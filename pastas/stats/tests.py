@@ -2,9 +2,6 @@
 
 from logging import getLogger
 
-# Type Hinting
-from typing import Tuple
-
 from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
 from pandas import DataFrame, Series, date_range, infer_freq
 from scipy.stats import chi2, norm, normaltest, shapiro
@@ -89,7 +86,7 @@ def durbin_watson(series: Series) -> float:
 
 def ljung_box(
     series: Series, lags: int = 15, nparam: int = 0, full_output: bool = False
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Ljung-box test for autocorrelation.
 
     Parameters
@@ -183,7 +180,7 @@ def ljung_box(
         return q_stat[-1], pval[-1]
 
 
-def runs_test(series: Series, cutoff: str = "median") -> Tuple[float, float]:
+def runs_test(series: Series, cutoff: str = "median") -> tuple[float, float]:
     """Runs test for autocorrelation.
 
     Parameters
@@ -283,7 +280,7 @@ def stoffer_toloi(
     nparam: int = 0,
     freq: str = "D",
     snap_to_equidistant_timestamps: bool = False,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters

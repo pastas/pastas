@@ -1,8 +1,5 @@
 # Pastas: Analysis of Groundwater Time Series
 
-> [!IMPORTANT]
-> As of Pastas 1.5, noisemodels are not added to the Pastas models by default anymore. [Read more about this change here](https://github.com/pastas/pastas/issues/735).
-
 ![image](/doc/_static/logo_small.png)
 
 [![image](https://img.shields.io/pypi/v/pastas.svg)](https://pypi.python.org/pypi/pastas)
@@ -51,12 +48,10 @@ analysis tools.
 
 ## Quick installation guide
 
-To install Pastas, a working version of Python 3.9, 3.10, 3.11, or 3.12
-has to be installed on your computer. We recommend using the [Anaconda
-Distribution](https://www.continuum.io/downloads) as it includes most of
-the python package dependencies and the Jupyter Notebook software to run
-the notebooks. However, you are free to install any Python distribution
-you want.
+To install Pastas, a working version of Python has to be installed on your computer.
+We recommend using the [Anaconda Distribution](https://www.continuum.io/downloads) as it
+includes most of the python package dependencies and the Jupyter Notebook software to
+run the notebooks. However, you are free to install any Python distribution you want.
 
 ### Stable version
 
@@ -83,23 +78,16 @@ To get the latest development version, use:
 -   [Metran](https://github.com/pastas/metran) is a Python package to
     perform multivariate timeseries analysis using a technique called
     dynamic factor modelling.
--   [Hydropandas](https://github.com/ArtesiaWater/hydropandas/blob/master/examples/03_hydropandas_and_pastas.ipynb)
+-   [Hydropandas](https://hydropandas.readthedocs.io/en/stable/examples/03_hydropandas_and_pastas.html)
     can be used to obtain Dutch timeseries (KNMI, Dinoloket, ..)
 -   [PyEt](https://github.com/phydrus/pyet) can be used to compute
     potential evaporation from meteorological variables.
 
 ## Dependencies
 
-Pastas depends on a number of Python packages, of which all of the
-necessary are automatically installed when using the pip install
-manager. To summarize, the dependencies necessary for a minimal function
-installation of Pastas
-
--   numpy\>=1.7
--   matplotlib\>=3.1
--   pandas\>=1.1
--   scipy\>=1.8
--   numba\>=0.51
+Pastas depends on a number of Python packages, of which all of the necessary are
+automatically installed when using the pip install manager. To know which dependencies
+exist, check the `pyproject.toml` file.
 
 To install the most important optional dependencies (solver LmFit and
 function visualisation Latexify) at the same time with Pastas use:

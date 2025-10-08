@@ -14,7 +14,10 @@ def test_example(file) -> None:
     os.chdir(pathname)
     try:
         # run each example
-        exec(open(file).read())
+        with open(file) as f:
+            exec(compile(f.read(), file, "exec"))
+            # Report success
+            print(f"Example {file} ran successfully.")
         plt.close("all")
     except Exception as e:
         os.chdir(cwd)

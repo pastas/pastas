@@ -22,11 +22,8 @@ These methods may be used as follows.
     nse        0.929136
 """
 
-# Type Hinting
-from typing import List, Optional
-
-from numpy import nan
-from pandas import DataFrame
+from numpy import interp, nan
+from pandas import DataFrame, Series
 
 from pastas.typing import Model, TimestampType
 
@@ -78,8 +75,8 @@ class Statistics:
     @model_tmin_tmax
     def rmse(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -103,8 +100,8 @@ class Statistics:
     @model_tmin_tmax
     def rmsn(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -135,7 +132,7 @@ class Statistics:
 
     @model_tmin_tmax
     def sse(
-        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
     ) -> float:
         """Sum of the squares of the error (SSE)
 
@@ -154,8 +151,8 @@ class Statistics:
     @model_tmin_tmax
     def mae(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -179,8 +176,8 @@ class Statistics:
     @model_tmin_tmax
     def nse(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -205,8 +202,8 @@ class Statistics:
     @model_tmin_tmax
     def nnse(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -232,8 +229,8 @@ class Statistics:
     @model_tmin_tmax
     def pearsonr(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -258,8 +255,8 @@ class Statistics:
     @model_tmin_tmax
     def evp(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -284,8 +281,8 @@ class Statistics:
     @model_tmin_tmax
     def rsq(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -310,8 +307,8 @@ class Statistics:
     @model_tmin_tmax
     def kge(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         modified: bool = False,
         **kwargs,
@@ -332,17 +329,32 @@ class Statistics:
         --------
         pastas.stats.kge
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+
+        # Get simulation at the correct indices
+        if self.ml.interpolate_simulation:
+            # interpolate simulation to times of observations
+            sim_interpolated = Series(
+                interp(obs.index.asi8, sim.index.asi8, sim.values), index=obs.index
+            )
+        else:
+            # All the observation indexes are in the simulation
+            sim_interpolated = sim.reindex(obs.index)
+
         return metrics.kge(
-            obs=obs, sim=sim, weighted=weighted, modified=modified, **kwargs
+            obs=obs,
+            sim=sim_interpolated,
+            weighted=weighted,
+            modified=modified,
+            **kwargs,
         )
 
     @model_tmin_tmax
     def kge_2012(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -366,7 +378,7 @@ class Statistics:
 
     @model_tmin_tmax
     def bic(
-        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
     ) -> float:
         """Bayesian Information Criterium (BIC).
 
@@ -391,7 +403,7 @@ class Statistics:
 
     @model_tmin_tmax
     def aic(
-        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
     ) -> float:
         """Akaike Information Criterium (AIC).
 
@@ -415,7 +427,7 @@ class Statistics:
 
     @model_tmin_tmax
     def aicc(
-        self, tmin: Optional[TimestampType] = None, tmax: Optional[TimestampType] = None
+        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
     ) -> float:
         """Akaike Information Criterium with second order bias correction (AICc).
 
@@ -440,9 +452,9 @@ class Statistics:
     @model_tmin_tmax
     def summary(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
-        stats: Optional[List[str]] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
+        stats: list[str] | None = None,
     ) -> DataFrame:
         """Returns a Pandas DataFrame with goodness-of-fit metrics.
 
@@ -491,12 +503,43 @@ class Statistics:
     @model_tmin_tmax
     def diagnostics(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         alpha: float = 0.05,
         stats: tuple = (),
         float_fmt: str = "{0:.2f}",
     ) -> DataFrame:
+        """Methods to compute various diagnostics checks for the noise time series. If
+        no NoiseModel is used, the diagnostics are computed on the model residuals.
+
+        Parameters
+        ----------
+        tmin: str or pandas.Timestamp, optional
+            Start date of the residual / noise time series to compute the diagnostics
+            checks for.
+        tmax: str or pandas.Timestamp, optional
+            End date of the residuals / noise time series to compute the diagnostics
+            checks for.
+        alpha: float, optional
+            significance level to use for the hypothesis testing.
+        stats: tuple, optional
+            Tuple with the diagnostic checks to perform. Not implemented yet.
+        float_fmt: str
+            String to use for formatting the floats in the returned DataFrame.
+
+        Returns
+        -------
+        df: Pandas.DataFrame
+            DataFrame with the information for the diagnostics checks. The final column
+            in this DataFrame report if the Null-Hypothesis is rejected. If H0 is not
+            rejected (=False) the data is in agreement with one of the properties of
+            white noise (e.g., normally distributed).
+
+        See Also
+        --------
+        pastas.stats.diagnostics
+
+        """
         if self.ml.noisemodel and self.ml.settings["noise"]:
             series = self.ml.noise(tmin=tmin, tmax=tmax)
             nparam = self.ml.noisemodel.nparam

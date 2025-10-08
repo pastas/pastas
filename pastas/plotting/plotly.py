@@ -20,8 +20,8 @@ from pastas.stats import acf
 class Plotly:
     """Extension class for interactive plotly figures for pastas Models.
 
-    Usage
-    -----
+    Examples
+    --------
     >>> ps.extensions.register_plotly_extension()
     INFO: Registered plotly plotting methods in Model class, e.g. `ml.plotly.plot()`.
     >>> fig = ml.plotly.results()
@@ -327,19 +327,17 @@ class Plotly:
         p["optimal"] = p["optimal"].astype(str)
         p.loc[:, "optimal"] = optimal.apply(_table_formatter_params)
 
+        values = ["<b>Parameter</b>", "<b>Optimal</b>"]
         if stderr:
-            stderr = p.loc[:, "stderr"] / optimal
+            values.append("<b>Std. Err.</b>")
+            stderr_values = p.loc[:, "stderr"] / optimal
             p["stderr"] = p["stderr"].astype(str)
-            p.loc[:, "stderr"] = stderr.abs().apply(_table_formatter_stderr)
+            p.loc[:, "stderr"] = stderr_values.abs().apply(_table_formatter_stderr)
 
         tab = go.Table(
             domain=dict(x=[x_pos + dx, 1.0], y=[y_pos[2] + dy, 1.0]),
             header=dict(
-                values=[
-                    "<b>Parameter</b>",
-                    "<b>Optimal</b>",
-                    "<b>Std. Err.</b>" if stderr else "",
-                ],
+                values=values,
                 font=dict(size=12),
                 align=["left", "center", "center"],
                 height=40,
@@ -349,7 +347,7 @@ class Plotly:
                 align=["left", "right", "right"],
                 height=30,
             ),
-            columnwidth=[100, 70, 70],
+            columnwidth=[100, 70, 70] if stderr else [100, 70],
         )
 
         traces.append(tab)

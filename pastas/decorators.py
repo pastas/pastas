@@ -1,10 +1,11 @@
+from collections.abc import Callable
 from functools import wraps
 from logging import getLogger
-from typing import Any, Dict, Optional
+from typing import Any
 
 from packaging.version import parse as parse_version
 
-from pastas.typing import Function, TimestampType
+from pastas.typing import TimestampType
 from pastas.version import __version__
 
 logger = getLogger(__name__)
@@ -18,7 +19,7 @@ def set_use_numba(b: bool) -> None:
     USE_NUMBA = b
 
 
-def set_parameter(function: Function) -> Function:
+def set_parameter(function: Callable) -> Callable:
     @wraps(function)
     def _set_parameter(self, name: str, value: float, **kwargs):
         if name not in self.parameters.index:
@@ -31,7 +32,7 @@ def set_parameter(function: Function) -> Function:
     return _set_parameter
 
 
-def get_stressmodel(function: Function) -> Function:
+def get_stressmodel(function: Callable) -> Callable:
     @wraps(function)
     def _get_stressmodel(self, name: str, **kwargs):
         if name not in self.stressmodels.keys():
@@ -47,12 +48,12 @@ def get_stressmodel(function: Function) -> Function:
     return _get_stressmodel
 
 
-def model_tmin_tmax(function: Function) -> Function:
+def model_tmin_tmax(function: Callable) -> Callable:
     @wraps(function)
     def _model_tmin_tmax(
         self,
-        tmin: Optional[TimestampType] = None,
-        tmax: Optional[TimestampType] = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
         *args,
         **kwargs,
     ):
@@ -146,8 +147,8 @@ def deprecate_args_or_kwargs(
         raise DeprecationWarning(msg)
 
 
-def njit(function: Optional[Function] = None, **kwargs) -> Function:
-    def njit_decorator(f: Function):
+def njit(function: Callable | None = None, **kwargs) -> Callable:
+    def njit_decorator(f: Callable) -> Callable:
         try:
             if not USE_NUMBA:
                 return f
@@ -166,12 +167,12 @@ def njit(function: Optional[Function] = None, **kwargs) -> Function:
 
 
 def latexfun(
-    function: Optional[Function] = None,
-    identifiers: Optional[Dict[str, str]] = None,
+    function: Callable | None = None,
+    identifiers: dict[str, str] | None = None,
     use_math_symbols: bool = True,
     use_raw_function_name: bool = False,
-) -> Function:
-    def latexify_decorator(f: Function) -> Function:
+) -> Callable:
+    def latexify_decorator(f: Callable) -> Callable:
         try:
             import latexify
 

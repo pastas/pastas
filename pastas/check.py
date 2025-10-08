@@ -1,9 +1,9 @@
 import logging
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 from matplotlib.colors import rgb2hex
-from pandas import DataFrame, concat
+from pandas import DataFrame, Timedelta, concat
 
 from pastas.model import Model
 from pastas.rfunc import RfuncBase
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 operators = {
     "greater_equal": ">=",
-    "less_equal": ">=",
+    "less_equal": "<=",  # Fixed: was incorrectly ">=", changed to "<="
     "greater_than": ">",
     "less_than": "<",
     "equal": "==",
@@ -77,25 +77,27 @@ def rsq_geq_threshold(ml: Model, threshold: float = 0.7):
     return _stat_ufunc_threshold(ml, np.greater_equal, "rsq", threshold)
 
 
-def response_memory(
-    ml,
+def _response_memory(
+    ml: Model,
+    threshold: float,
+    label: str,
     cutoff: float = 0.95,
-    factor_length_oseries: float = 0.5,
-    names: Optional[list[str] | str] = None,
+    names: list[str] | str | None = None,
 ):
-    """Check if response function memory is shorter than fraction of calibration period.
+    """Check if response function memory is shorter than threshold.
 
     Parameters
     ----------
     ml: pastas.Model
         Pastas model instance.
+    threshold : float
+        Threshold value for the maximum length of the response function.
+    label : str
+        Label for the check, e.g. "{factor_length_oseries} Δt_calib" or "warmup".
     cutoff: float, optional
         Cutoff value for the length of the response function. Default is 0.95, which
         means that the response function is cutoff at the time the step response is at
         95% of the gain.
-    factor_length_oseries: float, optional
-        Factor to multiply the length of the observation series with to get the
-        maximum allowed memory. Default is 0.5, e.g. half of the calibration period.
     names: list or str, optional
         List of stressmodel names to check the memory for. Default is None, which
         means all stressmodels are checked.
@@ -105,8 +107,6 @@ def response_memory(
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    len_oseries_calib = (ml.settings["tmax"] - ml.settings["tmin"]).days
-
     if names is None:
         names = list(ml.stressmodels.keys())
     elif names is not None and not isinstance(names, list):
@@ -151,15 +151,15 @@ def response_memory(
             for iw in range(nwells):
                 lbl = (
                     f"t{cutoff * 100:.0f}_{sm_name} ({sm.distances.index[iw]}) <"
-                    f" {factor_length_oseries} Δt_calib"
+                    f" {label}"
                 )
                 p = sm.get_parameters(ml, istress=iw)
                 tmem = interp_step(cutoff, p, sm.rfunc)
-                check = tmem < factor_length_oseries * len_oseries_calib
+                check = tmem < threshold
                 df.loc[lbl] = [
                     tmem,
                     "<",
-                    factor_length_oseries * len_oseries_calib,
+                    threshold,
                     dim,
                     check,
                     "",
@@ -170,10 +170,10 @@ def response_memory(
             lbl = f"response_t{cutoff * 100:.0f}_{sm_name}"
             p = ml.get_parameters(sm_name)
             tmem = interp_step(cutoff, p, sm.rfunc)
-            check = tmem < factor_length_oseries * len_oseries_calib
+            check = tmem < threshold
             df.loc[lbl] = [
                 tmem,
-                factor_length_oseries * len_oseries_calib,
+                threshold,
                 dim,
                 check,
                 "",
@@ -181,12 +181,12 @@ def response_memory(
         else:
             # for response functions where get_tmax is exact
             tmem = ml.get_response_tmax(sm_name, cutoff=cutoff)
-            check = tmem < factor_length_oseries * len_oseries_calib
-            lbl = f"t{cutoff * 100:.0f}_{sm_name} < {factor_length_oseries} Δt_calib"
+            check = tmem < threshold
+            lbl = f"t{cutoff * 100:.0f}_{sm_name} < {label}"
             df.loc[lbl] = [
                 tmem,
                 "<",
-                factor_length_oseries * len_oseries_calib,
+                threshold,
                 dim,
                 check,
                 "",
@@ -194,10 +194,72 @@ def response_memory(
     return df
 
 
+def response_memory(
+    ml,
+    cutoff: float = 0.95,
+    factor_length_oseries: float = 0.5,
+    names: list[str] | str | None = None,
+):
+    """Check if response function memory is shorter than fraction of calibration period.
+
+    Parameters
+    ----------
+    ml: pastas.Model
+        Pastas model instance.
+    cutoff: float, optional
+        Cutoff value for the length of the response function. Default is 0.95, which
+        means that the response function is cutoff at the time the step response is at
+        95% of the gain.
+    factor_length_oseries: float, optional
+        Factor to multiply the length of the observation series with to get the
+        maximum allowed memory. Default is 0.5, e.g. half of the calibration period.
+    names: list or str, optional
+        List of stressmodel names to check the memory for. Default is None, which
+        means all stressmodels are checked.
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        DataFrame with the results of the check.
+    """
+    len_oseries_calib = (ml.settings["tmax"] - ml.settings["tmin"]).days
+    threshold = factor_length_oseries * len_oseries_calib
+    label = f"{factor_length_oseries} Δt_calib"
+    return _response_memory(ml, threshold, label, cutoff=cutoff, names=names)
+
+
+def response_memory_vs_warmup(
+    ml, cutoff: float = 0.95, names: list[str] | str | None = None
+):
+    """Check if response function memory is shorter than warmup.
+
+    Parameters
+    ----------
+    ml: pastas.Model
+        Pastas model instance.
+    cutoff: float, optional
+        Cutoff value for the length of the response function. Default is 0.95, which
+        means that the response function is cutoff at the time the step response is at
+        95% of the gain.
+    names: list or str, optional
+        List of stressmodel names to check the memory for. Default is None, which
+        means all stressmodels are checked.
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        DataFrame with the results of the check.
+    """
+    warmup = ml.settings["warmup"]
+    threshold = warmup.days if isinstance(warmup, Timedelta) else Timedelta(warmup).days
+    label = "warmup"
+    return _response_memory(ml, threshold, label, cutoff=cutoff, names=names)
+
+
 def uncertainty_gain(
     ml: Model,
     n_std: float = 1.96,
-    names: Optional[list[str] | str] = None,
+    names: list[str] | str | None = None,
 ):
     """Check if the gain is larger than n_std times the uncertainty in the gain.
 
@@ -229,7 +291,7 @@ def uncertainty_gain(
     return df
 
 
-def parameter_bounds(ml: Model, parameters: Optional[list[str] | str] = None):
+def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
     """Check if the optimal parameter values are not on the lower or upper bounds.
 
     Parameters
@@ -274,7 +336,7 @@ def parameter_bounds(ml: Model, parameters: Optional[list[str] | str] = None):
 
 def uncertainty_parameters(
     ml: Model,
-    parameters: Optional[list[str] | str] = None,
+    parameters: list[str] | str | None = None,
     n_std: float = 1.96,
 ):
     """Check if parameter value is larger than n_std times the standard deviation.
@@ -305,7 +367,7 @@ def uncertainty_parameters(
     return concat(results)
 
 
-def _uncertainty_parameter(ml, parameter, n_std=1.96):
+def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
     """Internal method to check if parameter value is larger than n_std * std.
 
     Parameters

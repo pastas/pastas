@@ -1,9 +1,8 @@
 """This module contains methods to compute the groundwater signatures. Part of the
 signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`."""
 
-# Type Hinting
 from logging import getLogger
-from typing import Optional, Tuple, Union
+from typing import Literal
 
 from numpy import (
     arctan,
@@ -138,7 +137,7 @@ def cv_period_mean(
     return cv
 
 
-def _cv_date_min_max(series: Series, stat: str) -> float:
+def _cv_date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
     """Method to compute the coefficient of variation of the date of annual
     minimum or maximum head using circular statistics.
 
@@ -323,7 +322,7 @@ def _parde_coefficients(series: Series, normalize: bool = True) -> Series:
     return coefficients
 
 
-def _martens(series: Series, normalize: bool = False) -> Tuple[Series, Series]:
+def _martens(series: Series, normalize: bool = False) -> tuple[Series, Series]:
     """Function for the average seasonal fluctuation and interannual fluctuation.
 
     Parameters
@@ -385,8 +384,8 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
 
     A higher value of s indicates a more seasonal head, and vice versa.
 
-    Warning
-    -------
+    Warnings
+    --------
     In this formulating the water table is referenced to a certain datum and
     positive, not as depth below the surface!
 
@@ -422,8 +421,8 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
 
     A higher value of s indicates a more variable head, and vice versa.
 
-    Warning
-    -------
+    Warnings
+    --------
     In this formulating the water table is referenced to a certain datum and
     positive, not as depth below the surface!
 
@@ -436,10 +435,10 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
 def _colwell_components(
     series: Series,
     bins: int = 11,
-    freq: str = "W",
-    method: str = "mean",
+    freq: Literal["D", "W", "M", "ME"] = "W",
+    method: Literal["mean"] = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwell's predictability, constant, and contingency
     :cite:t:`colwell_predictability_1974`.
 
@@ -491,8 +490,7 @@ def _colwell_components(
     elif freq == "D":
         df["time"] = df.index.isocalendar().day
     else:
-        msg = "freq %s is not a supported option."
-        logger.error(msg, freq)
+        msg = "Signature `colwell_`: freq %s is not a supported option."
         raise ValueError(msg % freq)
 
     df["values"] = 1.0
@@ -518,9 +516,9 @@ def colwell_constancy(
     series: Series,
     bins: int = 11,
     freq: str = "W",
-    method: str = "mean",
+    method: Literal["mean"] = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwells constancy index after :cite:t:`colwell_predictability_1974`.
 
     Parameters
@@ -556,9 +554,9 @@ def colwell_contingency(
     series: Series,
     bins: int = 11,
     freq: str = "W",
-    method: str = "mean",
+    method: Literal["mean"] = "mean",
     normalize: bool = True,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Colwell's contingency :cite:t:`colwell_predictability_1974`
 
     Parameters
@@ -593,7 +591,7 @@ def colwell_contingency(
 
 
 def low_pulse_count(
-    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.2, rolling_window: str | None = "7D"
 ) -> float:
     """Average number of times the series is below a certain threshold per year.
 
@@ -618,8 +616,8 @@ def low_pulse_count(
     The threshold is defined as the 20th percentile of non-exceedance
     :cite:t:`richter_method_1996`.
 
-    Warning
-    -------
+    Warnings
+    --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
@@ -641,7 +639,7 @@ def low_pulse_count(
 
 
 def high_pulse_count(
-    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.8, rolling_window: str | None = "7D"
 ) -> float:
     """Average number of times the series exceeds a certain threshold per year.
 
@@ -665,8 +663,8 @@ def high_pulse_count(
     Number of times during which the head exceeds a certain threshold. The threshold is
     defined as the 80th percentile of non-exceedance.
 
-    Warning
-    -------
+    Warnings
+    --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
@@ -685,7 +683,7 @@ def high_pulse_count(
 
 
 def low_pulse_duration(
-    series: Series, quantile: float = 0.2, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.2, rolling_window: str | None = "7D"
 ) -> float:
     """Average duration of pulses where the head is below a certain threshold.
 
@@ -709,8 +707,8 @@ def low_pulse_duration(
     -----
     Average duration of pulses (in days) where the head drops below a certain threshold.
 
-    Warning
-    -------
+    Warnings
+    --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
@@ -731,7 +729,7 @@ def low_pulse_duration(
 
 
 def high_pulse_duration(
-    series: Series, quantile: float = 0.8, rolling_window: Union[str, None] = "7D"
+    series: Series, quantile: float = 0.8, rolling_window: str | None = "7D"
 ) -> float:
     """Average duration of pulses where the head exceeds a certain threshold.
 
@@ -756,8 +754,8 @@ def high_pulse_duration(
     Average duration of pulses where the head drops exceeds a certain threshold. The
     threshold is defined as the 80th percentile of non-exceedance.
 
-    Warning
-    -------
+    Warnings
+    --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
@@ -808,7 +806,7 @@ def _get_differences(series: Series, normalize: bool = False) -> Series:
 
 
 def rise_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Mean of positive head changes from one day to the next.
 
@@ -843,7 +841,7 @@ def rise_rate(
 
 
 def fall_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Mean negative head changes from one day to the next.
 
@@ -879,7 +877,7 @@ def fall_rate(
 
 
 def cv_rise_rate(
-    series: Series, normalize: bool = True, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = True, rolling_window: str | None = "7D"
 ) -> float:
     """Coefficient of Variation in rise rate.
 
@@ -914,7 +912,7 @@ def cv_rise_rate(
 
 
 def cv_fall_rate(
-    series: Series, normalize: bool = False, rolling_window: Union[str, None] = "7D"
+    series: Series, normalize: bool = False, rolling_window: str | None = "7D"
 ) -> float:
     """Coefficient of Variation in fall rate.
 
@@ -1003,8 +1001,8 @@ def reversals_avg(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily (>10%% of time steps are "
-            "non-daily). This may lead to incorrect results."
+            "Signature `reversals_avg`: the time step is not approximately daily "
+            "(>10%% of time steps are non-daily). This may lead to incorrect results."
         )
         logger.warning(msg)
         return nan
@@ -1043,7 +1041,7 @@ def reversals_cv(series: Series) -> float:
     # Check if the time step is approximately daily
     if not (dt > 0.9).all() & (dt < 1.1).all():
         msg = (
-            "The time step is not approximately daily. "
+            "Signature `reversals_cv`: the time step is not approximately daily. "
             "This may lead to incorrect results."
         )
         logger.warning(msg)
@@ -1076,8 +1074,8 @@ def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
     -----
     Mean of annual maximum head :cite:p:`clausen_flow_2000`.
 
-    Warning
-    -------
+    Warnings
+    --------
     This signatures is sensitive to the base level of the time series if normalize is
     set to False.
 
@@ -1288,7 +1286,7 @@ def recession_constant(
     # Return nan and raise warning if the decay constant is close to the boundary
     if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
         msg = (
-            "The estimated recession constant (%s) is close to the boundary. "
+            "Signature `recession_constant`: the estimated recession constant (%s) is close to the boundary. "
             "This may lead to incorrect results."
         )
         logger.warning(msg, round(popt[1], 2))
@@ -1361,7 +1359,7 @@ def recovery_constant(
     # Return nan and raise warning if the recovery constant is close to the boundary
     if isclose(popt[1], 0.0) or isclose(popt[1], 1e3):
         msg = (
-            "The estimated recovery constant (%s) is close to the boundary. "
+            "Signature `recovery_constant`: the estimated recovery constant (%s) is close to the boundary. "
             "This may lead to incorrect results."
         )
         logger.warning(msg, round(popt[1], 2))
@@ -1492,7 +1490,7 @@ def richards_pathlength(series: Series, normalize: bool = True) -> float:
 
 def _baselevel(
     series: Series, normalize: bool = True, period="30D"
-) -> Tuple[Series, Series]:
+) -> tuple[Series, Series]:
     """Baselevel function for the baselevel index and stability.
 
     Parameters
@@ -1541,7 +1539,9 @@ def _baselevel(
     return series, ht
 
 
-def baselevel_index(series: Series, normalize: bool = True, period="30D") -> float:
+def baselevel_index(
+    series: Series, normalize: bool = True, period: str = "30D"
+) -> float:
     """Base level index (BLI) adapted after :cite:t:`organization_manual_2008`.
 
     Parameters
@@ -1573,7 +1573,9 @@ def baselevel_index(series: Series, normalize: bool = True, period="30D") -> flo
     return ht.sum() / series.sum()
 
 
-def baselevel_stability(series: Series, normalize: bool = True, period="30D") -> float:
+def baselevel_stability(
+    series: Series, normalize: bool = True, period: str = "30D"
+) -> float:
     """Baselevel stability after :cite:t:`heudorfer_index-based_2019`.
 
     Parameters
@@ -1640,7 +1642,7 @@ def autocorr_time(series: Series, cutoff: float = 0.8, **kwargs) -> float:
         return (c < cutoff).idxmax() / Timedelta("1D")
 
 
-def _date_min_max(series: Series, stat: str) -> float:
+def _date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
     """Compute the average date of the minimum head value with circular statistics.
 
     Parameters
@@ -1747,13 +1749,14 @@ def date_max(series: Series) -> float:
 
 
 def summary(
-    data: Union[DataFrame, Series], signatures: Optional[list] = None
+    data: DataFrame | Series,
+    signatures: list[str] | None = None,
 ) -> DataFrame:
     """Method to get many signatures for a time series.
 
     Parameters
     ----------
-    data: Union[pandas.DataFrame, pandas.Series]
+    data: pandas.DataFrame | pandas.Series
         pandas DataFrame or Series with DatetimeIndex
     signatures: list
         list of signatures to return. By default all available signatures are returned.
@@ -1803,8 +1806,8 @@ def summary(
             try:
                 result.loc[signature, col] = func(data[col])
             except Exception as e:
-                msg = f"Could not compute signature {signature} for column {col}: {e}"
-                logger.warning(msg)
+                msg = f"Signature '{signature}': could not be computed for series '{col}': {e}"
+                logger.error(msg)
                 result.loc[signature, col] = nan
 
     return result

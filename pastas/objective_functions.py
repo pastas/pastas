@@ -46,9 +46,10 @@ class GaussianLikelihood:
 
         """
         parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"]
+            [(0.05, 1e-10, 1.0, True, 0.01, name, "uniform")],
+            columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"],
+            index=[name + "_var"],
         )
-        parameters.loc[name + "_var"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
         return parameters
 
     def compute(self, rv, p):
@@ -115,20 +116,14 @@ class GaussianLikelihoodAr1:
             Initial parameters for the log-likelihood function.
 
         """
-        parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"]
+        return DataFrame(
+            [
+                (0.05, 1e-10, 1.0, True, 0.01, name, "uniform"),
+                (0.5, 1e-10, 0.99999, True, 0.2, name, "uniform"),
+            ],
+            columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"],
+            index=[name + "_var", name + "_phi"],
         )
-        parameters.loc[name + "_var"] = (0.05, 1e-10, 1, True, 0.01, name, "uniform")
-        parameters.loc[name + "_phi"] = (
-            0.5,
-            1e-10,
-            0.99999,
-            True,
-            0.2,
-            name,
-            "uniform",
-        )
-        return parameters
 
     def compute(self, rv, p):
         """Compute the log-likelihood.

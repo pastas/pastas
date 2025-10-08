@@ -1,7 +1,5 @@
 from logging import getLogger
-
-# Type Hinting
-from typing import Optional, Union
+from typing import Any
 
 import pandas as pd
 from pandas import Series, Timedelta
@@ -37,8 +35,11 @@ class TimeSeries:
     series: pastas.TimeSeries
         Returns a pastas.TimeSeries object.
 
+    Other Parameters
+    ----------------
+
     Time series settings
-    --------------------
+
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
            * `drop`: drop NaNs from time series
@@ -95,9 +96,9 @@ class TimeSeries:
     def __init__(
         self,
         series: Series,
-        name: Optional[str] = None,
-        settings: Optional[Union[str, dict]] = None,
-        metadata: Optional[dict] = None,
+        name: str | None = None,
+        settings: str | dict[str, Any] | None = None,
+        metadata: dict | None = None,
     ) -> None:
         # Make sure we have a Pandas Series and not a 1D-DataFrame
         if isinstance(series, pd.DataFrame):
@@ -271,9 +272,7 @@ class TimeSeries:
         update = False
         for key, value in kwargs.items():
             if key in ["tmin", "tmax"]:
-                if value is None:
-                    pass
-                else:
+                if value is not None:
                     value = pd.Timestamp(value)
             if (value != self.settings[key]) and (value is not None):
                 self.settings[key] = value
@@ -473,7 +472,7 @@ class TimeSeries:
                 )
             elif method == "bfill":
                 first_value = series.at[series.first_valid_index()]
-                series = series.fillna(method="bfill")  # Default option
+                series = series.bfill()  # Default option
                 logger.info(
                     "Time Series '%s' was extended in the past to %s with the first "
                     "value (%.2g) of the time series.",
@@ -543,7 +542,7 @@ class TimeSeries:
                 )
             elif method == "ffill":
                 last_value = series.at[series.last_valid_index()]
-                series = series.fillna(method="ffill")
+                series = series.ffill()
                 logger.info(
                     "Time Series '%s' was extended in the future to %s with the last "
                     "value (%.2g) of the time series.",
@@ -578,7 +577,7 @@ class TimeSeries:
 
         return series
 
-    def to_dict(self, series: Optional[bool] = True) -> dict:
+    def to_dict(self, series: bool | None = True) -> dict:
         """Method to export the Time Series to a json format.
 
         Parameters
@@ -664,7 +663,7 @@ def validate_oseries(series: Series):
     0. Make sure the series is a Pandas.Series
     1. Make sure the values are floats
     2. Make sure the index is a DatetimeIndex
-    3. Make sure the indices are datetime64
+    3. Make sure the indices are datetime64 (and tz naive)
     4. Make sure the index has no NaT-values
     5. Make sure the index is monotonically increasing
     6. Make sure there are no duplicate indices
@@ -733,7 +732,14 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     # 3. Make sure the indices are datetime64
     if not pd.api.types.is_datetime64_dtype(series.index):
-        msg = "Indices os series %s are not datetime64."
+        if isinstance(series.index.dtype, pd.DatetimeTZDtype):
+            msg = (
+                "The index of series %s is timezone aware. Please convert "
+                "the series to timezone naive. Try using "
+                "`series.index = series.index.tz_localize(None)`."
+            )
+        else:
+            msg = "Indices of series %s are not datetime64."
         logger.error(msg, name)
         raise ValueError(msg % name)
 

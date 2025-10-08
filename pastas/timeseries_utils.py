@@ -2,9 +2,6 @@
 
 import logging
 
-# Type Hinting
-from typing import Optional
-
 import numpy as np
 from pandas import Index, Series, Timedelta, Timestamp, api, date_range, infer_freq
 from pandas.core.resample import Resampler
@@ -82,7 +79,7 @@ def _get_stress_dt(freq: str) -> float:
     -----
     Used for comparison to determine if a time series needs to be up or downsampled.
 
-    See http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+    See https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html
     for the offset_aliases supported by Pandas.
     """
     if freq is None:
@@ -118,6 +115,11 @@ def _get_stress_dt(freq: str) -> float:
             dt = num * 1.0 / 24.0
         else:
             raise (ValueError("freq of {} not supported".format(freq)))
+
+    # Check if dt can be an integer, if so convert to int
+    if not isinstance(dt, int):
+        if dt.is_integer():
+            dt = int(dt)
 
     return dt
 
@@ -467,7 +469,7 @@ def pandas_equidistant_sample(series: Series, freq: str) -> Series:
 
 
 def pandas_equidistant_nearest(
-    series: Series, freq: str, tolerance: Optional[str] = None
+    series: Series, freq: str, tolerance: str | None = None
 ) -> Series:
     """Create equidistant time series using pandas.reindex with method='nearest'.
 

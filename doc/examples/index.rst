@@ -31,6 +31,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     uncertainty_ls_mcmc
     standardized_groundwater_index
     signatures
+    ensemble_predictions
 
 
 Basics
@@ -118,17 +119,44 @@ Applications
 
 `Groundwater signatures`_
 
+`Ensemble predictions`_
+
 .. _Standardized Groundwater Index: standardized_groundwater_index.html
 .. _Groundwater signatures: signatures.html
+.. _Ensemble predictions: ensemble_predictions.html
 
 
-STOWA Manual (Dutch only)
--------------------------
+Time Series Analysis Manual
+---------------------------
 
-In 2021 the STOWA published a manual on time series analysis. This manual has
-some general notebooks on preprocessing data, model structure, calibration and
-assessment with Pastas. There are also more case-specific notebooks available
-on determining stresses, characteristics, system analysis and predicting. The
-notebooks (currently Dutch only) can be found `here
-<https://github.com/ArtesiaWater/stowa_handleiding_tijdreeksanalyse>`_.
+The `notebooks <https://github.com/ArtesiaWater/stowa_handleiding_tijdreeksanalyse>`_ from
+the Dutch Manual on Time Series Analysis, which use Pastas, have been translated into English
+and are available below. The full manual can be found here: Von Asmuth, J., Baggelaar, P.,
+Bakker, M., Brakenhoff, D., Collenteur, R., Ebbens, O., Mondeel, H., Klop, S., & Schaars, F. (2021).
+Handleiding Tijdreeksanalyse (`STOWA rapport nr. 32 <https://www.stowa.nl/publicaties/handleiding-voor-het-uitvoeren-van-tijdreeksanalyses>`_).
+Stichting Toegepast Onderzoek Waterbeheer, Amersfoort.
 
+`Preprocessing`_
+
+`Model structure`_
+
+`Model calibration`_
+
+`Model assessment`_
+
+`Case Study 1 Assessing contributions`_
+
+`Case Study 2 Determining characteristics`_
+
+`Case Study 3 System analysis`_
+
+`Case Study 4 Forecasting`_
+
+.. _Preprocessing: stowa_preprocessing.html
+.. _Model structure: stowa_model_structure.html
+.. _Model calibration: stowa_calibration.html
+.. _Model assessment: stowa_assessment.html
+.. _Case Study 1 Assessing contributions: stowa_cases_contribution_assessment.html
+.. _Case Study 2 Determining characteristics: stowa_cases_characteristics.html
+.. _Case Study 3 System analysis: stowa_cases_system_analysis.html
+.. _Case Study 4 Forecasting: stowa_cases_forecasting.html

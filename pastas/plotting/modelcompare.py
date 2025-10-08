@@ -1,17 +1,23 @@
 """This module contains tools for visually comparing multiple models."""
 
+from copy import copy
 from itertools import combinations
 from logging import getLogger
-from typing import List, Optional
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, concat
+from pandas import DataFrame, Timestamp, concat
 
-from pastas.plotting.plotutil import _table_formatter_params, share_xaxes, share_yaxes
+from pastas.plotting.plotutil import (
+    _table_formatter_params,
+    plot_series_with_gaps,
+    share_xaxes,
+    share_yaxes,
+)
 from pastas.rfunc import HantushWellModel
 from pastas.stats.core import acf
-from pastas.typing import Axes, Model
+from pastas.typing import Axes, Model, TimestampType
 
 logger = getLogger(__name__)
 
@@ -58,7 +64,13 @@ class CompareModels:
         mc.figure.savefig("modelcomparison.png")
     """
 
-    def __init__(self, models: List[Model], names: Optional[List[str]] = None) -> None:
+    def __init__(
+        self,
+        models: list[Model],
+        names: list[str] | None = None,
+        tmin: TimestampType | None = None,
+        tmax: TimestampType | None = None,
+    ) -> None:
         """Initialize model compare class.
 
         Parameters
@@ -67,6 +79,12 @@ class CompareModels:
             list of models to compare.
         names : list of str, optional
             override model names
+        tmin: TimestampType, optional
+            Timestamp with a start date for the simulation period (E.g. '1980'). If none
+            is provided, the tmin from the oseries is used.
+        tmax: TimestampType, optional
+            Timestamp with an end date for the simulation period (E.g. '2010'). If none
+            is provided, the tmax from the oseries is used.
         """
         self.models = models
         # ensure unique model names
@@ -79,6 +97,16 @@ class CompareModels:
             modelnames = [f"{iml.name}_{i}" for i, iml in enumerate(self.models)]
         self.modelnames = modelnames
 
+        # prevent NaT types which cause various pandas issues
+        if not tmin:
+            self.tmin = None
+        else:
+            self.tmin = Timestamp(tmin)
+        if not tmax:
+            self.tmax = None
+        else:
+            self.tmax = Timestamp(tmax)
+
         # attributes that are set and used later
         self.figure = None
         self.axes = None
@@ -89,7 +117,7 @@ class CompareModels:
 
     def initialize_figure(
         self,
-        mosaic: Optional[List[List[str]]] = None,
+        mosaic: list[list[str]] | None = None,
         cmap: str = "tab10",
         return_ax: bool = False,
         **fig_kwargs,
@@ -120,9 +148,9 @@ class CompareModels:
 
     def initialize_adjust_height_figure(
         self,
-        mosaic: Optional[List[List[str]]] = None,
+        mosaic: list[list[str]] | None = None,
         cmap: str = "tab10",
-        smdict: Optional[dict] = None,
+        smdict: dict[int, list[str]] | None = None,
         **fig_kwargs,
     ) -> None:
         """initialize subplots based on a mosaic with equal vertical scales.
@@ -237,7 +265,7 @@ class CompareModels:
             if axlbl in ["sim", "res"] or axlbl.startswith("con"):
                 self.axes[axlbl].autoscale(enable=None, axis="y", tight=True)
 
-    def get_unique_stressmodels(self, models: List[Model] = None) -> List[str]:
+    def get_unique_stressmodels(self, models: list[Model] = None) -> list[str]:
         """Get all unique stressmodel names.
 
         Parameters
@@ -254,9 +282,7 @@ class CompareModels:
 
         return sm_unique
 
-    def get_default_mosaic(
-        self, n_stressmodels: Optional[int] = None
-    ) -> List[List[str]]:
+    def get_default_mosaic(self, n_stressmodels: int | None = None) -> list[list[str]]:
         """Get default mosaic for matplotlib.subplot_mosaic().
 
         Parameters
@@ -283,7 +309,7 @@ class CompareModels:
 
         return mosaic
 
-    def get_tmin_tmax(self, models: List[Model] = None) -> DataFrame:
+    def get_tmin_tmax(self, models: list[Model] = None) -> DataFrame:
         """get tmin and tmax of all models.
 
         Parameters
@@ -305,8 +331,8 @@ class CompareModels:
 
     def get_metrics(
         self,
-        models: Optional[List[Model]] = None,
-        metric_selection: Optional[List[str]] = None,
+        models: list[Model] | None = None,
+        metric_selection: list[str] | None = None,
     ) -> DataFrame:
         """get metrics of all models in a DataFrame.
 
@@ -342,9 +368,9 @@ class CompareModels:
 
     def get_parameters(
         self,
-        models: Optional[List[Model]] = None,
+        models: list[Model] | None = None,
         param_col: str = "optimal",
-        param_selection: Optional[List[str]] = None,
+        param_selection: list[str] | None = None,
     ) -> DataFrame:
         """get parameter values of all models in a DataFrame.
 
@@ -382,7 +408,7 @@ class CompareModels:
             return params
 
     def get_diagnostics(
-        self, models: Optional[List[Model]] = None, diag_col: str = "P-value"
+        self, models: list[Model] | None = None, diag_col: str = "P-value"
     ) -> DataFrame:
         """Get p-values of statistical tests in a DataFrame.
 
@@ -423,7 +449,7 @@ class CompareModels:
         else:
             axs = self.axes
 
-        oseries = [ml.oseries.series for ml in self.models]
+        oseries = [ml.oseries.series[self.tmin : self.tmax] for ml in self.models]
         equals = np.array([])
         for pair in combinations(oseries, 2):
             equals = np.append(equals, np.array_equal(pair[0], pair[1]))
@@ -470,7 +496,7 @@ class CompareModels:
                 name = self.modelnames[i]
             else:
                 name = ml.model
-            simulation = ml.simulate()
+            simulation = ml.simulate(tmin=self.tmin, tmax=self.tmax)
             axs[axn].plot(
                 simulation.index,
                 simulation.values,
@@ -497,10 +523,10 @@ class CompareModels:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
-            residuals = ml.residuals()
-            axs[axn].plot(
-                residuals.index,
-                residuals.values,
+            residuals = ml.residuals(tmin=self.tmin, tmax=self.tmax)
+            axs[axn] = plot_series_with_gaps(
+                series=residuals,
+                ax=axs[axn],
                 label="Residuals",
                 color=self.cmap(i),
             )
@@ -523,18 +549,21 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             if ml.settings["noise"]:
-                noise = ml.noise()
-                axs[axn].plot(
-                    noise.index,
-                    noise.values,
+                noise = ml.noise(tmin=self.tmin, tmax=self.tmax)
+                axs[axn] = plot_series_with_gaps(
+                    series=noise,
+                    ax=axs[axn],
                     label="Noise",
-                    linestyle="--",
                     color=self.cmap(i),
+                    linestyle="--",
                 )
         return axs[axn]
 
     def plot_response(
-        self, smdict: Optional[dict] = None, axn: str = "rf{i}", response: str = "step"
+        self,
+        smdict: dict[int, list[str]] | None = None,
+        axn: str = "rf{i}",
+        response: str = "step",
     ) -> None:
         """plot step or block responses.
 
@@ -628,7 +657,7 @@ class CompareModels:
 
     def plot_contribution(
         self,
-        smdict: Optional[dict] = None,
+        smdict: dict[int, list[str]] | None = None,
         axn: str = "con{i}",
         normalized: bool = False,
     ) -> None:
@@ -675,7 +704,9 @@ class CompareModels:
                 for smn in namlist:
                     if smn not in ml.stressmodels:
                         continue
-                    for con in ml.get_contributions(split=False):
+                    for con in ml.get_contributions(
+                        split=False, tmin=self.tmin, tmax=self.tmax
+                    ):
                         if smn in con.name:
                             label = f"{con.name}"
                             if normalized:
@@ -700,9 +731,7 @@ class CompareModels:
         if self.axes is None:
             return axs[axn.format(i=0)]
 
-    def plot_stress(
-        self, axn: str = "stress", names: Optional[List[str]] = None
-    ) -> None:
+    def plot_stress(self, axn: str = "stress", names: list[str] | None = None) -> None:
         """plot stresses time series.
 
         Parameters
@@ -770,7 +799,7 @@ class CompareModels:
             )
         return axs[axn]
 
-    def plot_table(self, axn: str = "table", df: Optional[DataFrame] = None) -> None:
+    def plot_table(self, axn: str = "table", df: DataFrame | None = None) -> None:
         """Plot dataframe as table.
 
         Parameters
@@ -795,6 +824,9 @@ class CompareModels:
             colColours=[(1.0, 1.0, 1.0, 1.0)]
             + [self.cmap(i, alpha=0.75) for i in range(len(df.columns) - 1)],
             bbox=(0.0, 0.0, 1.0, 1.0),
+            colWidths=[
+                max(df[col].astype(str).str.len().max(), len(col)) for col in df.columns
+            ],
         )
         axs[axn].set_xticks([])
         axs[axn].set_yticks([])
@@ -804,7 +836,7 @@ class CompareModels:
         self,
         axn: str = "tab",
         param_col: str = "optimal",
-        param_selection: Optional[List[str]] = None,
+        param_selection: list[str] | None = None,
     ) -> None:
         """plot model parameters table.
 
@@ -830,7 +862,7 @@ class CompareModels:
         return self.plot_table(axn=axn, df=params[cols])
 
     def plot_table_metrics(
-        self, axn: str = "met", metric_selection: Optional[List[str]] = None
+        self, axn: str = "met", metric_selection: list[str] | None = None
     ) -> None:
         """plot metrics table.
 
@@ -879,7 +911,7 @@ class CompareModels:
         cols = diags.columns.to_list()[-1:] + diags.columns.to_list()[:-1]
         return self.plot_table(axn=axn, df=diags[cols])
 
-    def share_xaxes(self, axes: List[Axes]) -> None:
+    def share_xaxes(self, axes: list[Axes]) -> None:
         """share x-axes.
 
         Parameters
@@ -889,7 +921,7 @@ class CompareModels:
         """
         share_xaxes(axes)
 
-    def share_yaxes(self, axes: List[Axes]) -> None:
+    def share_yaxes(self, axes: list[Axes]) -> None:
         """share y-axes.
 
         Parameters
@@ -899,15 +931,35 @@ class CompareModels:
         """
         share_yaxes(axes)
 
+    def _get_legend_handles_labels_without_duplicates(
+        self, ax: plt.Axes
+    ) -> tuple[list[Any], list[str]]:
+        handles, labels = ax.get_legend_handles_labels()
+        unique_handles = []
+        unique_labels = []
+        for handle, label in zip(handles, labels):
+            if label not in unique_labels:
+                unique_handles.append(handle)
+                unique_labels.append(label)
+            else:
+                idx = unique_labels.index(label)
+                hand = copy(
+                    unique_handles[idx]
+                )  # make a copy to avoid modifying handle in plot
+                hand.set_color("k")
+                unique_handles[idx] = hand
+
+        return unique_handles, unique_labels
+
     def plot(
         self,
-        smdict: Optional[dict] = None,
+        smdict: dict[int, list[str]] | None = None,
         normalized: bool = False,
-        param_selection: Optional[list] = None,
+        param_selection: list[str] | None = None,
         grid: bool = True,
         legend: bool = True,
         adjust_height: bool = False,
-        legend_kwargs: Optional[dict] = None,
+        legend_kwargs: dict[str, Any] | None = None,
         **fig_kwargs,
     ) -> None:
         """plot the models in a comparison plot.
@@ -938,6 +990,8 @@ class CompareModels:
             contributions in one subplot, please also provide smdict for best results.
         legend_kwargs : dict, optional
             pass legend keyword arguments to plots.
+        **fig_kwargs
+            pass keyword arguments to matplotlib.pyplot.subplot_mosaic.
         """
         self.adjust_height = adjust_height
         if "figsize" not in fig_kwargs:
@@ -966,10 +1020,17 @@ class CompareModels:
             if axn not in ("tab", "met", "dia"):
                 self.axes[axn].grid(grid)
                 if legend and not axn.startswith("rf"):
-                    if legend_kwargs is None:
-                        legend_kwargs = {}
-                    _, labels = self.axes[axn].get_legend_handles_labels()
+                    legend_kwargs = {} if legend_kwargs is None else legend_kwargs
+
+                    handles, labels = (
+                        self._get_legend_handles_labels_without_duplicates(
+                            self.axes[axn]
+                        )
+                    )
+
                     self.axes[axn].legend(
+                        handles=handles,
+                        labels=labels,
                         ncol=legend_kwargs.pop(
                             "ncol", max([int(np.ceil(len(labels))), 4])
                         ),
@@ -988,11 +1049,16 @@ class CompareModels:
             self.share_xaxes(xshare_left)
         if len(xshare_right) > 1:
             self.share_xaxes(xshare_right)
+        for axn in xshare_right:
+            axn.yaxis.tick_right()
 
         # xlim bounds
-        tmintmax = self.get_tmin_tmax()
-        tmin = tmintmax.loc[:, "tmin"].min()
-        tmax = tmintmax.loc[:, "tmax"].max()
+        tmin, tmax = self.tmin, self.tmax
+        default_tmintmax = self.get_tmin_tmax()
+        if not tmin:
+            tmin = default_tmintmax.loc[:, "tmin"].min()
+        if not tmax:
+            tmax = default_tmintmax.loc[:, "tmax"].max()
         self.axes["sim"].set_xlim(tmin, tmax)
 
         # met
@@ -1001,4 +1067,4 @@ class CompareModels:
         # tab
         _ = self.plot_table_params(param_selection=param_selection)
 
-        self.figure.tight_layout(pad=0.0)
+        # self.figure.tight_layout(pad=0.0)

@@ -9,6 +9,8 @@
 
 *.coverage*
 
+*.amlignore*
+
 pastas.egg-info
 pastas/gui/settings
 
@@ -37,3 +39,5 @@ Test_Model.pdf
 test.pas
 doc/about/publications.bib
 doc/about/references.bib
+*.nbc
+*.nbi

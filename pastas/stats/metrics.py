@@ -13,7 +13,6 @@ or directly from a Pastas model:
 """
 
 from logging import getLogger
-from typing import Optional
 
 from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
@@ -44,9 +43,9 @@ logger = getLogger(__name__)
 
 
 def mae(
-    obs: Optional[Series] = None,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    obs: Series | None = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
@@ -94,9 +93,9 @@ def mae(
 
 
 def rmse(
-    obs: Optional[Series] = None,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    obs: Series | None = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
@@ -143,9 +142,9 @@ def rmse(
 
 
 def sse(
-    obs: Optional[Series] = None,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    obs: Series | None = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
 ) -> float:
     """Compute the Sum of the Squared Errors (SSE).
@@ -195,10 +194,10 @@ def pearsonr(
 
     Parameters
     ----------
-    sim: pandas.Series
-        The Series with the simulated values.
     obs: pandas.Series
         The Series with the observed values.
+    sim: pandas.Series
+        The Series with the simulated values.
     missing: str, optional
         string with the rule to deal with missing values in the observed series. Only
         "drop" is supported now.
@@ -242,8 +241,8 @@ def pearsonr(
 
 def evp(
     obs: Series,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
@@ -307,8 +306,8 @@ def evp(
 
 def nse(
     obs: Series,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
@@ -356,8 +355,8 @@ def nse(
 
 def nnse(
     obs: Series,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
@@ -386,7 +385,7 @@ def nnse(
 
     Notes
     -----
-    NNSE computed according to :cite:t:`nash_normalized_2006`
+    NNSE computed according to :cite:t:`mathevet_bounded_2006`
 
     .. math:: \\text{NNSE} = 1 / (2 - NSE)
 
@@ -410,12 +409,12 @@ def nnse(
 
 def rsq(
     obs: Series,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
-    nparam: Optional[int] = None,
+    nparam: int | None = None,
 ) -> float:
     """Compute R-squared, possibly adjusted for the number of free parameters.
 
@@ -476,9 +475,9 @@ def rsq(
 
 
 def bic(
-    obs: Optional[Series] = None,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    obs: Series | None = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
     nparam: int = 1,
 ) -> float:
@@ -521,9 +520,9 @@ def bic(
 
 
 def aic(
-    obs: Optional[Series] = None,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    obs: Series | None = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
     nparam: int = 1,
 ) -> float:
@@ -574,9 +573,9 @@ def aic(
 
 
 def aicc(
-    obs: Optional[Series] = None,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    obs: Series | None = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
     nparam: int = 1,
 ) -> float:
@@ -603,7 +602,7 @@ def aicc(
     -----
 
     The corrected Akaike Information Criterium (AICc)
-    :cite:p:`suguria_aicc_1978` is computed as follows:
+    :cite:p:`sugiura_further_1978` is computed as follows:
 
     .. math:: \\text{AIC} = -2 log(L) + 2 nparam - (2 nparam (nparam + 1) / (nobs - nparam - 1))
 
@@ -754,15 +753,12 @@ def kge_2012(
 
 
 def _compute_err(
-    obs: Optional[Series] = None,
-    sim: Optional[Series] = None,
-    res: Optional[Series] = None,
+    obs: Series | None = None,
+    sim: Series | None = None,
+    res: Series | None = None,
     missing: str = "drop",
 ):
     """
-
-    Parameters
-    ----------
     Parameters
     ----------
     sim: pandas.Series, optional
@@ -818,12 +814,12 @@ def picp(obs: Series, bounds: DataFrame):
     -----
     The Prediction Interval Coverage Probability (PICP) is computed as follows:
 
-    .. math:: PICP = \frac{1}{N} \sum _{i=1}^N a_i,
+    .. math:: PICP = \\frac{1}{N} \\sum_{i=1}^N a_i,
         a_i =
-        \begin{cases}
-             1 & \text{if }h_i \in [\hat{h_i}^L, \hat{h_i}^U], \\
-             0 & \text{otherwise} \\
-        \end{cases}
+        \\begin{cases}
+             1 & \\text{if} h_i \\text{in} [\\hat{h_i}^L, \\hat{h_i}^U], \\
+             0 & \\text{otherwise}
+        \\end{cases}
 
     Examples
     --------
