@@ -739,7 +739,7 @@ def _validate_series(series: Series, equidistant: bool = True):
                 "`series.index = series.index.tz_localize(None)`."
             )
         else:
-            msg = "Indices os series %s are not datetime64."
+            msg = "Indices of series %s are not datetime64."
         logger.error(msg, name)
         raise ValueError(msg % name)
 
