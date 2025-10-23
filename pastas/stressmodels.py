@@ -19,7 +19,6 @@ from logging import getLogger
 from typing import Any
 
 import numpy as np
-from cachetools import LRUCache
 from packaging.version import parse as parse_version
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from pandas import __version__ as pd_version
@@ -39,6 +38,13 @@ from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
 from .utils import validate_name
+
+try:
+    from cachetools import LRUCache
+
+    CACHETOOLS_AVAILABLE = True
+except (ModuleNotFoundError, ImportError):
+    CACHETOOLS_AVAILABLE = False
 
 pandas_version = parse_version(pd_version)
 
@@ -99,7 +105,10 @@ class StressModelBase:
 
         self.stress = []
 
-        self._cache = LRUCache(maxsize=max_cache_size)
+        if CACHETOOLS_AVAILABLE:
+            self._cache = LRUCache(maxsize=max_cache_size)
+        else:
+            self._cache = None
 
     @property
     def nparam(self) -> tuple[int]:
@@ -407,7 +416,7 @@ class StressModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
-        return self._simulate(tuple(p.tolist()), tmin, tmax, freq, dt)
+        return self._simulate(tuple(p), tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(

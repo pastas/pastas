@@ -3,11 +3,17 @@ from functools import wraps
 from logging import getLogger
 from typing import Any
 
-from cachetools import cachedmethod
 from packaging.version import parse as parse_version
 
 from pastas.typing import TimestampType
 from pastas.version import __version__
+
+try:
+    from cachetools import cachedmethod
+
+    CACHETOOLS_AVAILABLE = True
+except (ModuleNotFoundError, ImportError):
+    CACHETOOLS_AVAILABLE = False
 
 logger = getLogger(__name__)
 
@@ -203,12 +209,16 @@ def conditional_cachedmethod(cache_getter):
     """Decorator to conditionally cache a method using cachetools.cachedmethod."""
 
     def decorator(func):
-        # Wrap with cachedmethod, preserving signature
-        cached_func = cachedmethod(cache_getter)(func)
+        if CACHETOOLS_AVAILABLE:
+            # Wrap with cachedmethod, preserving signature
+            # defined here so it is not recreated on every function call
+            cached_func = cachedmethod(cache_getter)(func)
+        else:
+            cached_func = None
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if USE_CACHE:
+            if USE_CACHE and CACHETOOLS_AVAILABLE:
                 return cached_func(self, *args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
