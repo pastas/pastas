@@ -24,7 +24,8 @@ dependencies = [
     "matplotlib >= 3.9.0",
     "pandas >= 2.2.2",
     "scipy >= 1.13.0",
-    "numba >= 0.60.0",
+    "numba >= 0.60.0, < 0.63.0 ; python_version < '3.14'",
+    "numba >= 0.63.0b1 ; python_version == '3.14'",
 ]
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
 classifiers = [
@@ -37,6 +38,7 @@ classifiers = [
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
     'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
@@ -99,7 +101,7 @@ ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
 [tool.tox]
 requires = ["tox>=4"]
-env_list = ["py310", "py311", "py312", "py313", "ruff", "notebooks"]
+env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
 
 [tool.tox.env_run_base]
 description = "run unit tests"
