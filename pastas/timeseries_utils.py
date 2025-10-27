@@ -252,7 +252,7 @@ def get_sample_for_freq(
         The start date of the sampled series. If None, the tmin is set to the first
         index of s. The default is None.
     tmax : TimestampType, optional
-        The end date of the sampled series. If None, the tmin is set to the last
+        The end date of the sampled series. If None, the tmax is set to the last
         index of s. The default is None.
 
     Returns
