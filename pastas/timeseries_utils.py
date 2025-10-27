@@ -3,9 +3,19 @@
 import logging
 
 import numpy as np
-from pandas import Index, Series, Timedelta, Timestamp, api, date_range, infer_freq
+from pandas import (
+    Index,
+    Series,
+    DataFrame,
+    Timedelta,
+    Timestamp,
+    api,
+    date_range,
+    infer_freq,
+)
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
+from pastas.typing import TimestampType
 from scipy import interpolate
 
 from .decorators import njit
@@ -191,19 +201,21 @@ def _infer_fixed_freq(tindex: Index) -> str:
 
 
 def get_sample(tindex: Index, ref_tindex: Index) -> Index:
-    """Sample the index so that the frequency is not higher than the frequency
-    of ref_tindex.
+    """Sample the index of a pandas Series or DataFrame so that the frequency is not
+    higher than the frequency of ref_tindex.
 
     Parameters
     ----------
-    tindex: pandas.Index
-        Pandas index object.
-    ref_tindex: pandas.Index
-        Pandas index object.
+    tindex : pandas.DatetimeIndex
+        The original Index, consisting of pandas Timestamps.
+    ref_tindex : pandas.DatetimeIndex
+        A reference Index consisting of pandas Timestamps.
 
     Returns
     -------
-    series: pandas.Index
+    pandas.Index
+        The sampled index, consisting of a subset of the original index tindex. The
+        values in tindex that are closest to ref_index are returned.
 
     Notes
     -----
@@ -222,6 +234,39 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
         )
         ind = np.unique(f(ref_tindex.asi8).astype(int))
         return tindex[ind]
+
+
+def get_sample_for_freq(
+    s: Series, freq: str, tmin: TimestampType = None, tmax: TimestampType = None
+):
+    """Sample a pandas Series or DataFrame so that the frequency is not higher than a
+    supplied frequency.
+
+    Parameters
+    ----------
+    s : pandas.Series or pandas.DataFrame
+        The original Series or DataFrame to be sampled.
+    freq : str
+        a frequency string accepted by `pandas.date_range()`.
+    tmin : TimestampType, optional
+        The start date of the sampled series. If None, the tmin is set to the first
+        index of s. The default is None.
+    tmax : TimestampType, optional
+        The end date of the sampled series. If None, the tmin is set to the last
+        index of s. The default is None.
+
+    Returns
+    -------
+    pandas.Series
+        The sampled series, consisting of a subset of the original series.
+
+    """
+    if tmin is None:
+        tmin = s.index.min()
+    if tmax is None:
+        tmax = s.index.max()
+    ref_tindex = date_range(tmin, tmax, freq=freq)
+    return s.loc[get_sample(s.index, ref_tindex)]
 
 
 def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> Series:
@@ -257,6 +302,15 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
     s_new : pandas.Series
         The resampled series
     """
+    if isinstance(s, DataFrame):
+        if len(s.columns) == 1:
+            s = s.iloc[:, 0]
+        elif len(s.columns) > 1:
+            # helpful specific message for multi-column DataFrames
+            msg = "DataFrame with multiple columns. Please select one."
+            logger.error(msg)
+            raise ValueError(msg)
+
     dt = _get_dt_array(s.index)
 
     if fast:
