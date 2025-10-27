@@ -4,9 +4,9 @@ import logging
 
 import numpy as np
 from pandas import (
+    DataFrame,
     Index,
     Series,
-    DataFrame,
     Timedelta,
     Timestamp,
     api,
@@ -15,8 +15,9 @@ from pandas import (
 )
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
-from pastas.typing import TimestampType
 from scipy import interpolate
+
+from pastas.typing import TimestampType
 
 from .decorators import njit
 
@@ -237,7 +238,10 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
 
 
 def get_sample_for_freq(
-    s: Series | DataFrame, freq: str, tmin: TimestampType = None, tmax: TimestampType = None
+    s: Series | DataFrame,
+    freq: str,
+    tmin: TimestampType = None,
+    tmax: TimestampType = None,
 ):
     """Sample a pandas Series or DataFrame so that the frequency is not higher than a
     supplied frequency.
