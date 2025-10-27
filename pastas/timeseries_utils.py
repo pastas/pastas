@@ -237,7 +237,7 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
 
 
 def get_sample_for_freq(
-    s: Series, freq: str, tmin: TimestampType = None, tmax: TimestampType = None
+    s: Series | DataFrame, freq: str, tmin: TimestampType = None, tmax: TimestampType = None
 ):
     """Sample a pandas Series or DataFrame so that the frequency is not higher than a
     supplied frequency.
