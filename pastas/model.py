@@ -97,9 +97,17 @@ class Model:
         name: str | None = None,
         metadata: dict[str, Any] | None = None,
         freq: str = "D",
+        weights: float | Series | None = None,
     ) -> None:
         # Construct the different model components
         self.oseries = TimeSeries(oseries, settings="oseries", metadata=metadata)
+        if weights is None or isinstance(weights, (int, float)):
+            weights = 1.0 if weights is None else weights
+            weights = Series(
+                data=np.full(self.oseries.series.shape, weights),
+                index=self.oseries.series.index,
+            )
+        self.weights = TimeSeries(weights, settings="oseries")
 
         if name is None and self.oseries.name is not None:
             name = self.oseries.name
@@ -735,7 +743,6 @@ class Model:
             deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
 
         # Set the settings
-        self.settings["weights"] = weights
         self.settings["fit_constant"] = fit_constant
         self.settings["freq_obs"] = freq_obs
 
@@ -903,13 +910,15 @@ class Model:
                 )
                 deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
 
+        if weights is None:
+            weights = self.weights
+
         if initialize:
             self.initialize(
                 tmin=tmin,
                 tmax=tmax,
                 freq=freq,
                 warmup=warmup,
-                weights=weights,
                 initial=initial,
                 fit_constant=fit_constant,
                 freq_obs=freq_obs,
@@ -933,7 +942,7 @@ class Model:
 
         # Solve model
         success, optimal, stderr = self.solver.solve(
-            noise=self.settings["noise"], weights=weights, **kwargs
+            noise=self.settings["noise"], **kwargs
         )
         if not success:
             logger.warning("Model parameters could not be estimated well.")
