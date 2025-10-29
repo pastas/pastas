@@ -33,7 +33,7 @@ class TestGaussianLikelihood:
         assert params.loc["test_var", "pmax"] == 1
         assert params.loc["test_var", "vary"]
         assert params.loc["test_var", "name"] == "test"
-        assert params.loc["test_var", "dist"] == "uniform"
+        assert params.loc["test_var"] == "uniform"
 
     def test_compute(self) -> None:
         """Test compute method."""
@@ -151,4 +151,4 @@ def test_likelihood_parameter_types(likelihood_class: Type[Any]) -> None:
     )  # Allow Python bool
     assert isinstance(params.loc[:, "stderr"].values[0], float)
     assert isinstance(params.loc[:, "name"].values[0], str)
-    assert isinstance(params.loc[:, "dist"].values[0], str)
+    assert isinstance(params.loc[:].values[0], str)

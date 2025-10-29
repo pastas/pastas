@@ -92,7 +92,7 @@ class StressModelBase:
         self.rfunc = rfunc
 
         self.parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
+            columns=["initial", "pmin", "pmax", "vary", "name"]
         )
 
         self.stress = []
@@ -152,7 +152,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.at[name, "dist"] = str(value)
+        self.parameters.at[name] = str(value)
 
     def update_stress(
         self,
@@ -1692,7 +1692,6 @@ class TarsoModel(RechargeModel):
                 "pmax": np.nan,
                 "vary": True,
                 "name": self.name,
-                "dist": "uniform",
             }
         )
         p0.loc[f"{self.name}_d"] = pd0
@@ -1708,7 +1707,6 @@ class TarsoModel(RechargeModel):
                 "pmax": self.dmax,
                 "vary": True,
                 "name": self.name,
-                "dist": "uniform",
             }
         )
         p1.loc[f"{self.name}_d"] = pd1

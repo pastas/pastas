@@ -116,7 +116,6 @@ class Model:
                 "pmax",
                 "vary",
                 "stderr",
-                "dist",
             ]
         )
 
@@ -779,6 +778,9 @@ class Model:
             self.parameters.at["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
+        if hasattr(self, "solver") and hasattr(self.solver, "initialize"):
+            self.solver.initialize()
+
     def add_solver(self, solver: Solver) -> None:
         """Method to add a solver to the model.
 
@@ -974,7 +976,6 @@ class Model:
         pmin: float | None = None,
         pmax: float | None = None,
         optimal: float | None = None,
-        dist: str | None = None,
         move_bounds: bool = False,
     ) -> None:
         """Method to change the parameter properties.
@@ -1075,9 +1076,6 @@ class Model:
         if pmax is not None:
             obj._set_pmax(name, pmax)
             self.parameters.at[name, "pmax"] = pmax
-        if dist is not None:
-            obj._set_dist(name, dist)
-            self.parameters.at[name, "dist"] = dist
         if optimal is not None:
             self.parameters.at[name, "optimal"] = optimal
 

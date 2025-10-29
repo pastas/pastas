@@ -132,7 +132,6 @@ class TestModelComponents:
                     "pmax",
                     "vary",
                     "name",
-                    "dist",
                 ]
             )
         ).all()
@@ -144,7 +143,6 @@ class TestModelComponents:
                     np.dtypes.Float64DType(),
                     np.dtypes.Float64DType(),
                     np.dtypes.BoolDType(),
-                    "str",
                     "str",
                 ]
             )

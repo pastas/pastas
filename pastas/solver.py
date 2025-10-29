@@ -511,9 +511,8 @@ class LeastSquares(BaseSolver):
         callback: CallBack | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
-        self.vary = self.ml.parameters.vary.values.astype(bool)
-        self.initial = self.ml.parameters.initial.values.copy()
-        parameters = self.ml.parameters.loc[self.vary]
+        vary = self.ml.parameters.vary.values.astype(bool)
+        parameters = self.ml.parameters.loc[vary]
 
         # Set the boundaries
         method = kwargs.pop("method") if "method" in kwargs else "trf"
@@ -528,8 +527,8 @@ class LeastSquares(BaseSolver):
                 keep_feasible=True,
             )
             # set to nan because that's what is used by the solver
-            self.ml.parameters.loc[self.vary, "pmin"] = np.nan
-            self.ml.parameters.loc[self.vary, "pmax"] = np.nan
+            self.ml.parameters.loc[vary, "pmin"] = np.nan
+            self.ml.parameters.loc[vary, "pmax"] = np.nan
         else:
             bounds = Bounds(
                 lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
@@ -559,10 +558,10 @@ class LeastSquares(BaseSolver):
 
         # Prepare return values
         success = self.result.success
-        optimal = self.initial
-        optimal[self.vary] = self.result.x
+        optimal = self.ml.parameters.initial.values.copy()
+        optimal[vary] = self.result.x
         stderr = np.zeros(len(optimal)) * np.nan
-        stderr[self.vary] = np.sqrt(np.diag(self.pcov))
+        stderr[vary] = np.sqrt(np.diag(self.pcov))
 
         return success, optimal, stderr
 
@@ -880,6 +879,15 @@ class EmceeSolve(BaseSolver):
         if objective_function is None:
             objective_function = GaussianLikelihood()
         self.objective_function = objective_function
+
+    def initialize(self) -> None:
+        """Initialize the solver before solving the model."""
+        if "dist" not in self.ml.parameters:
+            logger.info(
+                "No 'dist' column found in the model parameters. "
+                "Setting all parameter distributions to 'uniform' (uniform)."
+            )
+            self.ml.parameters["dist"] = "uniform"
         self.parameters = self.objective_function.get_init_parameters("ln")
 
     def solve(
@@ -1088,13 +1096,13 @@ class EmceeSolve(BaseSolver):
 
         # Set the priors for the parameters that are varied from the model
         for _, (loc, pmin, pmax, scale, dist) in self.ml.parameters.loc[
-            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
+            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr"]
         ].iterrows():
             self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
 
         # Set the priors for the parameters that are varied from the objective function
         for _, (loc, pmin, pmax, scale, dist) in self.parameters.loc[
-            self.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
+            self.parameters.vary, ["initial", "pmin", "pmax", "stderr"]
         ].iterrows():
             self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
 
@@ -1198,7 +1206,7 @@ class EmceeSolve(BaseSolver):
 
         # Set the distribution
         if dist is not None:
-            self.parameters.at[name, "dist"] = str(dist)
+            self.parameters.at[name] = str(dist)
 
     def to_dict(self) -> dict:
         """This method is not supported for this solver.
