@@ -880,7 +880,7 @@ class EmceeSolve(BaseSolver):
         if objective_function is None:
             objective_function = GaussianLikelihood()
         self.objective_function = objective_function
-        self.parameters: DataFrame | None
+        self.parameters: DataFrame | None = None
         self.ml: Model | None = None
 
     def initialize(self) -> None:
