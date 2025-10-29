@@ -91,9 +91,7 @@ class StressModelBase:
             rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
-        self.parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name"]
-        )
+        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
 
         self.stress = []
 

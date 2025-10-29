@@ -41,9 +41,7 @@ class NoiseModelBase:
         self.nparam = 1
         self.name = "noise"
         self.norm = None
-        self.parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name"]
-        )
+        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
 
     def set_init_parameters(self, oseries: Series | None = None) -> None:
         if oseries is not None:
