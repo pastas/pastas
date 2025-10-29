@@ -883,7 +883,7 @@ class EmceeSolve(BaseSolver):
 
     def initialize(self) -> None:
         """Initialize the solver before solving the model."""
-        if "dist" not in self.ml.parameters:
+        if "dist" not in self.ml.parameters.columns:
             logger.info(
                 "No 'dist' column found in the model parameters. "
                 "Setting all parameter distributions to 'uniform' (uniform)."
@@ -1097,13 +1097,13 @@ class EmceeSolve(BaseSolver):
 
         # Set the priors for the parameters that are varied from the model
         for _, (loc, pmin, pmax, scale, dist) in self.ml.parameters.loc[
-            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr"]
+            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
         ].iterrows():
             self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
 
         # Set the priors for the parameters that are varied from the objective function
         for _, (loc, pmin, pmax, scale, dist) in self.parameters.loc[
-            self.parameters.vary, ["initial", "pmin", "pmax", "stderr"]
+            self.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
         ].iterrows():
             self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
 
@@ -1207,7 +1207,7 @@ class EmceeSolve(BaseSolver):
 
         # Set the distribution
         if dist is not None:
-            self.parameters.at[name] = str(dist)
+            self.parameters.at[name, "dist"] = str(dist)
 
     def to_dict(self) -> dict:
         """This method is not supported for this solver.
