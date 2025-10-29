@@ -511,8 +511,9 @@ class LeastSquares(BaseSolver):
         callback: CallBack | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
-        vary = self.ml.parameters.vary.values.astype(bool)
-        parameters = self.ml.parameters.loc[vary]
+        self.vary = self.ml.parameters.vary.values.astype(bool)
+        self.initial = self.ml.parameters.initial.values.copy()
+        parameters = self.ml.parameters.loc[self.vary]
 
         # Set the boundaries
         method = kwargs.pop("method") if "method" in kwargs else "trf"
@@ -527,8 +528,8 @@ class LeastSquares(BaseSolver):
                 keep_feasible=True,
             )
             # set to nan because that's what is used by the solver
-            self.ml.parameters.loc[vary, "pmin"] = np.nan
-            self.ml.parameters.loc[vary, "pmax"] = np.nan
+            self.ml.parameters.loc[self.vary, "pmin"] = np.nan
+            self.ml.parameters.loc[self.vary, "pmax"] = np.nan
         else:
             bounds = Bounds(
                 lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
@@ -558,10 +559,10 @@ class LeastSquares(BaseSolver):
 
         # Prepare return values
         success = self.result.success
-        optimal = self.ml.parameters.initial.values.copy()
-        optimal[vary] = self.result.x
+        optimal = self.initial
+        optimal[self.vary] = self.result.x
         stderr = np.zeros(len(optimal)) * np.nan
-        stderr[vary] = np.sqrt(np.diag(self.pcov))
+        stderr[self.vary] = np.sqrt(np.diag(self.pcov))
 
         return success, optimal, stderr
 

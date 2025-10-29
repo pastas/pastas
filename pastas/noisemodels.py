@@ -298,7 +298,6 @@ class ArmaNoiseModel(NoiseModelBase):
             5000.0,
             True,
             "noise",
-            "uniform",
         )
         self.parameters.loc["noise_beta"] = (
             1.0,
@@ -306,7 +305,6 @@ class ArmaNoiseModel(NoiseModelBase):
             np.inf,
             True,
             "noise",
-            "uniform",
         )
 
     def simulate(self, res: Series, p: ArrayLike) -> Series:
