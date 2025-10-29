@@ -511,7 +511,6 @@ class StepModel(StressModelBase):
             tmax,
             False,
             self.name,
-            "uniform",
         )
 
     def simulate(
@@ -600,7 +599,6 @@ class LinearTrend(StressModelBase):
             np.inf,
             True,
             self.name,
-            "uniform",
         )
         self.parameters.loc[self.name + "_tstart"] = (
             start,
@@ -608,7 +606,6 @@ class LinearTrend(StressModelBase):
             tmax,
             False,
             self.name,
-            "uniform",
         )
         self.parameters.loc[self.name + "_tend"] = (
             end,
@@ -616,7 +613,6 @@ class LinearTrend(StressModelBase):
             tmax,
             False,
             self.name,
-            "uniform",
         )
 
     def simulate(
@@ -694,7 +690,6 @@ class Constant(StressModelBase):
             np.nan,
             True,
             self.name,
-            "uniform",
         )
 
     @staticmethod
@@ -1940,7 +1935,6 @@ class ChangeModel(StressModelBase):
             np.inf,
             True,
             self.name,
-            "uniform",
         )
         self.parameters.loc[self.name + "_tchange"] = (
             tchange,
@@ -1948,7 +1942,6 @@ class ChangeModel(StressModelBase):
             tmax,
             False,
             self.name,
-            "uniform",
         )
         self.parameters.name = self.name
 
