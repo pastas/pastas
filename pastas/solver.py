@@ -880,16 +880,27 @@ class EmceeSolve(BaseSolver):
         if objective_function is None:
             objective_function = GaussianLikelihood()
         self.objective_function = objective_function
+        self.parameters: DataFrame | None
+        self.ml: Model | None = None
 
     def initialize(self) -> None:
         """Initialize the solver before solving the model."""
-        if "dist" not in self.ml.parameters.columns:
-            logger.info(
-                "No 'dist' column found in the model parameters. "
-                "Setting all parameter distributions to 'uniform' (uniform)."
-            )
-            self.ml.parameters["dist"] = "uniform"
-        self.parameters = self.objective_function.get_init_parameters("ln")
+        if self.parameters is None:
+            self.parameters = self.objective_function.get_init_parameters("ln")
+            if self.ml is None:
+                raise ValueError(
+                    "Model (ml) is not set for the EmceeSolve solver"
+                    "Add the solver via `ml.add_solver` before initializing."
+                )
+
+            if "dist" not in self.ml.parameters.columns:
+                logger.info(
+                    "No 'dist' column found in the model parameters. "
+                    "Setting all parameter distributions to 'uniform' (uniform)."
+                )
+                self.ml.parameters["dist"] = "uniform"
+        else:
+            logger.info("Solver is already initialized.")
 
     def solve(
         self,
