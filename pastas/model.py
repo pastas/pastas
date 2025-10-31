@@ -1103,6 +1103,26 @@ class Model:
 
         return
 
+    def set_oseries(self, s: Series, metadata: dict[str, Any] | None = None):
+        """Set a new oseries for an existing Model.
+
+        Parameters
+        ----------
+        s : pandas.Series
+            The time series to be set as the oseries.
+        metadata : dict, optional
+            Dictionary containing metadata about the time series. If None, the metadata
+            from the existing oseries will be used. Te default is None.
+
+        Notes
+        -----
+        This method replaces the existing oseries with a new TimeSeries object while
+        preserving the original metadata if no new metadata is provided.
+        """
+        if metadata is None:
+            metadata = self.oseries.metadata
+        self.oseries = TimeSeries(s, settings="oseries")
+
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
 
