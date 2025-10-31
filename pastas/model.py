@@ -1121,7 +1121,7 @@ class Model:
         """
         if metadata is None:
             metadata = self.oseries.metadata
-        self.oseries = TimeSeries(s, settings="oseries")
+        self.oseries = TimeSeries(s, settings="oseries", metadata=metadata)
 
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
