@@ -395,7 +395,7 @@ class BaseSolver:
 
         parameter_sample = self.get_parameter_sample(n=n, name=name, max_iter=max_iter)
         data = {}
-        
+
         use_cache = get_use_cache()
         if use_cache:
             set_use_cache(False)
