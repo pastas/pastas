@@ -27,9 +27,19 @@ def set_use_numba(b: bool) -> None:
     USE_NUMBA = b
 
 
+def get_use_numba() -> bool:
+    global USE_NUMBA
+    return USE_NUMBA
+
+
 def set_use_cache(b: bool) -> None:
     global USE_CACHE
     USE_CACHE = b
+
+
+def get_use_cache() -> bool:
+    global USE_CACHE
+    return USE_CACHE
 
 
 def set_parameter(function: Callable) -> Callable:
@@ -220,6 +230,9 @@ def conditional_cachedmethod(cache_getter):
         def wrapper(self, *args, **kwargs):
             if USE_CACHE and CACHETOOLS_AVAILABLE:
                 return cached_func(self, *args, **kwargs)
+            elif USE_CACHE and not CACHETOOLS_AVAILABLE:
+                logger.warning("cachetools is not installed, caching is not available.")
+                return func(self, *args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
 
