@@ -1,5 +1,4 @@
 from typing import Any
-from unittest.mock import patch
 
 from pastas.version import get_versions, show_versions
 
