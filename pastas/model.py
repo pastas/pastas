@@ -2115,14 +2115,13 @@ class Model:
             else Timedelta(self.settings["warmup"]).days
         )
 
-        for sm_name in self.stressmodels:
+        for sm_name in sm_names:
             if isinstance(self.stressmodels[sm_name].rfunc, HantushWellModel):
                 kwargs = {"warn": False}
             else:
                 kwargs = {}
-            check.at[sm_name, "response_tmax"] = self.get_response_tmax(
-                sm_name, cutoff=cutoff, **kwargs
-            )
+            rtmax = self.get_response_tmax(sm_name, cutoff=cutoff, **kwargs)
+            check.at[sm_name, "response_tmax"] = rtmax if rtmax is not None else 0
 
         check["check_warmup"] = check["response_tmax"] < check["len_warmup"]
         check["check_response"] = check["response_tmax"] < check["len_oseries_calib"]
