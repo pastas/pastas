@@ -1103,7 +1103,7 @@ class Model:
 
         return
 
-    def set_oseries(self, s: Series, metadata: dict[str, Any] | None = None):
+    def set_oseries(self, s: Series, metadata: dict[str, Any] | None = None) -> None:
         """Set a new oseries for an existing Model.
 
         Parameters
