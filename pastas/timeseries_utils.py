@@ -17,8 +17,6 @@ from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
-from pastas.typing import TimestampType
-
 from .decorators import njit
 
 logger = logging.getLogger(__name__)
@@ -240,8 +238,8 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
 def get_sample_for_freq(
     s: Series | DataFrame,
     freq: str,
-    tmin: TimestampType = None,
-    tmax: TimestampType = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
 ):
     """Sample a pandas Series or DataFrame so that the frequency is not higher than a
     supplied frequency.
@@ -252,10 +250,10 @@ def get_sample_for_freq(
         The original Series or DataFrame to be sampled.
     freq : str
         A frequency string accepted by `pandas.date_range()`.
-    tmin : TimestampType, optional
+    tmin : pandas.Timestamp or str, optional
         The start date of the sampled series. If None, the tmin is set to the first
         index of s. The default is None.
-    tmax : TimestampType, optional
+    tmax : pandas.Timestamp or str, optional
         The end date of the sampled series. If None, the tmax is set to the last
         index of s. The default is None.
 
