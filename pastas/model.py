@@ -1933,6 +1933,7 @@ class Model:
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
+            "freq_obs": str(self.settings["freq_obs"]),
             "warmup": str(self.settings["warmup"]),
             "solver": self.settings["solver"],
         }
@@ -1988,9 +1989,9 @@ class Model:
 
         basic = ""
         len_val4 = max([len(v) for v in fit.values()])
-        wspace = width - (8 + 23 + 9 + len_val4)
+        wspace = width - (9 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += f"{val1:<8}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
+            basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
 
         # Create the parameters block
         params = (
@@ -2102,14 +2103,13 @@ class Model:
             else Timedelta(self.settings["warmup"]).days
         )
 
-        for sm_name in self.stressmodels:
+        for sm_name in sm_names:
             if isinstance(self.stressmodels[sm_name].rfunc, HantushWellModel):
                 kwargs = {"warn": False}
             else:
                 kwargs = {}
-            check.at[sm_name, "response_tmax"] = self.get_response_tmax(
-                sm_name, cutoff=cutoff, **kwargs
-            )
+            rtmax = self.get_response_tmax(sm_name, cutoff=cutoff, **kwargs)
+            check.at[sm_name, "response_tmax"] = rtmax if rtmax is not None else 0
 
         check["check_warmup"] = check["response_tmax"] < check["len_warmup"]
         check["check_response"] = check["response_tmax"] < check["len_oseries_calib"]
