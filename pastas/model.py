@@ -1116,8 +1116,7 @@ class Model:
         This method replaces the existing oseries with a new TimeSeries object while
         preserving the original metadata if no new metadata is provided.
         """
-        if metadata is None:
-            metadata = self.oseries.metadata
+        metadata = metadata or (self.oseries.metadata if hasattr(self, 'oseries') else None)
         self.oseries = TimeSeries(s, settings="oseries", metadata=metadata)
 
     def _get_time_offset(self, freq: str) -> Timedelta:
