@@ -557,7 +557,7 @@ class StepModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
-        return self._simulate(tuple(p.tolist()), tmin, tmax, freq, dt)
+        return self._simulate(tuple(p), tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
@@ -940,7 +940,7 @@ class WellModel(StressModelBase):
         dt: float = 1.0,
         istress: int | None = None,
     ) -> Series:
-        return self._simulate(tuple(p.tolist()), tmin, tmax, freq, dt, istress)
+        return self._simulate(tuple(p), tmin, tmax, freq, dt, istress)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
@@ -1460,7 +1460,7 @@ class RechargeModel(StressModelBase):
         dt: float = 1.0,
         istress: int | None = None,
     ) -> Series:
-        return self._simulate(tuple(p.tolist()), tmin, tmax, freq, dt, istress)
+        return self._simulate(tuple(p), tmin, tmax, freq, dt, istress)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
@@ -1809,7 +1809,7 @@ class TarsoModel(RechargeModel):
         freq=None,
         dt: float = 1.0,
     ) -> Series:
-        return self._simulate(tuple(p.tolist()), tmin, tmax, freq, dt)
+        return self._simulate(tuple(p), tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
