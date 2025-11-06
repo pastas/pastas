@@ -66,6 +66,7 @@ class BaseSolver:
     def to_dict(self) -> dict:
         return {"class": self._name}
 
+
 class LeastSquaresSolver(BaseSolver):
     def __init__(
         self,
@@ -478,7 +479,6 @@ class LeastSquaresSolver(BaseSolver):
 
         return rv.values
 
-
     @staticmethod
     def _get_correlations(pcov: DataFrame) -> DataFrame:
         """Internal method to obtain the parameter correlations from the
@@ -505,13 +505,14 @@ class LeastSquaresSolver(BaseSolver):
 
     def to_dict(self) -> dict:
         data = super().to_dict()
-        data.update({
-            "pcov": self.pcov,
-            "nfev": self.nfev,
-            "obj_func": self.obj_func,
-        })
+        data.update(
+            {
+                "pcov": self.pcov,
+                "nfev": self.nfev,
+                "obj_func": self.obj_func,
+            }
+        )
         return data
-
 
 
 class LeastSquares(LeastSquaresSolver):
