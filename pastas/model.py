@@ -99,7 +99,7 @@ class Model:
         freq: str = "D",
     ) -> None:
         # Construct the different model components
-        self.set_oseries(s=oseries, metadata=metadata) # sets self.oseries
+        self.set_oseries(s=oseries, metadata=metadata)  # sets self.oseries
 
         if name is None and self.oseries.name is not None:
             name = self.oseries.name
