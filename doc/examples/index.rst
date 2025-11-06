@@ -17,6 +17,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     adding_rivers
     adding_wells
     multiple_wells
+    hantush_response
     adding_trends
     changing_responses
     threshold_non_linear
