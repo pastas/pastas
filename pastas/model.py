@@ -100,12 +100,7 @@ class Model:
     ) -> None:
         # Construct the different model components
         self.set_oseries(s=oseries, metadata=metadata)  # sets self.oseries
-
-        if name is None and self.oseries.name is not None:
-            name = self.oseries.name
-        elif name is None and self.oseries.name is None:
-            name = "Observations"
-        self.name = validate_name(name)
+        self.name = validate_name(name or (self.oseries.name if self.oseries.name else "Observations"))
 
         self.parameters = DataFrame(
             columns=[
