@@ -99,13 +99,10 @@ class Model:
         freq: str = "D",
     ) -> None:
         # Construct the different model components
-        self.oseries = TimeSeries(oseries, settings="oseries", metadata=metadata)
-
-        if name is None and self.oseries.name is not None:
-            name = self.oseries.name
-        elif name is None and self.oseries.name is None:
-            name = "Observations"
-        self.name = validate_name(name)
+        self.set_oseries(s=oseries, metadata=metadata)  # sets self.oseries
+        self.name = validate_name(
+            name or (self.oseries.name if self.oseries.name else "Observations")
+        )
 
         self.parameters = DataFrame(
             columns=[
@@ -1113,6 +1110,27 @@ class Model:
                 )
 
         return
+
+    def set_oseries(self, s: Series, metadata: dict[str, Any] | None = None) -> None:
+        """Set a new oseries for an existing Model.
+
+        Parameters
+        ----------
+        s : pandas.Series
+            The time series to be set as the oseries.
+        metadata : dict, optional
+            Dictionary containing metadata about the time series. If None, the metadata
+            from the existing oseries will be used. Te default is None.
+
+        Notes
+        -----
+        This method replaces the existing oseries with a new TimeSeries object while
+        preserving the original metadata if no new metadata is provided.
+        """
+        metadata = metadata or (
+            self.oseries.metadata if hasattr(self, "oseries") else None
+        )
+        self.oseries = TimeSeries(s, settings="oseries", metadata=metadata)
 
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.

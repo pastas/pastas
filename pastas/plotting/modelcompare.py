@@ -15,9 +15,9 @@ from pastas.plotting.plotutil import (
     share_xaxes,
     share_yaxes,
 )
-from pastas.rfunc import HantushWellModel
 from pastas.stats.core import acf
-from pastas.typing import Axes, Model
+from pastas.stressmodels import WellModel
+from pastas.typing import Axes, Model, TimestampType
 
 logger = getLogger(__name__)
 
@@ -610,7 +610,7 @@ class CompareModels:
                         kwargs = {}
                         p = None
                         if ml.stressmodels[smn].rfunc is not None:
-                            if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
+                            if isinstance(ml.stressmodels[smn], WellModel):
                                 kwargs = {"warn": False}
                                 p = ml.stressmodels[smn].get_parameters(
                                     model=ml, istress=0
@@ -635,7 +635,7 @@ class CompareModels:
                         kwargs = {}
                         p = None
                         if ml.stressmodels[smn].rfunc is not None:
-                            if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
+                            if isinstance(ml.stressmodels[smn], WellModel):
                                 kwargs = {"warn": False}
                                 p = ml.stressmodels[smn].get_parameters(
                                     model=ml, istress=0
