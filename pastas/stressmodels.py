@@ -430,8 +430,8 @@ class StressModel(StressModelBase):
     def _simulate(
         self,
         p: tuple,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -570,8 +570,8 @@ class StepModel(StressModelBase):
     def _simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -953,8 +953,8 @@ class WellModel(StressModelBase):
     def _simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
@@ -1475,8 +1475,8 @@ class RechargeModel(StressModelBase):
     def _simulate(
         self,
         p: tuple | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
@@ -1842,8 +1842,8 @@ class TarsoModel(RechargeModel):
     def _simulate(
         self,
         p: tuple,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq=None,
         dt: float = 1.0,
     ) -> Series:
@@ -2092,8 +2092,8 @@ class ChangeModel(StressModelBase):
     def _simulate(
         self,
         p: tuple,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
