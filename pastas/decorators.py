@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from contextlib import contextmanager
 from functools import wraps
 from logging import getLogger
 from typing import Any
@@ -42,6 +43,12 @@ def set_use_cache(b: bool) -> None:
     package to be installed and the USE_CACHE variable to be set to True.
     """
     global USE_CACHE
+    if b and not CACHETOOLS_AVAILABLE:
+        logger.error(
+            "Cannot enable caching: cachetools is not installed. "
+            "Install with: pip install cachetools"
+        )
+        return
     USE_CACHE = b
 
 
@@ -225,26 +232,51 @@ def latexfun(
 
 
 def conditional_cachedmethod(cache_getter):
-    """Decorator to conditionally cache a method using cachetools.cachedmethod."""
+    """Decorator to conditionally cache a method using cachetools.cachedmethod.
+
+    This decorator checks the global USE_CACHE flag and only applies caching when
+    both cachetools is available and caching is enabled.
+
+    Parameters
+    ----------
+    cache_getter : callable
+        Function that returns the cache object from self (e.g., lambda self: self._cache)
+    """
 
     def decorator(func):
-        if CACHETOOLS_AVAILABLE:
-            # Wrap with cachedmethod, preserving signature
-            # defined here so it is not recreated on every function call
-            cached_func = cachedmethod(cache_getter)(func)
-        else:
-            cached_func = None
+        if not CACHETOOLS_AVAILABLE:
+            # No cachetools available - just return the original function
+            return func
+
+        # Create the cached version once at decoration time
+        cached_func = cachedmethod(cache_getter)(func)
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if USE_CACHE and CACHETOOLS_AVAILABLE:
+            if USE_CACHE:
                 return cached_func(self, *args, **kwargs)
-            elif USE_CACHE and not CACHETOOLS_AVAILABLE:
-                logger.warning("cachetools is not installed, caching is not available.")
-                return func(self, *args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
 
         return wrapper
 
     return decorator
+
+
+@contextmanager
+def temporarily_disable_cache():
+    """Context manager to temporarily disable caching.
+
+    Examples
+    --------
+    >>> with ps.temporarily_disable_cache():
+    ...     # Caching is disabled within this block
+    ...     ml.simulate()
+    """
+    global USE_CACHE
+    original_state = USE_CACHE
+    USE_CACHE = False
+    try:
+        yield
+    finally:
+        USE_CACHE = original_state
