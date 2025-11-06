@@ -23,21 +23,30 @@ CURRENT_PASTAS_VERSION = parse_version(__version__)
 
 
 def set_use_numba(b: bool) -> None:
+    """Enable or disable the use of Numba JIT compilation."""
     global USE_NUMBA
     USE_NUMBA = b
 
 
 def get_use_numba() -> bool:
+    """Check if Numba JIT compilation is enabled."""
     global USE_NUMBA
     return USE_NUMBA
 
 
 def set_use_cache(b: bool) -> None:
+    """Enable or disable the use of caching with cachetools.
+    
+    When caching is enabled, the results of simulate() calls are stored in a cache
+    to speed up repeated calls with the same parameters. This requires the cachetools
+    package to be installed and the USE_CACHE variable to be set to True.
+    """
     global USE_CACHE
     USE_CACHE = b
 
 
 def get_use_cache() -> bool:
+    """Check if caching with cachetools is enabled."""
     global USE_CACHE
     return USE_CACHE
 
