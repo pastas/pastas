@@ -17,7 +17,7 @@ from pastas.plotting.plotutil import (
 )
 from pastas.stats.core import acf
 from pastas.stressmodels import WellModel
-from pastas.typing import Axes, Model, TimestampType
+from pastas.typing import Axes, Model
 
 logger = getLogger(__name__)
 
@@ -68,8 +68,8 @@ class CompareModels:
         self,
         models: list[Model],
         names: list[str] | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
     ) -> None:
         """Initialize model compare class.
 
@@ -79,11 +79,13 @@ class CompareModels:
             list of models to compare.
         names : list of str, optional
             override model names
-        tmin: TimestampType, optional
-            Timestamp with a start date for the simulation period (E.g. '1980'). If none
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the
+            simulation period (E.g. '1980-01-01 00:00:00'). If none
             is provided, the tmin from the oseries is used.
-        tmax: TimestampType, optional
-            Timestamp with an end date for the simulation period (E.g. '2010'). If none
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the
+            simulation period (E.g. '2020-01-01 00:00:00'). If none
             is provided, the tmax from the oseries is used.
         """
         self.models = models

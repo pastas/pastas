@@ -13,5 +13,4 @@ from .types import (
     StressModel,
     StressSettingsDict,
     TimeSeries,
-    TimestampType,
 )

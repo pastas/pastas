@@ -30,7 +30,6 @@ from pastas.typing import (
     Recharge,
     RFunc,
     StressSettingsDict,
-    TimestampType,
 )
 
 from .decorators import conditional_cachedmethod, njit, set_parameter
@@ -78,8 +77,8 @@ class StressModelBase:
     def __init__(
         self,
         name: str,
-        tmin: TimestampType,
-        tmax: TimestampType,
+        tmin: Timestamp | str,
+        tmax: Timestamp | str,
         rfunc: RFunc | None = None,
         up: bool = True,
         gain_scale_factor: float = 1.0,
@@ -171,8 +170,8 @@ class StressModelBase:
 
     def update_stress(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
@@ -182,12 +181,14 @@ class StressModelBase:
         freq: str, optional
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the minimum
-            time of the series.
-        tmax: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the maximum
-            time of the series.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the minimum time of the series
+            (E.g. '1980-01-01 00:00:00').
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the maximum time of the series
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
 
         Notes
         -----
@@ -207,8 +208,8 @@ class StressModelBase:
     def get_stress(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         istress: int | None = None,
         **kwargs,
@@ -242,7 +243,7 @@ class StressModelBase:
             return len(self.stress)
 
     def _get_block(
-        self, p: ArrayLike, dt: float, tmin: TimestampType, tmax: TimestampType
+        self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
     ) -> ArrayLike:
         """Internal method to get the block-response function."""
         if tmin is not None and tmax is not None:
@@ -418,8 +419,8 @@ class StressModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -429,8 +430,8 @@ class StressModel(StressModelBase):
     def _simulate(
         self,
         p: tuple,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -441,8 +442,14 @@ class StressModel(StressModelBase):
         p: array_like
             array_like object with the values as floats representing the model
             parameters.
-        tmin: str, optional
-        tmax: str, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         freq: str, optional
         dt: int, optional
 
@@ -514,7 +521,7 @@ class StepModel(StressModelBase):
 
     def __init__(
         self,
-        tstart: TimestampType,
+        tstart: Timestamp | str,
         name: str,
         rfunc: RFunc | None = None,
         up: bool = None,
@@ -552,8 +559,8 @@ class StepModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -563,8 +570,8 @@ class StepModel(StressModelBase):
     def _simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -624,7 +631,7 @@ class LinearTrend(StressModelBase):
     _name = "LinearTrend"
 
     def __init__(
-        self, start: TimestampType, end: TimestampType, name: str = "trend"
+        self, start: Timestamp | str, end: Timestamp | str, name: str = "trend"
     ) -> None:
         StressModelBase.__init__(
             self, name=name, tmin=Timestamp.min, tmax=Timestamp.max
@@ -668,8 +675,8 @@ class LinearTrend(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -934,8 +941,8 @@ class WellModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
@@ -946,8 +953,8 @@ class WellModel(StressModelBase):
     def _simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
@@ -1023,8 +1030,8 @@ class WellModel(StressModelBase):
     def get_stress(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         istress: int | None = None,
         squeeze: bool = True,
@@ -1416,8 +1423,8 @@ class RechargeModel(StressModelBase):
 
     def update_stress(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
     ) -> None:
         """Method to update the settings of the all stresses in the stress model.
@@ -1427,12 +1434,14 @@ class RechargeModel(StressModelBase):
         freq: str, optional
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the minimum
-            time of the series.
-        tmax: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the maximum
-            time of the series.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the minimum time of the series
+            (E.g. '1980-01-01 00:00:00').
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the maximum time of the series
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
 
         Notes
         -----
@@ -1454,8 +1463,8 @@ class RechargeModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
@@ -1466,8 +1475,8 @@ class RechargeModel(StressModelBase):
     def _simulate(
         self,
         p: tuple | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
@@ -1479,8 +1488,14 @@ class RechargeModel(StressModelBase):
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters.
-        tmin: string, optional
-        tmax: string, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         freq: string, optional
         dt: float, optional
             Time step to use in the recharge calculation.
@@ -1517,8 +1532,8 @@ class RechargeModel(StressModelBase):
     def get_stress(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         istress: int | None = None,
         **kwargs,
@@ -1530,8 +1545,14 @@ class RechargeModel(StressModelBase):
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters.
-        tmin: string, optional
-        tmax: string, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         freq: string, optional
         istress: int, optional
             Return one of the stresses used for the recharge calculation. 0 for
@@ -1577,8 +1598,8 @@ class RechargeModel(StressModelBase):
     def get_water_balance(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
     ) -> DataFrame:
         """Method to obtain the water balance components.
@@ -1588,8 +1609,14 @@ class RechargeModel(StressModelBase):
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters.
-        tmin: string, optional
-        tmax: string, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         freq: string, optional
 
         Returns
@@ -1804,8 +1831,8 @@ class TarsoModel(RechargeModel):
     def simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq=None,
         dt: float = 1.0,
     ) -> Series:
@@ -1815,8 +1842,8 @@ class TarsoModel(RechargeModel):
     def _simulate(
         self,
         p: tuple,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq=None,
         dt: float = 1.0,
     ) -> Series:
@@ -1993,7 +2020,7 @@ class ChangeModel(StressModelBase):
         rfunc1: RFunc,
         rfunc2: RFunc,
         name: str,
-        tchange: str | TimestampType,
+        tchange: str | Timestamp | str,
         up: bool = True,
         settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
@@ -2054,8 +2081,8 @@ class ChangeModel(StressModelBase):
     def simulate(
         self,
         p: ArrayLike,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
@@ -2065,8 +2092,8 @@ class ChangeModel(StressModelBase):
     def _simulate(
         self,
         p: tuple,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
