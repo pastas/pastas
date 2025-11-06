@@ -8,11 +8,10 @@ from collections.abc import Callable
 
 from numpy import nan
 from packaging.version import parse as parse_version
-from pandas import Series, Timedelta, concat, date_range
+from pandas import Series, Timedelta, Timestamp, concat, date_range
 from pandas import __version__ as pd_version
 
 from pastas.timeseries_utils import get_sample
-from pastas.typing import TimestampType
 
 pandas_version = parse_version(pd_version)
 
@@ -21,8 +20,8 @@ year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
 
 def q_ghg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     q: float = 0.94,
     by_year: bool = True,
 ) -> Series:
@@ -32,7 +31,9 @@ def q_ghg(
     ----------
     series: pandas.Series
         Series to calculate the GHG for.
-    tmin, tmax: pandas.Timestamp, optional
+    tmin, tmax: pandas.Timestamp or str, optional
+        A string or pandas.Timestamp with the start and end dates for the
+        period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
     q : float, optional
         quantile fraction of exceedance (default 0.94)
     by_year: bool, optional
@@ -49,8 +50,8 @@ def q_ghg(
 
 def q_glg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     q: float = 0.06,
     by_year: bool = True,
 ) -> Series:
@@ -61,7 +62,9 @@ def q_glg(
     ----------
     series: pandas.Series
         Series to calculate the GLG for.
-    tmin, tmax: pandas.Timestamp, optional
+    tmin, tmax: pandas.Timestamp or str, optional
+        A string or pandas.Timestamp with the start and end dates for the
+        period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
     q : float, optional
         quantile, fraction of exceedance (default 0.06)
     by_year: bool, optional
@@ -78,8 +81,8 @@ def q_glg(
 
 def q_gvg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     by_year: bool = True,
 ) -> Series:
     """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring GW Level).
@@ -88,7 +91,9 @@ def q_gvg(
     ----------
     series: pandas.Series
         Series to calculate the GVG for.
-    tmin, tmax: pandas.Timestamp, optional
+    tmin, tmax: pandas.Timestamp or str, optional
+        A string or pandas.Timestamp with the start and end dates for the
+        period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
     by_year: bool, optional
         Take average over quantiles per year (default True)
 
@@ -115,8 +120,8 @@ def q_gvg(
 
 def ghg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     fill_method: str = "nearest",
     limit: int = 0,
     output: str = "mean",
@@ -131,10 +136,12 @@ def ghg(
     ----------
     series: pandas.Series with a DatetimeIndex
         The pandas Series of which the statistic is determined.
-    tmin: pandas.Timestamp, optional
-        The lowest index to take into account.
-    tmax: pandas.Timestamp, optional
-        The highest index to take into account.
+    tmin: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+    tmax: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The highest index to take into account (E.g. '2020-01-01 00:00:00').
     fill_method : str
         see .. :mod: pastas.stats.dutch._gxg
     limit : int or None, optional
@@ -203,8 +210,8 @@ def ghg(
 
 def glg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     fill_method: str = "nearest",
     limit: int = 0,
     output: str = "mean",
@@ -218,10 +225,12 @@ def glg(
     ----------
     series: pandas.Series with a DatetimeIndex
         The pandas Series of which the statistic is determined.
-    tmin: pandas.Timestamp, optional
-        The lowest index to take into account.
-    tmax: pandas.Timestamp, optional
-        The highest index to take into account.
+    tmin: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+    tmax: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The highest index to take into account (E.g. '2020-01-01 00:00:00').
     fill_method : str, optional
         see .. :mod: pastas.stats.dutch._gxg
     limit : int or None, optional
@@ -290,8 +299,8 @@ def glg(
 
 def gvg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     fill_method: str = "linear",
     limit: int = 8,
     output: str = "mean",
@@ -305,10 +314,12 @@ def gvg(
     ----------
     series: pandas.Series with a DatetimeIndex
         The pandas Series of which the statistic is determined.
-    tmin: pandas.Timestamp, optional
-        The lowest index to take into account.
-    tmax: pandas.Timestamp, optional
-        The highest index to take into account.
+    tmin: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+    tmax: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The highest index to take into account (E.g. '2020-01-01 00:00:00').
     fill_method : str, optional
         see .. :mod: pastas.stats.dutch._gxg
     limit : int or None, optional
@@ -365,8 +376,8 @@ def gvg(
 
 def gg(
     series: Series,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     fill_method: str = "nearest",
     limit: int = 0,
     output: str = "mean",
@@ -380,10 +391,12 @@ def gg(
     ----------
     series: pandas.Series with a DatetimeIndex
         The pandas Series of which the statistic is determined.
-    tmin: pandas.Timestamp, optional
-        The lowest index to take into account.
-    tmax: pandas.Timestamp, optional
-        The highest index to take into account.
+    tmin: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+    tmax: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The highest index to take into account (E.g. '2020-01-01 00:00:00').
     fill_method : str, optional
         see .. :mod: pastas.stats.dutch._gxg
     limit : int or None, optional
@@ -480,8 +493,8 @@ def _in_spring(series: Series) -> Series:
 def _gxg(
     series: Series,
     year_agg: Callable,
-    tmin: TimestampType | None,
-    tmax: TimestampType | None,
+    tmin: Timestamp | str | None,
+    tmax: Timestamp | str | None,
     fill_method: str,
     limit: int | None,
     output: str,
@@ -498,10 +511,12 @@ def _gxg(
         The pandas Series of which the statistic is determined.
     year_agg : function series -> scalar
         Aggregator function to one value per year.
-    tmin: pandas.Timestamp, optional
-        The lowest index to take into account.
-    tmax: pandas.Timestamp, optional
-        The highest index to take into account.
+    tmin: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+    tmax: pandas.Timestamp or str, optional
+        A Timestamp or str is expected.
+        The highest index to take into account (E.g. '2020-01-01 00:00:00').
     fill_method : str
         see notes below.
     limit : int or None, optional
@@ -635,8 +650,8 @@ def _gxg(
 def _q_gxg(
     series: Series,
     q: float,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     by_year: bool = True,
 ) -> Series:
     """Dutch groundwater statistics GHG and GLG approximated by taking quantiles of
@@ -650,8 +665,14 @@ def _q_gxg(
         Series to calculate the GXG for.
     q: float
         quantile fraction of exceedance.
-    tmin: pandas.Timestamp, optional
-    tmax: pandas.Timestamp, optional
+    tmin: pandas.Timestamp or str, optional
+        A string or pandas.Timestamp with the start date for the period
+        (E.g. '1980-01-01 00:00:00'). Strings are converted to
+    pandas.Timestamp internally.
+    tmax: pandas.Timestamp or str, optional
+        A string or pandas.Timestamp with the end date for the period
+        (E.g. '2020-01-01 00:00:00'). Strings are converted to
+    pandas.Timestamp internally.
     by_year: bool, optional
         Take average over quantiles per year (default True).
     """

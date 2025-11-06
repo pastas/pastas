@@ -62,7 +62,7 @@ more about the formatting of code and docstrings.
     pre-commit` and running `pre-commit install` in the root of the repository.
 
 4. Test Code
------------
+------------
 The ensure a proper functioning of Pastas, it is important to supply tests
 in the test-suite (`see here <https://github
 .com/pastas/pastas/tree/master/tests>`_). The ensure a proper functioning of

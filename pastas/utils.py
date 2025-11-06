@@ -7,12 +7,11 @@ from platform import platform
 from pandas import Timestamp
 
 from pastas.typing import Model as ModelType
-from pastas.typing import TimestampType
 
 logger = logging.getLogger(__name__)
 
 
-def get_stress_tmin_tmax(ml: ModelType) -> tuple[TimestampType, TimestampType]:
+def get_stress_tmin_tmax(ml: ModelType) -> tuple[Timestamp | str, Timestamp | str]:
     """Get the minimum and maximum time that all the stresses have data."""
     from pastas import Model
 
