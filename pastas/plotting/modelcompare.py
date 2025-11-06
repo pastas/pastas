@@ -81,14 +81,12 @@ class CompareModels:
             override model names
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the
-            simulation period
-            (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from
-            the oseries is used.
+            simulation period (E.g. '1980-01-01 00:00:00'). If none
+            is provided, the tmin from the oseries is used.
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the end date for the
-            simulation period
-            (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
-            the oseries is used.
+            simulation period (E.g. '2020-01-01 00:00:00'). If none
+            is provided, the tmax from the oseries is used.
         """
         self.models = models
         # ensure unique model names
