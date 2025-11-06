@@ -36,7 +36,7 @@ def get_use_numba() -> bool:
 
 def set_use_cache(b: bool) -> None:
     """Enable or disable the use of caching with cachetools.
-    
+
     When caching is enabled, the results of simulate() calls are stored in a cache
     to speed up repeated calls with the same parameters. This requires the cachetools
     package to be installed and the USE_CACHE variable to be set to True.
