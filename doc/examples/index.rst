@@ -17,6 +17,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     adding_rivers
     adding_wells
     multiple_wells
+    hantush_response
     adding_trends
     changing_responses
     threshold_non_linear
@@ -160,3 +161,10 @@ Stichting Toegepast Onderzoek Waterbeheer, Amersfoort.
 .. _Case Study 2 Determining characteristics: stowa_cases_characteristics.html
 .. _Case Study 3 System analysis: stowa_cases_system_analysis.html
 .. _Case Study 4 Forecasting: stowa_cases_forecasting.html
+
+
+Pastas Performance
+------------------
+`Caching for performance`_
+
+.. _Caching for performance: caching_for_performance.html

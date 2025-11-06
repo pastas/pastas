@@ -19,6 +19,7 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, least_squares
 
+from pastas.decorators import temporarily_disable_cache
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Model
 
@@ -395,8 +396,10 @@ class BaseSolver:
         parameter_sample = self.get_parameter_sample(n=n, name=name, max_iter=max_iter)
         data = {}
 
-        for i, p in enumerate(parameter_sample):
-            data[i] = func(p=p, **kwargs)
+        # Disable caching during parameter sampling as each sample is unique
+        with temporarily_disable_cache():
+            for i, p in enumerate(parameter_sample):
+                data[i] = func(p=p, **kwargs)
 
         return DataFrame.from_dict(data, orient="columns", dtype=float)
 
