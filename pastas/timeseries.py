@@ -228,12 +228,14 @@ class TimeSeries:
         fill_after: str or float, optional
             Method used to extend a time series after any measurements are available.
             Possible values are: "mean" or a float value.
-        tmin: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the minimum
-            time of the series.
-        tmax: str or pandas.Timestamp, optional
-            String that can be converted to, or a Pandas Timestamp with the maximum
-            time of the series.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the minimum time of the series
+            (E.g. '1980-01-01 00:00:00').
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the maximum time of the series
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
 
         Notes
         -----
