@@ -12,7 +12,7 @@ from pastas.plotting.modelcompare import CompareModels
 from pastas.plotting.plotutil import plot_series_with_gaps, share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
 from pastas.stats.metrics import evp, rmse
-from pastas.typing import ArrayLike, Axes, Figure, Model, TimestampType
+from pastas.typing import ArrayLike, Axes, Figure, Model
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ def compare(
     models: list[Model],
     names: list[str] | None = None,
     adjust_height: bool = True,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     **kwargs,
 ) -> dict:
     """Plot multiple Pastas models in one figure to visually compare models.
@@ -46,11 +46,13 @@ def compare(
         subplots on the left is equal. Default is False, in which case the axes are
         not rescaled to include all data, so certain data might not be visible. Set
         False to ensure you can see all data.
-    tmin: TimestampType, optional
-        Timestamp with a start date for the simulation period (E.g. '1980'). If none
+    tmin: pandas.Timestamp or str, optional
+        A string or pandas.Timestamp with the start date for the
+        simulation period (E.g. '1980-01-01 00:00:00'). If none
         is provided, the tmin from the oseries is used.
-    tmax: TimestampType, optional
-        Timestamp with an end date for the simulation period (E.g. '2010'). If none
+    tmax: pandas.Timestamp or str, optional
+        A string or pandas.Timestamp with the end date for the
+        simulation period (E.g. '2020-01-01 00:00:00'). If none
         is provided, the tmax from the oseries is used.
     **kwargs
         The kwargs are passed to the CompareModels.plot() function.
@@ -71,8 +73,8 @@ def series(
     kde: bool = False,
     table: bool = False,
     titles: bool = True,
-    tmin: TimestampType | None = None,
-    tmax: TimestampType | None = None,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
     colors_stresses: list[str] | None = None,
     labels: list[str] | None = None,
     figsize: tuple = (10, 5),
@@ -97,8 +99,8 @@ def series(
         observations, mean, skew and kurtosis.
     titles: bool
         Set the titles or not. Taken from the name attribute of the series.
-    tmin: str or pd.Timestamp
-    tmax: str or pd.Timestamp
+    tmin: str or Timestamp
+    tmax: str or Timestamp
     colors_stresses: list of str
         List with the matplotlib colorcodes to use for plotting each stress timeseries.
         If list is shorter than number of stresses, the remaining stresses are plotted
@@ -154,6 +156,7 @@ def series(
     if kde:
         axes[-1, 1].set_xlabel("Density [-]")
     if head is not None:
+        head = head.loc[tmin:tmax].dropna()
         head.plot(
             ax=axes[0, 0], marker=".", linestyle=" ", color="k", xlabel="", **kwargs
         )
@@ -199,7 +202,7 @@ def series(
 
     if stresses is not None:
         for i, stress in enumerate(stresses, start=nrows - len(stresses)):
-            stress = stress[tmin:tmax].dropna()
+            stress = stress.loc[tmin:tmax].dropna()
             if i <= len(colors_stresses):
                 color_stress = colors_stresses[i - 1]
             else:
@@ -522,10 +525,10 @@ class TrackSolve:
     ----------
     ml : pastas.model.Model
         pastas Model to track
-    tmin : str or pandas.Timestamp, optional
+    tmin: pandas.Timestamp or str, optional
         start time for simulation, by default None which defaults to first index in
         ml.oseries.series
-    tmax : str or pandas.Timestamp, optional
+    tmax: pandas.Timestamp or str, optional
         end time for simulation, by default None which defaults to last index in
         ml.oseries.series
     update_iter : int, optional
@@ -576,8 +579,8 @@ class TrackSolve:
     def __init__(
         self,
         ml: Model,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         update_iter: int | None = None,
     ) -> None:
         logger.warning(
@@ -931,7 +934,9 @@ def pairplot(
     bins: int | None = None,
 ) -> dict[str, Axes]:
     """Plot correlation between time series on of values on the same time steps.
+
     Based on seaborn pairplot method.
+
     Parameters
     ----------
     data : DataFrame | list[Series]
@@ -939,6 +944,7 @@ def pairplot(
     bins : int | None, optional
         Number of bins in the histogram, by default None which uses Sturge's
         Rule to determine the number bins
+
     Returns
     -------
     dict[str, Axes]

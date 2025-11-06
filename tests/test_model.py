@@ -111,11 +111,19 @@ class TestModelComponents:
                     np.dtypes.Float64DType(),
                     np.dtypes.Float64DType(),
                     np.dtypes.BoolDType(),
-                    np.dtypes.ObjectDType(),
-                    np.dtypes.ObjectDType(),
+                    "str",
+                    "str",
                 ]
             )
         ).all()
+
+
+    def test_set_oseries(self, simple_model: ps.Model) -> None:
+        s0 = simple_model.oseries.series_original
+        s1 = s0 + 1.0
+        simple_model.set_oseries(s1)
+        assert (simple_model.oseries.series_original == s1).all()
+
 
     def test_add_multiple_stressmodels(
         self, ml_basic: ps.Model, prec: pd.Series, evap: pd.Series
@@ -486,6 +494,21 @@ class TestModelSolving:
         # Test with stderr
         report_stderr = ml_noisemodel.fit_report(stderr=True)
         assert "stderr" in report_stderr
+
+    def test_fit_report_freq_obs(self, ml_recharge: ps.Model) -> None:
+        """Test that freq_obs appears in fit report."""
+        # Test with default freq_obs (None)
+        ml_recharge.solve(report=False)
+        report_default = ml_recharge.fit_report()
+        assert "freq_obs" in report_default
+        assert "None" in report_default
+
+        # Test with explicit freq_obs value
+        ml_copy = ml_recharge.copy()
+        ml_copy.solve(report=False, freq_obs="7D")
+        report_with_freq_obs = ml_copy.fit_report()
+        assert "freq_obs" in report_with_freq_obs
+        assert "7D" in report_with_freq_obs
 
 
 class TestModelContributions:
