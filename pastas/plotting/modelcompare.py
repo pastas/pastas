@@ -17,7 +17,7 @@ from pastas.plotting.plotutil import (
 )
 from pastas.stats.core import acf
 from pastas.stressmodels import WellModel
-from pastas.typing import Axes, Model, TimestampType
+from pastas.typing import Axes, Model
 
 logger = getLogger(__name__)
 

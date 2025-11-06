@@ -5,9 +5,8 @@ from logging import getLogger
 from numpy import array, empty, exp, linspace, ones
 from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, Timestamp, concat
 
-from pastas.model import Model
 from pastas.noisemodels import ArNoiseModel
-from pastas.typing import ArrayLike
+from pastas.typing import ArrayLike, Model
 
 logger = getLogger(__name__)
 
