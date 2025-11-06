@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from contextlib import contextmanager
 from functools import wraps
 from logging import getLogger
 from typing import Any
@@ -8,15 +9,53 @@ from packaging.version import parse as parse_version
 from pastas.typing import TimestampType
 from pastas.version import __version__
 
+try:
+    from cachetools import cachedmethod
+
+    CACHETOOLS_AVAILABLE = True
+except (ModuleNotFoundError, ImportError):
+    CACHETOOLS_AVAILABLE = False
+
 logger = getLogger(__name__)
 
 USE_NUMBA = True
+USE_CACHE = False
 CURRENT_PASTAS_VERSION = parse_version(__version__)
 
 
 def set_use_numba(b: bool) -> None:
+    """Enable or disable the use of Numba JIT compilation."""
     global USE_NUMBA
     USE_NUMBA = b
+
+
+def get_use_numba() -> bool:
+    """Check if Numba JIT compilation is enabled."""
+    global USE_NUMBA
+    return USE_NUMBA
+
+
+def set_use_cache(b: bool) -> None:
+    """Enable or disable the use of caching with cachetools.
+
+    When caching is enabled, the results of simulate() calls are stored in a cache
+    to speed up repeated calls with the same parameters. This requires the cachetools
+    package to be installed and the USE_CACHE variable to be set to True.
+    """
+    global USE_CACHE
+    if b and not CACHETOOLS_AVAILABLE:
+        logger.error(
+            "Cannot enable caching: cachetools is not installed. "
+            "Install with: pip install cachetools"
+        )
+        return
+    USE_CACHE = b
+
+
+def get_use_cache() -> bool:
+    """Check if caching with cachetools is enabled."""
+    global USE_CACHE
+    return USE_CACHE
 
 
 def set_parameter(function: Callable) -> Callable:
@@ -190,3 +229,54 @@ def latexfun(
         return latexify_decorator(function)
 
     return latexify_decorator
+
+
+def conditional_cachedmethod(cache_getter):
+    """Decorator to conditionally cache a method using cachetools.cachedmethod.
+
+    This decorator checks the global USE_CACHE flag and only applies caching when
+    both cachetools is available and caching is enabled.
+
+    Parameters
+    ----------
+    cache_getter : callable
+        Function that returns the cache object from self (e.g., lambda self: self._cache)
+    """
+
+    def decorator(func):
+        if not CACHETOOLS_AVAILABLE:
+            # No cachetools available - just return the original function
+            return func
+
+        # Create the cached version once at decoration time
+        cached_func = cachedmethod(cache_getter)(func)
+
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if USE_CACHE:
+                return cached_func(self, *args, **kwargs)
+            else:
+                return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+@contextmanager
+def temporarily_disable_cache():
+    """Context manager to temporarily disable caching.
+
+    Examples
+    --------
+    >>> with ps.temporarily_disable_cache():
+    ...     # Caching is disabled within this block
+    ...     ml.simulate()
+    """
+    global USE_CACHE
+    original_state = USE_CACHE
+    USE_CACHE = False
+    try:
+        yield
+    finally:
+        USE_CACHE = original_state
