@@ -1,6 +1,5 @@
 """Tests for the stressmodels module."""
 
-from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -64,7 +63,7 @@ class TestStressModel:
         """Test initialization."""
         sm = StressModel(stress=prec, rfunc=ps.Exponential(), name="test")
         assert sm.name == "test"
-        assert sm.rfunc == ps.Exponential()
+        assert isinstance(sm.rfunc, ps.Exponential)
 
         # Test with different settings
         sm = StressModel(
@@ -423,7 +422,7 @@ class TestChangeModel:
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),
             name="change_sim",
-            tchange="2001-06-01",
+            tchange="2010-06-01",
         )
 
         # Get parameters
