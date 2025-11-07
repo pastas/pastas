@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pytest
 from pandas.testing import assert_series_equal
 
 import pastas as ps
@@ -12,50 +11,6 @@ from pastas.stats.dutch import (
     q_glg,
     q_gvg,
 )
-
-
-@pytest.fixture
-def sample_timeseries() -> pd.Series:
-    """Create a sample timeseries for testing."""
-    # Create daily data spanning multiple years
-    index = pd.date_range(start="2017-01-01", end="2021-12-31", freq="D")
-    # Create seasonal pattern with some noise
-    time = np.arange(len(index))
-    seasonal = 10 * np.sin(2 * np.pi * time / 365.25) + 100
-    noise = np.random.normal(0, 1, len(index))
-    values = seasonal + noise
-
-    # Add some missing data
-    series = pd.Series(values, index=index)
-    mask = np.random.random(len(series)) < 0.1
-    series = series.mask(mask)
-
-    return series
-
-
-@pytest.fixture
-def biweekly_timeseries() -> pd.Series:
-    """Create a biweekly timeseries for testing."""
-    # Create data on the 14th and 28th of each month
-    dates = []
-    for year in range(2017, 2021):
-        for month in range(1, 13):
-            dates.append(pd.Timestamp(year=year, month=month, day=14))
-            if month == 2 and year % 4 != 0:
-                # Skip Feb 28 in non-leap years
-                continue
-            if month == 2 and day_exists(year, month, 28):
-                dates.append(pd.Timestamp(year=year, month=month, day=28))
-            elif month != 2:
-                dates.append(pd.Timestamp(year=year, month=month, day=28))
-
-    # Create seasonal pattern with some noise
-    time = np.arange(len(dates))
-    seasonal = 10 * np.sin(2 * np.pi * time / 24) + 100  # 24 measurements per year
-    noise = np.random.normal(0, 1, len(dates))
-    values = seasonal + noise
-
-    return pd.Series(values, index=pd.DatetimeIndex(dates))
 
 
 def day_exists(year: int, month: int, day: int) -> bool:
@@ -94,86 +49,86 @@ def test_in_spring() -> None:
     assert_series_equal(result, expected)
 
 
-def test_q_gxg(sample_timeseries: pd.Series) -> None:
+def test_q_gxg(head: pd.Series) -> None:
     """Test the _q_gxg helper function."""
 
     # Test q_gxg with different quantiles
-    result_high = _q_gxg(sample_timeseries, q=0.94, by_year=True)
-    result_low = _q_gxg(sample_timeseries, q=0.06, by_year=True)
+    result_high = _q_gxg(head, q=0.94, by_year=True)
+    result_low = _q_gxg(head, q=0.06, by_year=True)
 
     # High quantile should be higher than low quantile
     assert result_high > result_low
 
     # Test by_year parameter
-    result_by_year = _q_gxg(sample_timeseries, q=0.5, by_year=True)
-    result_all = _q_gxg(sample_timeseries, q=0.5, by_year=False)
+    result_by_year = _q_gxg(head, q=0.5, by_year=True)
+    result_all = _q_gxg(head, q=0.5, by_year=False)
 
     # Results should be roughly similar but not identical
     assert abs(result_by_year - result_all) < 1.0
     assert result_by_year != result_all
 
 
-def test_q_ghg(sample_timeseries: pd.Series) -> None:
+def test_q_ghg(head: pd.Series) -> None:
     """Test q_ghg function."""
     # Test default parameters
-    result = q_ghg(sample_timeseries)
+    result = q_ghg(head)
     assert isinstance(result, float)
 
     # Test with date range
     tmin = pd.Timestamp("2018-01-01")
     tmax = pd.Timestamp("2019-12-31")
-    result_range = q_ghg(sample_timeseries, tmin=tmin, tmax=tmax)
+    result_range = q_ghg(head, tmin=tmin, tmax=tmax)
     assert isinstance(result_range, float)
 
     # Test by_year parameter
-    result_all = q_ghg(sample_timeseries, by_year=False)
+    result_all = q_ghg(head, by_year=False)
     assert isinstance(result_all, float)
 
 
-def test_q_glg(sample_timeseries: pd.Series) -> None:
+def test_q_glg(head: pd.Series) -> None:
     """Test q_glg function."""
     # Test default parameters
-    result = q_glg(sample_timeseries)
+    result = q_glg(head)
     assert isinstance(result, float)
 
     # Ensure q_glg gives lower values than q_ghg
-    assert q_glg(sample_timeseries) < q_ghg(sample_timeseries)
+    assert q_glg(head) < q_ghg(head)
 
 
-def test_q_gvg(sample_timeseries: pd.Series) -> None:
+def test_q_gvg(head: pd.Series) -> None:
     """Test q_gvg function."""
     # Test default parameters
-    result = q_gvg(sample_timeseries)
+    result = q_gvg(head)
     assert isinstance(result, float)
 
     # Test with and without by_year
-    result1 = q_gvg(sample_timeseries, by_year=True)
-    result2 = q_gvg(sample_timeseries, by_year=False)
+    result1 = q_gvg(head, by_year=True)
+    result2 = q_gvg(head, by_year=False)
     assert result1 != result2
 
 
-def test_gvg(biweekly_timeseries: pd.Series) -> None:
+def test_gvg(head: pd.Series) -> None:
     """Test gvg function."""
     # Test default parameters
-    result = gvg(biweekly_timeseries)
+    result = gvg(head)
     assert isinstance(result, float)
 
     # Test with different limit values
-    result1 = gvg(biweekly_timeseries, limit=4)
-    result2 = gvg(biweekly_timeseries, limit=12)
+    result1 = gvg(head, limit=4)
+    result2 = gvg(head, limit=12)
     assert np.isnan(result1) or np.isnan(result2) or result1 != result2
 
     # Test with None limit (no filling)
-    result_none = gvg(biweekly_timeseries, limit=None)
+    result_none = gvg(head, limit=None)
     assert isinstance(result_none, float)
 
 
-def test_get_spring(sample_timeseries: pd.Series) -> None:
+def test_get_spring(head: pd.Series) -> None:
     """Test the _get_spring helper function."""
     from pastas.stats.dutch import _get_spring
 
     # Extract spring values
-    spring_values = _get_spring(sample_timeseries, min_n_meas=2)
+    spring_values = _get_spring(head, min_n_meas=2)
 
     # Verify only spring values are returned
     for date in spring_values.index:
@@ -182,7 +137,7 @@ def test_get_spring(sample_timeseries: pd.Series) -> None:
         )
 
     # Test with insufficient measurements
-    sparse_series = sample_timeseries.iloc[::10]  # Take every 10th value
+    sparse_series = head.iloc[::10]  # Take every 10th value
     result = _get_spring(sparse_series, min_n_meas=5)
     # Check if there are enough measurements in result
     if len(result) < 5:  # If not enough measurements
@@ -195,51 +150,41 @@ def test_get_spring(sample_timeseries: pd.Series) -> None:
             )
 
 
-def test_gg(biweekly_timeseries: pd.Series) -> None:
+def test_gg(head: pd.Series) -> None:
     """Test gg function."""
     # Test default parameters
-    result = ps.stats.gg(biweekly_timeseries, min_n_years=1, min_n_meas=1)
+    result = ps.stats.gg(head, min_n_years=1, min_n_meas=1)
     assert isinstance(result, float)
 
     # Test different outputs
-    result_yearly = ps.stats.gg(
-        biweekly_timeseries, output="yearly", min_n_years=1, min_n_meas=1
-    )
+    result_yearly = ps.stats.gg(head, output="yearly", min_n_years=1, min_n_meas=1)
     assert isinstance(result_yearly, pd.Series)
 
-    result_semi = ps.stats.gg(
-        biweekly_timeseries, output="semimonthly", min_n_years=1, min_n_meas=1
-    )
+    result_semi = ps.stats.gg(head, output="semimonthly", min_n_years=1, min_n_meas=1)
     assert isinstance(result_semi, pd.Series)
 
     # Verify average calculation
-    mean_value = biweekly_timeseries.mean()
+    mean_value = head.mean()
     # GG should be somewhat close to the mean of all values
     assert abs(result - mean_value) < 1.0
 
 
-def test_ghg_outputs(biweekly_timeseries: pd.Series) -> None:
+def test_ghg_outputs(head: pd.Series) -> None:
     """Test ghg function with various output formats."""
     # Test default parameters (mean output)
-    result_mean = ps.stats.ghg(biweekly_timeseries, min_n_years=1, min_n_meas=1)
+    result_mean = ps.stats.ghg(head, min_n_years=1, min_n_meas=1)
     assert isinstance(result_mean, float)
 
     # Test yearly output
-    result_yearly = ps.stats.ghg(
-        biweekly_timeseries, output="yearly", min_n_years=1, min_n_meas=1
-    )
+    result_yearly = ps.stats.ghg(head, output="yearly", min_n_years=1, min_n_meas=1)
     assert isinstance(result_yearly, pd.Series)
 
     # Test g3 output (selected data points used for calculation)
-    result_g3 = ps.stats.ghg(
-        biweekly_timeseries, output="g3", min_n_years=1, min_n_meas=1
-    )
+    result_g3 = ps.stats.ghg(head, output="g3", min_n_years=1, min_n_meas=1)
     assert isinstance(result_g3, pd.Series)
 
     # Test semimonthly output
-    result_semi = ps.stats.ghg(
-        biweekly_timeseries, output="semimonthly", min_n_years=1, min_n_meas=1
-    )
+    result_semi = ps.stats.ghg(head, output="semimonthly", min_n_years=1, min_n_meas=1)
     assert isinstance(result_semi, pd.Series)
 
     # Verify relationship between outputs
@@ -247,22 +192,18 @@ def test_ghg_outputs(biweekly_timeseries: pd.Series) -> None:
         assert abs(result_yearly.mean() - result_mean) < 1e-10
 
 
-def test_glg_outputs(biweekly_timeseries: pd.Series) -> None:
+def test_glg_outputs(head: pd.Series) -> None:
     """Test glg function with various output formats."""
     # Test default parameters (mean output)
-    result_mean = ps.stats.glg(biweekly_timeseries, min_n_years=1, min_n_meas=1)
+    result_mean = ps.stats.glg(head, min_n_years=1, min_n_meas=1)
     assert isinstance(result_mean, float)
 
     # Test yearly output
-    result_yearly = ps.stats.glg(
-        biweekly_timeseries, output="yearly", min_n_years=1, min_n_meas=1
-    )
+    result_yearly = ps.stats.glg(head, output="yearly", min_n_years=1, min_n_meas=1)
     assert isinstance(result_yearly, pd.Series)
 
     # Test g3 output (selected data points used for calculation)
-    result_g3 = ps.stats.glg(
-        biweekly_timeseries, output="g3", min_n_years=1, min_n_meas=1
-    )
+    result_g3 = ps.stats.glg(head, output="g3", min_n_years=1, min_n_meas=1)
     assert isinstance(result_g3, pd.Series)
 
     # Verify relationship between outputs
@@ -295,7 +236,7 @@ def test_gxg_min_requirements() -> None:
     assert isinstance(result, float) and not np.isnan(result)
 
 
-def test_fill_methods(sample_timeseries: pd.Series) -> None:
+def test_fill_methods(head: pd.Series) -> None:
     """Test different fill methods for gxg functions."""
     # Create series with strategic gaps
     dates = pd.date_range("2019-01-01", "2021-12-31", freq="14D")
