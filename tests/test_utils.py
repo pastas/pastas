@@ -42,13 +42,13 @@ class TestGetStressTminTmax:
 class TestValidateName:
     """Test validate_name function."""
 
-    def test_valid_name_linux(self, _: Any) -> None:
+    def test_valid_name_linux(self) -> None:
         """Test with valid name on Linux."""
         name = "valid_name-123"
         result = validate_name(name)
         assert result == name
 
-    def test_invalid_name_linux(self, _: Any, caplog: Any) -> None:
+    def test_invalid_name_linux(self, caplog: Any) -> None:
         """Test with invalid name on Linux platform."""
         name = "invalid/name with space"
 
@@ -56,7 +56,7 @@ class TestValidateName:
         assert result == name
         assert "contains illegal character" in caplog.text
 
-    def test_invalid_name_raise_error(self, _: Any) -> None:
+    def test_invalid_name_raise_error(self) -> None:
         """Test with invalid name and raise_error=True."""
         name = "invalid/name"
 
