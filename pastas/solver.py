@@ -815,10 +815,15 @@ class LmfitSolve(LeastSquaresSolver):
             parameters.add(pname, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
         # Create the Minimizer object and minimize
+        objfunction = partial(
+            self.objfunction,
+            noise=noise,
+            weights=weights,
+            callback=callback,
+        )
         self.mini = lmfit.Minimizer(
-            userfcn=self.objfunction,
+            userfcn=objfunction,
             calc_covar=True,
-            fcn_args=(noise, weights, callback),
             params=parameters,
             **kwargs,
         )
