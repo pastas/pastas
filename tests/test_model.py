@@ -117,11 +117,11 @@ class TestModelComponents:
             )
         ).all()
 
-    def test_set_oseries(self, simple_model: ps.Model) -> None:
-        s0 = simple_model.oseries.series_original
+    def test_set_oseries(self, ml_solved: ps.Model) -> None:
+        s0 = ml_solved.oseries.series_original
         s1 = s0 + 1.0
-        simple_model.set_oseries(s1)
-        assert (simple_model.oseries.series_original == s1).all()
+        ml_solved.set_oseries(s1)
+        assert (ml_solved.oseries.series_original == s1).all()
 
     def test_add_multiple_stressmodels(
         self, ml_basic: ps.Model, prec: pd.Series, evap: pd.Series
