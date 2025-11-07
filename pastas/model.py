@@ -113,7 +113,6 @@ class Model:
                 "pmax",
                 "vary",
                 "stderr",
-                "dist",
             ]
         )
 
@@ -784,6 +783,9 @@ class Model:
             self.parameters.at["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
 
+        if hasattr(self, "solver") and hasattr(self.solver, "initialize"):
+            self.solver.initialize()
+
     def add_solver(self, solver: Solver) -> None:
         """Method to add a solver to the model.
 
@@ -982,8 +984,8 @@ class Model:
         pmin: float | None = None,
         pmax: float | None = None,
         optimal: float | None = None,
-        dist: str | None = None,
         move_bounds: bool = False,
+        **kwargs,
     ) -> None:
         """Method to change the parameter properties.
 
@@ -1001,8 +1003,6 @@ class Model:
             maximum value for the parameter.
         optimal: float, optional
             optimal value for the parameter.
-        dist: str, optional
-            Distribution of the parameters.
         move_bounds: bool, optional
             Reset pmin/pmax based on new initial value. Of move_bounds=True, pmin and
             pmax must be None.
@@ -1083,11 +1083,14 @@ class Model:
         if pmax is not None:
             obj._set_pmax(name, pmax)
             self.parameters.at[name, "pmax"] = pmax
-        if dist is not None:
-            obj._set_dist(name, dist)
-            self.parameters.at[name, "dist"] = dist
         if optimal is not None:
             self.parameters.at[name, "optimal"] = optimal
+        for key, value in kwargs.items():
+            if key in self.parameters.columns:
+                self.parameters.at[name, key] = value
+            else:
+                msg = f"Parameter property '{key}' is not recognized."
+                logger.error(msg)
 
         # Check if bounds are consistent
         curr_pmin = self.parameters.at[name, "pmin"]
