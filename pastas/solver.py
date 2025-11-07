@@ -589,13 +589,17 @@ class LeastSquares(LeastSquaresSolver):
             )
 
         objfunction = partial(
-            self.objfunction, initial=initial, vary=vary, callback=callback
+            self.objfunction,
+            noise=noise,
+            weights=weights,
+            initial=initial,
+            vary=vary,
+            callback=callback,
         )
         self.result = least_squares(
             objfunction,
             bounds=bounds,
             x0=initial[vary],
-            args=(noise, weights, callback),
             method=method,
             **kwargs,
         )
