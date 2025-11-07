@@ -21,57 +21,39 @@ from pastas.stressmodels import (
 
 
 @pytest.fixture
-def stress_data() -> pd.Series:
-    """Create stress data for testing."""
-    date_range = pd.date_range(start="2000-01-01", end="2002-12-31", freq="D")
-    stress = pd.Series(np.random.rand(len(date_range)), index=date_range)
-    return stress
-
-
-@pytest.fixture
-def response_function() -> ps.rfunc.RfuncBase:
-    """Create response function for testing."""
-    return ps.Exponential()
-
-
-@pytest.fixture
-def basic_stress_model(
-    stress_data: pd.Series, response_function: ps.rfunc.RfuncBase
-) -> StressModel:
+def stress_model(ml_sm: ps.Model) -> StressModel:
     """Create basic StressModel for testing."""
-    return StressModel(
-        stress=stress_data, rfunc=response_function, name="stress1", settings="prec"
-    )
+    return ml_sm.stressmodels["prec"]
 
 
 class TestStressModelBase:
     """Test StressModelBase methods."""
 
-    def test_update_stress(self, basic_stress_model: StressModel) -> None:
+    def test_update_stress(self, stress_model: StressModel) -> None:
         """Test updating stress settings."""
         # Get original frequency
-        original_freq = basic_stress_model.freq
+        original_freq = stress_model.freq
 
         # Update to weekly frequency
-        basic_stress_model.update_stress(freq="7D")
+        stress_model.update_stress(freq="7D")
 
         # Check if frequency was updated
-        assert basic_stress_model.freq == "7D"
-        assert basic_stress_model.stress[0].settings["freq"] == "7D"
+        assert stress_model.freq == "7D"
+        assert stress_model.stress[0].settings["freq"] == "7D"
 
         # Reset to original frequency
-        basic_stress_model.update_stress(freq=original_freq)
+        stress_model.update_stress(freq=original_freq)
 
-    def test_get_stress(self, basic_stress_model: StressModel) -> None:
+    def test_get_stress(self, stress_model: StressModel) -> None:
         """Test getting stress."""
-        stress = basic_stress_model.get_stress()
+        stress = stress_model.get_stress()
         assert isinstance(stress, pd.Series)
         assert len(stress) > 0
 
         # Test with time limits
         tmin = "2001-01-01"
         tmax = "2001-12-31"
-        stress_limited = basic_stress_model.get_stress(tmin=tmin, tmax=tmax)
+        stress_limited = stress_model.get_stress(tmin=tmin, tmax=tmax)
         assert stress_limited.index[0] >= pd.Timestamp(tmin)
         assert stress_limited.index[-1] <= pd.Timestamp(tmax)
 
@@ -79,39 +61,37 @@ class TestStressModelBase:
 class TestStressModel:
     """Test StressModel."""
 
-    def test_init(
-        self, stress_data: pd.Series, response_function: ps.rfunc.RfuncBase
-    ) -> None:
+    def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
-        sm = StressModel(stress=stress_data, rfunc=response_function, name="test")
+        sm = StressModel(stress=prec, rfunc=ps.Exponential(), name="test")
         assert sm.name == "test"
-        assert sm.rfunc == response_function
+        assert sm.rfunc == ps.Exponential()
 
         # Test with different settings
         sm = StressModel(
-            stress=stress_data,
-            rfunc=response_function,
+            stress=prec,
+            rfunc=ps.Exponential(),
             name="test",
             settings={"fill_nan": "mean"},
         )
         assert sm.stress[0].settings["fill_nan"] == "mean"
 
-    def test_simulate(self, basic_stress_model: StressModel) -> None:
+    def test_simulate(self, stress_model: StressModel) -> None:
         """Test simulate method."""
         # Get parameters
-        p = basic_stress_model.parameters.initial.values
+        p = stress_model.parameters.initial.values
 
         # Run simulation
-        sim = basic_stress_model.simulate(p=p)
+        sim = stress_model.simulate(p=p)
 
         # Check results
         assert isinstance(sim, pd.Series)
-        assert len(sim) == len(basic_stress_model.stress[0].series)
+        assert len(sim) == len(stress_model.stress[0].series)
         assert not np.isnan(sim).any()
 
-    def test_to_dict(self, basic_stress_model: StressModel) -> None:
+    def test_to_dict(self, stress_model: StressModel) -> None:
         """Test to_dict method."""
-        data = basic_stress_model.to_dict()
+        data = stress_model.to_dict()
 
         # Check required keys
         required_keys = ["class", "rfunc", "name", "up", "stress"]
@@ -119,7 +99,7 @@ class TestStressModel:
             assert key in data
 
         # Check values
-        assert data["name"] == basic_stress_model.name
+        assert data["name"] == stress_model.name
         assert data["class"] == "StressModel"
 
 
@@ -581,10 +561,10 @@ class TestWellModel:
 class TestChangeModel:
     """Test ChangeModel."""
 
-    def test_init(self, stress_data: pd.Series) -> None:
+    def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
         cm = ChangeModel(
-            stress=stress_data,
+            stress=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),
             name="change",
@@ -595,10 +575,10 @@ class TestChangeModel:
         assert cm.rfunc1._name == "Exponential"
         assert cm.rfunc2._name == "Gamma"
 
-    def test_simulate(self, stress_data: pd.Series) -> None:
+    def test_simulate(self, prec: pd.Series) -> None:
         """Test simulate method."""
         cm = ChangeModel(
-            stress=stress_data,
+            stress=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),
             name="change_sim",
@@ -613,7 +593,7 @@ class TestChangeModel:
 
         # Check results
         assert isinstance(sim, pd.Series)
-        assert len(sim) == len(stress_data)
+        assert len(sim) == len(prec)
         assert sim.name == "change_sim"
 
         # The simulation should include weighted contributions from both rfuncs
