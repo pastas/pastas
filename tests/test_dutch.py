@@ -236,7 +236,7 @@ def test_gxg_min_requirements() -> None:
     assert isinstance(result, float) and not np.isnan(result)
 
 
-def test_fill_methods(head: pd.Series) -> None:
+def test_fill_methods() -> None:
     """Test different fill methods for gxg functions."""
     # Create series with strategic gaps
     dates = pd.date_range("2019-01-01", "2021-12-31", freq="14D")
