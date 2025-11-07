@@ -7,7 +7,10 @@ import pastas as ps
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
 @pytest.mark.parametrize("up", [True, False])
 def test_rfunc(rfunc_name: str, up: bool) -> None:
-    if rfunc_name not in []:
+    if rfunc_name == "Edelman":
+        with pytest.raises(DeprecationWarning):
+            rfunc = getattr(ps.rfunc, rfunc_name)()
+    else:
         rfunc = getattr(ps.rfunc, rfunc_name)()
         rfunc.update_rfunc_settings(up=up)
         if rfunc_name == "HantushWellModel":
