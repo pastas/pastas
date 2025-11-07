@@ -148,6 +148,12 @@ class TestModelComponents:
             )
         ).all()
 
+    def test_set_oseries(self, simple_model: ps.Model) -> None:
+        s0 = simple_model.oseries.series_original
+        s1 = s0 + 1.0
+        simple_model.set_oseries(s1)
+        assert (simple_model.oseries.series_original == s1).all()
+
     def test_add_multiple_stressmodels(self, simple_model: ps.Model) -> None:
         """Test adding multiple stress models at once."""
         dates = pd.date_range(start="2000-01-01", end="2005-12-31", freq="D")

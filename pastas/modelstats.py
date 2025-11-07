@@ -23,9 +23,9 @@ These methods may be used as follows.
 """
 
 from numpy import interp, nan
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Timestamp
 
-from pastas.typing import Model, TimestampType
+from pastas.typing import Model
 
 from .decorators import model_tmin_tmax
 from .stats import diagnostics, metrics
@@ -75,8 +75,8 @@ class Statistics:
     @model_tmin_tmax
     def rmse(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -84,8 +84,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -100,8 +106,8 @@ class Statistics:
     @model_tmin_tmax
     def rmsn(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -109,8 +115,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -132,14 +144,20 @@ class Statistics:
 
     @model_tmin_tmax
     def sse(
-        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
+        self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> float:
         """Sum of the squares of the error (SSE)
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
 
         See Also
         --------
@@ -151,8 +169,8 @@ class Statistics:
     @model_tmin_tmax
     def mae(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -160,8 +178,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -176,8 +200,8 @@ class Statistics:
     @model_tmin_tmax
     def nse(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -185,8 +209,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -202,8 +232,8 @@ class Statistics:
     @model_tmin_tmax
     def nnse(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -211,8 +241,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -229,8 +265,8 @@ class Statistics:
     @model_tmin_tmax
     def pearsonr(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -238,8 +274,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -255,8 +297,8 @@ class Statistics:
     @model_tmin_tmax
     def evp(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -264,8 +306,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -281,8 +329,8 @@ class Statistics:
     @model_tmin_tmax
     def rsq(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -290,8 +338,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -307,8 +361,8 @@ class Statistics:
     @model_tmin_tmax
     def kge(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         modified: bool = False,
         **kwargs,
@@ -317,8 +371,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -353,8 +413,8 @@ class Statistics:
     @model_tmin_tmax
     def kge_2012(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         weighted: bool = False,
         **kwargs,
     ) -> float:
@@ -362,8 +422,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         weighted: bool, optional
             If weighted is True, the variances are computed using the time step
             between observations as weights. Default is False.
@@ -378,15 +444,21 @@ class Statistics:
 
     @model_tmin_tmax
     def bic(
-        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
+        self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> float:
         """Bayesian Information Criterium (BIC).
 
         Parameters
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
 
         See Also
         --------
@@ -403,14 +475,20 @@ class Statistics:
 
     @model_tmin_tmax
     def aic(
-        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
+        self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> float:
         """Akaike Information Criterium (AIC).
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
 
         See Also
         --------
@@ -427,14 +505,20 @@ class Statistics:
 
     @model_tmin_tmax
     def aicc(
-        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
+        self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> float:
         """Akaike Information Criterium with second order bias correction (AICc).
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
 
         See Also
         --------
@@ -452,16 +536,22 @@ class Statistics:
     @model_tmin_tmax
     def summary(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         stats: list[str] | None = None,
     ) -> DataFrame:
         """Returns a Pandas DataFrame with goodness-of-fit metrics.
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         stats: list, optional
             list of statistics that need to be calculated. If nothing is provided,
             all statistics are returned.
@@ -503,8 +593,8 @@ class Statistics:
     @model_tmin_tmax
     def diagnostics(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         alpha: float = 0.05,
         stats: tuple = (),
         float_fmt: str = "{0:.2f}",
@@ -514,12 +604,14 @@ class Statistics:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-            Start date of the residual / noise time series to compute the diagnostics
-            checks for.
-        tmax: str or pandas.Timestamp, optional
-            End date of the residuals / noise time series to compute the diagnostics
-            checks for.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date (E.g. '1980-01-01
+            00:00:00') of the residual / noise time series to compute the diagnostics
+            checks for.  Strings are converted to pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date (E.g. '1980-01-01
+            00:00:00') of the residuals / noise time series to compute the diagnostics
+            checks for. Strings are converted to pandas.Timestamp internally.
         alpha: float, optional
             significance level to use for the hypothesis testing.
         stats: tuple, optional

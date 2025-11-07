@@ -21,7 +21,7 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, least_squares
 
-from pastas.decorators import temporarily_disable_cache, deprecate_args_or_kwargs
+from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cache
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Model
 

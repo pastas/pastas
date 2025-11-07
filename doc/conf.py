@@ -119,7 +119,6 @@ napoleon_type_aliases = {
     "array_like": ":term:`array_like`",
     "ps": "pastas",
     "ml": "pastas.model.Model",
-    "TimestampType": "pandas.Timestamp",
 }
 # add custom section to docstrings in Parameters style
 napoleon_custom_sections = [("Time series settings", "params_style")]

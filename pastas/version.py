@@ -6,7 +6,7 @@ from pandas import options as pd_options
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.12.0b"
+__version__ = "2.0.0"
 
 # TODO: Remove before release but keep in dev for testing
 
