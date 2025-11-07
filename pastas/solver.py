@@ -1176,7 +1176,7 @@ class EmceeSolve(BaseSolver):
         # Check if the parameter is present in the solver
         if name not in self.parameters.index:
             msg = "parameter %s is not present in the solver."
-            self.logger.error(msg, name)
+            logger.error(msg, name)
             raise KeyError(msg % name)
 
         # Set the initial value
