@@ -19,7 +19,7 @@ from typing import Literal
 import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
-from scipy.optimize import Bounds, least_squares
+from scipy.optimize import Bounds, OptimizeResult, least_squares
 
 from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cache
 from pastas.objective_functions import GaussianLikelihood
@@ -90,13 +90,12 @@ class LeastSquaresSolver(BaseSolver):
         super().__init__()
         self.pcov = pcov
         self.nfev = nfev
-        self.result: None | "MinimizeResult" |  =
+        self.result: OptimizeResult | "lmfit.minimizer.MinimizerResult" | None = None
         if kwargs:
             logger.warning(
                 f"The following keyword arguments are ignored to the Solver {self._name}: "
                 f"{', '.join(kwargs.keys())}"
             )
-
 
     @property
     def pcor(self) -> DataFrame | None:
@@ -805,7 +804,9 @@ class LmfitSolve(LeastSquaresSolver):
     ) -> tuple[bool, ArrayLike, ArrayLike]:
         # Deal with the parameters
         parameters = lmfit.Parameters()
-        for pname, params in self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]].iterrows():
+        for pname, params in self.ml.parameters.loc[
+            :, ["initial", "pmin", "pmax", "vary"]
+        ].iterrows():
             pp = np.where(params.isnull(), None, params)
             parameters.add(pname, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
@@ -821,13 +822,21 @@ class LmfitSolve(LeastSquaresSolver):
         names = self.result.var_names
 
         # Set all parameter attributes
-        covar = self.result.covar if hasattr(self.result, "covar") and self.result.covar is not None else None
-        self.pcov = DataFrame(
-            covar,
-            index=names,
-            columns=names,
-            dtype=float,
-        ) if covar is not None else None
+        covar = (
+            self.result.covar
+            if hasattr(self.result, "covar") and self.result.covar is not None
+            else None
+        )
+        self.pcov = (
+            DataFrame(
+                covar,
+                index=names,
+                columns=names,
+                dtype=float,
+            )
+            if covar is not None
+            else None
+        )
 
         # Set all optimization attributes
         self.nfev = self.result.nfev
@@ -935,7 +944,11 @@ class EmceeSolve(BaseSolver):
             raise ImportError(msg) from None
 
         if "objective_function" in kwargs:
-            deprecate_args_or_kwargs("objective_function", "2.0.0", reason="Use the argument objfunction instead")
+            deprecate_args_or_kwargs(
+                "objective_function",
+                "2.0.0",
+                reason="Use the argument objfunction instead",
+            )
             objfunction = kwargs.pop("objective_function")
 
         super().__init__(**kwargs)
