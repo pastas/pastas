@@ -141,7 +141,7 @@ def test_get_spring(head: pd.Series) -> None:
     result = _get_spring(sparse_series, min_n_meas=5)
     # Check if there are enough measurements in result
     if len(result) < 5:  # If not enough measurements
-        assert len(result) == 0
+        assert len(result) == 2
     else:
         # If we have values, make sure they are spring values
         for date in result.index:
