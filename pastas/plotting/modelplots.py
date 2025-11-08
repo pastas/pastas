@@ -22,7 +22,7 @@ from pastas.plotting.plotutil import (
 from pastas.rfunc import HantushWellModel
 from pastas.stressmodels import ChangeModel, TarsoModel
 from pastas.timeseries_utils import _get_dt
-from pastas.typing import Axes, Figure, Model, TimestampType
+from pastas.typing import Axes, Figure, Model
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,8 @@ class Plotting:
     @model_tmin_tmax
     def plot(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         oseries: bool = True,
         simulation: bool = True,
         ax: Axes | None = None,
@@ -63,8 +63,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         oseries: bool, optional
             True to plot the observed time series.
         simulation: bool, optional
@@ -121,8 +127,8 @@ class Plotting:
     @model_tmin_tmax
     def results(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 8),
         split: bool = False,
         adjust_height: bool = True,
@@ -136,8 +142,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         figsize: tuple, optional
             tuple of size 2 to determine the figure size in inches.
         split: bool, optional
@@ -313,8 +325,8 @@ class Plotting:
     @model_tmin_tmax
     def results_mosaic(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         stderr: bool = False,
         block_or_step: str = "step",
         return_warmup: bool = False,
@@ -328,8 +340,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
         block_or_step: str, optional
@@ -629,8 +647,8 @@ class Plotting:
     @model_tmin_tmax
     def decomposition(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         ytick_base: bool = True,
         split: bool = True,
         figsize: tuple = (10, 8),
@@ -644,8 +662,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         ytick_base: Boolean or float, optional
             Make the ytick-base constant if True, set this base to float if a float.
         split: bool, optional
@@ -795,8 +819,8 @@ class Plotting:
     @model_tmin_tmax
     def diagnostics(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 5),
         bins: int = 50,
         acf_options: dict | None = None,
@@ -808,9 +832,9 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
             start time for which to calculate the residuals.
-        tmax: str or pandas.Timestamp, optional
+        tmax: pandas.Timestamp or str, optional
             end time for which to calculate the residuals.
         figsize: tuple, optional
             Tuple with the height and width of the figure in inches.
@@ -869,8 +893,8 @@ class Plotting:
     @model_tmin_tmax
     def cum_frequency(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         ax: Axes | None = None,
         figsize: tuple = (5, 2),
         **kwargs,
@@ -881,8 +905,14 @@ class Plotting:
         ----------
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-        tmax: str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
         figsize: tuple, optional
@@ -999,8 +1029,8 @@ class Plotting:
     @model_tmin_tmax
     def stresses(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         cols: int = 1,
         split: bool = True,
         sharex: bool = True,
@@ -1011,8 +1041,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp, optional
-        tmax: str or pd.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         cols: int
             number of columns used for plotting.
         split: bool, optional
@@ -1058,8 +1094,8 @@ class Plotting:
     @model_tmin_tmax
     def contributions_pie(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         ax: Axes | None = None,
         figsize: Figure | None = None,
         split: bool = True,
@@ -1074,8 +1110,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional.
-        tmax: str or pandas.Timestamp, optional.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         ax: matplotlib.axes.Axes, optional
             The Axes to plot the pie chart on. A new figure and axes will be created of
             not provided.
@@ -1140,8 +1182,8 @@ class Plotting:
     @model_tmin_tmax
     def stacked_results(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 8),
         stackcolors: dict[str, str] | list[str] | None = None,
         stacklegend: bool = False,
@@ -1154,8 +1196,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin : str or pandas.Timestamp, optional
-        tmax : str or pandas.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         figsize : tuple, optional
         stackcolors : dict or list, optional
             Either dictionary with stress names as keys and colors as values, or a
@@ -1257,8 +1305,8 @@ class Plotting:
     @model_tmin_tmax
     def series(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         split: bool = True,
         **kwargs,
     ) -> Axes:
@@ -1266,8 +1314,8 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp
-        tmax: str or pd.Timestamp
+        tmin: str or Timestamp
+        tmax: str or Timestamp
         split: bool, optional
             Split the stresses in multiple stresses when possible.
         hist: bool
@@ -1295,8 +1343,8 @@ class Plotting:
     @model_tmin_tmax
     def summary(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         results_kwargs: dict | None = None,
         diagnostics_kwargs: dict | None = None,
     ) -> Figure:
@@ -1304,8 +1352,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp, optional
-        tmax: str or pd.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         fname: str, optional
             string with the file name / path to store the PDF file.
         dpi: int, optional
@@ -1343,8 +1397,8 @@ class Plotting:
     @model_tmin_tmax
     def summary_pdf(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         results_kwargs: dict | None = None,
         diagnostics_kwargs: dict | None = None,
         fname: str | None = None,
@@ -1354,8 +1408,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp, optional
-        tmax: str or pd.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         results_kwargs: dict, optional
             dictionary passed on to ml.plots.results method.
         diagnostics_kwargs: dict, optional
@@ -1384,8 +1444,8 @@ class Plotting:
     @model_tmin_tmax
     def pairplot(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         bins: int | None = None,
         split: bool = True,
     ) -> dict[str, Axes]:
@@ -1394,8 +1454,8 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp
-        tmax: str or pd.Timestamp
+        tmin: str or Timestamp
+        tmax: str or Timestamp
         bins : int | None, optional
             Number of bins in the histogram, by default None which uses Sturge's
             rule to determine the number bins
@@ -1415,8 +1475,8 @@ class Plotting:
     @model_tmin_tmax
     def contribution(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         name: str | None = None,
         plot_stress: bool = True,
         plot_response: bool = False,
@@ -1429,8 +1489,14 @@ class Plotting:
 
         Parameters
         ----------
-        tmin: str or pd.Timestamp, optional
-        tmax: str or pd.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
         name: str, optional
             Name of the stressmodel to plot the contribution for.
         plot_stress: bool, optional
