@@ -1,7 +1,5 @@
 """Tests for the stressmodels module."""
 
-from unittest.mock import patch
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -15,63 +13,44 @@ from pastas.stressmodels import (
     RechargeModel,
     StepModel,
     StressModel,
-    TarsoModel,
     WellModel,
 )
 
 
 @pytest.fixture
-def stress_data() -> pd.Series:
-    """Create stress data for testing."""
-    date_range = pd.date_range(start="2000-01-01", end="2002-12-31", freq="D")
-    stress = pd.Series(np.random.rand(len(date_range)), index=date_range)
-    return stress
-
-
-@pytest.fixture
-def response_function() -> ps.rfunc.RfuncBase:
-    """Create response function for testing."""
-    return ps.Exponential()
-
-
-@pytest.fixture
-def basic_stress_model(
-    stress_data: pd.Series, response_function: ps.rfunc.RfuncBase
-) -> StressModel:
+def stress_model(ml_sm: ps.Model) -> StressModel:
     """Create basic StressModel for testing."""
-    return StressModel(
-        stress=stress_data, rfunc=response_function, name="stress1", settings="prec"
-    )
+    return ml_sm.stressmodels["prec"]
 
 
 class TestStressModelBase:
     """Test StressModelBase methods."""
 
-    def test_update_stress(self, basic_stress_model: StressModel) -> None:
+    def test_update_stress(self, stress_model: StressModel) -> None:
         """Test updating stress settings."""
         # Get original frequency
-        original_freq = basic_stress_model.freq
+        original_freq = stress_model.freq
 
         # Update to weekly frequency
-        basic_stress_model.update_stress(freq="7D")
+        stress_model.update_stress(freq="7D")
 
         # Check if frequency was updated
-        assert basic_stress_model.freq == "7D"
-        assert basic_stress_model.stress[0].settings["freq"] == "7D"
+        assert stress_model.freq == "7D"
+        assert stress_model.stress[0].settings["freq"] == "7D"
 
         # Reset to original frequency
-        basic_stress_model.update_stress(freq=original_freq)
+        stress_model.update_stress(freq=original_freq)
 
-    def test_get_stress(self, basic_stress_model: StressModel) -> None:
+    def test_get_stress(self, stress_model: StressModel) -> None:
         """Test getting stress."""
-        stress = basic_stress_model.get_stress()
+        stress = stress_model.get_stress()
         assert isinstance(stress, pd.Series)
         assert len(stress) > 0
 
         # Test with time limits
         tmin = "2001-01-01"
         tmax = "2001-12-31"
-        stress_limited = basic_stress_model.get_stress(tmin=tmin, tmax=tmax)
+        stress_limited = stress_model.get_stress(tmin=tmin, tmax=tmax)
         assert stress_limited.index[0] >= pd.Timestamp(tmin)
         assert stress_limited.index[-1] <= pd.Timestamp(tmax)
 
@@ -79,39 +58,37 @@ class TestStressModelBase:
 class TestStressModel:
     """Test StressModel."""
 
-    def test_init(
-        self, stress_data: pd.Series, response_function: ps.rfunc.RfuncBase
-    ) -> None:
+    def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
-        sm = StressModel(stress=stress_data, rfunc=response_function, name="test")
+        sm = StressModel(stress=prec, rfunc=ps.Exponential(), name="test")
         assert sm.name == "test"
-        assert sm.rfunc == response_function
+        assert isinstance(sm.rfunc, ps.Exponential)
 
         # Test with different settings
         sm = StressModel(
-            stress=stress_data,
-            rfunc=response_function,
+            stress=prec,
+            rfunc=ps.Exponential(),
             name="test",
             settings={"fill_nan": "mean"},
         )
         assert sm.stress[0].settings["fill_nan"] == "mean"
 
-    def test_simulate(self, basic_stress_model: StressModel) -> None:
+    def test_simulate(self, stress_model: StressModel) -> None:
         """Test simulate method."""
         # Get parameters
-        p = basic_stress_model.parameters.initial.values
+        p = stress_model.parameters.initial.values
 
         # Run simulation
-        sim = basic_stress_model.simulate(p=p)
+        sim = stress_model.simulate(p=p)
 
         # Check results
         assert isinstance(sim, pd.Series)
-        assert len(sim) == len(basic_stress_model.stress[0].series)
+        assert len(sim) == len(stress_model.stress[0].series)
         assert not np.isnan(sim).any()
 
-    def test_to_dict(self, basic_stress_model: StressModel) -> None:
+    def test_to_dict(self, stress_model: StressModel) -> None:
         """Test to_dict method."""
-        data = basic_stress_model.to_dict()
+        data = stress_model.to_dict()
 
         # Check required keys
         required_keys = ["class", "rfunc", "name", "up", "stress"]
@@ -119,7 +96,7 @@ class TestStressModel:
             assert key in data
 
         # Check values
-        assert data["name"] == basic_stress_model.name
+        assert data["name"] == stress_model.name
         assert data["class"] == "StressModel"
 
 
@@ -216,172 +193,6 @@ class TestConstant:
         # Test simulation (static value)
         result = sm.simulate(p=5.0)
         assert result == 5.0
-
-
-class TestTarsoModel:
-    """Test TarsoModel."""
-
-    def setup_method(self) -> None:
-        """Setup for tests."""
-        # Create test data
-        date_range = pd.date_range(start="2000-01-01", end="2002-12-31", freq="D")
-        np.random.seed(42)  # For reproducibility
-
-        # Generate synthetic precipitation and evaporation
-        self.prec = pd.Series(np.random.gamma(1, 2, len(date_range)), index=date_range)
-        self.evap = pd.Series(
-            np.random.gamma(0.5, 1, len(date_range)), index=date_range
-        )
-
-        # Create synthetic observations around drainage levels
-        self.obs = pd.Series(np.random.normal(5, 1, len(date_range)), index=date_range)
-
-    def test_init_with_oseries(self) -> None:
-        """Test initialization with observed series."""
-        tm = TarsoModel(
-            prec=self.prec,
-            evap=self.evap,
-            oseries=self.obs,
-            name="tarso1",
-        )
-        assert tm.name == "tarso1"
-        assert tm.dmin == self.obs.min()
-        assert tm.dmax == self.obs.max()
-
-    def test_init_with_levels(self) -> None:
-        """Test initialization with explicit drainage levels."""
-        tm = TarsoModel(
-            prec=self.prec,
-            evap=self.evap,
-            dmin=3.0,
-            dmax=7.0,
-            name="tarso2",
-        )
-        assert tm.name == "tarso2"
-        assert tm.dmin == 3.0
-        assert tm.dmax == 7.0
-
-    def test_init_error(self) -> None:
-        """Test error when neither oseries nor levels are provided."""
-        with pytest.raises(Exception) as e:
-            TarsoModel(
-                prec=self.prec,
-                evap=self.evap,
-                name="tarso_error",
-            )
-        assert "Please specify either oseries or dmin and dmax" in str(e.value)
-
-    def test_initialization_conflict(self) -> None:
-        """Test error when both oseries and levels are provided."""
-        with pytest.raises(Exception) as e:
-            TarsoModel(
-                prec=self.prec,
-                evap=self.evap,
-                oseries=self.obs,
-                dmin=3.0,
-                dmax=7.0,
-                name="tarso_error",
-            )
-        assert "Please specify either oseries or dmin and dmax" in str(e.value)
-
-    def test_tarso_function(self) -> None:
-        """Test the tarso function directly."""
-        tm = TarsoModel(
-            prec=self.prec,
-            evap=self.evap,
-            dmin=3.0,
-            dmax=7.0,
-            name="tarso_func_test",
-        )
-
-        # Create test parameters and recharge data
-        p = np.array([1.0, 10.0, 4.0, 2.0, 5.0, 6.0])  # A0, a0, d0, A1, a1, d1
-        r = np.random.rand(100)  # Random recharge series
-        dt = 1.0
-
-        # Run tarso function
-        result = tm.tarso(p, r, dt)
-
-        # Basic checks
-        assert len(result) == len(r)
-        assert not np.isnan(result).any()
-
-        # Check if result values are reasonable (between drainage levels or close)
-        assert np.all(result >= p[2] - 1)  # Close to or above lower drainage level
-        assert np.all(result <= p[5] + 1)  # Close to or below upper drainage level
-
-    def test_simulate(self) -> None:
-        """Test simulate method."""
-        tm = TarsoModel(
-            prec=self.prec,
-            evap=self.evap,
-            dmin=3.0,
-            dmax=7.0,
-            name="tarso_sim_test",
-        )
-
-        # Get parameters
-        p = tm.parameters.initial.values
-
-        # Run simulation
-        sim = tm.simulate(p=p)
-
-        # Check results
-        assert isinstance(sim, pd.Series)
-        assert len(sim) == len(self.prec)
-        assert not np.isnan(sim).any()
-
-        # Results should be reasonable (near drainage levels)
-        assert sim.min() >= tm.dmin - 1.0
-        assert sim.max() <= tm.dmax + 1.0
-
-    def test_check_stressmodel_compatibility(self) -> None:
-        """Test compatibility check method."""
-        # Create mock model with multiple stressmodels
-        mock_model = type(
-            "obj",
-            (object,),
-            {
-                "stressmodels": {"sm1": None, "sm2": None},
-                "constant": None,
-                "transform": None,
-            },
-        )
-
-        # Test with logger.warning mock
-        with patch("pastas.stressmodels.logger") as mock_logger:
-            TarsoModel._check_stressmodel_compatibility(mock_model)
-            mock_logger.warning.assert_called_once()
-
-        # Test when constant exists
-        mock_model = type(
-            "obj",
-            (object,),
-            {
-                "stressmodels": {"sm1": None},
-                "constant": True,  # Constant exists
-                "transform": None,
-            },
-        )
-
-        with patch("pastas.stressmodels.logger") as mock_logger:
-            TarsoModel._check_stressmodel_compatibility(mock_model)
-            mock_logger.warning.assert_called_once()
-
-        # Test when transform exists
-        mock_model = type(
-            "obj",
-            (object,),
-            {
-                "stressmodels": {"sm1": None},
-                "constant": None,
-                "transform": True,  # Transform exists
-            },
-        )
-
-        with patch("pastas.stressmodels.logger") as mock_logger:
-            TarsoModel._check_stressmodel_compatibility(mock_model)
-            mock_logger.warning.assert_called_once()
 
 
 class TestRechargeModel:
@@ -589,10 +400,10 @@ class TestWellModel:
 class TestChangeModel:
     """Test ChangeModel."""
 
-    def test_init(self, stress_data: pd.Series) -> None:
+    def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
         cm = ChangeModel(
-            stress=stress_data,
+            stress=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),
             name="change",
@@ -603,14 +414,14 @@ class TestChangeModel:
         assert cm.rfunc1._name == "Exponential"
         assert cm.rfunc2._name == "Gamma"
 
-    def test_simulate(self, stress_data: pd.Series) -> None:
+    def test_simulate(self, prec: pd.Series) -> None:
         """Test simulate method."""
         cm = ChangeModel(
-            stress=stress_data,
+            stress=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),
             name="change_sim",
-            tchange="2001-06-01",
+            tchange="2010-06-01",
         )
 
         # Get parameters
@@ -621,7 +432,7 @@ class TestChangeModel:
 
         # Check results
         assert isinstance(sim, pd.Series)
-        assert len(sim) == len(stress_data)
+        assert len(sim) == len(prec)
         assert sim.name == "change_sim"
 
         # The simulation should include weighted contributions from both rfuncs

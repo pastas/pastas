@@ -21,6 +21,7 @@ from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import least_squares
 from scipy.optimize._numdiff import approx_derivative
 
+from pastas.decorators import temporarily_disable_cache
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Model
 
@@ -397,8 +398,10 @@ class BaseSolver:
         parameter_sample = self.get_parameter_sample(n=n, name=name, max_iter=max_iter)
         data = {}
 
-        for i, p in enumerate(parameter_sample):
-            data[i] = func(p=p, **kwargs)
+        # Disable caching during parameter sampling as each sample is unique
+        with temporarily_disable_cache():
+            for i, p in enumerate(parameter_sample):
+                data[i] = func(p=p, **kwargs)
 
         return DataFrame.from_dict(data, orient="columns", dtype=float)
 
@@ -1277,7 +1280,7 @@ class EmceeSolve(BaseSolver):
         # Check if the parameter is present in the solver
         if name not in self.parameters.index:
             msg = "parameter %s is not present in the solver."
-            self.logger.error(msg, name)
+            logger.error(msg, name)
             raise KeyError(msg % name)
 
         # Set the initial value
