@@ -1151,7 +1151,7 @@ class Model:
         curr_pmax = self._parameters.at[name, "pmax"]
         if curr_pmin is not None and curr_pmax is not None and curr_pmin > curr_pmax:
             raise ValueError(
-                f"Lower bound (pmin={curr_pmin}) cannot be greater than upper bound (pmax={curr_pmax})"
+                f"Lower bound (pmin={curr_pmin}) of parameter {name} cannot be greater than upper bound (pmax={curr_pmax})"
             )
 
         # Check if initial value respects bounds
@@ -1159,11 +1159,11 @@ class Model:
         if curr_initial is not None:
             if curr_pmin is not None and curr_initial < curr_pmin:
                 raise ValueError(
-                    f"Initial value ({curr_initial}) cannot be less than lower bound (pmin={curr_pmin})"
+                    f"Initial value ({curr_initial}) of parameter {name} cannot be less than lower bound (pmin={curr_pmin})"
                 )
             if curr_pmax is not None and curr_initial > curr_pmax:
                 raise ValueError(
-                    f"Initial value ({curr_initial}) cannot be greater than upper bound (pmax={curr_pmax})"
+                    f"Initial value ({curr_initial}) of parameter {name} cannot be greater than upper bound (pmax={curr_pmax})"
                 )
 
         return
