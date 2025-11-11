@@ -29,7 +29,7 @@ from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
-from pastas.settings import ReadOnlyDataFrame, ReadOnlyDict
+from pastas.settings import ParameterDataFrame, SettingsDict
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
@@ -217,7 +217,7 @@ class Model:
             Method to change parameter properties.
         """
         # Return a copy wrapped in ReadOnlyDataFrame to warn on modification attempts
-        return ReadOnlyDataFrame(self._parameters.copy())
+        return ParameterDataFrame(self._parameters.copy())
 
     @parameters.setter
     def parameters(self, value):
@@ -246,7 +246,7 @@ class Model:
         UserWarning to alert you that changes won't affect the model.
         """
         # Return a copy wrapped in ReadOnlyDict to warn on modification attempts
-        return ReadOnlyDict(self._settings)
+        return SettingsDict(self._settings)
 
     @settings.setter
     def settings(self, value):
