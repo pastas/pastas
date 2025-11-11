@@ -37,11 +37,11 @@ from pastas.decorators import (
     deprecate_args_or_kwargs,
     get_stressmodel,
 )
+from pastas.immutables import ParameterDataFrame, SettingsDict
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
-from pastas.settings import ParameterDataFrame, SettingsDict
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
