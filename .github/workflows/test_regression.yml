@@ -1,0 +1,53 @@
+name: CI REGRESSION
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:  # Allow manual triggering
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression-test:
+    name: Regression Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          check-latest: true
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system uvtrick cloudpickle
+
+      - name: Run regression tests
+        run: |
+          cd tests
+          uv run --with uvtrick regression.py > regression_results.txt 2>&1 || true
+          cat regression_results.txt
+
+      - name: Upload regression results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-results-${{ github.sha }}
+          path: tests/regression_results.txt
+          retention-days: 90
+
+      - name: Check for regressions
+        run: |
+          echo "Regression test completed. Review the results in the artifacts."
+          echo "Future enhancement: Add automated comparison with previous results."

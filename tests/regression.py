@@ -1,5 +1,9 @@
 # %%
 # run with `uv run --with uvtrick regression.py`
+import json
+from datetime import datetime
+from pathlib import Path
+
 from pandas import DataFrame
 from uvtrick import Env
 
@@ -135,4 +139,17 @@ if __name__ == "__main__":
         res = Env(", ".join(requirements), python="3.11").run(bench)
         ress.append(res)
     df = DataFrame(ress).set_index("pastas")
-print(df.T)
+    print(df.T)
+
+    # Save results to JSON for CI/CD tracking
+    output_data = {
+        "timestamp": datetime.now().isoformat(),
+        "results": ress,
+        "summary": df.to_dict(orient="index"),
+    }
+
+    output_file = Path(__file__).parent / "regression_results.json"
+    with open(output_file, "w") as f:
+        json.dump(output_data, f, indent=2)
+
+    print(f"\nResults saved to: {output_file}")
