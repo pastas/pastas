@@ -74,4 +74,3 @@ class ReadOnlyDataFrame(pd.DataFrame):
     def _constructor(self):
         """Return the constructor for slicing operations."""
         return ReadOnlyDataFrame
-

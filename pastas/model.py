@@ -219,7 +219,7 @@ class Model:
         -----
         The parameters attribute is read-only. To modify parameter properties,
         use the set_parameter method instead.
-        
+
         Attempting to modify values in the returned DataFrame will trigger a
         UserWarning to alert you that changes won't affect the model.
 
@@ -253,7 +253,7 @@ class Model:
         -----
         The settings attribute is read-only. Model settings are automatically
         updated through methods like solve() and initialize().
-        
+
         Attempting to modify values in the returned dictionary will trigger a
         UserWarning to alert you that changes won't affect the model.
         """
