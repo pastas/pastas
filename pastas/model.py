@@ -29,6 +29,7 @@ from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
+from pastas.settings import ReadOnlyDataFrame, ReadOnlyDict
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
 from pastas.timeseries import TimeSeries
@@ -206,14 +207,17 @@ class Model:
         -----
         The parameters attribute is read-only. To modify parameter properties,
         use the set_parameter method instead.
+        
+        Attempting to modify values in the returned DataFrame will trigger a
+        UserWarning to alert you that changes won't affect the model.
 
         See Also
         --------
         set_parameter
             Method to change parameter properties.
         """
-        # Return a copy to prevent direct manipulation
-        return self._parameters.copy()
+        # Return a copy wrapped in ReadOnlyDataFrame to warn on modification attempts
+        return ReadOnlyDataFrame(self._parameters)
 
     @parameters.setter
     def parameters(self, value):
@@ -237,9 +241,12 @@ class Model:
         -----
         The settings attribute is read-only. Model settings are automatically
         updated through methods like solve() and initialize().
+        
+        Attempting to modify values in the returned dictionary will trigger a
+        UserWarning to alert you that changes won't affect the model.
         """
-        # Return a copy to prevent direct manipulation
-        return self._settings.copy()
+        # Return a copy wrapped in ReadOnlyDict to warn on modification attempts
+        return ReadOnlyDict(self._settings)
 
     @settings.setter
     def settings(self, value):
