@@ -44,7 +44,9 @@ jobs:
         if: always()
         with:
           name: regression-results-${{ github.sha }}
-          path: tests/regression_results.txt
+          path: |
+            tests/regression_results.txt
+            tests/regression_results.json
           retention-days: 90
 
       - name: Check for regressions
