@@ -1067,6 +1067,8 @@ class FourParam(RfuncBase):
 
         ps.FourParam.impulse
 
+    The function is explained in:cite:t:`bakker_calibration_2008`.
+
     """
 
     _name = "FourParam"
