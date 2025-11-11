@@ -229,7 +229,7 @@ class Model:
             Method to change parameter properties.
         """
         # Return a copy wrapped in ReadOnlyDataFrame to warn on modification attempts
-        return ReadOnlyDataFrame(self._parameters)
+        return ReadOnlyDataFrame(self._parameters.copy())
 
     @parameters.setter
     def parameters(self, value):
