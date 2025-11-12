@@ -7,7 +7,7 @@ remain consistent across different versions of Pastas and its dependencies.
 
 How it Works
 ------------
-Uses uvtrick (https://github.com/koaning/uvtrick) to run code in isolated 
+Uses uvtrick (https://github.com/koaning/uvtrick) to run code in isolated
 environments with different package versions using the uv package manager.
 
 What is Tested
@@ -23,7 +23,7 @@ Running Locally with Tox
 The recommended way to run regression tests is using tox:
     tox -e regression
 
-This uses the tox configuration in pyproject.toml and ensures consistent 
+This uses the tox configuration in pyproject.toml and ensures consistent
 execution with the CI environment.
 
 Alternative: Direct Execution
@@ -73,10 +73,9 @@ Future Enhancements
 # %%
 # run with `uv run --with uvtrick regression.py`
 import json
-from datetime import datetime
 from pathlib import Path
 
-from pandas import DataFrame
+from pandas import DataFrame, Timestamp
 from uvtrick import Env
 
 
@@ -208,14 +207,14 @@ if __name__ == "__main__":
             f"pastas=={pastas_version}",
         ]
 
-        res = Env(", ".join(requirements), python="3.11").run(bench)
+        res = Env(", ".join(requirements)).run(bench)
         ress.append(res)
     df = DataFrame(ress).set_index("pastas")
     print(df.T)
 
     # Save results to JSON for CI/CD tracking
     output_data = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": Timestamp.now().isoformat(),
         "results": ress,
         "summary": df.to_dict(orient="index"),
     }
