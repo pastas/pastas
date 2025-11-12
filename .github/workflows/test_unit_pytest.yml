@@ -9,6 +9,7 @@ on:
     branches:
       - master
       - dev
+      - dev2
 
 concurrency:
   # Group by workflow name and ref (branch or pull request ref).
