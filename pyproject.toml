@@ -60,6 +60,7 @@ caching = ["cachetools"]
 codespelling = ["codespell[toml]"]
 full = ["pastas[latexify,solvers,interactive,datasets,caching]"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
+regressiontesting = ["uv", "uvtrick", "cloudpickle"]
 ci = [
     "pastas[pytesting,solvers,interactive,caching]",
     "jupyter",
@@ -101,7 +102,16 @@ ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
 [tool.tox]
 requires = ["tox>=4"]
-env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks", "regression"]
+env_list = [
+    "py310",
+    "py311",
+    "py312",
+    "py313",
+    "py314",
+    "ruff",
+    "notebooks",
+    "regression",
+]
 
 [tool.tox.env_run_base]
 description = "run unit tests"
@@ -157,5 +167,5 @@ commands = [["codespell"]]
 
 [tool.tox.env.regression]
 description = "run regression tests"
-deps = ["uv", "uvtrick", "cloudpickle"]
+extras = ["regressiontesting"]
 commands = [["uv", "run", "--with", "uvtrick", "tests/regression.py"]]
