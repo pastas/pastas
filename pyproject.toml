@@ -101,7 +101,7 @@ ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
 [tool.tox]
 requires = ["tox>=4"]
-env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
+env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks", "regression"]
 
 [tool.tox.env_run_base]
 description = "run unit tests"
@@ -154,3 +154,8 @@ commands = [
 description = "run spelling checks"
 extras = ["codespelling"]
 commands = [["codespell"]]
+
+[tool.tox.env.regression]
+description = "run regression tests"
+deps = ["uv", "uvtrick", "cloudpickle"]
+commands = [["uv", "run", "--with", "uvtrick", "tests/regression.py"]]

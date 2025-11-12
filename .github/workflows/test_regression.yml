@@ -16,6 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      # Color Output
+      # Rich (pip)
+      FORCE_COLOR: 1
+      # Tox
+      PY_COLORS: 1
     
     steps:
       - uses: actions/checkout@v4
@@ -25,21 +31,22 @@ jobs:
         with:
           python-version: "3.11"
           check-latest: true
-
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
 
       - name: Install dependencies
         run: |
-          uv pip install --system uvtrick cloudpickle
+          python -m pip install --upgrade pip
+          pip install tox
+
+      - name: Setup tox environment
+        run: tox -e regression --notest
 
       - name: Run regression tests
-        run: |
-          cd tests
-          uv run --with uvtrick regression.py > regression_results.txt 2>&1 || true
-          cat regression_results.txt
+        run: tox -e regression --skip-pkg-install > tests/regression_results.txt 2>&1 || true
+
+      - name: Show results
+        run: cat tests/regression_results.txt
 
       - name: Upload regression results
         uses: actions/upload-artifact@v4

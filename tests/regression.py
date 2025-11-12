@@ -18,8 +18,16 @@ What is Tested
 4. Tracks key metrics: R-squared (rsq), RMSE, number of function evaluations (nfev),
    and model parameters (optimal values)
 
-Running Locally
----------------
+Running Locally with Tox
+-------------------------
+The recommended way to run regression tests is using tox:
+    tox -e regression
+
+This uses the tox configuration in pyproject.toml and ensures consistent 
+execution with the CI environment.
+
+Alternative: Direct Execution
+-----------------------------
 Prerequisites:
     pip install uv uvtrick
 
@@ -42,6 +50,7 @@ Continuous Integration
 The regression tests run automatically via GitHub Actions:
 - Trigger: Pushes to the master branch
 - Workflow file: .github/workflows/test_regression.yml
+- Uses tox for consistent execution with local testing
 - Manual trigger: Can be run manually from the Actions tab
 - Results: Stored as GitHub Actions artifacts with 90-day retention
 
