@@ -862,7 +862,7 @@ class Model:
             None, equal weights are used. This can be used to put extra/less weight on
             certain periods (e.g., droughts) or measurements (i.e. outliers), and make
             more complex calibration schemes (see, for example,
-            :cite:`colllenteur_analysis_2023`).
+            :cite:`colllenteur_analysis_2023`). Note that the weights are only used during optimization and not when computing the goodness-of-fit metrics.
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter. If it
             is set to False, the constant is set equal to the mean of the residuals.
