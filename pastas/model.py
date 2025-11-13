@@ -961,6 +961,8 @@ class Model:
                 print(self.fit_report(corr=True, stderr=True))
             else:
                 print(self.fit_report())
+        else:
+            self._generate_warnings_report()  # log warnings even if no report
 
     @property
     @PastasDeprecationWarning(remove_version="2.0.0", reason="Use 'ml.solver' instead.")
@@ -1934,6 +1936,57 @@ class Model:
 
         return file_info
 
+    def _generate_warnings_report(self) -> list[str]:
+        """Internal method to generate warnings after model optimization.
+
+        Returns
+        -------
+        msg: list of str
+            List of warning messages.
+        """
+        msg = []
+        # model optimization unsuccessful
+        if not self._solve_success:
+            msg.append("Model parameters could not be estimated well.")
+
+        # parameter bound warnings
+        lowerhit, upperhit = self._check_parameters_bounds()
+        nhits = upperhit.sum() + lowerhit.sum()
+
+        if nhits > 0:
+            for p in upperhit.index:
+                if upperhit.at[p]:
+                    pmsg = (
+                        f"Parameter '{p}' on upper bound: "
+                        f"{self.parameters.at[p, 'pmax']:.2e}"
+                    )
+                    msg.append(pmsg)
+                    logger.warning(pmsg)
+                elif lowerhit.at[p]:
+                    pmsg = (
+                        f"Parameter '{p}' on lower bound: "
+                        f"{self.parameters.at[p, 'pmin']:.2e}"
+                    )
+                    msg.append(pmsg)
+                    logger.warning(pmsg)
+
+        # check response t_cutoff vs length calibration period and warmup period
+        response_tmax_check = self._check_response_tmax()
+        if (~response_tmax_check["check_response"]).any():
+            mask = ~response_tmax_check["check_response"]
+            for i in response_tmax_check.loc[mask].index:
+                rmsg = f"Response tmax for '{i}' > than calibration period."
+                msg.append(rmsg)
+                logger.warning(rmsg)
+        if (~response_tmax_check["check_warmup"]).any():
+            mask = ~response_tmax_check["check_warmup"]
+            for i in response_tmax_check.loc[mask].index:
+                rmsg = f"Response tmax for '{i}' > than warmup period."
+                msg.append(rmsg)
+                logger.warning(rmsg)
+
+        return msg
+
     def fit_report(
         self,
         corr: bool = False,
@@ -2065,39 +2118,9 @@ class Model:
             corr = ""
 
         if warnings:
-            msg = []
-            # model optimization unsuccessful
-            if not self._solve_success:
-                msg.append("Model parameters could not be estimated well.")
+            msg = self._generate_warnings_report()
 
-            # parameter bound warnings
-            lowerhit, upperhit = self._check_parameters_bounds()
-            nhits = upperhit.sum() + lowerhit.sum()
-
-            if nhits > 0:
-                for p in upperhit.index:
-                    if upperhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on upper bound: "
-                            f"{self.parameters.at[p, 'pmax']:.2e}"
-                        )
-                    elif lowerhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on lower bound: "
-                            f"{self.parameters.at[p, 'pmin']:.2e}"
-                        )
-            # check response t_cutoff vs length calibration period and warmup period
-            response_tmax_check = self._check_response_tmax()
-            if (~response_tmax_check["check_response"]).any():
-                mask = ~response_tmax_check["check_response"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than calibration period.")
-            if (~response_tmax_check["check_warmup"]).any():
-                mask = ~response_tmax_check["check_warmup"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than warmup period.")
-
-            # create message
+            # create warnings block
             if len(msg) > 0:
                 msg = [
                     f"\n\nWarnings! ({len(msg)})\n"
