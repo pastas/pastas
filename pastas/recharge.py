@@ -23,15 +23,15 @@ pastas.stressmodels.RechargeModel
 
 Examples
 --------
-Using the recharge models is as follows:
+Use recharge models with a RechargeModel stress model::
 
->>> rch = ps.rch.FlexModel()
->>> sm = ps.RechargeModel(prec, evap, recharge=rch, rfunc=ps.Gamma(), name="rch")
->>> ml.add_stressmodel(sm)
+    rch = ps.rch.FlexModel()
+    sm = ps.RechargeModel(prec, evap, recharge=rch, rfunc=ps.Gamma(), name="rch")
+    ml.add_stressmodel(sm)
 
-After solving a model, the simulated recharge flux can be obtained:
+After solving a model, the simulated recharge flux can be obtained::
 
->>> rch_sim = ml.get_stress("rch")
+    rch_sim = ml.get_stress("rch")
 """
 
 from logging import getLogger
@@ -82,6 +82,7 @@ class Linear(RechargeBase):
     The precipitation excess is calculated as:
 
     .. math::
+
         R = P - f * E
 
     """
@@ -595,11 +596,13 @@ class Berendrecht(RechargeBase):
     water balance for the unsaturated zone reservoir is written as:
 
     .. math::
+
         \\frac{dS_e}{dt} = \\frac{1}{D_e}(f_iP - E_a - R)
 
     where the recharge is calculated as:
 
     .. math::
+
         R(S_e) = K_sS_e^\\lambda(1-(1-S_e^{1/m})^m)^2
 
     For a detailed description of the recharge model and parameters we refer to the
@@ -754,22 +757,27 @@ class Peterson(RechargeBase):
     The water balance for the unsaturated zone reservoir is written as:
 
     .. math::
+
         \\frac{dS}{dt} = P_e - E_a - R
 
     where the fluxes $P_e$, $E_a$ and $R$ are calculated as:
 
     .. math::
+
         P_e = P \\left(1 - \\frac{S}{\\hat{S_{cap}}}\\right)^\\alpha
 
     .. math::
+
         E_a = E_p \\left(\\frac{S}{\\hat{S_{cap}}}\\right)^\\gamma
 
     .. math::
+
         R = \\hat{k_{sat}}\\left(\\frac{S}{\\hat{S_{cap}}}\\right)^{\\hat{\\beta}}
 
     with the parameters:
 
     .. math::
+
         \\hat{S_{cap}} = 10^{S_{cap}}; \\hat{k_{sat}} = 10^{k_{sat}}; \\hat{\\beta} =
         10^{\\beta}
 

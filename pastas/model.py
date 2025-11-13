@@ -1,4 +1,16 @@
-#  This module contains the Model class in Pastas.
+"""This module contains the Model class.
+
+Models are the central class in Pastas and contains all the information
+necessary to set up, solve and analyze time series models.
+
+Examples
+--------
+Create a new Pastas model::
+
+    head = pd.read_csv("head.csv", index_col=[0], parse_dates=True).squeeze("columns")
+    ml = ps.Model(head, name="my_model")
+
+"""
 
 # Python Dependencies
 from collections import OrderedDict
@@ -595,6 +607,7 @@ class Model:
         The noise are the time series that result when applying a noise model.
 
         .. Note::
+
             The noise is sometimes also referred to as the innovations in the
             literature.
 

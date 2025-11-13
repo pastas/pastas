@@ -1,3 +1,14 @@
+"""TimeSeries class for handling time series in Pastas.
+
+Examples
+--------
+Create a TimeSeries object::
+
+    series = pd.read_csv("rain.csv", index_col=[0], parse_dates=True).squeeze("columns")
+    ts = ps.TimeSeries(series)
+
+"""
+
 from logging import getLogger
 from typing import Any
 

@@ -1,4 +1,20 @@
-"""This module contains tools for visually comparing multiple models."""
+"""Tools for visually comparing multiple Pastas models.
+
+This module contains the CompareModels class, which may be used to create
+visual comparison plots for multiple Pastas models.
+
+Examples
+--------
+Compare two Pastas models::
+
+    ps.plots.compare([ml1, ml2])
+
+For more advanced usage, create a CompareModels instance and use its methods::
+
+    mc = ps.CompareModels([ml1, ml2])
+    mc.plot()
+
+"""
 
 from copy import copy
 from itertools import combinations
@@ -62,6 +78,7 @@ class CompareModels:
 
         # save figure
         mc.figure.savefig("modelcomparison.png")
+
     """
 
     def __init__(

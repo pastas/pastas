@@ -1,4 +1,4 @@
-"""This module contains utility functions for working with time series."""
+"""Utility functions for working with time series."""
 
 import logging
 

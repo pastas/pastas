@@ -1,3 +1,9 @@
+"""This module contains decorators and utility functions for Pastas models.
+
+Includes decorators for caching, configuring global settings, deprecation warnings,
+and other convenient methods for handling time, numba compiled code, etc.
+"""
+
 from collections.abc import Callable
 from contextlib import contextmanager
 from functools import wraps
@@ -269,9 +275,11 @@ def temporarily_disable_cache():
 
     Examples
     --------
-    >>> with ps.temporarily_disable_cache():
-    ...     # Caching is disabled within this block
-    ...     ml.simulate()
+    To temporarily disable the cache (if it is currently active)::
+
+        with ps.temporarily_disable_cache():
+            # Caching is disabled within this block
+            ml.simulate()
     """
     global USE_CACHE
     original_state = USE_CACHE

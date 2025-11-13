@@ -1,3 +1,13 @@
+"""Module to get and show the current version of Pastas and its dependencies.
+
+Examples
+--------
+Show the versions of Pastas and its all dependencies::
+
+    ps.show_versions(optional=True)
+
+"""
+
 import logging
 from importlib import import_module, metadata
 from platform import python_version
