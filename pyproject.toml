@@ -78,6 +78,7 @@ rtd = [
     "numpydoc",
     "sphinx-design",
     "myst_nb",
+    "sphinx-autoapi",
 ]
 dev = ["tox", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
 
