@@ -280,3 +280,22 @@ def temporarily_disable_cache():
         yield
     finally:
         USE_CACHE = original_state
+
+
+@contextmanager
+def temporarily_enable_cache():
+    """Context manager to temporarily enable caching.
+
+    Examples
+    --------
+    >>> with ps.temporarily_enable_cache():
+    ...     # Caching is enabled within this block
+    ...     ml.simulate()
+    """
+    global USE_CACHE
+    original_state = USE_CACHE
+    USE_CACHE = True
+    try:
+        yield
+    finally:
+        USE_CACHE = original_state
