@@ -1,6 +1,6 @@
 """This module contains the Model class.
 
-Models are the central class in Pastas and contains all the information
+Model is the central class in Pastas and contains all the information
 necessary to set up, solve and analyze time series models.
 
 Examples
