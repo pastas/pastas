@@ -132,6 +132,7 @@ autoapi_dirs = ["../pastas"]
 autoapi_root = "api"
 autoapi_options = ["show-module-summary"]
 autoapi_own_page_level = "method"
+autoapi_template_dir = "_static/autoapi_templates"
 
 # -- Numpydoc settings ----------------------------------------------------------------
 
