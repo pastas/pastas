@@ -12,7 +12,7 @@ Run a checklist of standard checks on a Pastas model::
         {"func": parameter_bounds},
     ]
 
-    ps.check.checklist(checks)
+    ps.check.checklist(ml, checks)
 
 Or use the list of checks defined in Brakenhoff et al. (2022)::
 
