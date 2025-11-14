@@ -915,7 +915,7 @@ class Model:
                 msg = (
                     "To solve using a noisemodel, add a noisemodel to a "
                     "model called ml using ml.add_noisemodel(n), where n is an instance"
-                    "of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
+                    " of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
                     "GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
