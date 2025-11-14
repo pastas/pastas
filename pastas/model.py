@@ -857,8 +857,12 @@ class Model:
             Reset initial parameters from the individual stress models. Default is
             True. If False, the optimal values from an earlier optimization are used.
         weights: pandas.Series, optional
-            Pandas Series with values by which the residuals are multiplied,
-            index-based. Must have the same indices as the oseries.
+            Pandas Series with values by which the residuals or noise time series are
+            multiplied, index-based. Must have the same indices as the oseries. If
+            None, equal weights are used. This can be used to put extra/less weight on
+            certain periods (e.g., droughts) or measurements (i.e. outliers), and make
+            more complex calibration schemes (see, for example,
+            :cite:`colllenteur_analysis_2023`). Note that the weights are only used during optimization and not when computing the goodness-of-fit metrics.
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter. If it
             is set to False, the constant is set equal to the mean of the residuals.
@@ -2050,6 +2054,7 @@ class Model:
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
+            "weights": "Yes" if str(self.settings["weights"]) else "No",
         }
 
         if output is not None:
