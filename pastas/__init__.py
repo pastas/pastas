@@ -1,3 +1,5 @@
+"""Pastas is a Python package for analyzing hydrogeological time series data."""
+
 # ruff: noqa: F401
 import logging
 import warnings

@@ -1,4 +1,14 @@
-"""This module contains all the response functions available in Pastas."""
+"""This module contains all the response functions available in Pastas.
+
+Examples
+--------
+Use response functions in stress models::
+
+    rfunc = ps.Gamma()
+    sm = ps.StressModel(stress, rfunc=rfunc, name="well")
+    ml.add_stressmodel(sm)
+
+"""
 
 from logging import getLogger
 

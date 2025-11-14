@@ -1,4 +1,15 @@
-"""The following methods may be used for the diagnostic checking of the residual time series of a calibrated (Pastas) model."""
+"""Statistical tests to check model results.
+
+Contains diagnostic tests to check if model residuals/noise do not contain significant
+autocorrelation and are normally distributed, using hypothesis testing.
+
+Examples
+--------
+Run diagnostic tests on model after optimization::
+
+    ml.stats.diagnostics()
+
+"""
 
 from logging import getLogger
 
@@ -39,6 +50,7 @@ def durbin_watson(series: Series) -> float:
     zero. The formula to calculate the Durbin-Watson statistic (DW) is:
 
     .. math::
+
         DW = \\frac{\\sum_{t=2}^{n}(\\upsilon_t-\\upsilon_{t-1}^2)}
         {\\sum_{t=1}^{n}\\upsilon_t^2}
 
@@ -113,6 +125,7 @@ def ljung_box(
     independently distributed up to a desired time lag $k$ and is computed as follows:
 
     .. math::
+
         Q(k) = n (n + 2) \\sum_{k=1}^{h} \\frac{\\rho^2(k)}{n - k}
 
     where :math:`\\rho_k` is the autocorrelation at lag $k$, $h$ is the maximum lag
@@ -207,6 +220,7 @@ def runs_test(series: Series, cutoff: str = "median") -> tuple[float, float]:
     non-random. The test statistic is computed as follows:
 
     .. math::
+
         Z = \\frac{R-\\bar{R}}{\\sigma_R}
 
     where $R$ is the number of runs, :math:`\\bar{R}` the expected number of runs and
@@ -314,6 +328,7 @@ def stoffer_toloi(
     missing data. The test statistic is computed as follows:
 
     .. math ::
+
         Q_k = n^2 \\sum_{k=1}^{h} \\frac{\\hat{\\rho}_k^2}{n-k}
 
     where :math:`\\hat{\\rho}_k` is the autocorrelation for lag $k$. When the

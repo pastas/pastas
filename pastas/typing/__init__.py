@@ -1,3 +1,5 @@
+"""Typing subpackage for type hints and aliases used throughout Pastas."""
+
 # ruff: noqa: F401
 from .types import (
     ArrayLike,

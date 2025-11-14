@@ -1,4 +1,4 @@
-"""This module contains plotting methods for Pastas Models."""
+"""Plotting methods for Pastas Models, including time series and diagnostics plots."""
 
 import logging
 from typing import Any, Literal
@@ -35,7 +35,8 @@ class Plotting:
     a model. For example, if we stored a :class:`pastas.model.Model` instance in the
     variable `ml`, the plot methods are available as follows::
 
-    >>> ml.plots.results()
+        ml.plots.results()
+
     """
 
     def __init__(self, ml: Model) -> None:
