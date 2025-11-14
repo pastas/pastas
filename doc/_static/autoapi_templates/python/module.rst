@@ -1,7 +1,7 @@
 {% if obj.display %}
    {% if is_own_page %}
-{{ obj.id }}
-{{ "=" * obj.id|length }}
+{{ obj.short_name }}
+{{ "=" * obj.short_name|length }}
 
 .. py:module:: {{ obj.name }}
 
@@ -17,14 +17,21 @@
          {% set visible_submodules = obj.submodules|selectattr("display")|list %}
          {% set visible_submodules = (visible_subpackages + visible_submodules)|sort %}
          {% if visible_submodules %}
+
 Submodules
 ----------
 
 .. toctree::
-   :maxdepth: 1
+   :hidden:
 
             {% for submodule in visible_submodules %}
    {{ submodule.include_path }}
+            {% endfor %}
+
+.. autoapisummary::
+
+            {% for submodule in visible_submodules %}
+   {{ submodule.id }}
             {% endfor %}
 
 
