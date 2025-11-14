@@ -14,6 +14,7 @@
 [<img src="https://github.com/codespaces/badge.svg" height="20">](https://codespaces.new/pastas/pastas?quickstart=1)
 [![image](https://github.com/pastas/pastas/actions/workflows/test_unit_pytest.yml/badge.svg?branch=master)](https://github.com/pastas/pastas/actions/workflows/test_unit_pytest.yml)
 [![image](https://github.com/pastas/pastas/actions/workflows/test_format_lint.yml/badge.svg?branch=master)](https://github.com/pastas/pastas/actions/workflows/test_format_lint.yml)
+[![image](https://github.com/pastas/pastas/actions/workflows/test_regression.yml/badge.svg?branch=master)](https://github.com/pastas/pastas/actions/workflows/test_regression.yml)
 
 ## Pastas: what is it?
 

@@ -1,0 +1,64 @@
+name: CI REGRESSION
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:  # Allow manual triggering
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression-test:
+    name: Regression Testing
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # Color Output
+      # Rich (pip)
+      FORCE_COLOR: 1
+      # Tox
+      PY_COLORS: 1
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          check-latest: true
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+
+      - name: Setup tox environment
+        run: tox -e regression --notest
+
+      - name: Run regression tests
+        run: tox -e regression --skip-pkg-install > tests/regression_results.txt 2>&1 || true
+
+      - name: Show results
+        run: cat tests/regression_results.txt
+
+      - name: Upload regression results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-results-${{ github.sha }}
+          path: |
+            tests/regression_results.txt
+            tests/regression_results.json
+          retention-days: 90
+
+      - name: Check for regressions
+        run: |
+          echo "Regression test completed. Review the results in the artifacts."
+          echo "Future enhancement: Add automated comparison with previous results."
