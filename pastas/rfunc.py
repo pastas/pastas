@@ -891,7 +891,7 @@ class Polder(RfuncBase):
 
         ps.Polder.impulse
 
-    The function is explained in Eq. 123.32 in:cite:t:`bruggeman_analytical_1999`.
+    The function is explained in Eq. 123.32 in :cite:t:`bruggeman_analytical_1999`.
 
     """
 
@@ -1066,6 +1066,8 @@ class FourParam(RfuncBase):
     environment::
 
         ps.FourParam.impulse
+
+    The function is explained in :cite:t:`bakker_calibration_2008`.
 
     """
 
