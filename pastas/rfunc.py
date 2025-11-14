@@ -1,4 +1,14 @@
-"""This module contains all the response functions available in Pastas."""
+"""This module contains all the response functions available in Pastas.
+
+Examples
+--------
+Use response functions in stress models::
+
+    rfunc = ps.Gamma()
+    sm = ps.StressModel(stress, rfunc=rfunc, name="well")
+    ml.add_stressmodel(sm)
+
+"""
 
 from logging import getLogger
 
@@ -20,7 +30,6 @@ from scipy.special import (
 )
 
 from .decorators import latexfun, njit
-from .version import check_numba_scipy
 
 try:
     from numba import prange
@@ -478,8 +487,6 @@ class HantushWellModel(RfuncBase):
         parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
-    use_numba: bool, optional
-        Use the method 'numba_step' to compute the step_response.
     quad: bool, optional
         Use the method 'numba_quad' to compute the step_response.
 
@@ -505,21 +512,13 @@ class HantushWellModel(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_numba: bool = False,
         quad: bool = False,
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.distances = None
         self.nparam = 3
-        self.use_numba = use_numba  # requires numba_scipy for real speedups
-        self.quad = quad  # if quad=True, implicitly uses numba
-        # check numba and numba_scipy installation
-        if self.quad or self.use_numba:
-            # turn off use_numba if numba_scipy is not available
-            # or there is a version conflict
-            if self.use_numba:
-                self.use_numba = check_numba_scipy()
+        self.quad = quad
 
     def set_distances(self, distances) -> None:
         self.distances = distances
@@ -605,29 +604,6 @@ class HantushWellModel(RfuncBase):
         return np.exp(-y - (b / y)) / y
 
     @staticmethod
-    @njit(parallel=True)
-    def numba_step(A: float, a: float, b: float, r: float, t: ArrayLike) -> ArrayLike:
-        rho = 2 * r * np.exp(b / 2)
-        rhosq = rho**2
-        k0rho = k0(rho)
-        tau = t / a
-        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
-        F = np.zeros((tau.size,), dtype=np.float64)
-        for i in prange(tau.size):
-            tau_i = tau[i]
-            if tau_i < rho / 2:
-                F[i] = w * exp1(rhosq / (4 * tau_i)) - (w - 1) * exp1(
-                    tau_i + rhosq / (4 * tau_i)
-                )
-            elif tau_i >= rho / 2:
-                F[i] = (
-                    2 * k0rho
-                    - w * exp1(tau_i)
-                    + (w - 1) * exp1(tau_i + rhosq / (4 * tau_i))
-                )
-        return A * F / 2
-
-    @staticmethod
     def numpy_step(A: float, a: float, b: float, r: float, t: ArrayLike) -> ArrayLike:
         rho = 2 * r * np.exp(b / 2)
         rhosq = rho**2
@@ -670,11 +646,7 @@ class HantushWellModel(RfuncBase):
         if self.quad:
             return self.quad_step(A, a, b, r, t)
         else:
-            # if numba_scipy is available and param a >= ~30, numba is faster
-            if a >= 30.0 and self.use_numba:
-                return self.numba_step(A, a, b, r, t)
-            else:  # otherwise numpy is faster
-                return self.numpy_step(A, a, b, r, t)
+            return self.numpy_step(A, a, b, r, t)
 
     @staticmethod
     def variance_gain(
@@ -754,7 +726,6 @@ class HantushWellModel(RfuncBase):
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
-            "use_numba": self.use_numba,
             "quad": self.quad,
         }
         return data
@@ -773,8 +744,6 @@ class Hantush(RfuncBase):
         parameter, computed as 1 / gain_scale_factor.
     cutoff: float, optional
         proportion after which the step function is cut off.
-    use_numba: bool, optional
-        Use the method 'numba_step' to compute the step_response.
     quad: bool, optional
         Use the method 'numba_quad' to compute the step_response.
 
@@ -797,20 +766,12 @@ class Hantush(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_numba: bool = False,
         quad: bool = False,
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 3
-        self.use_numba = use_numba
         self.quad = quad
-        # check numba and numba_scipy installation
-        if self.quad or self.use_numba:
-            # turn off use_numba if numba_scipy is not available
-            # or there is a version conflict
-            if self.use_numba:
-                self.use_numba = check_numba_scipy()
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -847,29 +808,6 @@ class Hantush(RfuncBase):
     @njit
     def _integrand_hantush(y: float, b: float) -> float:
         return np.exp(-y - (b / y)) / y
-
-    @staticmethod
-    @njit(parallel=True)
-    def numba_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
-        rho = 2 * np.sqrt(b)
-        rhosq = rho**2
-        k0rho = k0(rho)
-        tau = t / a
-        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
-        F = np.zeros((tau.size,), dtype=np.float64)
-        for i in prange(tau.size):
-            tau_i = tau[i]
-            if tau_i < rho / 2:
-                F[i] = w * exp1(rhosq / (4 * tau_i)) - (w - 1) * exp1(
-                    tau_i + rhosq / (4 * tau_i)
-                )
-            elif tau_i >= rho / 2:
-                F[i] = (
-                    2 * k0rho
-                    - w * exp1(tau_i)
-                    + (w - 1) * exp1(tau_i + rhosq / (4 * tau_i))
-                )
-        return A * F / (2 * k0rho)
 
     @staticmethod
     def numpy_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
@@ -910,11 +848,7 @@ class Hantush(RfuncBase):
         if self.quad:
             return self.quad_step(A, a, b, t)
         else:
-            # if numba_scipy is available and param a >= ~30, numba is faster
-            if a >= 30.0 and self.use_numba:
-                return self.numba_step(A, a, b, t)
-            else:  # otherwise numpy is faster
-                return self.numpy_step(A, a, b, t)
+            return self.numpy_step(A, a, b, t)
 
     @staticmethod
     @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
@@ -940,7 +874,6 @@ class Hantush(RfuncBase):
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
-            "use_numba": self.use_numba,
             "quad": self.quad,
         }
         return data
@@ -968,7 +901,7 @@ class Polder(RfuncBase):
 
         ps.Polder.impulse
 
-    The function is explained in Eq. 123.32 in:cite:t:`bruggeman_analytical_1999`.
+    The function is explained in Eq. 123.32 in :cite:t:`bruggeman_analytical_1999`.
 
     """
 
@@ -1143,6 +1076,8 @@ class FourParam(RfuncBase):
     environment::
 
         ps.FourParam.impulse
+
+    The function is explained in :cite:t:`bakker_calibration_2008`.
 
     """
 

@@ -1,4 +1,16 @@
-#  This module contains the Model class in Pastas.
+"""This module contains the Model class.
+
+Model is the central class in Pastas and contains all the information
+necessary to set up, solve and analyze time series models.
+
+Examples
+--------
+Create a new Pastas model::
+
+    head = pd.read_csv("head.csv", index_col=[0], parse_dates=True).squeeze("columns")
+    ml = ps.Model(head, name="my_model")
+
+"""
 
 # Python Dependencies
 from collections import OrderedDict
@@ -39,7 +51,7 @@ from pastas.timeseries_utils import (
     get_sample,
 )
 from pastas.transform import ThresholdTransform
-from pastas.typing import ArrayLike, Solver, StressModel, TimestampType
+from pastas.typing import ArrayLike, Solver, StressModel
 from pastas.typing import Model as ModelType
 from pastas.typing import NoiseModel as NoiseModelType
 from pastas.utils import validate_name
@@ -99,13 +111,10 @@ class Model:
         freq: str = "D",
     ) -> None:
         # Construct the different model components
-        self.oseries = TimeSeries(oseries, settings="oseries", metadata=metadata)
-
-        if name is None and self.oseries.name is not None:
-            name = self.oseries.name
-        elif name is None and self.oseries.name is None:
-            name = "Observations"
-        self.name = validate_name(name)
+        self.set_oseries(s=oseries, metadata=metadata)  # sets self.oseries
+        self.name = validate_name(
+            name or (self.oseries.name if self.oseries.name else "Observations")
+        )
 
         self.parameters = DataFrame(
             columns=[
@@ -378,8 +387,8 @@ class Model:
     def simulate(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         return_warmup: bool = False,
@@ -391,12 +400,14 @@ class Model:
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period (
+            E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -478,8 +489,8 @@ class Model:
     def residuals(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
     ) -> Series:
@@ -490,12 +501,14 @@ class Model:
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -558,8 +571,8 @@ class Model:
     def noise(
         self,
         p: ArrayLike | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
     ) -> Series | None:
@@ -570,12 +583,14 @@ class Model:
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -592,6 +607,7 @@ class Model:
         The noise are the time series that result when applying a noise model.
 
         .. Note::
+
             The noise is sometimes also referred to as the innovations in the
             literature.
 
@@ -621,8 +637,8 @@ class Model:
     def noise_weights(
         self,
         p: list | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
     ) -> ArrayLike:
@@ -641,8 +657,8 @@ class Model:
 
     def observations(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         update_observations: bool = False,
     ) -> Series:
@@ -650,12 +666,14 @@ class Model:
 
         Parameters
         ----------
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -707,8 +725,8 @@ class Model:
 
     def initialize(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         noise: bool | None = None,
@@ -802,8 +820,8 @@ class Model:
 
     def solve(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         noise: bool | None = None,
@@ -820,12 +838,14 @@ class Model:
 
         Parameters
         ----------
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If
-            none is provided, the tmin from the oseries is used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -850,8 +870,13 @@ class Model:
             Reset initial parameters from the individual stress models. Default is
             True. If False, the optimal values from an earlier optimization are used.
         weights: pandas.Series, optional
-            Pandas Series with values by which the residuals are multiplied,
-            index-based. Must have the same indices as the oseries.
+            Pandas Series with values by which the residuals or noise time series are
+            multiplied, index-based. Must have the same indices as the oseries. If
+            None, equal weights are used. This can be used to put extra/less weight on
+            certain periods (e.g., droughts) or measurements (i.e. outliers), and make
+            more complex calibration schemes (see, for example,
+            :cite:`colllenteur_analysis_2023`). Note that the weights are only used
+            during optimization and not when computing the goodness-of-fit metrics.
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter. If it
             is set to False, the constant is set equal to the mean of the residuals.
@@ -877,7 +902,8 @@ class Model:
           one can access the covariance (ml.solver.pcov) and correlation matrix (
           ml.solver.pcor).
         - Each solver returns a number of results after optimization. These solver
-          specific results are stored in ml.solver.result and can be accessed from there.
+          specific results are stored in ml.solver.result and can be accessed from
+          there.
 
         See Also
         --------
@@ -888,8 +914,8 @@ class Model:
             if noise is True:
                 msg = (
                     "To solve using a noisemodel, add a noisemodel to a "
-                    "model called ml using ml.add_noisemodel(n), where n is an instance "
-                    "of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
+                    "model called ml using ml.add_noisemodel(n), where n is an instance"
+                    " of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
                     "GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
@@ -953,6 +979,8 @@ class Model:
                 print(self.fit_report(corr=True, stderr=True))
             else:
                 print(self.fit_report())
+        else:
+            self._generate_warnings_report()  # log warnings even if no report
 
     @property
     @PastasDeprecationWarning(remove_version="2.0.0", reason="Use 'ml.solver' instead.")
@@ -1103,6 +1131,27 @@ class Model:
 
         return
 
+    def set_oseries(self, s: Series, metadata: dict[str, Any] | None = None) -> None:
+        """Set a new oseries for an existing Model.
+
+        Parameters
+        ----------
+        s : pandas.Series
+            The time series to be set as the oseries.
+        metadata : dict, optional
+            Dictionary containing metadata about the time series. If None, the metadata
+            from the existing oseries will be used. Te default is None.
+
+        Notes
+        -----
+        This method replaces the existing oseries with a new TimeSeries object while
+        preserving the original metadata if no new metadata is provided.
+        """
+        metadata = metadata or (
+            self.oseries.metadata if hasattr(self, "oseries") else None
+        )
+        self.oseries = TimeSeries(s, settings="oseries", metadata=metadata)
+
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
 
@@ -1148,11 +1197,11 @@ class Model:
         Parameters
         ----------
         tmin: pandas.Timestamp
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
+            String with a start date for the simulation period (E.g. '1980-01-01
+            00:00:00'). If none is provided, the tmin from the oseries is used.
         tmax: pandas.Timestamp
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+            String with an end date for the simulation period (E.g. '2020-01-01
+            00:00:00'). If none is provided, the tmax from the oseries is used.
         freq: str
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -1186,7 +1235,7 @@ class Model:
 
     def get_tmin(
         self,
-        tmin: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
         use_oseries: bool = True,
         use_stresses: bool = False,
     ) -> Timestamp:
@@ -1194,9 +1243,10 @@ class Model:
 
         Parameters
         ----------
-        tmin: str or pandas.Timestamp, optional
-            string with a year or date that can be turned into a pandas Timestamp (
-            e.g. pd.Timestamp(tmin)).
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp that can be turned into a pandas Timestamp
+            (e.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
@@ -1249,7 +1299,7 @@ class Model:
 
     def get_tmax(
         self,
-        tmax: TimestampType | None = None,
+        tmax: Timestamp | str | None = None,
         use_oseries: bool = True,
         use_stresses: bool = False,
     ) -> Timestamp:
@@ -1257,9 +1307,10 @@ class Model:
 
         Parameters
         ----------
-        tmax: str or pandas.Timestamp, optional
-            string with a year or date that can be turned into a pandas Timestamp (
-            e.g. pd.Timestamp(tmax)).
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp that can be turned into a pandas Timestamp
+            (e.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
         use_oseries: bool, optional
             Obtain the tmin and tmax from the oseries. Default is True.
         use_stresses: bool, optional
@@ -1416,8 +1467,8 @@ class Model:
     def get_contribution(
         self,
         name: str,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         istress: int | None = None,
@@ -1430,12 +1481,14 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -1524,18 +1577,20 @@ class Model:
         return contribs
 
     def get_transform_contribution(
-        self, tmin: TimestampType | None = None, tmax: TimestampType | None = None
+        self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> Series:
         """Method to get the contribution of a transform.
 
         Parameters
         ----------
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
 
         Returns
         -------
@@ -1551,8 +1606,8 @@ class Model:
 
     def get_output_series(
         self,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         add_contributions: bool = True,
         split: bool = True,
     ) -> DataFrame:
@@ -1560,14 +1615,16 @@ class Model:
 
         Parameters
         ----------
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
         add_contributions: bool, optional
-            Add the contributions from the different stresses or not.¬
+            Add the contributions from the different stresses or not.
         split: bool, optional
             Passed on to ml.get_contributions. Split the contribution from recharge
             into evaporation and precipitation. See also ml.get_contributions.
@@ -1798,8 +1855,8 @@ class Model:
     def get_stress(
         self,
         name: str,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
         istress: int | None = None,
@@ -1812,12 +1869,14 @@ class Model:
         ----------
         name: str
             String with the name of the stressmodel.
-        tmin: str, optional
-            String with a start date for the simulation period (E.g. '1980'). If none
-            is provided, the tmin from the oseries is used.
-        tmax: str, optional
-            String with an end date for the simulation period (E.g. '2010'). If none
-            is provided, the tmax from the oseries is used.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -1895,6 +1954,57 @@ class Model:
 
         return file_info
 
+    def _generate_warnings_report(self) -> list[str]:
+        """Internal method to generate warnings after model optimization.
+
+        Returns
+        -------
+        msg: list of str
+            List of warning messages.
+        """
+        msg = []
+        # model optimization unsuccessful
+        if not self._solve_success:
+            msg.append("Model parameters could not be estimated well.")
+
+        # parameter bound warnings
+        lowerhit, upperhit = self._check_parameters_bounds()
+        nhits = upperhit.sum() + lowerhit.sum()
+
+        if nhits > 0:
+            for p in upperhit.index:
+                if upperhit.at[p]:
+                    pmsg = (
+                        f"Parameter '{p}' on upper bound: "
+                        f"{self.parameters.at[p, 'pmax']:.2e}"
+                    )
+                    msg.append(pmsg)
+                    logger.warning(pmsg)
+                elif lowerhit.at[p]:
+                    pmsg = (
+                        f"Parameter '{p}' on lower bound: "
+                        f"{self.parameters.at[p, 'pmin']:.2e}"
+                    )
+                    msg.append(pmsg)
+                    logger.warning(pmsg)
+
+        # check response t_cutoff vs length calibration period and warmup period
+        response_tmax_check = self._check_response_tmax()
+        if (~response_tmax_check["check_response"]).any():
+            mask = ~response_tmax_check["check_response"]
+            for i in response_tmax_check.loc[mask].index:
+                rmsg = f"Response tmax for '{i}' > than calibration period."
+                msg.append(rmsg)
+                logger.warning(rmsg)
+        if (~response_tmax_check["check_warmup"]).any():
+            mask = ~response_tmax_check["check_warmup"]
+            for i in response_tmax_check.loc[mask].index:
+                rmsg = f"Response tmax for '{i}' > than warmup period."
+                msg.append(rmsg)
+                logger.warning(rmsg)
+
+        return msg
+
     def fit_report(
         self,
         corr: bool = False,
@@ -1917,8 +2027,7 @@ class Model:
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
         output : str, optional (deprecated)
-            deprecated argument, use corr and stderr arguments
-            instead.
+            deprecated argument, use corr and stderr arguments instead.
 
         Returns
         -------
@@ -1945,6 +2054,7 @@ class Model:
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
+            "freq_obs": str(self.settings["freq_obs"]),
             "warmup": str(self.settings["warmup"]),
             "solver": self.settings["solver"],
         }
@@ -1958,6 +2068,7 @@ class Model:
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
+            "weights": "Yes" if str(self.settings["weights"]) else "No",
         }
 
         if output is not None:
@@ -2000,9 +2111,9 @@ class Model:
 
         basic = ""
         len_val4 = max([len(v) for v in fit.values()])
-        wspace = width - (8 + 23 + 9 + len_val4)
+        wspace = width - (9 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += f"{val1:<8}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
+            basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
 
         # Create the parameters block
         params = (
@@ -2026,39 +2137,9 @@ class Model:
             corr = ""
 
         if warnings:
-            msg = []
-            # model optimization unsuccessful
-            if not self._solve_success:
-                msg.append("Model parameters could not be estimated well.")
+            msg = self._generate_warnings_report()
 
-            # parameter bound warnings
-            lowerhit, upperhit = self._check_parameters_bounds()
-            nhits = upperhit.sum() + lowerhit.sum()
-
-            if nhits > 0:
-                for p in upperhit.index:
-                    if upperhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on upper bound: "
-                            f"{self.parameters.at[p, 'pmax']:.2e}"
-                        )
-                    elif lowerhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on lower bound: "
-                            f"{self.parameters.at[p, 'pmin']:.2e}"
-                        )
-            # check response t_cutoff vs length calibration period and warmup period
-            response_tmax_check = self._check_response_tmax()
-            if (~response_tmax_check["check_response"]).any():
-                mask = ~response_tmax_check["check_response"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than calibration period.")
-            if (~response_tmax_check["check_warmup"]).any():
-                mask = ~response_tmax_check["check_warmup"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than warmup period.")
-
-            # create message
+            # create warnings block
             if len(msg) > 0:
                 msg = [
                     f"\n\nWarnings! ({len(msg)})\n"
@@ -2114,14 +2195,13 @@ class Model:
             else Timedelta(self.settings["warmup"]).days
         )
 
-        for sm_name in self.stressmodels:
+        for sm_name in sm_names:
             if isinstance(self.stressmodels[sm_name].rfunc, HantushWellModel):
                 kwargs = {"warn": False}
             else:
                 kwargs = {}
-            check.at[sm_name, "response_tmax"] = self.get_response_tmax(
-                sm_name, cutoff=cutoff, **kwargs
-            )
+            rtmax = self.get_response_tmax(sm_name, cutoff=cutoff, **kwargs)
+            check.at[sm_name, "response_tmax"] = rtmax if rtmax is not None else 0
 
         check["check_warmup"] = check["response_tmax"] < check["len_warmup"]
         check["check_response"] = check["response_tmax"] < check["len_oseries_calib"]

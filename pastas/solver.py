@@ -4,9 +4,11 @@ All solvers inherit from the BaseSolver class, which contains general method for
 selecting the correct time series to misfit and options to weight the residuals or
 noise series.
 
-To solve a model the following syntax can be used:
+Examples
+--------
+Solve a model with a specific solver::
 
->>> ml.solve(solver=ps.LeastSquares())
+    ml.solve(solver=ps.LeastSquares())
 """
 
 import importlib
@@ -19,6 +21,7 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, least_squares
 
+from pastas.decorators import temporarily_disable_cache
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Model
 
@@ -395,8 +398,10 @@ class BaseSolver:
         parameter_sample = self.get_parameter_sample(n=n, name=name, max_iter=max_iter)
         data = {}
 
-        for i, p in enumerate(parameter_sample):
-            data[i] = func(p=p, **kwargs)
+        # Disable caching during parameter sampling as each sample is unique
+        with temporarily_disable_cache():
+            for i, p in enumerate(parameter_sample):
+                data[i] = func(p=p, **kwargs)
 
         return DataFrame.from_dict(data, orient="columns", dtype=float)
 
@@ -804,29 +809,30 @@ class EmceeSolve(BaseSolver):
     -----
     The EmceeSolve solver uses the emcee package to perform a Markov Chain Monte Carlo
     (MCMC) approach to find the optimal parameter values. The solver can be used as
-    follows:
+    follows::
 
-    >>> solver = ps.EmceeSolve(
-    ...     nwalkers=20,
-    ...     progress_bar=True,
-    ...     )
-    >>> ml.solve(solver=solver)
+        solver = ps.EmceeSolve(
+            nwalkers=20,
+            progress_bar=True,
+        )
+        ml.solve(solver=solver)
 
     The arguments provided are mostly passed on to the `emcee.EnsembleSampler`
     and determine how that instance is created. Arguments you want to pass on to
     `run_mcmc` (and indirectly the `sample` method), can be passed on to
-    `Model.solve`, like:
+    `Model.solve`, like::
 
-    >>> ml.solve(solver=ps.EmceeSolve(), thin_by=2)
+        ml.solve(solver=ps.EmceeSolve(), thin_by=2)
 
     Examples
     --------
+    Example usage::
 
-    >>> ml.solve(solver=ps.EmceeSolve(), steps=5000)
+        ml.solve(solver=ps.EmceeSolve(), steps=5000)
 
-    To obtain the MCMC chains, use:
+    To obtain the MCMC chains, use::
 
-    >>> ml.solver.sampler.get_chain(flat=True, discard=3000)
+        ml.solver.sampler.get_chain(flat=True, discard=3000)
 
     References
     ----------
@@ -1173,7 +1179,7 @@ class EmceeSolve(BaseSolver):
         # Check if the parameter is present in the solver
         if name not in self.parameters.index:
             msg = "parameter %s is not present in the solver."
-            self.logger.error(msg, name)
+            logger.error(msg, name)
             raise KeyError(msg % name)
 
         # Set the initial value

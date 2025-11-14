@@ -2,14 +2,15 @@
 and the observations.
 
 Examples
-========
-These methods may be used as follows:
+--------
+Calculate metrics directly::
 
->>> ps.stats.rmse(sim, obs)
+    ps.stats.rmse(sim, obs)
 
-or directly from a Pastas model:
+Or from a Pastas model::
 
->>> ml.stats.rmse()
+    ml.stats.rmse()
+
 """
 
 from logging import getLogger
@@ -194,10 +195,10 @@ def pearsonr(
 
     Parameters
     ----------
-    sim: pandas.Series
-        The Series with the simulated values.
     obs: pandas.Series
         The Series with the observed values.
+    sim: pandas.Series
+        The Series with the simulated values.
     missing: str, optional
         string with the rule to deal with missing values in the observed series. Only
         "drop" is supported now.

@@ -1,3 +1,8 @@
+"""This module contains the default configuration parameters for Pastas time series.
+
+Defines default settings for handling time series, e.g. for resampling and gap filling.
+"""
+
 from .typing import OseriesSettingsDict, StressSettingsDict
 
 rcParams = {

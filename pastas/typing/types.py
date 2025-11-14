@@ -1,3 +1,5 @@
+"""Type definitions and aliases for Pastas internals."""
+
 # Type hinting for Pastas library
 # Typing
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar
@@ -11,7 +13,6 @@ from matplotlib.figure import Figure as MatplotlibFigure
 from numpy.typing import ArrayLike as NumpyArrayLike
 
 # Pandas
-from pandas import Timestamp
 
 # External Types
 Axes = TypeVar("Axes", bound=MatplotlibAxes)  # Matplotlib Axes
@@ -23,7 +24,6 @@ if TYPE_CHECKING:  # https://mypy.readthedocs.io/en/latest/runtime_troubles.html
     import pastas as ps
 
 # Internal Types
-TimestampType = TypeVar("TimestampType", bound=str | Timestamp)  # Tmin or Tmax
 Model = TypeVar("Model", bound="ps.Model")  # Model
 TimeSeries = TypeVar("TimeSeries", bound="ps.timeseries.TimeSeries")  # Time Series
 StressModel = TypeVar(

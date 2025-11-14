@@ -1,3 +1,25 @@
+"""This module provides functions for checking and validating Pastas models and their
+components.
+
+Examples
+--------
+Run a checklist of standard checks on a Pastas model::
+
+    checks = [
+        {"func": rsq_geq_threshold, "threshold": 0.7},
+        {"func": response_memory, "cutoff": 0.95, "factor_length_oseries": 0.5},
+        {"func": uncertainty_gain, "n_std": 1.96},
+        {"func": parameter_bounds},
+    ]
+
+    ps.check.checklist(ml, checks)
+
+Or use the list of checks defined in Brakenhoff et al. (2022)::
+
+    ps.check.checklist(ml, ps.check.checks_brakenhoff_2022)
+
+"""
+
 import logging
 from collections.abc import Callable
 
@@ -14,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 operators = {
     "greater_equal": ">=",
-    "less_equal": "<=",  # Fixed: was incorrectly ">=", changed to "<="
+    "less_equal": "<=",
     "greater_than": ">",
     "less_than": "<",
     "equal": "==",

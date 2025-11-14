@@ -1,3 +1,14 @@
+"""This module contains interactive Bokeh plots for Pastas models.
+
+Examples
+--------
+Use Bokeh for interactive plotting::
+
+    ps.extensions.register_bokeh()
+    ml.bokeh.plot()
+
+"""
+
 from bokeh.layouts import column, row
 from bokeh.models import (
     ColumnDataSource,
@@ -18,18 +29,16 @@ class Bokeh:
 
     Examples
     --------
-    >>> ps.extensions.register_bokeh()
-    INFO: Registered bokeh plotting methods in Model class, e.g. `ml.bokeh.plot()`.
-    >>> fig = ml.bokeh.results()
-    >>> fig.write_html("results_figure.html")
 
-    Methods
-    -------
-    plot
-        plot oseries and model simulation, interactive version of `ml.plot()`
-    results
-        plot oseries, model simulation, contribution, step responses and parameters
-        table,interactive version of `ml.plots.results()`
+    Register extension::
+        ps.extensions.register_bokeh()
+
+    INFO: Registered bokeh plotting methods in Model class, e.g. `ml.bokeh.plot()`.
+
+    Then plot and save the figure as html::
+
+        fig = ml.bokeh.results()
+        fig.write_html("results_figure.html")
 
     Notes
     -----
@@ -38,7 +47,6 @@ class Bokeh:
     `bokeh.io.output_notebook()` function should be called before plotting. The `bokeh`
     extension is not registered by default, and should be called explicitly. Check the
     bokeh documentation for more information on how to interact with the plots.
-
     """
 
     def __init__(self, model):
@@ -49,9 +57,15 @@ class Bokeh:
 
         Parameters
         ----------
-        tmin : pd.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             start time for model simulation, by default None
-        tmax : pd.Timestamp, optional
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             end time for model simulation, by default None
         height : int, optional
              height of the plot, by default 500
@@ -119,9 +133,15 @@ class Bokeh:
 
         Parameters
         ----------
-        tmin : pd.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             start time for model simulation, by default None
-        tmax : pd.Timestamp, optional
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             end time for model simulation, by default None
         height : int, optional
              height of the plot, by default 500

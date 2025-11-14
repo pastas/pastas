@@ -1,4 +1,13 @@
-"""This module contains interactive plots for Pastas models."""
+"""This module contains interactive Plotly plots for Pastas models.
+
+Examples
+--------
+Use Plotly for interactive plotting::
+
+    ps.extensions.register_plotly()
+    ml.plotly.plot()
+
+"""
 
 import numpy as np
 import pandas as pd
@@ -22,21 +31,17 @@ class Plotly:
 
     Examples
     --------
-    >>> ps.extensions.register_plotly_extension()
-    INFO: Registered plotly plotting methods in Model class, e.g. `ml.plotly.plot()`.
-    >>> fig = ml.plotly.results()
-    >>> fig.write_html("results_figure.html")
+    Register extension::
 
-    Methods
-    -------
-    plot
-        plot oseries and model simulation, interactive version of `ml.plot()`
-    results
-        plot oseries, model simulation, contribution, step responses and parameters
-        table,interactive version of `ml.plots.results()`
-    diagnostics
-        plot noise, autocorrelation, distribution of noise and heteroscedasticity,
-        interactive version of `ml.plots.diagnostics()`
+        ps.extensions.register_plotly_extension()
+
+    INFO: Registered plotly plotting methods in Model class, e.g. `ml.plotly.plot()`.
+
+    Then plot and save the figure as html::
+
+        fig = ml.plotly.results()
+        fig.write_html("results_figure.html")
+
     """
 
     def __init__(self, model):
@@ -47,9 +52,15 @@ class Plotly:
 
         Parameters
         ----------
-        tmin : pd.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             start time for model simulation, by default None
-        tmax : pd.Timestamp, optional
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             end time for model simulation, by default None
 
         Returns
@@ -130,9 +141,15 @@ class Plotly:
         ----------
         ml : pastas.Model
             model to plot results for
-        tmin : pd.Timestamp, optional
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             start time for model results, by default None
-        tmax : pd.Timestamp, optional
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+            pandas.Timestamp internally.
             end time for model results, by default None
         stderr : bool, optional
             include standard errors in parameter table, by default False

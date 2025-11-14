@@ -1,4 +1,20 @@
-"""This module contains tools for visually comparing multiple models."""
+"""Tools for visually comparing multiple Pastas models.
+
+This module contains the CompareModels class, which may be used to create
+visual comparison plots for multiple Pastas models.
+
+Examples
+--------
+Compare two Pastas models::
+
+    ps.plots.compare([ml1, ml2])
+
+For more advanced usage, create a CompareModels instance and use its methods::
+
+    mc = ps.CompareModels([ml1, ml2])
+    mc.plot()
+
+"""
 
 from copy import copy
 from itertools import combinations
@@ -15,9 +31,9 @@ from pastas.plotting.plotutil import (
     share_xaxes,
     share_yaxes,
 )
-from pastas.rfunc import HantushWellModel
 from pastas.stats.core import acf
-from pastas.typing import Axes, Model, TimestampType
+from pastas.stressmodels import WellModel
+from pastas.typing import Axes, Model
 
 logger = getLogger(__name__)
 
@@ -62,14 +78,15 @@ class CompareModels:
 
         # save figure
         mc.figure.savefig("modelcomparison.png")
+
     """
 
     def __init__(
         self,
         models: list[Model],
         names: list[str] | None = None,
-        tmin: TimestampType | None = None,
-        tmax: TimestampType | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
     ) -> None:
         """Initialize model compare class.
 
@@ -79,11 +96,13 @@ class CompareModels:
             list of models to compare.
         names : list of str, optional
             override model names
-        tmin: TimestampType, optional
-            Timestamp with a start date for the simulation period (E.g. '1980'). If none
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the
+            simulation period (E.g. '1980-01-01 00:00:00'). If none
             is provided, the tmin from the oseries is used.
-        tmax: TimestampType, optional
-            Timestamp with an end date for the simulation period (E.g. '2010'). If none
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the
+            simulation period (E.g. '2020-01-01 00:00:00'). If none
             is provided, the tmax from the oseries is used.
         """
         self.models = models
@@ -606,7 +625,7 @@ class CompareModels:
                         kwargs = {}
                         p = None
                         if ml.stressmodels[smn].rfunc is not None:
-                            if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
+                            if isinstance(ml.stressmodels[smn], WellModel):
                                 kwargs = {"warn": False}
                                 p = ml.stressmodels[smn].get_parameters(
                                     model=ml, istress=0
@@ -631,7 +650,7 @@ class CompareModels:
                         kwargs = {}
                         p = None
                         if ml.stressmodels[smn].rfunc is not None:
-                            if isinstance(ml.stressmodels[smn].rfunc, HantushWellModel):
+                            if isinstance(ml.stressmodels[smn], WellModel):
                                 kwargs = {"warn": False}
                                 p = ml.stressmodels[smn].get_parameters(
                                     model=ml, istress=0

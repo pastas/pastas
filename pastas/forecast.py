@@ -1,20 +1,28 @@
-"""This module contains methods to generate forecasts using a Pastas model instance."""
+"""This module contains methods to generate forecasts using a Pastas model instance.
+
+Examples
+--------
+Generate forecasts using ensembles of stress forecasts::
+
+    forecasts = ...  # dictionary or list of dataframes with time series forecasts
+    ps.forecast(ml, forecasts)
+
+"""
 
 from logging import getLogger
 
 from numpy import array, empty, exp, linspace, ones
-from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, concat
+from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, Timestamp, concat
 
-from pastas.model import Model
 from pastas.noisemodels import ArNoiseModel
-from pastas.typing import ArrayLike, TimestampType
+from pastas.typing import ArrayLike, Model
 
 logger = getLogger(__name__)
 
 
 def _check_forecast_data(
     forecasts: dict[str, list[DataFrame]],
-) -> tuple[int, TimestampType, TimestampType, DatetimeIndex]:
+) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
     Parameters
@@ -265,22 +273,25 @@ def get_overall_mean_and_variance(df: DataFrame) -> tuple[DataFrame, DataFrame]:
 
     Example
     -------
-    >>> import pastas as ps
-    >>> import pandas as pd
-    >>> import numpy as np
-    >>> from pastas.forecast import get_overall_mean_and_variance
+    Simple example showing how to use the get_overall_mean_and_variance function::
 
-    >>> # Create a sample DataFrame with forecasts
-    >>> index = pd.date_range("2023-01-01", periods=10, freq="D")
-    >>> data = np.random.rand(10, 6)
-    >>> columns = pd.MultiIndex.from_product(
-    ...     [range(3), range(2), ["mean", "var"]],
-    ...     names=["ensemble_member", "param_member", "forecast"],
-    ... )
-    >>> df = pd.DataFrame(data=data, index=index, columns=columns)
-    >>> # Call the function to get the overall mean and variance
-    >>> mean, var = get_overall_mean_and_variance(df)
-    >>> print(mean)
+        import pastas as ps
+        import pandas as pd
+        import numpy as np
+        from pastas.forecast import get_overall_mean_and_variance
+
+        # Create a sample DataFrame with forecasts
+        index = pd.date_range("2023-01-01", periods=10, freq="D")
+        data = np.random.rand(10, 6)
+        columns = pd.MultiIndex.from_product(
+            [range(3), range(2), ["mean", "var"]],
+            names=["ensemble_member", "param_member", "forecast"],
+        )
+        df = pd.DataFrame(data=data, index=index, columns=columns)
+
+        # Call the function to get the overall mean and variance
+        mean, var = get_overall_mean_and_variance(df)
+        print(mean)
 
     """
     means = df.loc[:, (slice(None), slice(None), "mean")]

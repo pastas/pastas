@@ -13,7 +13,7 @@ data_path = Path(__file__).parent / "data"
 
 # Test data generation helpers
 def generate_test_data(
-    start_date: str = "2000-01-01", end_date: str = "2005-12-31", freq: str = "D"
+    start_date: str = "2010-01-01", end_date: str = "2015-12-31", freq: str = "D"
 ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
     """Generate test time series data."""
     dates = pd.date_range(start=start_date, end=end_date, freq=freq)
@@ -144,6 +144,11 @@ def ml_noisemodel(ml_solved: ps.Model) -> ps.Model:
     ml_copy.add_noisemodel(noise)
     ml_copy.solve(report=False)
     return ml_copy
+
+
+@pytest.fixture
+def ml_bad() -> ps.Model:
+    return ps.io.load(data_path / "ml_bad.pas")
 
 
 # Test markers
