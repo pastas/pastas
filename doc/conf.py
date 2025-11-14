@@ -96,6 +96,7 @@ html_theme_options = {
         }
     ],
     "announcement": "",  # You can put an announcement (HTML) here
+    "show_nav_level": 2,
 }
 
 html_context = {
