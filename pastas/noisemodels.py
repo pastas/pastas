@@ -1,19 +1,16 @@
-"""This module contains the noise models available in Pastas.
-
-A Noise model may be used to transform the residual series into a noise series that
+"""Noise models may be used to transform the residual series into a noise series that
 better represents white noise.
 
 Examples
 --------
-By default, a noise model is added to a Pastas model. It is possible to replace the
-default model with different models as follows:
+A noise model can be added to a Pastas model.::
 
->>> n = ps.ArmaNoiseModel()
->>> ml.add_noisemodel(n)
+    n = ps.ArmaNoiseModel()
+    ml.add_noisemodel(n)
 
-or, to delete the noise model from the model:
+Or delete the noise model from the model::
 
->>> ml.del_noisemodel()
+    ml.del_noisemodel()
 
 See Also
 --------
@@ -188,7 +185,9 @@ class ArNoiseModel(NoiseModelBase):
         -----
         Weights are
 
-        .. math:: w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
+        .. math::
+
+            w = 1 / sqrt((1 - exp(-2 \\Delta t / \\alpha)))
 
         which are then normalized so that sum(w) = len(res).
         """
@@ -268,6 +267,7 @@ class ArmaNoiseModel(NoiseModelBase):
     Calculates the noise according to:
 
     .. math::
+
         \\upsilon_t = r_t - r_{t-1} e^{-\\Delta t/\\alpha} - \\upsilon_{t-1}
         e^{-\\Delta t/\\beta}
 

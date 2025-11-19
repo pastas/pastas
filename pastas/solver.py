@@ -4,9 +4,11 @@ All solvers inherit from the BaseSolver class, which contains general method for
 selecting the correct time series to misfit and options to weight the residuals or
 noise series.
 
-To solve a model the following syntax can be used:
+Examples
+--------
+Solve a model with a specific solver::
 
->>> ml.solve(solver=ps.LeastSquares())
+    ml.solve(solver=ps.LeastSquares())
 """
 
 import importlib
@@ -895,29 +897,30 @@ class EmceeSolve(BaseSolver):
     -----
     The EmceeSolve solver uses the emcee package to perform a Markov Chain Monte Carlo
     (MCMC) approach to find the optimal parameter values. The solver can be used as
-    follows:
+    follows::
 
-    >>> solver = ps.EmceeSolve(
-    ...     nwalkers=20,
-    ...     progress_bar=True,
-    ...     )
-    >>> ml.solve(solver=solver)
+        solver = ps.EmceeSolve(
+            nwalkers=20,
+            progress_bar=True,
+        )
+        ml.solve(solver=solver)
 
     The arguments provided are mostly passed on to the `emcee.EnsembleSampler`
     and determine how that instance is created. Arguments you want to pass on to
     `run_mcmc` (and indirectly the `sample` method), can be passed on to
-    `Model.solve`, like:
+    `Model.solve`, like::
 
-    >>> ml.solve(solver=ps.EmceeSolve(), thin_by=2)
+        ml.solve(solver=ps.EmceeSolve(), thin_by=2)
 
     Examples
     --------
+    Example usage::
 
-    >>> ml.solve(solver=ps.EmceeSolve(), steps=5000)
+        ml.solve(solver=ps.EmceeSolve(), steps=5000)
 
-    To obtain the MCMC chains, use:
+    To obtain the MCMC chains, use::
 
-    >>> ml.solver.sampler.get_chain(flat=True, discard=3000)
+        ml.solver.sampler.get_chain(flat=True, discard=3000)
 
     References
     ----------

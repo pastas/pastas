@@ -1,3 +1,14 @@
+"""Extensions subpackage for registering additional functionality to Pastas models.
+
+Examples
+--------
+Register an extension and use it::
+
+    ps.extensions.register_plotly()
+    ml.plotly.plot()
+
+"""
+
 import logging
 
 from pastas.extensions.accessor import (

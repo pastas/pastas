@@ -1,20 +1,14 @@
 """The following methods may be used to describe the fit between the model simulation
 and the observations.
 
-.. currentmodule:: pastas.modelstats.Statistics
-
-.. autosummary::
-   :nosignatures:
-   :toctree: ./generated
-
-   summary
-
 Examples
-========
-These methods may be used as follows.
+--------
+Calculate statistics for a model::
 
+    ml.stats.summary(stats=["rmse", "mae", "nse"])
 
-    >>> ml.stats.summary(stats=["rmse", "mae", "nse"])
+This returns a Series containing the statistics::
+
                   Value
     Statistic
     rmse       0.114364
@@ -32,6 +26,20 @@ from .stats import diagnostics, metrics
 
 
 class Statistics:
+    """This class provides statistics to pastas Model class.
+
+    Parameters
+    ----------
+    ml: Pastas.model.Model
+        ml is a time series Model that is calibrated.
+
+    Notes
+    -----
+    To obtain a list of all statistics that are included type:
+
+    >>> print(ml.stats.ops)
+    """
+
     # Save all statistics that can be calculated.
     ops = [
         "rmse",
@@ -48,19 +56,6 @@ class Statistics:
     ]
 
     def __init__(self, ml: Model):
-        """This class provides statistics to pastas Model class.
-
-        Parameters
-        ----------
-        ml: Pastas.model.Model
-            ml is a time series Model that is calibrated.
-
-        Notes
-        -----
-        To obtain a list of all statistics that are included type:
-
-        >>> print(ml.stats.ops)
-        """
         # Save a reference to the model.
         self.ml = ml
 
@@ -448,7 +443,6 @@ class Statistics:
     ) -> float:
         """Bayesian Information Criterium (BIC).
 
-        Parameters
         Parameters
         ----------
         tmin: pandas.Timestamp or str, optional

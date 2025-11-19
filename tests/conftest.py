@@ -146,6 +146,11 @@ def ml_noisemodel(ml_solved: ps.Model) -> ps.Model:
     return ml_copy
 
 
+@pytest.fixture
+def ml_bad() -> ps.Model:
+    return ps.io.load(data_path / "ml_bad.pas")
+
+
 # Test markers
 def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest markers."""

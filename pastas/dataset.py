@@ -3,6 +3,12 @@ GitHub. The datasets are used for testing and examples in the documentation. The
 load_dataset function can be used to load a single csv file or multiple csv files from
 a subfolder in the pastas-data repository.
 
+Examples
+--------
+Load a single dataset from the "collenteur_2021" subfolder::
+
+    df = ps.load_dataset("collenteur_2021")
+
 """
 
 from functools import lru_cache

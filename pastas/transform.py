@@ -1,6 +1,14 @@
-"""This module contains all the transforms that can be added to a model.
+"""Nonlinear transforms for time series models.
 
 These transforms are applied after the simulation, to incorporate nonlinear effects.
+
+Examples
+--------
+Add a threshold transform to a model::
+
+    transform = ps.ThresholdTransform()
+    ml.add_transform(transform)
+
 """
 
 import numpy as np

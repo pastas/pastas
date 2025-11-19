@@ -1,5 +1,5 @@
-"""The following methods may be used to calculate the crosscorrelation and
-autocorrelation for a time series.
+"""The following methods may be used to calculate statistics, the crosscorrelation and
+autocorrelation for time series.
 
 These methods are 'special' in the sense that they are able to deal with irregular
 time steps often observed in hydrological time series.
@@ -385,7 +385,9 @@ def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     -----
     The (weighted) mean for a time series x is computed as:
 
-    .. math:: \\bar{x} = \\sum_{i=1}^{N} w_i x_i
+    .. math::
+
+        \\bar{x} = \\sum_{i=1}^{N} w_i x_i
 
     where :math:`w_i` are the weights, taken as the time step between observations,
     normalized by the sum of all time steps.
@@ -413,7 +415,9 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     -----
     The (weighted) variance for a time series x is computed as:
 
-    .. math:: \\sigma_x^2 = \\sum_{i=1}^{N} w_i (x_i - \\bar{x})^2
+    .. math::
+
+        \\sigma_x^2 = \\sum_{i=1}^{N} w_i (x_i - \\bar{x})^2
 
     where :math:`w_i` are the weights, taken as the time step between observations,
     normalized by the sum of all time steps. Note how weighted mean (:math:`\\bar{
