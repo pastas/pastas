@@ -203,6 +203,7 @@ def _load_stressmodel(ts, data):
             ts["stress"] = series
             metadata.append(meta)
             settings.append(setting)
+        ts["s"] = ts.pop("stress")
 
     if "prec" in ts.keys():
         series, meta, setting = _unpack_series(ts["prec"])
