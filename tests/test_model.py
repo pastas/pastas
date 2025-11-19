@@ -79,7 +79,7 @@ class TestModelComponents:
     def test_add_stressmodel(self, ml_basic: ps.Model, prec: pd.Series) -> None:
         """Test adding a stress model."""
 
-        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+        sm = ps.StressModel(prec, rfunc=ps.Exponential(), name="precipitation")
         ml_basic.add_stressmodel(sm)
 
         assert "precipitation" in ml_basic.stressmodels
@@ -88,7 +88,7 @@ class TestModelComponents:
     def test_stressmodel_params(self, prec: pd.Series) -> None:
         """Test getting stress model parameters."""
 
-        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+        sm = ps.StressModel(prec, rfunc=ps.Exponential(), name="precipitation")
 
         assert isinstance(sm.parameters, pd.DataFrame)
         assert (
@@ -120,8 +120,8 @@ class TestModelComponents:
     ) -> None:
         """Test adding multiple stress models at once."""
 
-        sm1 = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
-        sm2 = ps.StressModel(stress=evap, rfunc=ps.Exponential(), name="evaporation")
+        sm1 = ps.StressModel(prec, rfunc=ps.Exponential(), name="precipitation")
+        sm2 = ps.StressModel(evap, rfunc=ps.Exponential(), name="evaporation")
 
         ml_basic.add_stressmodel([sm1, sm2])
 
@@ -136,7 +136,7 @@ class TestModelComponents:
         first_sm_name = list(ml_solved.stressmodels.keys())[0]
 
         # Create a new stress model with the same name but different response function
-        sm = ps.StressModel(stress=prec, rfunc=ps.Gamma(), name=first_sm_name)
+        sm = ps.StressModel(prec, rfunc=ps.Gamma(), name=first_sm_name)
 
         # Should replace the existing stress model and log a warning
         ml_solved.add_stressmodel(sm)

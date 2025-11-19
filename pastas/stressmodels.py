@@ -379,7 +379,7 @@ class StressModel(StressModelBase):
     --------
     >>> import pastas as ps
     >>> import pandas as pd
-    >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma(), name="Prec",
+    >>> sm = ps.StressModel(pd.Series(), rfunc=ps.Gamma(), name="Prec",
     >>>                     settings="prec")
 
     See Also

@@ -60,13 +60,13 @@ class TestStressModel:
 
     def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
-        sm = StressModel(stress=prec, rfunc=ps.Exponential(), name="test")
+        sm = StressModel(prec, rfunc=ps.Exponential(), name="test")
         assert sm.name == "test"
         assert isinstance(sm.rfunc, ps.Exponential)
 
         # Test with different settings
         sm = StressModel(
-            stress=prec,
+            prec,
             rfunc=ps.Exponential(),
             name="test",
             settings={"fill_nan": "mean"},
@@ -318,7 +318,7 @@ class TestWellModel:
     def test_init(self) -> None:
         """Test initialization."""
         wm = WellModel(
-            stress=[self.well1, self.well2, self.well3],
+            s=[self.well1, self.well2, self.well3],
             name="wells",
             distances=self.distances,
         )
@@ -328,7 +328,7 @@ class TestWellModel:
 
         # Test with sorting
         wm_sorted = WellModel(
-            stress=[self.well1, self.well2, self.well3],
+            s=[self.well1, self.well2, self.well3],
             name="wells_sorted",
             distances=self.distances,
             sort_wells=True,
@@ -339,19 +339,18 @@ class TestWellModel:
         """Test error when number of stresses and distances don't match."""
         with pytest.raises(ValueError) as e:
             WellModel(
-                stress=[self.well1, self.well2],
+                s=[self.well1, self.well2],
                 name="wells_error",
                 distances=[100, 200, 300],
             )
         assert (
-            "number of stresses does not match the number of distances"
-            in str(e.value).lower()
+            "does not match the number of distances provided." in str(e.value).lower()
         )
 
     def test_get_distances(self) -> None:
         """Test get_distances method."""
         wm = WellModel(
-            stress=[self.well1, self.well2, self.well3],
+            s=[self.well1, self.well2, self.well3],
             name="wells_dist",
             distances=self.distances,
             sort_wells=False,  # Keep original order for easier testing
@@ -375,7 +374,7 @@ class TestWellModel:
     def test_simulate(self) -> None:
         """Test simulate method."""
         wm = WellModel(
-            stress=[self.well1, self.well2, self.well3],
+            s=[self.well1, self.well2, self.well3],
             name="wells_sim",
             distances=self.distances,
         )
@@ -403,7 +402,7 @@ class TestChangeModel:
     def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
         cm = ChangeModel(
-            stress=prec,
+            s=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),
             name="change",
@@ -417,7 +416,7 @@ class TestChangeModel:
     def test_simulate(self, prec: pd.Series) -> None:
         """Test simulate method."""
         cm = ChangeModel(
-            stress=prec,
+            s=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),
             name="change_sim",
