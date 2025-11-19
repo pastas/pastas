@@ -891,7 +891,7 @@ class WellModel(StressModelBase):
         sort_wells: bool = True,
         metadata: list[dict[str, Any]] = None,
         max_cache_size: int = None,
-        stress: Series | None = None,
+        stress: list[Series] | None = None,
     ) -> None:
         if stress is not None:
             deprecate_args_or_kwargs(
