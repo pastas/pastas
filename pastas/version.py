@@ -1,16 +1,21 @@
+"""Module to get and show the current version of Pastas and its dependencies.
+
+Examples
+--------
+Show the versions of Pastas and its all dependencies::
+
+    ps.show_versions(optional=True)
+
+"""
+
 import logging
 from importlib import import_module, metadata
 from platform import python_version
 
-from pandas import options as pd_options
-
 logger = logging.getLogger(__name__)
 
-__version__ = "2.0.0"
-
-# TODO: Remove before release but keep in dev for testing
-
 pd_options.future.infer_string = True
+__version__ = "2.0.0"
 
 
 def get_versions(

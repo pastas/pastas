@@ -5,9 +5,10 @@ explains (part of) the output series.
 
 Examples
 --------
+Add a stress model to a Pastas model::
 
->>> sm = ps.StressModel(stress, rfunc=ps.Gamma(), name="sm1")
->>> ml.add_stressmodel(stressmodel=sm)
+    sm = ps.StressModel(stress, rfunc=ps.Gamma(), name="sm1")
+    ml.add_stressmodel(stressmodel=sm)
 
 See Also
 --------

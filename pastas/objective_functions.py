@@ -1,6 +1,5 @@
 """This module contains the objective functions that can be used with the pastas
-`EmceeSolve` solver.
-
+``EmceeSolve`` solver.
 """
 
 from numpy import log, pi
@@ -15,6 +14,7 @@ class GaussianLikelihood:
     The Gaussian log-likelihood function :cite:p:`smith_modeling_2015` is defined as:
 
     .. math::
+
         \\log(L) = -\\frac{N}{2}\\log(2\\pi\\sigma^2) -
         \\frac{\\sum_{t=1}^N \\epsilon_t^2}{2\\sigma^2}
 
@@ -83,6 +83,7 @@ class GaussianLikelihoodAr1:
     :cite:p:`smith_modeling_2015` is defined as:
 
     .. math::
+
         \\log(L) = -\\frac{N-1}{2}\\log(2\\pi\\sigma^2) -
          \\frac{\\sum_{t=1}^N(\\epsilon_t - \\phi \\epsilon_{t-\\Delta t})^2}
         {2\\sigma^2}

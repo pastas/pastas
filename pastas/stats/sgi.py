@@ -1,4 +1,11 @@
-"""This module contains methods to compute the Standardized Groundwater Index."""
+"""This module contains methods to compute the Standardized Groundwater Index.
+
+Examples
+--------
+Compute the Standardized Groundwater Index (SGI) for a groundwater level series::
+
+    sgi_series = ps.stats.sgi(series, timescale_months=3)
+"""
 
 from numpy import array, linspace
 from pandas import DataFrame, Series

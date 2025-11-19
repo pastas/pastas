@@ -1,3 +1,5 @@
+"""Pastas is a Python package for analyzing hydrogeological time series data."""
+
 # ruff: noqa: F401
 import logging
 import warnings
@@ -15,6 +17,7 @@ from pastas.decorators import (
     set_use_cache,
     set_use_numba,
     temporarily_disable_cache,
+    temporarily_enable_cache,
 )
 from pastas.model import Model
 from pastas.noisemodels import ArmaModel, ArmaNoiseModel, ArNoiseModel, NoiseModel
