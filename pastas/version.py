@@ -14,7 +14,6 @@ from platform import python_version
 
 logger = logging.getLogger(__name__)
 
-pd_options.future.infer_string = True
 __version__ = "2.0.0"
 
 
