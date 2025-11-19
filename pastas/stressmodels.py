@@ -33,7 +33,12 @@ from pastas.typing import (
     StressSettingsDict,
 )
 
-from .decorators import conditional_cachedmethod, njit, set_parameter
+from .decorators import (
+    conditional_cachedmethod,
+    deprecate_args_or_kwargs,
+    njit,
+    set_parameter,
+)
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
@@ -103,14 +108,17 @@ class StressModelBase:
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
         )
 
-        self.stress = []
-
         if CACHETOOLS_AVAILABLE:
             if max_cache_size is None:
                 max_cache_size = 32
             self._cache = LRUCache(maxsize=max_cache_size)
         else:
             self._cache = None
+
+    @property
+    def stress(self) -> list[TimeSeries]:
+        """List of stresses in the StressModel."""
+        return []
 
     @property
     def nparam(self) -> tuple[int]:
@@ -384,7 +392,7 @@ class StressModel(StressModelBase):
 
     def __init__(
         self,
-        stress: Series,
+        s: Series,
         rfunc: RFunc,
         name: str,
         up: bool = True,
@@ -392,26 +400,39 @@ class StressModel(StressModelBase):
         metadata: dict | None = None,
         gain_scale_factor: float | None = None,
         max_cache_size: int = None,
+        stress: Series | None = None,
     ) -> None:
-        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+        if stress is not None:
+            deprecate_args_or_kwargs(
+                "stress",
+                remove_version="3.0.0",
+                reason="The stress argument is deprecated, use 's' instead.",
+            )
+            s = stress
+        s = TimeSeries(s, settings=settings, metadata=metadata)
 
         StressModelBase.__init__(
             self,
             name=name,
-            tmin=stress.series.index.min(),
-            tmax=stress.series.index.max(),
+            tmin=s.settings["tmin"],
+            tmax=s.settings["tmax"],
             rfunc=rfunc,
             up=up,
             gain_scale_factor=(
-                stress.series.std() if gain_scale_factor is None else gain_scale_factor
+                s.series.std() if gain_scale_factor is None else gain_scale_factor
             ),
             max_cache_size=max_cache_size,
         )
 
         self.gain_scale_factor = gain_scale_factor
-        self.freq = stress.settings["freq"]
-        self.stress.append(stress)
+        self.freq = s.settings["freq"]
+        self.s = s
         self.set_init_parameters()
+
+    @property
+    def stress(self) -> list[TimeSeries]:
+        """List of stresses in the StressModel."""
+        return [self.s]
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
@@ -861,7 +882,7 @@ class WellModel(StressModelBase):
 
     def __init__(
         self,
-        stress: list[Series],
+        s: list[Series],
         name: str,
         distances: ArrayLike,
         rfunc: RFunc | None = None,
@@ -870,7 +891,16 @@ class WellModel(StressModelBase):
         sort_wells: bool = True,
         metadata: list[dict[str, Any]] = None,
         max_cache_size: int = None,
+        stress: Series | None = None,
     ) -> None:
+        if stress is not None:
+            deprecate_args_or_kwargs(
+                "stress",
+                remove_version="3.0.0",
+                reason="The stress argument is deprecated, use 's' instead.",
+            )
+            s = stress
+
         # check response function
         if rfunc is None:
             rfunc = HantushWellModel()
@@ -880,44 +910,42 @@ class WellModel(StressModelBase):
             )
 
         # check if number of stresses and distances match
-        if len(stress) != len(distances):
+        if len(s) != len(distances):
             msg = (
-                "The number of stresses does not match the number of distances "
+                "The number of stresses in `s` does not match the number of distances "
                 "provided."
             )
             logger.error(msg)
             raise ValueError(msg)
         else:
             self.distances = Series(
-                index=[s.squeeze().name for s in stress],
+                index=[si.squeeze().name for si in s],
                 data=distances,
                 name="distances",
             )
 
         # parse settings input
         if settings is None or isinstance(settings, str) or isinstance(settings, dict):
-            settings = len(stress) * [settings]
+            settings = len(s) * [settings]
 
         # if metadata is passed as dict -> convert to list
         if metadata is not None and isinstance(metadata, dict):
             metadata = [metadata]
 
         # parse stresses input
-        stress = self._handle_stress(stress, settings, metadata)
+        s = self._handle_stress(s, settings, metadata)
 
         # sort wells by distance
         self.sort_wells = sort_wells
         if self.sort_wells:
-            stress = [
-                s for _, s in sorted(zip(distances, stress), key=lambda pair: pair[0])
-            ]
+            s = [si for _, si in sorted(zip(distances, s), key=lambda pair: pair[0])]
             self.distances.sort_values(inplace=True)
 
         # estimate gain_scale_factor w/ max of stresses stdev
-        gain_scale_factor = np.max([s.series.std() for s in stress])
+        gain_scale_factor = np.max([si.series.std() for si in s])
 
-        tmin = np.min([s.series.index.min() for s in stress])
-        tmax = np.max([s.series.index.max() for s in stress])
+        tmin = np.min([si.series.index.min() for si in s])
+        tmax = np.max([si.series.index.max() for si in s])
 
         StressModelBase.__init__(
             self,
@@ -932,9 +960,14 @@ class WellModel(StressModelBase):
 
         self.rfunc.set_distances(self.distances.values)
 
-        self.stress = stress
-        self.freq = self.stress[0].settings["freq"]
+        self.freq = s[0].settings["freq"]
+        self.s = s
         self.set_init_parameters()
+
+    @property
+    def stress(self) -> list[TimeSeries]:
+        """List of stresses in the StressModel."""
+        return self.s
 
     def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
@@ -984,15 +1017,19 @@ class WellModel(StressModelBase):
         return h
 
     @staticmethod
-    def _handle_stress(stress, settings, metadata):
+    def _handle_stress(
+        s: Series | list[Series] | dict[str, Series],
+        settings: str | list[str] | StressSettingsDict | list[StressSettingsDict],
+        metadata: dict[str, Any] | list[dict[str, Any]] | None,
+    ) -> list[TimeSeries]:
         """Internal method to handle user provided stress in init.
 
         Parameters
         ----------
-        stress: pandas.Series, list or dict
+        s: pandas.Series, list or dict
             stress or collection of stresses.
-        settings: dict or iterable
-            settings dictionary.
+        settings: dict or list of dict
+            list of settings corresponding to the stress.
         metadata : dict or list of dict
             metadata dictionaries corresponding to stress
 
@@ -1003,10 +1040,10 @@ class WellModel(StressModelBase):
         """
         data = []
 
-        if isinstance(stress, Series):
-            data.append(TimeSeries(stress, settings=settings, metadata=metadata))
-        elif isinstance(stress, dict):
-            for i, (name, value) in enumerate(stress.items()):
+        if isinstance(s, Series):
+            data.append(TimeSeries(s, settings=settings, metadata=metadata))
+        elif isinstance(s, dict):
+            for i, (name, value) in enumerate(s.items()):
                 if metadata is not None:
                     imeta = metadata[i]
                 else:
@@ -1014,8 +1051,8 @@ class WellModel(StressModelBase):
                 data.append(
                     TimeSeries(value, name=name, settings=settings[i], metadata=imeta)
                 )
-        elif isinstance(stress, list):
-            for i, value in enumerate(stress):
+        elif isinstance(s, list):
+            for i, value in enumerate(s):
                 if metadata is not None:
                     imeta = metadata[i]
                 else:
@@ -1337,14 +1374,13 @@ class RechargeModel(StressModelBase):
         if rfunc is None:
             rfunc = Exponential()
 
-        if recharge is None:
-            recharge = Linear()
-
         # Store the precipitation and evaporation time series
         self.prec = TimeSeries(prec, settings=settings[0], metadata=metadata[0])
         self.evap = TimeSeries(evap, settings=settings[1], metadata=metadata[1])
 
         # Store recharge object
+        if recharge is None:
+            recharge = Linear()
         self.recharge = recharge
 
         # Store a temperature time series if provided/needed or set to None
@@ -1390,9 +1426,6 @@ class RechargeModel(StressModelBase):
             max_cache_size=max_cache_size,
         )
 
-        self.stress = [self.prec, self.evap]
-        if self.temp:
-            self.stress.append(self.temp)
         self.freq = self.prec.settings["freq"]
         self.set_init_parameters()
         if isinstance(self.recharge, Linear):
@@ -1412,6 +1445,14 @@ class RechargeModel(StressModelBase):
                     "double-check if the stresses are in mm/d and not in m/d."
                 )
                 logger.warning(msg)
+
+    @property
+    def stress(self) -> list[TimeSeries]:
+        """List of stresses in the StressModel."""
+        if self.temp is not None:
+            return [self.prec, self.evap, self.temp]
+        else:
+            return [self.prec, self.evap]
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
@@ -2017,7 +2058,7 @@ class ChangeModel(StressModelBase):
 
     def __init__(
         self,
-        stress: Series,
+        s: Series,
         rfunc1: RFunc,
         rfunc2: RFunc,
         name: str,
@@ -2025,15 +2066,23 @@ class ChangeModel(StressModelBase):
         up: bool = True,
         settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
+        stress: Series | None = None,
     ) -> None:
-        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+        if stress is not None:
+            deprecate_args_or_kwargs(
+                "stress",
+                remove_version="3.0.0",
+                reason="The stress argument is deprecated, use 's' instead.",
+            )
+            s = stress
+        s = TimeSeries(s, settings=settings, metadata=metadata)
 
         StressModelBase.__init__(
             self,
             name=name,
             rfunc=None,
-            tmin=stress.series.index.min(),
-            tmax=stress.series.index.max(),
+            tmin=s.settings["tmin"],
+            tmax=s.settings["tmax"],
         )
 
         rfunc1.update_rfunc_settings(up=up)
@@ -2043,9 +2092,14 @@ class ChangeModel(StressModelBase):
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
 
-        self.freq = stress.settings["freq"]
-        self.stress.append(stress)
+        self.freq = s.settings["freq"]
+        self.s = s
         self.set_init_parameters()
+
+    @property
+    def stress(self) -> list[TimeSeries]:
+        """List of stresses in the StressModel."""
+        return [self.s]
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
