@@ -10,7 +10,7 @@ Create a TimeSeries object::
 """
 
 from logging import getLogger
-from typing import Any
+from typing import Any, Self
 
 import pandas as pd
 from pandas import Series, Timedelta
@@ -211,7 +211,7 @@ class TimeSeries:
             "series_original. Please set series_original to update the series."
         )
 
-    def update_series(self, force_update: bool = False, **kwargs) -> None:
+    def update_series(self, force_update: bool = False, **kwargs) -> Self:
         """Method to update the series with new options.
 
         Parameters
@@ -273,6 +273,7 @@ class TimeSeries:
             series.name = self._series_original.name
 
             self._series = series
+        return self
 
     def _update_settings(self, **kwargs) -> bool:
         """Internal method that check if an update is actually necessary.
