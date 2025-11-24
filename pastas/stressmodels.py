@@ -224,15 +224,15 @@ class StressModelBase:
         freq: str | None = None,
         istress: int | None = None,
         **kwargs,
-    ) -> DataFrame:
+    ) -> Series:
         """Returns the stress(es) of the time series object as a pandas DataFrame.
 
         If the time series object has multiple stresses each column represents a stress.
 
         Returns
         -------
-        stress: pandas.Dataframe
-            Pandas dataframe of the stress(es)
+        stress: pandas.Series
+            Series of the stress
         """
         if tmin is None:
             tmin = self.tmin
@@ -240,8 +240,8 @@ class StressModelBase:
             tmax = self.tmax
 
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-
-        return self.stress[0].series
+        istress = 0 if istress is None else istress
+        return self.stress_tuple[istress].series
 
     def to_dict(self, **kwargs):
         """Method to export the stress model object."""
