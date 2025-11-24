@@ -1254,11 +1254,11 @@ class Plotting:
                 ax_step = axes[i]  # step response axis
                 ax_step.lines[0].remove()  # remove step response for r=1 m
                 if nsplit > 1:
-                    for istress in range(len(sml.stress)):
+                    for istress in range(len(sml.stress_tuple)):
                         h = self.ml.get_contribution(
                             sm, istress=istress, tmin=tmin, tmax=tmax
                         )
-                        name = sml.stress[istress].name
+                        name = sml.stress_tuple[istress].name
                         if name is None:
                             name = sm
                         contributions.append((name, h))

@@ -36,7 +36,7 @@ class TestStressModelBase:
 
         # Check if frequency was updated
         assert stress_model.freq == "7D"
-        assert stress_model.stress[0].settings["freq"] == "7D"
+        assert stress_model.stress.settings["freq"] == "7D"
 
         # Reset to original frequency
         stress_model.update_stress(freq=original_freq)
@@ -71,7 +71,7 @@ class TestStressModel:
             name="test",
             settings={"fill_nan": "mean"},
         )
-        assert sm.stress[0].settings["fill_nan"] == "mean"
+        assert sm.stress.settings["fill_nan"] == "mean"
 
     def test_simulate(self, stress_model: StressModel) -> None:
         """Test simulate method."""
@@ -83,7 +83,7 @@ class TestStressModel:
 
         # Check results
         assert isinstance(sim, pd.Series)
-        assert len(sim) == len(stress_model.stress[0].series)
+        assert len(sim) == len(stress_model.stress.series)
         assert not np.isnan(sim).any()
 
     def test_to_dict(self, stress_model: StressModel) -> None:

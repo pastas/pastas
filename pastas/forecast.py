@@ -218,11 +218,11 @@ def forecast(
             for i, fc in enumerate(fc_data):
                 ts = concat(
                     [
-                        sm.stress[i].series_original.loc[: tmin - day],
+                        sm.stress_tuple[i].series_original.loc[: tmin - day],
                         fc.iloc[:, member],
                     ]
                 )
-                sm.stress[i].series_original = ts
+                sm.stress = ts
 
         # 2. iterate over the parameter sets
         for i, param in enumerate(p):
