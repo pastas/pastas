@@ -15,6 +15,7 @@ See Also
 pastas.model.Model.add_stressmodel
 """
 
+from collections import namedtuple
 from inspect import isclass
 from logging import getLogger
 from typing import Any
@@ -24,6 +25,7 @@ from packaging.version import parse as parse_version
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from pandas import __version__ as pd_version
 from scipy.signal import fftconvolve
+from typing_extensions import Literal
 
 from pastas.typing import (
     ArrayLike,
@@ -102,8 +104,6 @@ class StressModelBase:
         self.parameters = DataFrame(
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
         )
-
-        self.stress = []
 
         if CACHETOOLS_AVAILABLE:
             if max_cache_size is None:
@@ -255,7 +255,7 @@ class StressModelBase:
         b = self.rfunc.block(p, dt, maxtmax=maxtmax)
         return b
 
-    def get_settings(self) -> dict:
+    def get_settings(self) -> dict[str, StressSettingsDict] | None:
         """Method to obtain the settings of the stresses.
 
         Returns
@@ -393,29 +393,59 @@ class StressModel(StressModelBase):
         gain_scale_factor: float | None = None,
         max_cache_size: int = None,
     ) -> None:
-        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+        self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
         StressModelBase.__init__(
             self,
             name=name,
-            tmin=stress.series.index.min(),
-            tmax=stress.series.index.max(),
+            tmin=self.stress.series.index.min(),
+            tmax=self.stress.series.index.max(),
             rfunc=rfunc,
             up=up,
             gain_scale_factor=(
-                stress.series.std() if gain_scale_factor is None else gain_scale_factor
+                self.stress.series.std()
+                if gain_scale_factor is None
+                else gain_scale_factor
             ),
             max_cache_size=max_cache_size,
         )
-
         self.gain_scale_factor = gain_scale_factor
-        self.freq = stress.settings["freq"]
-        self.stress.append(stress)
+        self.freq = self.stress.settings["freq"]
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
+
+    @property
+    def stress(self) -> TimeSeries:
+        """Return the stress time series."""
+        return self._stress
+
+    @stress.setter
+    def stress(self, value: Series) -> None:
+        """Set the stress time series."""
+        self.set_stress(value)
+
+    def set_stress(
+        self,
+        stress: Series,
+        settings: str | StressSettingsDict | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Set the stress time series."""
+        if hasattr(self, "_stress"):
+            if self._stress.metadata is not None and metadata is None:
+                metadata = self._stress.metadata
+            if self._stress.settings is not None and settings is None:
+                settings = self._stress.settings
+        self._stress = TimeSeries(stress, settings=settings, metadata=metadata)
+
+    @property
+    def stress_tuple(self) -> tuple[TimeSeries]:
+        """Return the stress time series as a list."""
+        nt = namedtuple("StressTuple", [("stress", TimeSeries)])
+        return nt(stress=self._stress)
 
     def simulate(
         self,
@@ -528,8 +558,7 @@ class StepModel(StressModelBase):
         up: bool = None,
         max_cache_size: int = None,
     ) -> None:
-        if rfunc is None:
-            rfunc = One()
+        rfunc = One() if rfunc is None else rfunc
         StressModelBase.__init__(
             self,
             name=name,
@@ -904,6 +933,7 @@ class WellModel(StressModelBase):
 
         # parse stresses input
         stress = self._handle_stress(stress, settings, metadata)
+        self._stress = stress
 
         # sort wells by distance
         self.sort_wells = sort_wells
@@ -932,9 +962,46 @@ class WellModel(StressModelBase):
 
         self.rfunc.set_distances(self.distances.values)
 
-        self.stress = stress
         self.freq = self.stress[0].settings["freq"]
         self.set_init_parameters()
+
+    @property
+    def stress(self) -> list[TimeSeries]:
+        """Return the stress time series."""
+        return self._stress
+
+    @stress.setter
+    def stress(self, value: list[Series] | Series) -> None:
+        """Set the stress time series."""
+        self.set_stress(value)
+
+    def set_stress(
+        self, stress: list[Series] | Series, settings: list, metadata: list
+    ) -> None:
+        """Set the stress time series."""
+        if isinstance(stress, Series):
+            i = [
+                x
+                for i in self.stress_tuple._fields
+                for x in self.stress_tuple
+                if i == x.name
+            ][0]
+            self._stress = [i]
+        else:
+            if len(stress) != len(self.distances):
+                msg = (
+                    "The number of stresses does not match the number of distances "
+                    "provided."
+                )
+                logger.error(msg)
+                raise ValueError(msg)
+            self._stress = stress
+
+    @property
+    def stress_tuple(self) -> tuple[TimeSeries, ...]:
+        """Return the stress time series as a tuple."""
+        nt = namedtuple("StressTuple", [x.name for x in self._stress])
+        return nt(*self._stress)
 
     def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
@@ -1341,8 +1408,8 @@ class RechargeModel(StressModelBase):
             recharge = Linear()
 
         # Store the precipitation and evaporation time series
-        self.prec = TimeSeries(prec, settings=settings[0], metadata=metadata[0])
-        self.evap = TimeSeries(evap, settings=settings[1], metadata=metadata[1])
+        self._prec = TimeSeries(prec, settings=settings[0], metadata=metadata[0])
+        self._evap = TimeSeries(evap, settings=settings[1], metadata=metadata[1])
 
         # Store recharge object
         self.recharge = recharge
@@ -1359,9 +1426,11 @@ class RechargeModel(StressModelBase):
                 msg = "Number of values for the settings and/or metadata is incorrect."
                 raise TypeError(msg)
             else:
-                self.temp = TimeSeries(temp, settings=settings[2], metadata=metadata[2])
+                self._temp = TimeSeries(
+                    temp, settings=settings[2], metadata=metadata[2]
+                )
         else:
-            self.temp = None
+            self._temp = None
 
         # Select indices from validated stress where both series are available.
         index = self.prec.series.index.intersection(self.evap.series.index)
@@ -1390,9 +1459,6 @@ class RechargeModel(StressModelBase):
             max_cache_size=max_cache_size,
         )
 
-        self.stress = [self.prec, self.evap]
-        if self.temp:
-            self.stress.append(self.temp)
         self.freq = self.prec.settings["freq"]
         self.set_init_parameters()
         if isinstance(self.recharge, Linear):
@@ -1412,6 +1478,71 @@ class RechargeModel(StressModelBase):
                     "double-check if the stresses are in mm/d and not in m/d."
                 )
                 logger.warning(msg)
+
+    def set_stress(
+        self,
+        name: Literal["prec", "evap", "temp"],
+        stress: Series,
+        settings: str | StressSettingsDict | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Set the stress time series."""
+        attr_name = f"_{name}"
+        if hasattr(self, attr_name):
+            if getattr(self, attr_name).metadata is not None and metadata is None:
+                metadata = getattr(self, attr_name).metadata
+            if getattr(self, attr_name).settings is not None and settings is None:
+                settings = getattr(self, attr_name).settings
+        setattr(
+            self, attr_name, TimeSeries(stress, settings=settings, metadata=metadata)
+        )
+
+    @property
+    def prec(self) -> TimeSeries:
+        """Return the stress time series."""
+        return self._prec
+
+    @prec.setter
+    def prec(self, value: Series) -> None:
+        """Set the precipitation time series."""
+        self.set_stress("prec", value)
+
+    @property
+    def evap(self) -> TimeSeries:
+        """Return the stress time series."""
+        return self._evap
+
+    @evap.setter
+    def evap(self, value: Series) -> None:
+        """Set the evaporation time series."""
+        self.set_stress("evap", value)
+
+    @property
+    def temp(self) -> TimeSeries | None:
+        """Return the stress time series."""
+        return self._temp
+
+    @temp.setter
+    def temp(self, value: Series) -> None:
+        """Set the temperature time series."""
+        self.set_stress("temp", value)
+
+    @property
+    def stress_tuple(self) -> tuple[TimeSeries]:
+        """Return the stress time series as a list."""
+        if self.temp is None:
+            nt = namedtuple("StressTuple", [("prec", TimeSeries)])
+            return nt(prec=self._prec, evap=self._evap)
+        else:
+            nt = namedtuple(
+                "StressTuple",
+                [
+                    ("prec", TimeSeries),
+                    ("evap", TimeSeries),
+                    ("temp", TimeSeries | None),
+                ],
+            )
+            return nt(prec=self._prec, evap=self._evap, temp=self._temp)
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
@@ -2026,14 +2157,14 @@ class ChangeModel(StressModelBase):
         settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
     ) -> None:
-        stress = TimeSeries(stress, settings=settings, metadata=metadata)
+        self.set_stress(stress, settings=settings, metadata=metadata)
 
         StressModelBase.__init__(
             self,
             name=name,
             rfunc=None,
-            tmin=stress.series.index.min(),
-            tmax=stress.series.index.max(),
+            tmin=self.stress.series.index.min(),
+            tmax=self.stress.series.index.max(),
         )
 
         rfunc1.update_rfunc_settings(up=up)
@@ -2043,9 +2174,33 @@ class ChangeModel(StressModelBase):
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
 
-        self.freq = stress.settings["freq"]
-        self.stress.append(stress)
+        self.freq = self.stress.settings["freq"]
         self.set_init_parameters()
+
+    @property
+    def stress(self) -> TimeSeries:
+        """Return the stress time series."""
+        return self._stress
+
+    @stress.setter
+    def stress(self, value: Series) -> None:
+        """Set the stress time series."""
+        self.set_stress(value)
+
+    def set_stress(
+        self,
+        stress: Series,
+        settings: str | StressSettingsDict | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        """Set the stress time series."""
+        self._stress = TimeSeries(stress, settings=settings, metadata=metadata)
+
+    @property
+    def stress_tuple(self) -> tuple[TimeSeries]:
+        """Return the stress time series as a list."""
+        nt = namedtuple("StressTuple", [("stress", TimeSeries)])
+        return nt(stress=self._stress)
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
