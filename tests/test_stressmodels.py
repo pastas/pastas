@@ -227,7 +227,7 @@ class TestRechargeModel:
         )
         assert rm.name == "rech1"
         assert rm.recharge._name == "Linear"
-        assert len(rm.stress) == 2  # prec and evap
+        assert len(rm.stress_tuple) == 2  # prec and evap
 
     def test_init_flex(self) -> None:
         """Test initialization with FlexModel recharge model."""
@@ -269,7 +269,7 @@ class TestRechargeModel:
         )
 
         assert rm.name == "rech_temp"
-        assert len(rm.stress) == 3  # prec, evap, and temp
+        assert len(rm.stress_tuple) == 3  # prec, evap, and temp
         assert rm.temp is not None
 
     def test_get_stress(self) -> None:
@@ -323,7 +323,7 @@ class TestWellModel:
             distances=self.distances,
         )
         assert wm.name == "wells"
-        assert len(wm.stress) == 3
+        assert len(wm.stress_tuple) == 3
         assert len(wm.distances) == 3
 
         # Test with sorting

@@ -19,7 +19,7 @@ def get_stress_tmin_tmax(ml: ModelType) -> tuple[Timestamp | str, Timestamp | st
     tmax = Timestamp.max
     if isinstance(ml, Model):
         for sm in ml.stressmodels:
-            for st in ml.stressmodels[sm].stress:
+            for st in ml.stressmodels[sm].stress_tuple:
                 tmin = max((tmin, st.series_original.index.min()))
                 tmax = min((tmax, st.series_original.index.max()))
     else:

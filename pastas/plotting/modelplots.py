@@ -482,7 +482,7 @@ class Plotting:
                 contribs[sm_name].values,
                 label=sm_name,
             )
-            title = [stress.name for stress in sm.stress]
+            title = [stress.name for stress in sm.stress_tuple]
             if len(title) > 3:
                 title = title[:3] + ["..."]
             if title:
@@ -1237,7 +1237,7 @@ class Plotting:
             # Get the contributions for StressModels with multiple stresses
             contributions = []
             sml = self.ml.stressmodels[sm]
-            if (len(sml.stress) > 0) and (sml._name == "WellModel"):
+            if (len(sml.stress_tuple) > 0) and (sml._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
                         wnam: f"C{iw + 1}"
