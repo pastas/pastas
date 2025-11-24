@@ -276,10 +276,10 @@ class StressModelBase:
         -----
         To update the settings of the time series, use the `update_stress` method.
         """
-        if hasattr(self, "stress_tuple"):
-            return {stress.name: stress.settings for stress in self.stress_tuple}
-        else:
+        if len(self.stress_tuple) == 0:
             return None
+        else:
+            return {stress.name: stress.settings for stress in self.stress_tuple}
 
     def get_parameters(self, model=None) -> ArrayLike:
         """Get parameters and return as array.
@@ -938,7 +938,7 @@ class WellModel(StressModelBase):
 
         # if metadata is passed as dict -> convert to list
         if metadata is not None and isinstance(metadata, dict):
-            metadata = [metadata]
+            metadata = [metadata] * len(stress)
 
         self.distances = Series(
             index=[s.squeeze().name for s in stress],
