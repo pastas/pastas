@@ -956,10 +956,10 @@ class WellModel(StressModelBase):
             self.distances.sort_values(inplace=True)
 
         # estimate gain_scale_factor w/ max of stresses stdev
-        gain_scale_factor = np.max([s.series.std() for s in stress])
+        gain_scale_factor = np.max([s.std() for s in stress])
 
-        tmin = np.min([s.series.index.min() for s in stress])
-        tmax = np.max([s.series.index.max() for s in stress])
+        tmin = np.min([s.index.min() for s in stress])
+        tmax = np.max([s.index.max() for s in stress])
 
         StressModelBase.__init__(
             self,
