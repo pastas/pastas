@@ -269,7 +269,7 @@ class Plotting:
                 if adjust_height:
                     ax_contrib.set_ylim(ylims[i + 2])
                 if not split:
-                    title = [stress.name for stress in sm.stress]
+                    title = [stress.name for stress in sm.stress_tuple]
                     if len(title) > 3:
                         title = title[:3] + ["..."]
                     ax_contrib.set_title(
