@@ -456,7 +456,7 @@ class StressModel(StressModelBase):
     @property
     def stress_tuple(self) -> tuple[TimeSeries]:
         """Return the stress time series as a list."""
-        nt = namedtuple("StressTuple", [("stress", TimeSeries)])
+        nt = namedtuple("StressTuple", ["stress"])
         return nt(stress=self._stress)
 
     def simulate(
@@ -1580,16 +1580,12 @@ class RechargeModel(StressModelBase):
     def stress_tuple(self) -> tuple[TimeSeries]:
         """Return the stress time series as a list."""
         if self.temp is None:
-            nt = namedtuple("StressTuple", [("prec", TimeSeries)])
+            nt = namedtuple("StressTuple", ["prec", "evap"])
             return nt(prec=self._prec, evap=self._evap)
         else:
             nt = namedtuple(
                 "StressTuple",
-                [
-                    ("prec", TimeSeries),
-                    ("evap", TimeSeries),
-                    ("temp", TimeSeries | None),
-                ],
+                ["prec", "evap", "temp"],
             )
             return nt(prec=self._prec, evap=self._evap, temp=self._temp)
 
@@ -2260,7 +2256,7 @@ class ChangeModel(StressModelBase):
     @property
     def stress_tuple(self) -> tuple[TimeSeries]:
         """Return the stress time series as a list."""
-        nt = namedtuple("StressTuple", [("stress", TimeSeries)])
+        nt = namedtuple("StressTuple", ["stress"])
         return nt(stress=self._stress)
 
     def set_init_parameters(self) -> None:
