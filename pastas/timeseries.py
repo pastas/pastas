@@ -119,6 +119,14 @@ class TimeSeries:
                     "1D-DataFrame was provided, automatically transformed to "
                     "pandas.Series."
                 )
+        elif isinstance(series, TimeSeries):
+            if name is None and series.name is not None:
+                name = series.name
+            if settings is None and series.settings is not None:
+                settings = series.settings
+            if metadata is None and series.metadata is not None:
+                metadata = series.metadata
+            series = series.series
 
         # Make sure we have a workable Pandas Series, depends on type of time series
         if settings == "oseries":
@@ -723,6 +731,9 @@ def _validate_series(series: Series, equidistant: bool = True):
             msg = "DataFrame with multiple columns. Please select one."
             logger.error(msg)
             raise ValueError(msg)
+
+    if isinstance(series, TimeSeries):
+        series = series.series
 
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
