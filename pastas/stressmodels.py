@@ -114,7 +114,7 @@ class StressModelBase:
 
     @property
     def stress_tuple(self) -> tuple:
-        return ((),)
+        return ()
 
     @property
     def nparam(self) -> tuple[int]:
@@ -585,7 +585,7 @@ class StepModel(StressModelBase):
 
     @property
     def stress_tuple(self) -> tuple:
-        return ((),)
+        return ()
 
     def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
@@ -688,7 +688,7 @@ class LinearTrend(StressModelBase):
 
     @property
     def stress_tuple(self) -> tuple:
-        return ((),)
+        return ()
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters for the stress model."""
@@ -792,7 +792,7 @@ class Constant(StressModelBase):
 
     @property
     def stress_tuple(self) -> tuple:
-        return ((),)
+        return ()
 
     def set_init_parameters(self):
         self.parameters.loc[self.name + "_d"] = (
