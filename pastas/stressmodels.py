@@ -457,7 +457,7 @@ class StressModel(StressModelBase):
     def stress_tuple(self) -> tuple[TimeSeries]:
         """Return the stress time series as a list."""
         nt = namedtuple("StressTuple", ["stress"])
-        return nt(stress=self._stress)
+        return nt(stress=self.stress)
 
     def simulate(
         self,
@@ -1539,7 +1539,27 @@ class RechargeModel(StressModelBase):
         settings: str | StressSettingsDict | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
-        """Set the stress time series."""
+        """Set the stress time series for the RechargeModel.
+
+        Parameters
+        ----------
+        name : str
+            Name of the stress to set. Must be one of "prec", "evap", or "temp".
+        stress : pandas.Series
+            pandas.Series with pandas.DatetimeIndex containing the stress time series.
+        settings : str or dict, optional
+            The settings of the time series. By default this is None. This can be a
+            string referring to a predefined settings dict (defined in
+            ps.rcParams["timeseries"]), or a dict with the settings to apply. For more
+            information refer to Time Series Settings section below for more information.
+        metadata : dict, optional
+            dictionary containing metadata about the stress. This is passed onto the
+            TimeSeries object.
+
+        Returns
+        -------
+        None
+        """
         attr_name = f"_{name}"
         if hasattr(self, attr_name):
             if getattr(self, attr_name).metadata is not None and metadata is None:
@@ -1585,13 +1605,13 @@ class RechargeModel(StressModelBase):
         """Return the stress time series as a list."""
         if self.temp is None:
             nt = namedtuple("StressTuple", ["prec", "evap"])
-            return nt(prec=self._prec, evap=self._evap)
+            return nt(prec=self.prec, evap=self.evap)
         else:
             nt = namedtuple(
                 "StressTuple",
                 ["prec", "evap", "temp"],
             )
-            return nt(prec=self._prec, evap=self._evap, temp=self._temp)
+            return nt(prec=self.prec, evap=self.evap, temp=self.temp)
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
@@ -2261,7 +2281,7 @@ class ChangeModel(StressModelBase):
     def stress_tuple(self) -> tuple[TimeSeries]:
         """Return the stress time series as a list."""
         nt = namedtuple("StressTuple", ["stress"])
-        return nt(stress=self._stress)
+        return nt(stress=self.stress)
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
