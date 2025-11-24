@@ -731,9 +731,9 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     name = series.name  # Only Series have a name, DateFrame do not
 
-    # 1. Make sure the values are floats
-    if not pd.api.types.is_float_dtype(series):
-        msg = "Values of time series %s are not dtype=float."
+    # 1. Make sure the values are numeric
+    if not pd.api.types.is_numeric_dtype(series):
+        msg = "Values of time series %s are not numeric (dtype=float)."
         logger.error(msg, name)
         raise ValueError(msg % name)
 
