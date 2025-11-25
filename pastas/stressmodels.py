@@ -984,7 +984,11 @@ class WellModel(StressModelBase):
     @property
     def stress(self) -> tuple[TimeSeries, ...]:
         """Return the stress time series."""
-        return tuple(self._stress)
+        class TupleWithSetError(tuple):
+            def __setitem__(self, *args, **kwargs):
+                raise AttributeError("Cannot set values in stress directly anymore. Please use the set_stress method.")
+
+        return TupleWithSetError(self._stress)
 
     @stress.setter
     def stress(
@@ -1005,7 +1009,21 @@ class WellModel(StressModelBase):
         | None = None,
         metadata: dict[str, Any] | list[dict[str, Any]] | None = None,
     ) -> None:
-        """Set the stress time series."""
+        """Set the stress time series.
+
+        Parameters
+        ----------
+        stress: pandas.Series, list of pandas.Series, TimeSeries or list of TimeSeries
+            stress or collection of stresses.
+        settings: dict or iterable, optional
+            settings dictionary.
+        metadata : dict or list of dict, optional
+            metadata dictionaries corresponding to stress
+
+        Returns
+        -------
+        None
+        """
         if isinstance(stress, (TimeSeries, Series)):
             stress_names = [x.name for x in self.stress_tuple]
             try:
