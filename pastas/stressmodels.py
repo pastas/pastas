@@ -456,7 +456,7 @@ class StressModel(StressModelBase):
 
     @property
     def stress_tuple(self) -> tuple[TimeSeries]:
-        """Return the stress time series as a list."""
+        """Return the stress time series as a tuple."""
         nt = namedtuple("StressTuple", ["stress"])
         return nt(stress=self.stress)
 
@@ -1666,7 +1666,7 @@ class RechargeModel(StressModelBase):
 
     @property
     def stress_tuple(self) -> tuple[TimeSeries]:
-        """Return the stress time series as a list."""
+        """Return the stress time series as a tuple."""
         if self.temp is None:
             nt = namedtuple("StressTuple", ["prec", "evap"])
             return nt(prec=self.prec, evap=self.evap)
@@ -2343,7 +2343,7 @@ class ChangeModel(StressModelBase):
 
     @property
     def stress_tuple(self) -> tuple[TimeSeries]:
-        """Return the stress time series as a list."""
+        """Return the stress time series as a tuple."""
         nt = namedtuple("StressTuple", ["stress"])
         return nt(stress=self.stress)
 
