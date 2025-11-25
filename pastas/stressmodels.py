@@ -1027,7 +1027,19 @@ class WellModel(StressModelBase):
         -------
         None
         """
-        if isinstance(stress, (TimeSeries, Series)):
+        if not isinstance(stress, (TimeSeries, Series)):
+            self._stress = self._handle_stress(
+                stress=stress, settings=settings, metadata=metadata
+            )
+            if self.sort_wells:
+                self._stress = [
+                    s
+                    for _, s in sorted(
+                        zip(self.distances, self._stress), key=lambda pair: pair[0]
+                    )
+                ]
+                self.distances.sort_values(inplace=True)
+        else:
             stress_names = [x.name for x in self.stress_tuple]
             try:
                 i = stress_names.index(stress.name)
@@ -1049,18 +1061,6 @@ class WellModel(StressModelBase):
                 self._stress[i] = TimeSeries(
                     stress, settings=settings, metadata=metadata
                 )
-        else:
-            self._stress = self._handle_stress(
-                stress=stress, settings=settings, metadata=metadata
-            )
-            if self.sort_wells:
-                self._stress = [
-                    s
-                    for _, s in sorted(
-                        zip(self.distances, self._stress), key=lambda pair: pair[0]
-                    )
-                ]
-                self.distances.sort_values(inplace=True)
 
         # checks if everything is okay
         if len(self._stress) != len(self.distances):
