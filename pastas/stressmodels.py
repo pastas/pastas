@@ -1016,10 +1016,8 @@ class WellModel(StressModelBase):
         stress: Series | list[Series] | TimeSeries | list[TimeSeries],
         settings: str
         | StressSettingsDict
-        | dict[str, Any]
         | list[str]
         | list[StressSettingsDict]
-        | list[dict[str, Any]]
         | None = None,
         metadata: dict[str, Any] | list[dict[str, Any]] | None = None,
     ) -> None:
