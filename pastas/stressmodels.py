@@ -205,9 +205,15 @@ class StressModelBase:
         --------
         ps.timeseries.TimeSeries.update_series
         """
-        for stress in self.stress_tuple:
-            stress_updated = stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
-            self.set_stress(stress=stress_updated)
+        if len(self.stress_tuple) != 0 and hasattr(self, "_stress"):
+            # not for StepModel, LinearTrend, Constant which have no stresses
+            # not for RechargeModel which has its own update_stress method
+            if isinstance(self._stress, Iterable):
+                # only for WellModel where self._stress is a list
+                for stress in self._stress:
+                    stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
+            else:
+                self._stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
 
         if freq:
             self.freq = freq
@@ -1717,19 +1723,10 @@ class RechargeModel(StressModelBase):
         --------
         ps.timeseries.TimeSeries.update_series
         """
-        prec_updated: TimeSeries = self.prec.update_series(
-            freq=freq, tmin=tmin, tmax=tmax
-        )
-        self.set_stress(name="prec", stress=prec_updated)
-        evap_updated: TimeSeries = self.evap.update_series(
-            freq=freq, tmin=tmin, tmax=tmax
-        )
-        self.set_stress(name="evap", stress=evap_updated)
+        self._prec.update_series(freq=freq, tmin=tmin, tmax=tmax)
+        self._evap.update_series(freq=freq, tmin=tmin, tmax=tmax)
         if self.temp is not None:
-            temp_updated: TimeSeries = self.temp.update_series(
-                freq=freq, tmin=tmin, tmax=tmax
-            )
-            self.set_stress(name="temp", stress=temp_updated)
+            self._temp.update_series(freq=freq, tmin=tmin, tmax=tmax)
 
         if freq:
             self.freq = freq
