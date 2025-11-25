@@ -36,7 +36,12 @@ from pastas.typing import (
     StressSettingsDict,
 )
 
-from .decorators import conditional_cachedmethod, njit, set_parameter
+from .decorators import (
+    PastasDeprecationWarning,
+    conditional_cachedmethod,
+    njit,
+    set_parameter,
+)
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
@@ -1639,6 +1644,18 @@ class RechargeModel(StressModelBase):
         setattr(
             self, attr_name, TimeSeries(stress, settings=settings, metadata=metadata)
         )
+
+    @property
+    @PastasDeprecationWarning(
+        remove_version="2.0.0",
+        reason=(
+            "for the RechargeModel. Use 'stress_tuple' property instead if you want to"
+            " obtain all stresses. For individual stresses call the 'prec', 'evap' and "
+            "'temp' attributes. Changing the stress can be done using the `set_stress` method."
+        ),
+    )
+    def stress(self):
+        pass
 
     @property
     def prec(self) -> TimeSeries:
