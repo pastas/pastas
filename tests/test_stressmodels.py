@@ -344,7 +344,7 @@ class TestWellModel:
                 distances=[100, 200, 300],
             )
         assert (
-            "number of stresses does not match the number of distances"
+            "the number of distances must match the number of stresses."
             in str(e.value).lower()
         )
 
@@ -395,6 +395,71 @@ class TestWellModel:
         # The individual stress simulation uses the well name instead of the model name
         assert sim1.name == "well1"
         assert len(sim1) == len(self.well1)
+
+    def test_set_stress(self) -> None:
+        """Test set_stress method."""
+        wm = WellModel(
+            stress=[self.well1, self.well2, self.well3],
+            name="wells_set",
+            distances=self.distances,
+        )
+
+        # Create new stress series
+        new_well1 = self.well1 * 2
+        new_well2 = self.well2 * 2
+        new_well3 = self.well3 * 2
+
+        # Set new stresses
+        wm.set_stress([new_well1, new_well2, new_well3])
+
+        # Verify that stresses were updated
+        assert wm.stress_tuple[0].series.equals(new_well1)
+        assert wm.stress_tuple[1].series.equals(new_well2)
+        assert wm.stress_tuple[2].series.equals(new_well3)
+
+        new_well4 = self.well1 * 3
+        wm.stress = new_well4
+        assert wm.stress_tuple[0].series.equals(new_well4)
+
+    def test_set_stress_error(self) -> None:
+        """Test error when setting stress with incorrect number of series."""
+        wm = WellModel(
+            stress=[self.well1, self.well2, self.well3],
+            name="wells_set_error",
+            distances=self.distances,
+        )
+
+        new_well1 = self.well1 * 2
+        new_well2 = self.well2 * 2
+
+        with pytest.raises(ValueError) as e:
+            wm.set_stress([new_well1, new_well2])
+        assert (
+            "the number of stress time series must match the number of distances."
+            in str(e.value).lower()
+        )
+
+        new_well3 = (self.well3 * 2).rename("wrong_name")
+        with pytest.raises(ValueError) as e:
+            wm.set_stress(new_well3)
+        assert "when setting a single stress series," in str(e.value).lower()
+
+        new_well4 = (self.well1 * 2).rename("name1")
+        new_well5 = (self.well2 * 2).rename("name2")
+        new_well6 = (self.well3 * 2).rename("name3")
+        with pytest.raises(ValueError) as e:
+            wm.set_stress([new_well4, new_well5, new_well6])
+        assert (
+            "new names of the stress time series were provided that do not match the original names on initialization."
+            in str(e.value).lower()
+        )
+
+        with pytest.raises(AttributeError) as e:
+            wm.stress[0] = new_well1
+        assert (
+            "cannot set values in stress directly anymore. please use the `set_stress` method."
+            in str(e.value).lower()
+        )
 
 
 class TestChangeModel:

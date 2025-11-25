@@ -984,9 +984,12 @@ class WellModel(StressModelBase):
     @property
     def stress(self) -> tuple[TimeSeries, ...]:
         """Return the stress time series."""
+
         class TupleWithSetError(tuple):
             def __setitem__(self, *args, **kwargs):
-                raise AttributeError("Cannot set values in stress directly anymore. Please use the set_stress method.")
+                raise AttributeError(
+                    "Cannot set values in stress directly anymore. Please use the `set_stress` method."
+                )
 
         return TupleWithSetError(self._stress)
 
