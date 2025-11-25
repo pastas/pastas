@@ -941,18 +941,21 @@ class WellModel(StressModelBase):
                 "WellModel only supports the rfunc HantushWellModel!"
             )
 
+        if len(distances) != len(stress):
+            msg = (
+                "The number of distances must match the number of stresses. "
+                f"Got {len(distances)} distances but {len(stress)} stresses."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+
         self.distances = Series(
-            index=[s.squeeze().name for s in stress],
+            index=[s.name for s in stress],
             data=distances,
             name="distances",
         )
         # sort wells by distance
         self.sort_wells = sort_wells
-        if self.sort_wells:
-            stress = [
-                s for _, s in sorted(zip(distances, stress), key=lambda pair: pair[0])
-            ]
-            self.distances.sort_values(inplace=True)
 
         # estimate gain_scale_factor w/ max of stresses stdev
         gain_scale_factor = np.max([s.std() for s in stress])
@@ -1003,35 +1006,68 @@ class WellModel(StressModelBase):
         metadata: dict[str, Any] | list[dict[str, Any]] | None = None,
     ) -> None:
         """Set the stress time series."""
-        if isinstance(stress, TimeSeries):
+        if isinstance(stress, (TimeSeries, Series)):
             stress_names = [x.name for x in self.stress_tuple]
-            i = stress_names.index(stress.name)
-            self._stress[i] = stress
-        elif isinstance(stress, Series):
-            stress_names = [x.name for x in self.stress_tuple]
-            i = stress_names.index(stress.name)
-            if hasattr(self, "_stress"):
-                if self.stress_tuple[i].settings is not None and settings is None:
-                    settings = self.stress_tuple[i].settings
-                if self.stress_tuple[i].metadata is not None and metadata is None:
-                    metadata = self.stress_tuple[i].metadata
-            self._stress[i] = TimeSeries(stress, settings=settings, metadata=metadata)
-        else:
-            if len(stress) != len(self.distances):
+            try:
+                i = stress_names.index(stress.name)
+            except ValueError:
                 msg = (
-                    "The number of stresses does not match the number of distances "
-                    "provided."
+                    "When setting a single stress Series, the name must match "
+                    "one of the existing stress names."
                 )
                 logger.error(msg)
                 raise ValueError(msg)
+            if isinstance(stress, TimeSeries):
+                self._stress[i] = stress
+            elif isinstance(stress, Series):
+                if hasattr(self, "_stress"):
+                    if self.stress_tuple[i].settings is not None and settings is None:
+                        settings = self.stress_tuple[i].settings
+                    if self.stress_tuple[i].metadata is not None and metadata is None:
+                        metadata = self.stress_tuple[i].metadata
+                self._stress[i] = TimeSeries(
+                    stress, settings=settings, metadata=metadata
+                )
+        else:
             self._stress = self._handle_stress(
                 stress=stress, settings=settings, metadata=metadata
             )
+            if self.sort_wells:
+                self._stress = [
+                    s
+                    for _, s in sorted(
+                        zip(self.distances, self._stress), key=lambda pair: pair[0]
+                    )
+                ]
+                self.distances.sort_values(inplace=True)
+
+        # checks if everything is okay
+        if len(self._stress) != len(self.distances):
+            msg = (
+                "The number of stress time series must match the number of distances. "
+                f"Got {len(self._stress)} stresses but WellModel has {len(self.distances)} distances."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+
+        names = [s.name for s in self.stress_tuple]
+        if np.unique(names).size != len(names):
+            msg = "All stress time series must have unique names."
+            logger.error(msg)
+            raise ValueError(msg)
+
+        if names != list(self.distances.index):
+            msg = (
+                "New names of the stress time series were provided "
+                "that do not match the original names on initialization."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
 
     @property
     def stress_tuple(self) -> tuple[TimeSeries, ...]:
         """Return the stress time series as a tuple."""
-        nt = namedtuple("StressTuple", [x.name for x in self._stress])
+        nt = namedtuple("StressTuple", [s.name for s in self._stress])
         return nt(*self._stress)
 
     def set_init_parameters(self) -> None:
