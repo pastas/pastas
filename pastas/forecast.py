@@ -11,7 +11,7 @@ Generate forecasts using ensembles of stress forecasts::
 
 from logging import getLogger
 
-from numpy import array, empty, exp, linspace, ones
+from numpy import array, empty, exp, isin, linspace, ones
 from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, Timestamp, concat
 
 from pastas.noisemodels import ArNoiseModel
@@ -21,7 +21,7 @@ logger = getLogger(__name__)
 
 
 def _check_forecast_data(
-    forecasts: dict[str, list[DataFrame]],
+    forecasts: dict[str, dict[str, DataFrame]],
 ) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
@@ -62,16 +62,16 @@ def _check_forecast_data(
     index = None
 
     for sm_name, fc_data in forecasts.items():
-        if not fc_data:
-            msg = f"No forecast data provided for stressmodel '{sm_name}'"
-            logger.warning(msg)
-            continue
+        if not isinstance(fc_data, dict) or not fc_data:
+            msg = f"Forecast data for stressmodel '{sm_name}' must be a non-empty dictionary"
+            logger.error(msg)
+            raise ValueError(msg)
 
-        for fc in fc_data:
+        for stress_name, fc in fc_data.items():
             # Check if DataFrame is empty
             if fc.empty:
                 msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}'"
-                logger.warning(msg)
+                logger.error(msg)
                 continue
 
             # Check if the number of columns is the same for all DataFrames
@@ -107,7 +107,7 @@ def _check_forecast_data(
 
 def forecast(
     ml: Model,
-    forecasts: dict[str, list[DataFrame]],
+    forecasts: dict[str, dict[str, DataFrame]],
     p: ArrayLike | None = None,
     post_process: bool = False,
 ) -> DataFrame:
@@ -215,14 +215,11 @@ def forecast(
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
             sm = ml.stressmodels[sm_name]  # Select stressmodel
-            for i, fc in enumerate(fc_data):
-                ts = concat(
-                    [
-                        sm.stress_tuple[i].series_original.loc[: tmin - day],
-                        fc.iloc[:, member],
-                    ]
-                )
-                sm.stress = ts
+            for i, (stress_name, fc) in enumerate(fc_data.items()):
+                old_stress = getattr(sm, stress_name).series_original.loc[: tmin - day]
+                new_stress = fc.iloc[:, member]
+                ts = concat([old_stress, new_stress], axis=0)
+                setattr(sm, stress_name, ts)
 
         # 2. iterate over the parameter sets
         for i, param in enumerate(p):
