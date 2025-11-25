@@ -28,7 +28,7 @@ class TestCheckForecastData:
 
     def test_no_valid_forecast_data(self) -> None:
         """Test that no valid forecast data raises a ValueError."""
-        forecasts: dict[str, list[DataFrame]] = {"sm1": []}
+        forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {}}
         with pytest.raises(ValueError, match="Forecast data for stressmodel"):
             _check_forecast_data(forecasts)
 
