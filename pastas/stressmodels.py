@@ -1006,7 +1006,7 @@ class WellModel(StressModelBase):
             stress_names = [x.name for x in self.stress_tuple]
             i = stress_names.index(stress.name)
             self._stress[i] = stress
-        if isinstance(stress, Series):
+        elif isinstance(stress, Series):
             stress_names = [x.name for x in self.stress_tuple]
             i = stress_names.index(stress.name)
             if hasattr(self, "_stress"):
