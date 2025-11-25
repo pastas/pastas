@@ -215,7 +215,7 @@ def forecast(
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
             sm = ml.stressmodels[sm_name]  # Select stressmodel
-            for i, (stress_name, fc) in enumerate(fc_data.items()):
+            for stress_name, fc in fc_data.items():
                 old_stress = getattr(sm, stress_name).series_original.loc[: tmin - day]
                 new_stress = fc.iloc[:, member]
                 ts = concat([old_stress, new_stress], axis=0)
