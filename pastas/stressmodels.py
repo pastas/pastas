@@ -16,6 +16,7 @@ pastas.model.Model.add_stressmodel
 """
 
 from collections import namedtuple
+from collections.abc import Iterable
 from inspect import isclass
 from logging import getLogger
 from typing import Any
@@ -914,16 +915,24 @@ class WellModel(StressModelBase):
 
     def __init__(
         self,
-        stress: list[Series],
+        stress: Iterable[Series],
         name: str,
         distances: ArrayLike,
-        rfunc: RFunc | None = None,
+        rfunc: HantushWellModel | None = None,
         up: bool = False,
-        settings: str | StressSettingsDict = "well",
+        settings: str
+        | StressSettingsDict
+        | Iterable[str]
+        | Iterable[StressSettingsDict] = "well",
         sort_wells: bool = True,
-        metadata: list[dict[str, Any]] = None,
+        metadata: Iterable[dict[str, Any]] = None,
         max_cache_size: int = None,
     ) -> None:
+        if not isinstance(stress, (tuple, list, dict)):
+            msg = f"The stress parameter must be a collection of pandas Series, not {type(stress)}"
+            logger.error(msg)
+            raise TypeError(msg)
+
         # check response function
         if rfunc is None:
             rfunc = HantushWellModel()
@@ -931,14 +940,6 @@ class WellModel(StressModelBase):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"
             )
-
-        # parse settings input
-        if settings is None or isinstance(settings, str) or isinstance(settings, dict):
-            settings = len(stress) * [settings]
-
-        # if metadata is passed as dict -> convert to list
-        if metadata is not None and isinstance(metadata, dict):
-            metadata = [metadata] * len(stress)
 
         self.distances = Series(
             index=[s.squeeze().name for s in stress],
@@ -978,9 +979,9 @@ class WellModel(StressModelBase):
         self.set_init_parameters()
 
     @property
-    def stress(self) -> list[TimeSeries]:
+    def stress(self) -> tuple[TimeSeries, ...]:
         """Return the stress time series."""
-        return self._stress
+        return tuple(self._stress)
 
     @stress.setter
     def stress(
@@ -1010,10 +1011,10 @@ class WellModel(StressModelBase):
             stress_names = [x.name for x in self.stress_tuple]
             i = stress_names.index(stress.name)
             if hasattr(self, "_stress"):
-                if self.stress_tuple[i].metadata is not None and metadata is None:
-                    metadata = self.stress_tuple[i].metadata
                 if self.stress_tuple[i].settings is not None and settings is None:
                     settings = self.stress_tuple[i].settings
+                if self.stress_tuple[i].metadata is not None and metadata is None:
+                    metadata = self.stress_tuple[i].metadata
             self._stress[i] = TimeSeries(stress, settings=settings, metadata=metadata)
         else:
             if len(stress) != len(self.distances):
@@ -1082,13 +1083,15 @@ class WellModel(StressModelBase):
 
     @staticmethod
     def _handle_stress(
-        stress: Series
-        | list[Series]
+        stress: list[Series]
         | dict[str, Series]
-        | TimeSeries
         | list[TimeSeries]
         | dict[str, TimeSeries],
-        settings: str | list[str] | StressSettingsDict | list[StressSettingsDict],
+        settings: str
+        | list[str]
+        | StressSettingsDict
+        | list[StressSettingsDict]
+        | None,
         metadata: dict[str, Any] | list[dict[str, Any]] | None,
     ) -> list[TimeSeries]:
         """Internal method to handle user provided stress in init.
@@ -1109,11 +1112,15 @@ class WellModel(StressModelBase):
         """
         data = []
 
-        if isinstance(stress, TimeSeries):
-            data.append(stress)
-        elif isinstance(stress, Series):
-            data.append(TimeSeries(stress, settings=settings, metadata=metadata))
-        elif isinstance(stress, dict):
+        # parse settings input
+        if settings is None or isinstance(settings, str) or isinstance(settings, dict):
+            settings = len(stress) * [settings]
+
+        # if metadata is passed as dict -> convert to list
+        if metadata is not None and isinstance(metadata, dict):
+            metadata = len(stress) * [metadata]
+
+        if isinstance(stress, dict):
             for i, (name, value) in enumerate(stress.items()):
                 if isinstance(value, TimeSeries):
                     data.append(value)
