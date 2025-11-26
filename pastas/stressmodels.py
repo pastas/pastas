@@ -19,14 +19,13 @@ from collections import namedtuple
 from collections.abc import Iterable
 from inspect import isclass
 from logging import getLogger
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from packaging.version import parse as parse_version
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from pandas import __version__ as pd_version
 from scipy.signal import fftconvolve
-from typing_extensions import Literal
 
 from pastas.typing import (
     ArrayLike,
