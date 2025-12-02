@@ -49,7 +49,9 @@ def pastas_hook(obj: dict):
             obj[key] = val
         elif key == "series":
             try:
-                obj[key] = read_json(stringIO(value), typ="series", orient="split")
+                obj[key] = read_json(
+                    stringIO(value), typ="series", orient="split"
+                ).astype(float)
             except Exception as e:
                 logger.debug(e)
                 obj[key] = value
