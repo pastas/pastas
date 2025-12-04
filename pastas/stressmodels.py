@@ -1540,12 +1540,8 @@ class RechargeModel(StressModelBase):
             recharge = Linear()
 
         # Store the precipitation and evaporation time series
-        self.set_stress(
-            name="prec", stress=prec, settings=settings[0], metadata=metadata[0]
-        )
-        self.set_stress(
-            name="evap", stress=evap, settings=settings[1], metadata=metadata[1]
-        )
+        self.set_stress(prec=prec, settings=settings[0], metadata=metadata[0])
+        self.set_stress(evap=evap, settings=settings[1], metadata=metadata[1])
 
         # Store recharge object
         self.recharge = recharge
@@ -1562,9 +1558,7 @@ class RechargeModel(StressModelBase):
                 msg = "Number of values for the settings and/or metadata is incorrect."
                 raise TypeError(msg)
             else:
-                self.set_stress(
-                    name="temp", stress=temp, settings=settings[2], metadata=metadata[2]
-                )
+                self.set_stress(temp=temp, settings=settings[2], metadata=metadata[2])
         else:
             self._temp = None
 
