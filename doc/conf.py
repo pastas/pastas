@@ -61,7 +61,6 @@ language = "en"
 # directories to ignore when looking for source files.
 exclude_patterns = [
     "_build",
-    "**groundwater_paper",
     "**.ipynb_checkpoints",
 ]
 
@@ -177,7 +176,7 @@ intersphinx_mapping = {
 # -- myst_nb options ------------------------------------------------------------------
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
-nb_execution_mode = "auto"
+nb_execution_mode = "off"
 nb_merge_streams = True
 myst_enable_extensions = ["dollarmath", "amsmath"]
 myst_dmath_double_inline = True
