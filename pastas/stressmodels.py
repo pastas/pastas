@@ -178,50 +178,6 @@ class StressModelBase:
         """
         self.parameters.at[name, "dist"] = str(value)
 
-    def update_stress(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        freq: str | None = None,
-    ) -> None:
-        """Method to update the settings of the all stresses in the stress model.
-
-        Parameters
-        ----------
-        freq: str, optional
-            String representing the desired frequency of the time series. Must be one
-            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the minimum time of the series
-            (E.g. '1980-01-01 00:00:00').
-        tmax: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the maximum time of the series
-            (E.g. '2020-01-01 00:00:00'). Strings are converted to
-
-            pandas.Timestamp internally.
-
-        Notes
-        -----
-        For the individual options for the different settings please refer to the
-        docstring from the TimeSeries.update_series() method.
-
-        See Also
-        --------
-        ps.timeseries.TimeSeries.update_series
-        """
-        if len(self.stress_tuple) != 0 and hasattr(self, "_stress"):
-            # not for StepModel, LinearTrend, Constant which have no stresses
-            # not for RechargeModel which has its own update_stress method
-            if isinstance(self._stress, Iterable):
-                # only for WellModel where self._stress is a list
-                for stress in self._stress:
-                    stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
-            else:
-                self._stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
-
-        if freq:
-            self.freq = freq
-
     def set_stress(self, stress: Series | TimeSeries) -> None:
         """Placeholder method for setting the stress time series."""
         _ = stress
@@ -254,8 +210,13 @@ class StressModelBase:
         istress = 0 if istress is None else istress
         return self.stress_tuple[istress].series
 
-    def to_dict(self, **kwargs):
-        """Method to export the stress model object."""
+    def update_stress(self, **kwargs) -> None:
+        """Placeholder method for updating the stress time series."""
+        pass
+
+    def to_dict(self, **kwargs) -> None:
+        """Placeholder method the to_dict method."""
+        pass
 
     def get_nsplit(self) -> int:
         """Determine in how many time series the contribution can be split."""
@@ -470,6 +431,42 @@ class StressModel(StressModelBase):
         nt = namedtuple("StressTuple", ["stress"])
         return nt(stress=self.stress)
 
+    def update_stress(
+        self,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        freq: str | None = None,
+    ) -> None:
+        """Method to update the settings of the all stresses in the stress model.
+
+        Parameters
+        ----------
+        freq: str, optional
+            String representing the desired frequency of the time series. Must be one
+            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the minimum time of the series
+            (E.g. '1980-01-01 00:00:00').
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the maximum time of the series
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
+
+        Notes
+        -----
+        For the individual options for the different settings please refer to the
+        docstring from the TimeSeries.update_series() method.
+
+        See Also
+        --------
+        ps.timeseries.TimeSeries.update_series
+        """
+        self._stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
+
+        if freq:
+            self.freq = freq
+
     def simulate(
         self,
         p: ArrayLike,
@@ -598,6 +595,9 @@ class StepModel(StressModelBase):
     def stress_tuple(self) -> tuple:
         return ()
 
+    def update_stress(self, **kwargs) -> None:
+        pass
+
     def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
         tmin = Timestamp.min.toordinal()
@@ -700,6 +700,9 @@ class LinearTrend(StressModelBase):
     @property
     def stress_tuple(self) -> tuple:
         return ()
+
+    def update_stress(self, **kwargs) -> None:
+        pass
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters for the stress model."""
@@ -804,6 +807,9 @@ class Constant(StressModelBase):
     @property
     def stress_tuple(self) -> tuple:
         return ()
+
+    def update_stress(self, **kwargs) -> None:
+        pass
 
     def set_init_parameters(self):
         self.parameters.loc[self.name + "_d"] = (
@@ -2357,6 +2363,42 @@ class ChangeModel(StressModelBase):
         """Return the stress time series as a tuple."""
         nt = namedtuple("StressTuple", ["stress"])
         return nt(stress=self.stress)
+
+    def update_stress(
+        self,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        freq: str | None = None,
+    ) -> None:
+        """Method to update the settings of the all stresses in the stress model.
+
+        Parameters
+        ----------
+        freq: str, optional
+            String representing the desired frequency of the time series. Must be one
+            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the minimum time of the series
+            (E.g. '1980-01-01 00:00:00').
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the maximum time of the series
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
+
+        Notes
+        -----
+        For the individual options for the different settings please refer to the
+        docstring from the TimeSeries.update_series() method.
+
+        See Also
+        --------
+        ps.timeseries.TimeSeries.update_series
+        """
+        self._stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
+
+        if freq:
+            self.freq = freq
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
