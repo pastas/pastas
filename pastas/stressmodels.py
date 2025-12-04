@@ -19,7 +19,7 @@ from collections import namedtuple
 from collections.abc import Iterable
 from inspect import isclass
 from logging import getLogger
-from typing import Any, Literal
+from typing import Any
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -178,10 +178,9 @@ class StressModelBase:
         """
         self.parameters.at[name, "dist"] = str(value)
 
-    def set_stress(self, stress: Series | TimeSeries) -> None:
-        """Placeholder method for setting the stress time series."""
-        _ = stress
-        return None
+    def set_stress(self, *args, **kwargs) -> None:
+        """Placeholder for the set_stress method."""
+        pass
 
     def get_stress(
         self,
@@ -210,18 +209,12 @@ class StressModelBase:
         istress = 0 if istress is None else istress
         return self.stresses[istress].series
 
-    def update_stress(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        freq: str | None = None,
-    ) -> None:
-        """Placeholder method for updating the stress time series."""
-        _ = tmin, tmax, freq
+    def update_stress(self, *args, **kwargs) -> None:
+        """Placeholder for the update_stress method."""
         pass
 
     def to_dict(self, **kwargs) -> None:
-        """Placeholder method the to_dict method."""
+        """Placeholder for the to_dict method."""
         pass
 
     def get_nsplit(self) -> int:
@@ -601,14 +594,8 @@ class StepModel(StressModelBase):
     def stresses(self) -> tuple:
         return ()
 
-    def update_stress(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        freq: str | None = None,
-    ) -> None:
+    def update_stress(self, *args, **kwargs) -> None:
         """Method that is required but has no effect."""
-        _ = tmin, tmax, freq
         pass
 
     def set_init_parameters(self) -> None:
@@ -714,14 +701,8 @@ class LinearTrend(StressModelBase):
     def stresses(self) -> tuple:
         return ()
 
-    def update_stress(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        freq: str | None = None,
-    ) -> None:
+    def update_stress(self, *args, **kwargs) -> None:
         """Method that is required but has no effect."""
-        _ = tmin, tmax, freq
         pass
 
     def set_init_parameters(self) -> None:
@@ -828,14 +809,8 @@ class Constant(StressModelBase):
     def stresses(self) -> tuple:
         return ()
 
-    def update_stress(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        freq: str | None = None,
-    ) -> None:
+    def update_stress(self, *args, **kwargs) -> None:
         """Method that is required but has no effect."""
-        _ = tmin, tmax, freq
         pass
 
     def set_init_parameters(self):
@@ -972,7 +947,10 @@ class WellModel(StressModelBase):
         max_cache_size: int = None,
     ) -> None:
         if not isinstance(stress, (tuple, list, dict)):
-            msg = f"The stress parameter must be a collection of pandas Series, not {type(stress)}"
+            msg = (
+                "The stress parameter must be a collection of "
+                f"pandas Series or pastas TimeSeries, not {type(stress)}"
+            )
             logger.error(msg)
             raise TypeError(msg)
 
