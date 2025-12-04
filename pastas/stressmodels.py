@@ -1273,9 +1273,9 @@ class WellModel(StressModelBase):
             else:
                 return df
         elif isinstance(istress, list):
-            return DataFrame.from_dict(
-                {s.name: s.series for s in self.stresses}
-            ).iloc[:, istress]
+            return DataFrame.from_dict({s.name: s.series for s in self.stresses}).iloc[
+                :, istress
+            ]
         else:
             if squeeze:
                 return self.stresses[istress].series
