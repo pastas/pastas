@@ -210,8 +210,14 @@ class StressModelBase:
         istress = 0 if istress is None else istress
         return self.stress_tuple[istress].series
 
-    def update_stress(self, **kwargs) -> None:
+    def update_stress(
+        self,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        freq: str | None = None,
+    ) -> None:
         """Placeholder method for updating the stress time series."""
+        _ = tmin, tmax, freq
         pass
 
     def to_dict(self, **kwargs) -> None:
@@ -595,7 +601,14 @@ class StepModel(StressModelBase):
     def stress_tuple(self) -> tuple:
         return ()
 
-    def update_stress(self, **kwargs) -> None:
+    def update_stress(
+        self,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        freq: str | None = None,
+    ) -> None:
+        """Method that is required but has no effect."""
+        _ = tmin, tmax, freq
         pass
 
     def set_init_parameters(self) -> None:
@@ -701,7 +714,14 @@ class LinearTrend(StressModelBase):
     def stress_tuple(self) -> tuple:
         return ()
 
-    def update_stress(self, **kwargs) -> None:
+    def update_stress(
+        self,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        freq: str | None = None,
+    ) -> None:
+        """Method that is required but has no effect."""
+        _ = tmin, tmax, freq
         pass
 
     def set_init_parameters(self) -> None:
@@ -808,7 +828,14 @@ class Constant(StressModelBase):
     def stress_tuple(self) -> tuple:
         return ()
 
-    def update_stress(self, **kwargs) -> None:
+    def update_stress(
+        self,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        freq: str | None = None,
+    ) -> None:
+        """Method that is required but has no effect."""
+        _ = tmin, tmax, freq
         pass
 
     def set_init_parameters(self):
