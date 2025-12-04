@@ -10,11 +10,12 @@ Create a TimeSeries object::
 """
 
 from logging import getLogger
-from typing import Any
 
 import pandas as pd
 from pandas import Series, Timedelta
 from pandas.tseries.frequencies import to_offset
+
+from pastas.typing import OseriesSettingsDict, StressSettingsDict
 
 from .rcparams import rcParams
 from .timeseries_utils import _get_dt, _get_time_offset, _infer_fixed_freq, resample
@@ -108,7 +109,7 @@ class TimeSeries:
         self,
         series: Series,
         name: str | None = None,
-        settings: str | dict[str, Any] | None = None,
+        settings: str | OseriesSettingsDict | StressSettingsDict | None = None,
         metadata: dict | None = None,
     ) -> None:
         # Make sure we have a Pandas Series and not a 1D-DataFrame
