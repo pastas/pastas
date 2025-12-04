@@ -178,6 +178,7 @@ Pastas: Open Source Software for the Analysis of Groundwater Time Series.
 Groundwater, 57: 877-885. `doi:10.1111/gwat.12925 <https://doi.org/10.1111/gwat.12925>`_
 
 `Example 1 Modeling Groundwater Levels with Pastas`_
+
 `Example 2 Analysis of groundwater monitoring networks using Pastas`_
 
 .. _Example 1 Modeling Groundwater Levels with Pastas: groundwater_paper/Ex1_simple_model/Example1.html
