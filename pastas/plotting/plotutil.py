@@ -68,7 +68,7 @@ def _get_height_ratios(ylims: list[tuple[float, float]]) -> list[float]:
 def _get_stress_series(ml, split: bool = True) -> list[Series]:
     stresses = []
     for name in ml.stressmodels.keys():
-        nstress = len(ml.stressmodels[name].stress_tuple)
+        nstress = len(ml.stressmodels[name].stresses)
         if split and nstress > 1:
             for istress in range(nstress):
                 stress = ml.get_stress(name, istress=istress)

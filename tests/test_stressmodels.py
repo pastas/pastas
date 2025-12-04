@@ -227,7 +227,7 @@ class TestRechargeModel:
         )
         assert rm.name == "rech1"
         assert rm.recharge._name == "Linear"
-        assert len(rm.stress_tuple) == 2  # prec and evap
+        assert len(rm.stresses) == 2  # prec and evap
 
     def test_init_flex(self) -> None:
         """Test initialization with FlexModel recharge model."""
@@ -269,7 +269,7 @@ class TestRechargeModel:
         )
 
         assert rm.name == "rech_temp"
-        assert len(rm.stress_tuple) == 3  # prec, evap, and temp
+        assert len(rm.stresses) == 3  # prec, evap, and temp
         assert rm.temp is not None
 
     def test_get_stress(self) -> None:
@@ -323,7 +323,7 @@ class TestWellModel:
             distances=self.distances,
         )
         assert wm.name == "wells"
-        assert len(wm.stress_tuple) == 3
+        assert len(wm.stresses) == 3
         assert len(wm.distances) == 3
 
         # Test with sorting
@@ -413,13 +413,13 @@ class TestWellModel:
         wm.set_stress([new_well1, new_well2, new_well3])
 
         # Verify that stresses were updated
-        assert wm.stress_tuple[0].series.equals(new_well1)
-        assert wm.stress_tuple[1].series.equals(new_well2)
-        assert wm.stress_tuple[2].series.equals(new_well3)
+        assert wm.stresses[0].series.equals(new_well1)
+        assert wm.stresses[1].series.equals(new_well2)
+        assert wm.stresses[2].series.equals(new_well3)
 
         new_well4 = self.well1 * 3
         wm.stress = new_well4
-        assert wm.stress_tuple[0].series.equals(new_well4)
+        assert wm.stresses[0].series.equals(new_well4)
 
     def test_set_stress_error(self) -> None:
         """Test error when setting stress with incorrect number of series."""

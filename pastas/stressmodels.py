@@ -118,7 +118,7 @@ class StressModelBase:
             self._cache = None
 
     @property
-    def stress_tuple(self) -> tuple:
+    def stresses(self) -> tuple:
         return ()
 
     @property
@@ -208,7 +208,7 @@ class StressModelBase:
 
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         istress = 0 if istress is None else istress
-        return self.stress_tuple[istress].series
+        return self.stresses[istress].series
 
     def update_stress(
         self,
@@ -229,7 +229,7 @@ class StressModelBase:
         if hasattr(self, "nsplit"):
             return self.nsplit
         else:
-            return len(self.stress_tuple)
+            return len(self.stresses)
 
     def _get_block(
         self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
@@ -254,10 +254,10 @@ class StressModelBase:
         -----
         To update the settings of the time series, use the `update_stress` method.
         """
-        if len(self.stress_tuple) == 0:
+        if len(self.stresses) == 0:
             return None
         else:
-            return {stress.name: stress.settings for stress in self.stress_tuple}
+            return {stress.name: stress.settings for stress in self.stresses}
 
     def get_parameters(self, model=None) -> ArrayLike:
         """Get parameters and return as array.
@@ -432,7 +432,7 @@ class StressModel(StressModelBase):
             self._stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
     @property
-    def stress_tuple(self) -> tuple[TimeSeries]:
+    def stresses(self) -> tuple[TimeSeries]:
         """Return the stress time series as a tuple."""
         nt = namedtuple("StressTuple", ["stress"])
         return nt(stress=self.stress)
@@ -598,7 +598,7 @@ class StepModel(StressModelBase):
         self.set_init_parameters()
 
     @property
-    def stress_tuple(self) -> tuple:
+    def stresses(self) -> tuple:
         return ()
 
     def update_stress(
@@ -711,7 +711,7 @@ class LinearTrend(StressModelBase):
         self.set_init_parameters()
 
     @property
-    def stress_tuple(self) -> tuple:
+    def stresses(self) -> tuple:
         return ()
 
     def update_stress(
@@ -825,7 +825,7 @@ class Constant(StressModelBase):
         self.set_init_parameters()
 
     @property
-    def stress_tuple(self) -> tuple:
+    def stresses(self) -> tuple:
         return ()
 
     def update_stress(
@@ -1021,7 +1021,7 @@ class WellModel(StressModelBase):
 
         self.rfunc.set_distances(self.distances.values)
 
-        self.freq = self.stress_tuple[0].settings["freq"]
+        self.freq = self.stresses[0].settings["freq"]
         self.set_init_parameters()
 
     @property
@@ -1081,7 +1081,7 @@ class WellModel(StressModelBase):
                 ]
                 self.distances.sort_values(inplace=True)
         else:
-            stress_names = [x.name for x in self.stress_tuple]
+            stress_names = [x.name for x in self.stresses]
             try:
                 i = stress_names.index(stress.name)
             except ValueError:
@@ -1095,10 +1095,10 @@ class WellModel(StressModelBase):
                 self._stress[i] = stress
             elif isinstance(stress, Series):
                 if hasattr(self, "_stress"):
-                    if self.stress_tuple[i].settings is not None and settings is None:
-                        settings = self.stress_tuple[i].settings
-                    if self.stress_tuple[i].metadata is not None and metadata is None:
-                        metadata = self.stress_tuple[i].metadata
+                    if self.stresses[i].settings is not None and settings is None:
+                        settings = self.stresses[i].settings
+                    if self.stresses[i].metadata is not None and metadata is None:
+                        metadata = self.stresses[i].metadata
                 self._stress[i] = TimeSeries(
                     stress, settings=settings, metadata=metadata
                 )
@@ -1112,7 +1112,7 @@ class WellModel(StressModelBase):
             logger.error(msg)
             raise ValueError(msg)
 
-        names = [s.name for s in self.stress_tuple]
+        names = [s.name for s in self.stresses]
         if np.unique(names).size != len(names):
             msg = "All stress time series must have unique names."
             logger.error(msg)
@@ -1127,7 +1127,7 @@ class WellModel(StressModelBase):
             raise ValueError(msg)
 
     @property
-    def stress_tuple(self) -> tuple[TimeSeries, ...]:
+    def stresses(self) -> tuple[TimeSeries, ...]:
         """Return the stress time series as a tuple."""
         nt = namedtuple("StressTuple", [s.name for s in self._stress])
         return nt(*self._stress)
@@ -1160,7 +1160,7 @@ class WellModel(StressModelBase):
         stress_df = self.get_stress(
             p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress, squeeze=False
         )
-        h = Series(data=0, index=self.stress_tuple[0].series.index, name=self.name)
+        h = Series(data=0, index=self.stresses[0].series.index, name=self.name)
         for name, r in distances.items():
             stress = stress_df.loc[:, name]
             npoints = stress.index.size
@@ -1171,8 +1171,8 @@ class WellModel(StressModelBase):
         if istress is not None:
             if isinstance(istress, list):
                 h.name = self.name + "_" + "+".join(str(i) for i in istress)
-            elif self.stress_tuple[istress].name is not None:
-                h.name = self.stress_tuple[istress].name
+            elif self.stresses[istress].name is not None:
+                h.name = self.stresses[istress].name
             else:
                 h.name = self.name + "_" + str(istress)
         else:
@@ -1267,20 +1267,20 @@ class WellModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
         if istress is None:
-            df = DataFrame.from_dict({s.name: s.series for s in self.stress_tuple})
+            df = DataFrame.from_dict({s.name: s.series for s in self.stresses})
             if squeeze:
                 return df.squeeze()
             else:
                 return df
         elif isinstance(istress, list):
             return DataFrame.from_dict(
-                {s.name: s.series for s in self.stress_tuple}
+                {s.name: s.series for s in self.stresses}
             ).iloc[:, istress]
         else:
             if squeeze:
-                return self.stress_tuple[istress].series
+                return self.stresses[istress].series
             else:
-                return self.stress_tuple[istress].series.to_frame()
+                return self.stresses[istress].series.to_frame()
 
     def get_distances(self, istress: int | None = None) -> DataFrame:
         if istress is None:
@@ -1338,7 +1338,7 @@ class WellModel(StressModelBase):
         """
         data = []
 
-        for stress in self.stress_tuple:
+        for stress in self.stresses:
             stress.name = validate_name(stress.name, raise_error=True)
             data.append(stress.to_dict(series=series))
 
@@ -1679,7 +1679,7 @@ class RechargeModel(StressModelBase):
     @PastasDeprecationWarning(
         remove_version="2.0.0",
         reason=(
-            "for the RechargeModel. Use 'stress_tuple' property instead if you want to"
+            "for the RechargeModel. Use 'stresses' property instead if you want to"
             " obtain all stresses. For individual stresses call the 'prec', 'evap' and "
             "'temp' attributes. Changing the stress can be done using the `set_stress` method."
         ),
@@ -1718,7 +1718,7 @@ class RechargeModel(StressModelBase):
         self.set_stress("temp", value)
 
     @property
-    def stress_tuple(self) -> tuple[TimeSeries]:
+    def stresses(self) -> tuple[TimeSeries]:
         """Return the stress time series as a tuple."""
         if self.temp is None:
             nt = namedtuple("StressTuple", ["prec", "evap"])
@@ -1838,8 +1838,8 @@ class RechargeModel(StressModelBase):
             if istress == 1 and self.nsplit > 1:
                 # only happen when Linear is used as the recharge model
                 stress = stress * p[-1]
-            if self.stress_tuple[istress].name is not None:
-                name = f"{self.name} ({self.stress_tuple[istress].name})"
+            if self.stresses[istress].name is not None:
+                name = f"{self.name} ({self.stresses[istress].name})"
 
         return Series(
             data=fftconvolve(stress, b, "full")[: stress.size],
@@ -2386,7 +2386,7 @@ class ChangeModel(StressModelBase):
             self._stress = TimeSeries(stress, settings=settings, metadata=metadata)
 
     @property
-    def stress_tuple(self) -> tuple[TimeSeries]:
+    def stresses(self) -> tuple[TimeSeries]:
         """Return the stress time series as a tuple."""
         nt = namedtuple("StressTuple", ["stress"])
         return nt(stress=self.stress)
@@ -2484,7 +2484,7 @@ class ChangeModel(StressModelBase):
             p[self.rfunc1.nparam : self.rfunc1.nparam + self.rfunc2.nparam]
         )
 
-        stress = self.stress_tuple[0].series
+        stress = self.stresses[0].series
         npoints = stress.index.size
         t = np.linspace(0, 1, npoints)
         beta = p[-2]
@@ -2519,7 +2519,7 @@ class ChangeModel(StressModelBase):
         Settings and metadata are exported with the stress.
         """
         data = {
-            "stress": self.stress_tuple[0].to_dict(series=series),
+            "stress": self.stresses[0].to_dict(series=series),
             "rfunc1": self.rfunc1.to_dict(),
             "rfunc2": self.rfunc2.to_dict(),
             "name": self.name,

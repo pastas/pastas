@@ -269,7 +269,7 @@ class Plotting:
                 if adjust_height:
                     ax_contrib.set_ylim(ylims[i + 2])
                 if not split:
-                    title = [stress.name for stress in sm.stress_tuple]
+                    title = [stress.name for stress in sm.stresses]
                     if len(title) > 3:
                         title = title[:3] + ["..."]
                     ax_contrib.set_title(
@@ -482,7 +482,7 @@ class Plotting:
                 contribs[sm_name].values,
                 label=sm_name,
             )
-            title = [stress.name for stress in sm.stress_tuple]
+            title = [stress.name for stress in sm.stresses]
             if len(title) > 3:
                 title = title[:3] + ["..."]
             if title:
@@ -1237,7 +1237,7 @@ class Plotting:
             # Get the contributions for StressModels with multiple stresses
             contributions = []
             sml = self.ml.stressmodels[sm]
-            if (len(sml.stress_tuple) > 0) and (sml._name == "WellModel"):
+            if (len(sml.stresses) > 0) and (sml._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
                         wnam: f"C{iw + 1}"
@@ -1254,11 +1254,11 @@ class Plotting:
                 ax_step = axes[i]  # step response axis
                 ax_step.lines[0].remove()  # remove step response for r=1 m
                 if nsplit > 1:
-                    for istress in range(len(sml.stress_tuple)):
+                    for istress in range(len(sml.stresses)):
                         h = self.ml.get_contribution(
                             sm, istress=istress, tmin=tmin, tmax=tmax
                         )
-                        name = sml.stress_tuple[istress].name
+                        name = sml.stresses[istress].name
                         if name is None:
                             name = sm
                         contributions.append((name, h))
