@@ -427,7 +427,7 @@ class StressModel(StressModelBase):
     @property
     def stresses(self) -> tuple[TimeSeries]:
         """Return the stress time series as a tuple."""
-        nt = namedtuple("StressTuple", ["stress"])
+        nt = namedtuple("StressesTuple", ["stress"])
         return nt(stress=self.stress)
 
     def update_stress(
@@ -1107,7 +1107,7 @@ class WellModel(StressModelBase):
     @property
     def stresses(self) -> tuple[TimeSeries, ...]:
         """Return the stress time series as a tuple."""
-        nt = namedtuple("StressTuple", [s.name for s in self._stress])
+        nt = namedtuple("StressesTuple", [s.name for s in self._stress])
         return nt(*self._stress)
 
     def set_init_parameters(self) -> None:
@@ -1697,7 +1697,7 @@ class RechargeModel(StressModelBase):
     @prec.setter
     def prec(self, value: Series) -> None:
         """Set the precipitation time series."""
-        self.set_stress("prec", value)
+        self.set_stress(prec=value)
 
     @property
     def evap(self) -> TimeSeries:
@@ -1707,7 +1707,7 @@ class RechargeModel(StressModelBase):
     @evap.setter
     def evap(self, value: Series) -> None:
         """Set the evaporation time series."""
-        self.set_stress("evap", value)
+        self.set_stress(evap=value)
 
     @property
     def temp(self) -> TimeSeries | None:
@@ -1717,17 +1717,17 @@ class RechargeModel(StressModelBase):
     @temp.setter
     def temp(self, value: Series) -> None:
         """Set the temperature time series."""
-        self.set_stress("temp", value)
+        self.set_stress(temp=value)
 
     @property
     def stresses(self) -> tuple[TimeSeries]:
         """Return the stress time series as a tuple."""
         if self.temp is None:
-            nt = namedtuple("StressTuple", ["prec", "evap"])
+            nt = namedtuple("StressesTuple", ["prec", "evap"])
             return nt(prec=self.prec, evap=self.evap)
         else:
             nt = namedtuple(
-                "StressTuple",
+                "StressesTuple",
                 ["prec", "evap", "temp"],
             )
             return nt(prec=self.prec, evap=self.evap, temp=self.temp)
@@ -2390,7 +2390,7 @@ class ChangeModel(StressModelBase):
     @property
     def stresses(self) -> tuple[TimeSeries]:
         """Return the stress time series as a tuple."""
-        nt = namedtuple("StressTuple", ["stress"])
+        nt = namedtuple("StressesTuple", ["stress"])
         return nt(stress=self.stress)
 
     def update_stress(
