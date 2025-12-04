@@ -1617,8 +1617,9 @@ class RechargeModel(StressModelBase):
 
     def set_stress(
         self,
-        name: Literal["prec", "evap", "temp"],
-        stress: Series,
+        prec: Series | None = None,
+        evap: Series | None = None,
+        temp: Series | None = None,
         settings: str | StressSettingsDict | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
@@ -1626,10 +1627,15 @@ class RechargeModel(StressModelBase):
 
         Parameters
         ----------
-        name : str
-            Name of the stress to set. Must be one of "prec", "evap", or "temp".
-        stress : pandas.Series
-            pandas.Series with pandas.DatetimeIndex containing the stress time series.
+        prec : pandas.Series, optional
+            pandas.Series with pandas.DatetimeIndex containing the precipitation series.
+            By default this is None.
+        evap : pandas.Series, optional
+            pandas.Series with pandas.DatetimeIndex containing the potential evaporation
+            series. By default this is None.
+        temp : pandas.Series, optional
+            pandas.Series with pandas.DatetimeIndex containing the temperature series.
+            By default this is None.
         settings : str or dict, optional
             The settings of the time series. By default this is None. This can be a
             string referring to a predefined settings dict (defined in
@@ -1643,15 +1649,39 @@ class RechargeModel(StressModelBase):
         -------
         None
         """
-        attr_name = f"_{name}"
-        if hasattr(self, attr_name):
-            if getattr(self, attr_name).metadata is not None and metadata is None:
-                metadata = getattr(self, attr_name).metadata
-            if getattr(self, attr_name).settings is not None and settings is None:
-                settings = getattr(self, attr_name).settings
-        setattr(
-            self, attr_name, TimeSeries(stress, settings=settings, metadata=metadata)
-        )
+
+        def _set_stress(
+            attr_name: str,
+            stress: Series,
+            settings: str | StressSettingsDict | None,
+            metadata: dict[str, Any] | None,
+        ) -> None:
+            if hasattr(self, attr_name):
+                if getattr(self, attr_name).metadata is not None and metadata is None:
+                    metadata = getattr(self, attr_name).metadata
+                if getattr(self, attr_name).settings is not None and settings is None:
+                    settings = getattr(self, attr_name).settings
+            setattr(
+                self,
+                attr_name,
+                TimeSeries(stress, settings=settings, metadata=metadata),
+            )
+
+        if sum([prec is not None, evap is not None, temp is not None]) > 1:
+            msg = "Only one of prec, evap, or temp can be set at a time."
+            logger.error(msg)
+            raise ValueError(msg)
+
+        if prec is not None:
+            _set_stress("_prec", prec, settings, metadata)
+        elif evap is not None:
+            _set_stress("_evap", evap, settings, metadata)
+        elif temp is not None:
+            _set_stress("_temp", temp, settings, metadata)
+        else:
+            msg = "No stress time series provided to set. Please provide either prec, evap or temp."
+            logger.error(msg)
+            raise ValueError(msg)
 
     @property
     @PastasDeprecationWarning(
