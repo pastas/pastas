@@ -995,6 +995,13 @@ class Model:
 
         return self.solver
 
+    @property
+    @PastasDeprecationWarning(
+        remove_version="3.0.0", reason="Use 'ml.observations()' instead."
+    )
+    def oseries_calib(self):
+        return self.oseries.series
+
     def set_parameter(
         self,
         name: str,
