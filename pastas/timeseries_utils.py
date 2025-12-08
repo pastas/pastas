@@ -187,6 +187,8 @@ def _infer_fixed_freq(tindex: Index) -> str:
     str
         frequency string
     """
+    if tindex.empty:
+        return None
     freq = infer_freq(tindex)
     if freq is None:
         return freq

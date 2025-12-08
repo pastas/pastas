@@ -534,11 +534,11 @@ class Model:
         sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
 
         # Get the oseries calibration series
-        self.oseries.update_series(tmin=tmin, tmax=tmax, freq=freq_obs)
+        obs = self.observations(tmin=tmin, tmax=tmax, freq=freq_obs)
 
         # Get simulation at the correct indices
         if self.interpolate_simulation is None:
-            if self.oseries.series.index.difference(sim.index).size != 0:
+            if obs.index.difference(sim.index).size != 0:
                 self.interpolate_simulation = True
                 logger.info(
                     "There are observations between the simulation time steps. Linear "
@@ -546,15 +546,13 @@ class Model:
                 )
         if self.interpolate_simulation:
             # interpolate simulation to times of observations
-            sim_interpolated = np.interp(
-                self.oseries.series.index.asi8, sim.index.asi8, sim.values
-            )
+            sim_interpolated = np.interp(obs.index.asi8, sim.index.asi8, sim.values)
         else:
             # All the observation indexes are in the simulation
-            sim_interpolated = sim.reindex(self.oseries.series.index)
+            sim_interpolated = sim.reindex(obs.index)
 
         # Calculate the actual residuals here
-        res = self.oseries.series.subtract(sim_interpolated)
+        res = obs.subtract(sim_interpolated)
 
         if res.hasnans:
             res = res.dropna()
@@ -705,7 +703,7 @@ class Model:
                 freq = self.settings["freq_obs"]
 
         oseries = self.oseries
-        if (
+        if not update_observations and (
             tmin != self.settings["tmin"]
             or tmax != self.settings["tmax"]
             or freq != self.settings["freq"]
