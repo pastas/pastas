@@ -61,7 +61,6 @@ language = "en"
 # directories to ignore when looking for source files.
 exclude_patterns = [
     "_build",
-    "**groundwater_paper",
     "**.ipynb_checkpoints",
 ]
 

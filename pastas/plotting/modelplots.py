@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import Series, Timestamp, concat
+from pandas import DataFrame, Series, Timestamp, concat
 
 from pastas.decorators import PastasDeprecationWarning, model_tmin_tmax
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
@@ -1558,7 +1558,10 @@ class Plotting:
                 s = self.ml.get_stress(name, tmin=tmin, tmax=tmax, istress=istress)
                 # if multiple stresses, sum stresses together
                 if isinstance(s, list):
-                    s = concat(s, axis=1).sum(axis=1, fill_value=0.0)
+                    s = concat(s, axis=1).sum(axis=1, skipna=True)
+                    stress_name = name
+                elif isinstance(s, DataFrame):
+                    s = s.sum("columns", skipna=True)
                     stress_name = name
                 else:
                     stress_name = s.name
