@@ -1,4 +1,16 @@
-#  This module contains the Model class in Pastas.
+"""This module contains the Model class.
+
+Model is the central class in Pastas and contains all the information
+necessary to set up, solve and analyze time series models.
+
+Examples
+--------
+Create a new Pastas model::
+
+    head = pd.read_csv("head.csv", index_col=[0], parse_dates=True).squeeze("columns")
+    ml = ps.Model(head, name="my_model")
+
+"""
 
 # Python Dependencies
 from collections import OrderedDict
@@ -595,6 +607,7 @@ class Model:
         The noise are the time series that result when applying a noise model.
 
         .. Note::
+
             The noise is sometimes also referred to as the innovations in the
             literature.
 
@@ -857,8 +870,13 @@ class Model:
             Reset initial parameters from the individual stress models. Default is
             True. If False, the optimal values from an earlier optimization are used.
         weights: pandas.Series, optional
-            Pandas Series with values by which the residuals are multiplied,
-            index-based. Must have the same indices as the oseries.
+            Pandas Series with values by which the residuals or noise time series are
+            multiplied, index-based. Must have the same indices as the oseries. If
+            None, equal weights are used. This can be used to put extra/less weight on
+            certain periods (e.g., droughts) or measurements (i.e. outliers), and make
+            more complex calibration schemes (see, for example,
+            :cite:`colllenteur_analysis_2023`). Note that the weights are only used
+            during optimization and not when computing the goodness-of-fit metrics.
         fit_constant: bool, optional
             Argument that determines if the constant is fitted as a parameter. If it
             is set to False, the constant is set equal to the mean of the residuals.
@@ -897,7 +915,7 @@ class Model:
                 msg = (
                     "To solve using a noisemodel, add a noisemodel to a "
                     "model called ml using ml.add_noisemodel(n), where n is an instance"
-                    "of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
+                    " of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
                     "GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
@@ -961,6 +979,8 @@ class Model:
                 print(self.fit_report(corr=True, stderr=True))
             else:
                 print(self.fit_report())
+        else:
+            self._generate_warnings_report()  # log warnings even if no report
 
     @property
     @PastasDeprecationWarning(remove_version="2.0.0", reason="Use 'ml.solver' instead.")
@@ -1934,6 +1954,57 @@ class Model:
 
         return file_info
 
+    def _generate_warnings_report(self) -> list[str]:
+        """Internal method to generate warnings after model optimization.
+
+        Returns
+        -------
+        msg: list of str
+            List of warning messages.
+        """
+        msg = []
+        # model optimization unsuccessful
+        if not self._solve_success:
+            msg.append("Model parameters could not be estimated well.")
+
+        # parameter bound warnings
+        lowerhit, upperhit = self._check_parameters_bounds()
+        nhits = upperhit.sum() + lowerhit.sum()
+
+        if nhits > 0:
+            for p in upperhit.index:
+                if upperhit.at[p]:
+                    pmsg = (
+                        f"Parameter '{p}' on upper bound: "
+                        f"{self.parameters.at[p, 'pmax']:.2e}"
+                    )
+                    msg.append(pmsg)
+                    logger.warning(pmsg)
+                elif lowerhit.at[p]:
+                    pmsg = (
+                        f"Parameter '{p}' on lower bound: "
+                        f"{self.parameters.at[p, 'pmin']:.2e}"
+                    )
+                    msg.append(pmsg)
+                    logger.warning(pmsg)
+
+        # check response t_cutoff vs length calibration period and warmup period
+        response_tmax_check = self._check_response_tmax()
+        if (~response_tmax_check["check_response"]).any():
+            mask = ~response_tmax_check["check_response"]
+            for i in response_tmax_check.loc[mask].index:
+                rmsg = f"Response tmax for '{i}' > than calibration period."
+                msg.append(rmsg)
+                logger.warning(rmsg)
+        if (~response_tmax_check["check_warmup"]).any():
+            mask = ~response_tmax_check["check_warmup"]
+            for i in response_tmax_check.loc[mask].index:
+                rmsg = f"Response tmax for '{i}' > than warmup period."
+                msg.append(rmsg)
+                logger.warning(rmsg)
+
+        return msg
+
     def fit_report(
         self,
         corr: bool = False,
@@ -1997,6 +2068,7 @@ class Model:
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
+            "weights": "Yes" if str(self.settings["weights"]) else "No",
         }
 
         if output is not None:
@@ -2065,39 +2137,9 @@ class Model:
             corr = ""
 
         if warnings:
-            msg = []
-            # model optimization unsuccessful
-            if not self._solve_success:
-                msg.append("Model parameters could not be estimated well.")
+            msg = self._generate_warnings_report()
 
-            # parameter bound warnings
-            lowerhit, upperhit = self._check_parameters_bounds()
-            nhits = upperhit.sum() + lowerhit.sum()
-
-            if nhits > 0:
-                for p in upperhit.index:
-                    if upperhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on upper bound: "
-                            f"{self.parameters.at[p, 'pmax']:.2e}"
-                        )
-                    elif lowerhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on lower bound: "
-                            f"{self.parameters.at[p, 'pmin']:.2e}"
-                        )
-            # check response t_cutoff vs length calibration period and warmup period
-            response_tmax_check = self._check_response_tmax()
-            if (~response_tmax_check["check_response"]).any():
-                mask = ~response_tmax_check["check_response"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than calibration period.")
-            if (~response_tmax_check["check_warmup"]).any():
-                mask = ~response_tmax_check["check_warmup"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than warmup period.")
-
-            # create message
+            # create warnings block
             if len(msg) > 0:
                 msg = [
                     f"\n\nWarnings! ({len(msg)})\n"

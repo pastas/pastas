@@ -24,20 +24,19 @@ sys.path.insert(0, os.path.abspath("."))
 # -- Load extensions ------------------------------------------------------------------
 
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
+    "sphinx.ext.autosectionlabel",
+    "autoapi.extension",
     "IPython.sphinxext.ipython_console_highlighting",  # lowercase didn't work
     "numpydoc",
     "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_design",
-    "sphinx.ext.autosectionlabel",
 ]
 
 # -- General configuration ------------------------------------------------------------
@@ -62,7 +61,6 @@ language = "en"
 # directories to ignore when looking for source files.
 exclude_patterns = [
     "_build",
-    "**groundwater_paper",
     "**.ipynb_checkpoints",
 ]
 
@@ -97,6 +95,7 @@ html_theme_options = {
         }
     ],
     "announcement": "",  # You can put an announcement (HTML) here
+    "show_nav_level": 2,
 }
 
 html_context = {
@@ -123,16 +122,17 @@ napoleon_type_aliases = {
 # add custom section to docstrings in Parameters style
 napoleon_custom_sections = [("Time series settings", "params_style")]
 
-# -- Autodoc, autosummary, and autosectionlabel settings ------------------------------
-
-autodoc_typehints = "description"
-autodoc_typehints_format = "short"
-
-autosummary_generate = True
-
-autoclass_content = "class"
+# -- Autosectionlabel settings --------------------------------------------------------
 
 autosectionlabel_prefix_document = True
+
+# -- AutoAPI settings -----------------------------------------------------------------
+
+autoapi_dirs = ["../pastas"]
+autoapi_root = "api"
+autoapi_options = ["show-module-summary"]
+autoapi_own_page_level = "method"
+autoapi_template_dir = "_static/autoapi_templates"
 
 # -- Numpydoc settings ----------------------------------------------------------------
 

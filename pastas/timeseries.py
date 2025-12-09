@@ -1,3 +1,14 @@
+"""TimeSeries class for handling time series in Pastas.
+
+Examples
+--------
+Create a TimeSeries object::
+
+    series = pd.read_csv("rain.csv", index_col=[0], parse_dates=True).squeeze("columns")
+    ts = ps.TimeSeries(series)
+
+"""
+
 from logging import getLogger
 from typing import Any
 
@@ -720,7 +731,7 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     name = series.name  # Only Series have a name, DateFrame do not
 
-    # 1. Make sure the values are floats
+    # 1. Make sure the values are float
     if not pd.api.types.is_float_dtype(series):
         msg = "Values of time series %s are not dtype=float."
         logger.error(msg, name)
