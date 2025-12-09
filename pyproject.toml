@@ -53,6 +53,7 @@ solvers = ["lmfit >= 1.3.2", "emcee >= 3.1.5"]
 latexify = ["latexify-py"]
 interactive = ["bokeh >= 3.6", "plotly"]
 datasets = ["requests"]
+pandasrc = ["pandas==3.0.0rc0"]
 ruffing = ["ruff"]
 formatting = ["pastas[ruffing]"]
 linting = ["pastas[ruffing]"]
@@ -108,6 +109,16 @@ env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
 description = "run unit tests"
 extras = ["ci"]
 commands = [["pytest", "tests", "-m", "not notebooks and not bnotebooks"]]
+
+[tool.tox.env.pandasrc]
+description = "run unit tests with pandas release candidate"
+extras = ["ci", "pandasrc"]
+commands = [["pytest", "tests", "-m", "not notebooks and not bnotebooks"]]
+
+[tool.tox.env.pandasrc-notebooks]
+description = "run unit tests and notebooks with pandas release candidate "
+extras = ["ci", "pandasrc"]
+commands = [["pytest", "tests", "-m", "not bnotebooks"]]
 
 [tool.tox.env.all]
 description = "run all unit tests (including Notebooks) and obtain coverage"

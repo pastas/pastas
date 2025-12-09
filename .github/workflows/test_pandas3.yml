@@ -21,10 +21,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Test suite for all unit tests including Notebooks
+          - name: Test suite for pandasrc
             python: "3.13"
-            toxenv: all
-            experimental: false
+            toxenv: pandasrc
+            experimental: true
+          - name: Test suite for pandasrc with notebooks
+            python: "3.13"
+            toxenv: pandasrc-notebooks
+            experimental: true
     env:
       # Color Output
       # Rich (pip)
