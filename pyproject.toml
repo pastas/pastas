@@ -115,7 +115,7 @@ description = "run unit tests with pandas release candidate"
 extras = ["ci", "pandasrc"]
 commands = [["pytest", "tests", "-m", "not notebooks and not bnotebooks"]]
 
-[tool.tox.env.pandasrc-notebooks]
+[tool.tox.env.pandasrc_notebooks]
 description = "run unit tests and notebooks with pandas release candidate "
 extras = ["ci", "pandasrc"]
 commands = [["pytest", "tests", "-m", "not bnotebooks"]]
