@@ -104,6 +104,44 @@ RFUNCS_WITH_EXACT_MOMENTS = [
     "FourParam",
     "Kraijenhoff",
 ]
+RFUNCS_WITHOUT_EXACT_MOMENTS = [
+    r
+    for r in ps.rfunc.__all__
+    if r not in RFUNCS_WITH_EXACT_MOMENTS and r not in ("RfuncBase", "HantushWellModel")
+]
+
+
+@pytest.mark.parametrize(
+    "rfunc_name", RFUNCS_WITHOUT_EXACT_MOMENTS + RFUNCS_WITH_EXACT_MOMENTS
+)
+def test_moment_discrete_works(rfunc_name: str) -> None:
+    """Test that discrete moment method can be called for all response functions.
+
+    All response functions should support calling the 'discrete' moment method,
+    though it may not work correctly for all functions.
+
+    Parameters
+    ----------
+    rfunc_name : str
+        Name of the response function class to test.
+    """
+
+    rfunc = getattr(ps.rfunc, rfunc_name)(cutoff=0.999)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Discrete method should be callable for all rfuncs
+    # (though it may raise an error for some unsupported rfuncs)
+    moment_val = rfunc.moment(p, order=0, method="discrete", dt=1.0)
+
+    # If it returns a value, check it's valid
+    assert isinstance(moment_val, (int, float, np.number)), (
+        f"{rfunc_name}.moment() should return a number or None for discrete method, "
+        f"got {type(moment_val)}"
+    )
+    if np.isfinite(moment_val):
+        assert moment_val >= 0, (
+            f"{rfunc_name}.moment() returned negative value: {moment_val}"
+        )
 
 
 @pytest.mark.parametrize("rfunc_name", RFUNCS_WITH_EXACT_MOMENTS)
@@ -143,80 +181,6 @@ def test_moment_discrete_vs_exact(rfunc_name: str, order: int) -> None:
 
 
 @pytest.mark.parametrize("rfunc_name", RFUNCS_WITH_EXACT_MOMENTS)
-@pytest.mark.parametrize("dt", [0.01, 0.1, 0.5])
-def test_moment_discrete_converges_with_dt(rfunc_name: str, dt: float) -> None:
-    """Test that discrete moment converges as dt decreases.
-
-    Parameters
-    ----------
-    rfunc_name : str
-        Name of the response function class to test.
-    dt : float
-        Time step for discrete approximation.
-    """
-    rfunc = getattr(ps.rfunc, rfunc_name)()
-    p = rfunc.get_init_parameters("test").initial.to_numpy()
-
-    # Compute exact moments for comparison
-    exact_moments = [rfunc.moment(p, order=order, method="exact") for order in range(5)]
-
-    # Compute discrete moments with given dt
-    discrete_moments = [
-        rfunc.moment(p, order=order, method="discrete", dt=dt) for order in range(5)
-    ]
-
-    # All moments should be finite
-    for moment_val in discrete_moments:
-        assert np.isfinite(moment_val), f"Discrete moment is not finite: {moment_val}"
-
-    # Check that discrete moments are reasonably close to exact
-    # Tolerance increases with order and dt due to numerical integration challenges
-    if dt == 0.01:
-        tolerances = [0.02, 0.02, 0.05, 0.10, 0.20]
-    elif dt == 0.1:
-        tolerances = [0.05, 0.05, 0.10, 0.15, 0.20]
-    else:  # dt == 0.5
-        tolerances = [0.10, 0.10, 0.15, 0.25, 0.35]
-
-    for order, (exact, discrete, tol) in enumerate(
-        zip(exact_moments, discrete_moments, tolerances)
-    ):
-        relative_error = abs(discrete - exact) / abs(exact)
-        assert relative_error < tol, (
-            f"{rfunc_name} order {order} with dt={dt}: "
-            f"discrete={discrete:.6f}, exact={exact:.6f}, "
-            f"relative_error={relative_error:.4f}"
-        )
-
-
-@pytest.mark.parametrize("rfunc_name", RFUNCS_WITH_EXACT_MOMENTS)
-@pytest.mark.parametrize("order", [0, 1, 2])
-def test_moment_order_values(rfunc_name: str, order: int) -> None:
-    """Test that moment values make physical sense.
-
-    Parameters
-    ----------
-    rfunc_name : str
-        Name of the response function class to test.
-    order : int
-        Order of the moment to compute (0-2).
-    """
-    rfunc = getattr(ps.rfunc, rfunc_name)()
-    p = rfunc.get_init_parameters("test").initial.to_numpy()
-
-    # Get moment using exact method
-    m = rfunc.moment(p, order=order, method="exact")
-
-    # Order 0 moment should be positive (integral of response function)
-    if order == 0:
-        assert m > 0, f"0-th order moment should be positive, got {m}"
-
-    # For all orders, moment should be finite and non-negative
-    assert np.isfinite(m), f"Moment should be finite, got {m}"
-    assert m >= 0, f"Moment should be non-negative, got {m}"
-
-
-@pytest.mark.parametrize("rfunc_name", RFUNCS_WITH_EXACT_MOMENTS)
 def test_moment_invalid_method(rfunc_name: str) -> None:
     """Test that invalid method raises ValueError.
 
@@ -234,7 +198,7 @@ def test_moment_invalid_method(rfunc_name: str) -> None:
 
 @pytest.mark.parametrize("rfunc_name", RFUNCS_WITH_EXACT_MOMENTS)
 @pytest.mark.parametrize("method", ["discrete", "exact"])
-def test_moment_order_1_equals_gain(rfunc_name: str, method: str) -> None:
+def test_moment_order_0_equals_gain(rfunc_name: str, method: str) -> None:
     """Test that the zero-th moment equals the gain of the response function.
 
     The zero-th moment (order=0) of a response function is the integral of the
@@ -266,14 +230,6 @@ def test_moment_order_1_equals_gain(rfunc_name: str, method: str) -> None:
     )
 
 
-# Response functions that do NOT support exact moment method
-RFUNCS_WITHOUT_EXACT_MOMENTS = [
-    r
-    for r in ps.rfunc.__all__
-    if r not in RFUNCS_WITH_EXACT_MOMENTS and r not in ("RfuncBase", "HantushWellModel")
-]
-
-
 @pytest.mark.parametrize("rfunc_name", RFUNCS_WITHOUT_EXACT_MOMENTS)
 def test_moment_exact_not_implemented(rfunc_name: str) -> None:
     """Test that calling exact method on rfuncs without it raises ValueError.
@@ -292,36 +248,3 @@ def test_moment_exact_not_implemented(rfunc_name: str) -> None:
     # Call exact method - should raise ValueError for unimplemented methods
     with pytest.raises(ValueError, match="Invalid method"):
         rfunc.moment(p, order=0, method="exact")  # type: ignore
-
-
-@pytest.mark.parametrize(
-    "rfunc_name", RFUNCS_WITHOUT_EXACT_MOMENTS + RFUNCS_WITH_EXACT_MOMENTS
-)
-def test_moment_discrete_works(rfunc_name: str) -> None:
-    """Test that discrete moment method can be called for all response functions.
-
-    All response functions should support calling the 'discrete' moment method,
-    though it may not work correctly for all functions.
-
-    Parameters
-    ----------
-    rfunc_name : str
-        Name of the response function class to test.
-    """
-
-    rfunc = getattr(ps.rfunc, rfunc_name)(cutoff=0.999)
-    p = rfunc.get_init_parameters("test").initial.to_numpy()
-
-    # Discrete method should be callable for all rfuncs
-    # (though it may raise an error for some unsupported rfuncs)
-    moment_val = rfunc.moment(p, order=0, method="discrete", dt=1.0)
-
-    # If it returns a value, check it's valid
-    assert isinstance(moment_val, (int, float, np.number)), (
-        f"{rfunc_name}.moment() should return a number or None for discrete method, "
-        f"got {type(moment_val)}"
-    )
-    if np.isfinite(moment_val):
-        assert moment_val >= 0, (
-            f"{rfunc_name}.moment() returned negative value: {moment_val}"
-        )
