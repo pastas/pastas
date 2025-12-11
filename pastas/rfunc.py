@@ -14,18 +14,20 @@ from logging import getLogger
 
 import numpy as np
 from numpy import pi
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
 from scipy.special import (
     erfc,
     erfcinv,
     exp1,
+    factorial,
     gamma,
     gammainc,
     gammaincinv,
     k0,
     k1,
+    kv,
     lambertw,
 )
 
@@ -39,6 +41,7 @@ except ImportError:
 from typing import Literal
 
 from pastas.decorators import PastasDeprecationWarning
+from pastas.stats import moment
 from pastas.typing import ArrayLike
 
 logger = getLogger(__name__)
@@ -182,7 +185,6 @@ class RfuncBase:
         s: array_like
             Array with the step response.
         """
-        return
 
     def block(self, p: ArrayLike, dt: float = 1.0, **kwargs) -> ArrayLike:
         """Method to return the block function.
@@ -203,7 +205,32 @@ class RfuncBase:
             Array with the block response.
         """
         s = self.step(p=p, dt=dt, **kwargs)
-        return np.append(s[0], np.subtract(s[1:], s[:-1]))
+        b = np.diff(s, prepend=s[0])
+        return b
+
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete", "exact"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        """Compute the raw moment of the response function.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+        order : int
+            The order of the moment to compute (0 through 4).
+        method : {'discrete', 'exact'}, optional
+            Method to compute the moment. 'discrete' uses numerical integration of
+            the discrete impulse response values, 'exact' uses the analytical
+            expression for the moment if available. Default is 'discrete'.
+        dt : float, optional
+            Time step between impulse response values. Default is 1.0.
+        """
 
     @staticmethod
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
@@ -380,6 +407,23 @@ class Gamma(RfuncBase):
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete", "exact"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        elif method == "exact":
+            A, n, a = p
+            return A * gamma(n + order) / gamma(n) * a**order
+        else:
+            raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
+
     @staticmethod
     @latexfun(identifiers={"impulse": "theta", "gamma": "Gamma"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
@@ -466,6 +510,23 @@ class Exponential(RfuncBase):
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
+
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete", "exact"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        elif method == "exact":
+            A, a = p
+            return A * factorial(order) * a**order
+        else:
+            raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
@@ -647,6 +708,23 @@ class HantushWellModel(RfuncBase):
             return self.quad_step(A, a, b, r, t)
         else:
             return self.numpy_step(A, a, b, r, t)
+
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        else:
+            raise ValueError(
+                f"Invalid method {method}. Only 'discrete' is supported for "
+                f"{self._name}."
+            )
 
     @staticmethod
     def variance_gain(
@@ -850,6 +928,25 @@ class Hantush(RfuncBase):
         else:
             return self.numpy_step(A, a, b, t)
 
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        elif method == "exact":
+            A, a, b = p
+            return (
+                (a**2 * b) ** (order / 2)
+                * kv(order, 2 * np.sqrt(b))
+                / kv(0, 2 * np.sqrt(b))
+            )
+
     @staticmethod
     @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
@@ -962,6 +1059,29 @@ class Polder(RfuncBase):
         s = A * self.polder_function(np.sqrt(b), np.sqrt(t / a))
         # / np.exp(-2 * np.sqrt(b))
         return s
+
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        elif method == "exact":
+            A, a, b = p
+            return (
+                A
+                * 2
+                / np.sqrt(pi)
+                * (a * a * b) ** (order / 2)
+                * kv(order - 0.5, 2 * np.sqrt(b))
+            )
+        else:
+            raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
@@ -1240,6 +1360,23 @@ class FourParam(RfuncBase):
                 s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
                 return s
 
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete", "exact"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        elif method == "exact":
+            _, n, a, b = p
+            return 2 * (a * a * b) ** ((order + n) / 2) * kv(order + n, 2 * np.sqrt(b))
+        else:
+            raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
+
     def to_dict(self):
         """Method to export the response function to a dictionary.
 
@@ -1358,6 +1495,23 @@ class DoubleExponential(RfuncBase):
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) + p[1] * np.exp(-t / p[3])))
         return s
+
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete", "exact"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        elif method == "exact":
+            A, alpha, a1, a2 = p
+            return A * factorial(order) * ((1 - alpha) * a1**order + alpha * a2**order)
+        else:
+            raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
 
 @PastasDeprecationWarning(
@@ -1550,6 +1704,27 @@ class Kraijenhoff(RfuncBase):
         s = p[0] * (1 - (8 / (pi**3 * (1 / 4 - p[2] ** 2)) * h))
         return s
 
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        elif method == "exact":
+            A, a, b = p
+            const = A * 8 * gamma(order + 1) * a**order / (pi**3 * (0.25 - b**2))
+            n = np.arange(self.n_terms)
+            m = 2 * n + 1
+            S = np.sum((-1) ** n * np.cos(m * pi * b) / (m ** (2 * order + 3)))
+            return const * S
+        else:
+            raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
+
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
@@ -1684,6 +1859,23 @@ class Spline(RfuncBase):
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
         s = p[0] * f(t)
         return s
+
+    def moments(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete", "exact"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            s = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(s, order)
+        else:
+            raise ValueError(
+                f"Invalid method {method}. Only 'discrete' is supported for "
+                f"{self._name}."
+            )
 
     def to_dict(self):
         """Method to export the response function to a dictionary.
