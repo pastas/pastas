@@ -1375,7 +1375,12 @@ class FourParam(RfuncBase):
             return moment(b, order)
         elif method == "exact":
             A, n, a, b = p
-            return A * (a * a * b) ** (order / 2) * kv(order + n, 2 * np.sqrt(b)) / kv(n, 2 * np.sqrt(b))
+            return (
+                A
+                * (a * a * b) ** (order / 2)
+                * kv(order + n, 2 * np.sqrt(b))
+                / kv(n, 2 * np.sqrt(b))
+            )
         else:
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 

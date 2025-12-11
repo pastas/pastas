@@ -101,7 +101,7 @@ RFUNCS_WITH_EXACT_MOMENTS = [
     "Hantush",
     "Polder",
     "DoubleExponential",
-    "FourParam"
+    "FourParam",
 ]
 
 
@@ -260,6 +260,6 @@ def test_moment_order_1_equals_gain(rfunc_name: str, method: str) -> None:
     tolerance = 0.05 if method == "discrete" else 0.01  # 5% or 1% tolerance
     relative_error = abs(moment_0 - gain) / abs(gain) if gain != 0 else abs(moment_0)
 
-    assert (
-        relative_error < tolerance
-    ), f"{rfunc_name} zero-th moment ({moment_0:.6f}) != gain ({gain:.6f}), relative error: {relative_error:.4f}"
+    assert relative_error < tolerance, (
+        f"{rfunc_name} zero-th moment ({moment_0:.6f}) != gain ({gain:.6f}), relative error: {relative_error:.4f}"
+    )
