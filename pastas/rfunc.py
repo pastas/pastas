@@ -1906,4 +1906,3 @@ class Spline(RfuncBase):
             "t": self.t,
         }
         return data
-
