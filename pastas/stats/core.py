@@ -451,6 +451,23 @@ def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     return sqrt(var(x, weighted=weighted, max_gap=max_gap))
 
 
+def moment(x: Series, order: int) -> float:
+    """Compute the raw moment of an impulse response array.
+
+    Parameters
+    ----------
+    x : Series
+        Impulse response values with index as time steps.
+    order : int
+        The order of the moment to compute (0 through 5).
+
+    Returns
+    -------
+    moment : float
+        The computed raw moment of the impulse response.
+    """
+    return float(np.sum((x.index**order) * x.values))
+
 # Helper functions
 
 
