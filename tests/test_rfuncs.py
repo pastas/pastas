@@ -102,6 +102,7 @@ RFUNCS_WITH_EXACT_MOMENTS = [
     "Polder",
     "DoubleExponential",
     "FourParam",
+    "Kraijenhoff",
 ]
 
 
@@ -263,3 +264,64 @@ def test_moment_order_1_equals_gain(rfunc_name: str, method: str) -> None:
     assert relative_error < tolerance, (
         f"{rfunc_name} zero-th moment ({moment_0:.6f}) != gain ({gain:.6f}), relative error: {relative_error:.4f}"
     )
+
+
+# Response functions that do NOT support exact moment method
+RFUNCS_WITHOUT_EXACT_MOMENTS = [
+    r
+    for r in ps.rfunc.__all__
+    if r not in RFUNCS_WITH_EXACT_MOMENTS and r not in ("RfuncBase", "HantushWellModel")
+]
+
+
+@pytest.mark.parametrize("rfunc_name", RFUNCS_WITHOUT_EXACT_MOMENTS)
+def test_moment_exact_not_implemented(rfunc_name: str) -> None:
+    """Test that calling exact method on rfuncs without it raises ValueError.
+
+    Response functions without an explicit exact moment implementation should
+    raise ValueError when 'exact' method is used.
+
+    Parameters
+    ----------
+    rfunc_name : str
+        Name of the response function class to test.
+    """
+    rfunc = getattr(ps.rfunc, rfunc_name)()
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Call exact method - should raise ValueError for unimplemented methods
+    with pytest.raises(ValueError, match="Invalid method"):
+        rfunc.moment(p, order=0, method="exact")  # type: ignore
+
+
+@pytest.mark.parametrize(
+    "rfunc_name", RFUNCS_WITHOUT_EXACT_MOMENTS + RFUNCS_WITH_EXACT_MOMENTS
+)
+def test_moment_discrete_works(rfunc_name: str) -> None:
+    """Test that discrete moment method can be called for all response functions.
+
+    All response functions should support calling the 'discrete' moment method,
+    though it may not work correctly for all functions.
+
+    Parameters
+    ----------
+    rfunc_name : str
+        Name of the response function class to test.
+    """
+
+    rfunc = getattr(ps.rfunc, rfunc_name)(cutoff=0.999)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Discrete method should be callable for all rfuncs
+    # (though it may raise an error for some unsupported rfuncs)
+    moment_val = rfunc.moment(p, order=0, method="discrete", dt=1.0)
+
+    # If it returns a value, check it's valid
+    assert isinstance(moment_val, (int, float, np.number)), (
+        f"{rfunc_name}.moment() should return a number or None for discrete method, "
+        f"got {type(moment_val)}"
+    )
+    if np.isfinite(moment_val):
+        assert moment_val >= 0, (
+            f"{rfunc_name}.moment() returned negative value: {moment_val}"
+        )
