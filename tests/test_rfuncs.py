@@ -101,6 +101,7 @@ RFUNCS_WITH_EXACT_MOMENTS = [
     "Hantush",
     "Polder",
     "DoubleExponential",
+    "FourParam"
 ]
 
 

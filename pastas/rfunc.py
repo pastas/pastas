@@ -1374,8 +1374,8 @@ class FourParam(RfuncBase):
             b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
             return moment(b, order)
         elif method == "exact":
-            _, n, a, b = p
-            return 2 * (a * a * b) ** ((order + n) / 2) * kv(order + n, 2 * np.sqrt(b))
+            A, n, a, b = p
+            return A * (a * a * b) ** (order / 2) * kv(order + n, 2 * np.sqrt(b)) / kv(n, 2 * np.sqrt(b))
         else:
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
