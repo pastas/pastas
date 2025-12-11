@@ -229,3 +229,37 @@ def test_moment_invalid_method(rfunc_name: str) -> None:
 
     with pytest.raises(ValueError, match="Invalid method"):
         rfunc.moment(p, order=0, method="invalid")  # type: ignore
+
+
+@pytest.mark.parametrize("rfunc_name", RFUNCS_WITH_EXACT_MOMENTS)
+@pytest.mark.parametrize("method", ["discrete", "exact"])
+def test_moment_order_1_equals_gain(rfunc_name: str, method: str) -> None:
+    """Test that the zero-th moment equals the gain of the response function.
+
+    The zero-th moment (order=0) of a response function is the integral of the
+    impulse response, which should equal the gain (amplitude) of the function.
+
+    Parameters
+    ----------
+    rfunc_name : str
+        Name of the response function class to test.
+    method : str
+        Method to compute moment ('discrete' or 'exact').
+    """
+    rfunc = getattr(ps.rfunc, rfunc_name)(cutoff=0.999999)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Get the zero-th moment using the specified method
+    moment_0 = rfunc.moment(p, order=0, method=method, dt=0.001)
+
+    # Get the gain
+    gain = rfunc.gain(p)
+
+    # The zero-th moment should approximately equal the gain
+    # Allow for numerical integration errors (especially for discrete method)
+    tolerance = 0.05 if method == "discrete" else 0.01  # 5% or 1% tolerance
+    relative_error = abs(moment_0 - gain) / abs(gain) if gain != 0 else abs(moment_0)
+
+    assert (
+        relative_error < tolerance
+    ), f"{rfunc_name} zero-th moment ({moment_0:.6f}) != gain ({gain:.6f}), relative error: {relative_error:.4f}"
