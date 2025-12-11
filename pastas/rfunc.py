@@ -1173,6 +1173,24 @@ class One(RfuncBase):
     ) -> ArrayLike:
         return p[0] * np.ones(1)
 
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete", "exact"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            if order == 0:
+                return self.gain(p)
+            else:
+                return 0.0
+        else:
+            raise ValueError(
+                f"Invalid method {method}. Only 'discrete' is supported for "
+                f"{self._name}."
+            )
+
 
 class FourParam(RfuncBase):
     """Four Parameter response function with 4 parameters A, a, b, and n.
@@ -1601,6 +1619,20 @@ class Edelman(RfuncBase):
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
 
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        else:
+            raise ValueError(f"Invalid method {method}. Choose 'discrete'.")
+
 
 class Kraijenhoff(RfuncBase):
     """The response function of :cite:t:`van_de_leur_study_1958`.
@@ -1867,7 +1899,7 @@ class Spline(RfuncBase):
         s = p[0] * f(t)
         return s
 
-    def moments(
+    def moment(
         self,
         p: ArrayLike,
         order: int,
