@@ -946,6 +946,8 @@ class Hantush(RfuncBase):
                 * kv(order, 2 * np.sqrt(b))
                 / kv(0, 2 * np.sqrt(b))
             )
+        else:
+            raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
     @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
