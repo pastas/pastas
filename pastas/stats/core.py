@@ -7,8 +7,8 @@ time steps often observed in hydrological time series.
 
 from logging import getLogger
 
-from numba import prange
 import numpy as np
+from numba import prange
 from pandas import DataFrame, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
@@ -452,6 +452,7 @@ def moment(x: Series, order: int) -> float:
         The computed raw moment of the impulse response.
     """
     return float(np.sum((x.index**order) * x.values))
+
 
 # Helper functions
 
