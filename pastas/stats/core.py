@@ -8,22 +8,7 @@ time steps often observed in hydrological time series.
 from logging import getLogger
 
 from numba import prange
-from numpy import (
-    append,
-    arange,
-    array,
-    average,
-    corrcoef,
-    diff,
-    empty_like,
-    exp,
-    inf,
-    nan,
-    ndarray,
-    ones,
-    pi,
-    sqrt,
-)
+import numpy as np
 from pandas import DataFrame, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
@@ -39,7 +24,7 @@ def acf(
     lags: ArrayLike = 365,
     bin_method: str = "regular",
     bin_width: float = 0.5,
-    max_gap: float = inf,
+    max_gap: float = np.inf,
     min_obs: int = 50,
     full_output: bool = False,
     alpha: float = 0.05,
@@ -132,7 +117,7 @@ def ccf(
     lags: ArrayLike = 365,
     bin_method: str = "regular",
     bin_width: float = 0.5,
-    max_gap: float = inf,
+    max_gap: float = np.inf,
     min_obs: int = 50,
     full_output: bool = False,
     alpha: float = 0.05,
@@ -213,12 +198,12 @@ def ccf(
     dt_mu = max(dt_x_mu, dt_y_mu)  # The mean time step from both series
 
     if isinstance(lags, int) and bin_method == "regular":
-        lags = arange(0, lags + 1, int(dt_mu), dtype=float)
+        lags = np.arange(0, lags + 1, int(dt_mu), dtype=float)
     elif isinstance(lags, int):
-        lags = arange(0, lags + 1, dtype=float)
+        lags = np.arange(0, lags + 1, dtype=float)
     elif isinstance(lags, list):
-        lags = array(lags, dtype=float)
-    elif isinstance(lags, ndarray):
+        lags = np.array(lags, dtype=float)
+    elif isinstance(lags, np.ndarray):
         # ensure dtype float otherwise numba will
         # create integer arrays for the results
         lags = lags.astype(float)
@@ -232,7 +217,7 @@ def ccf(
     else:
         raise NotImplementedError
 
-    conf = norm.ppf(1 - alpha / 2.0) / sqrt(b)
+    conf = norm.ppf(1 - alpha / 2.0) / np.sqrt(b)
     result = DataFrame(
         data={"ccf": c, "conf": conf, "n": b},
         dtype=float,
@@ -282,8 +267,8 @@ def _compute_ccf_rectangle(
     bin_width: float = 0.5,
 ) -> tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
-    c = empty_like(lags)
-    b = empty_like(lags)
+    c = np.empty_like(lags)
+    b = np.empty_like(lags)
     n = len(t_x)
 
     for k in prange(len(lags)):
@@ -300,7 +285,7 @@ def _compute_ccf_rectangle(
                     cl += x[i] * yj
                     b_sum += 1.0
         if b_sum == 0.0:
-            c[k] = nan
+            c[k] = np.nan
             b[k] = 1e-16  # Prevent division by zero error
         else:
             c[k] = cl / b_sum
@@ -318,12 +303,12 @@ def _compute_ccf_gaussian(
     bin_width: float = 0.5,
 ) -> tuple[ArrayLike, ArrayLike]:
     """Internal numba-optimized method to compute the ccf."""
-    c = empty_like(lags)
-    b = empty_like(lags)
+    c = np.empty_like(lags)
+    b = np.empty_like(lags)
     n = len(t_x)
 
     den1 = -2 * bin_width**2  # denominator 1
-    den2 = sqrt(2 * pi * bin_width)  # denominator 2
+    den2 = np.sqrt(2 * np.pi * bin_width)  # denominator 2
     six_den2 = 6 * den2  # six std. dev.
     for k in prange(len(lags)):
         cl = 0.0
@@ -336,12 +321,12 @@ def _compute_ccf_gaussian(
             for i in range(j, n):
                 dtlag = t_x[i] - t_yj - lag_k
                 if abs(dtlag) < six_den2:
-                    d = exp(dtlag**2 / den1) / den2
+                    d = np.exp(dtlag**2 / den1) / den2
                     # if d > 1e-5:
                     cl += x[i] * yj * d
                     b_sum += d
         if b_sum == 0.0:
-            c[k] = nan
+            c[k] = np.nan
             b[k] = 1e-16  # Prevent division by zero error
         else:
             c[k] = cl / b_sum
@@ -352,15 +337,15 @@ def _compute_ccf_gaussian(
 def _compute_ccf_regular(
     lags: ArrayLike, x: ArrayLike, y: ArrayLike
 ) -> tuple[ArrayLike, ArrayLike]:
-    c = empty_like(lags)
+    c = np.empty_like(lags)
     n = len(x)
     for i in range(len(lags)):
         lag = int(lags[i])
         if lag < n:
             # flip x, y to match numpy/scipy correlate output order
-            c[i] = corrcoef(y[: n - lag], x[lag:])[0, 1]
+            c[i] = np.corrcoef(y[: n - lag], x[lag:])[0, 1]
         else:
-            c[i] = nan
+            c[i] = np.nan
     b = n - lags
     b[b <= 0] = 1e-16  # Prevent division by zero error
     return c, b
@@ -393,7 +378,7 @@ def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     normalized by the sum of all time steps.
     """
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
-    return average(x.to_numpy(), weights=w)
+    return np.average(x.to_numpy(), weights=w)
 
 
 def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
@@ -424,7 +409,7 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     x}`) is used in this formula.
     """
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
-    mu = average(x.to_numpy(), weights=w)
+    mu = np.average(x.to_numpy(), weights=w)
     sigma = (x.size / (x.size - 1) * w * (x.to_numpy() - mu) ** 2).sum()
     return sigma
 
@@ -448,7 +433,7 @@ def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     --------
     ps.stats.mean, ps.stats.var
     """
-    return sqrt(var(x, weighted=weighted, max_gap=max_gap))
+    return np.sqrt(var(x, weighted=weighted, max_gap=max_gap))
 
 
 def moment(x: Series, order: int) -> float:
@@ -487,9 +472,9 @@ def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLi
         value is 30 days.
     """
     if weighted:
-        w = append(0.0, diff(x.index.to_numpy()) / Timedelta("1D"))
+        w = np.append(0.0, np.diff(x.index.to_numpy()) / Timedelta("1D"))
         w[w > max_gap] = max_gap
     else:
-        w = ones(x.index.size)
+        w = np.ones(x.index.size)
     w /= w.sum()
     return w
