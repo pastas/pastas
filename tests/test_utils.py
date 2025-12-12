@@ -22,7 +22,7 @@ class TestGetStressTminTmax:
 
         # Verify tmin and tmax make sense relative to stress data
         for sm_name in ml_solved.stressmodels:
-            for stress in ml_solved.stressmodels[sm_name].stress:
+            for stress in ml_solved.stressmodels[sm_name].stresses:
                 stress_tmin = stress.series_original.index.min()
                 stress_tmax = stress.series_original.index.max()
                 # tmin should be <= each stress's max time
