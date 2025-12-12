@@ -205,7 +205,7 @@ class RfuncBase:
             Array with the block response.
         """
         s = self.step(p=p, dt=dt, **kwargs)
-        b = np.diff(s, prepend=s[0])
+        b = np.append(s[0], np.subtract(s[1:], s[:-1]))
         return b
 
     def moment(
