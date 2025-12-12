@@ -292,7 +292,7 @@ class StressModel(StressModelBase):
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
         settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary with
-        the settings to apply. For more information refer to Time series settings
+        the settings to apply. For more information refer to time series settings
         section below.
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
@@ -413,7 +413,21 @@ class StressModel(StressModelBase):
         settings: str | StressSettingsDict | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
-        """Set the stress time series."""
+        """Set the stress time series.
+
+        Parameters
+        ----------
+        stress: pandas.Series or pastas.TimeSeries
+            pandas.Series with pandas.DatetimeIndex containing the stress or a
+            pastas TimeSeries object.
+        settings: dict or str, optional
+            The settings of the stress. This can be a string referring to a predefined
+            settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary
+            with the settings to apply. For more information refer to time series
+            settings section on class initialization.
+        metadata: dict, optional
+            Dictionary with metadata of the stress time series.
+        """
         if isinstance(stress, TimeSeries):
             self._stress = stress
         else:
@@ -948,7 +962,7 @@ class WellModel(StressModelBase):
     ) -> None:
         if not isinstance(stress, (tuple, list, dict)):
             msg = (
-                "The stress parameter must be a collection of "
+                "The value for the stress argument must be a collection of "
                 f"pandas Series or pastas TimeSeries, not {type(stress)}"
             )
             logger.error(msg)
@@ -1035,16 +1049,16 @@ class WellModel(StressModelBase):
 
         Parameters
         ----------
-        stress: pandas.Series, list of pandas.Series, TimeSeries or list of TimeSeries
-            stress or collection of stresses.
-        settings: dict or iterable, optional
-            settings dictionary.
-        metadata : dict or list of dict, optional
-            metadata dictionaries corresponding to stress
-
-        Returns
-        -------
-        None
+        stress: pandas.Series or pastas.TimeSeries
+            pandas.Series with pandas.DatetimeIndex containing the stress or a
+            pastas TimeSeries object.
+        settings: dict or str, optional
+            The settings of the stress. This can be a string referring to a predefined
+            settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary
+            with the settings to apply. For more information refer to time series
+            settings section on class initialization.
+        metadata: dict, optional
+            Dictionary with metadata of the stress time series.
         """
         if not isinstance(stress, (TimeSeries, Series)):
             self._stress = self._handle_stress(
@@ -1634,9 +1648,10 @@ class RechargeModel(StressModelBase):
             The settings of the time series. By default this is None. This can be a
             string referring to a predefined settings dict (defined in
             ps.rcParams["timeseries"]), or a dict with the settings to apply. For more
-            information refer to Time Series Settings section below for more information.
+            information refer to time series settings section on class initialization
+            for more information.
         metadata : dict, optional
-            dictionary containing metadata about the stress. This is passed onto the
+            Dictionary with metadata of the stress time series.
             TimeSeries object.
 
         Returns
@@ -2381,7 +2396,21 @@ class ChangeModel(StressModelBase):
         settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
     ) -> None:
-        """Set the stress time series."""
+        """Set the stress time series.
+
+        Parameters
+        ----------
+        stress: pandas.Series or pastas.TimeSeries
+            pandas.Series with pandas.DatetimeIndex containing the stress or a
+            pastas TimeSeries object.
+        settings: dict or str, optional
+            The settings of the stress. This can be a string referring to a predefined
+            settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary
+            with the settings to apply. For more information refer to time series
+            settings section on class initialization.
+        metadata: dict, optional
+            Dictionary with metadata of the stress time series.
+        """
         if isinstance(stress, TimeSeries):
             self._stress = stress
         else:
