@@ -1,5 +1,12 @@
 """This module contains methods to compute the groundwater signatures. Part of the
-signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`."""
+signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`.
+
+Examples
+--------
+Compute the coefficient of variation of the mean monthly head::
+
+    cv = ps.stats.cv_period_mean(series)
+"""
 
 from logging import getLogger
 from typing import Literal

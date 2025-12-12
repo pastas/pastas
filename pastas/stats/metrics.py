@@ -2,14 +2,15 @@
 and the observations.
 
 Examples
-========
-These methods may be used as follows:
+--------
+Calculate metrics directly::
 
->>> ps.stats.rmse(sim, obs)
+    ps.stats.rmse(sim, obs)
 
-or directly from a Pastas model:
+Or from a Pastas model::
 
->>> ml.stats.rmse()
+    ml.stats.rmse()
+
 """
 
 from logging import getLogger

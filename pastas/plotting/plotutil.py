@@ -1,4 +1,4 @@
-"""This module contains utility functions for plotting."""
+"""Utility functions for plotting in Pastas."""
 
 import logging
 

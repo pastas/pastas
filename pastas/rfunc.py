@@ -1,4 +1,14 @@
-"""This module contains all the response functions available in Pastas."""
+"""This module contains all the response functions available in Pastas.
+
+Examples
+--------
+Use response functions in stress models::
+
+    rfunc = ps.Gamma()
+    sm = ps.StressModel(stress, rfunc=rfunc, name="well")
+    ml.add_stressmodel(sm)
+
+"""
 
 from logging import getLogger
 
@@ -891,7 +901,7 @@ class Polder(RfuncBase):
 
         ps.Polder.impulse
 
-    The function is explained in Eq. 123.32 in:cite:t:`bruggeman_analytical_1999`.
+    The function is explained in Eq. 123.32 in :cite:t:`bruggeman_analytical_1999`.
 
     """
 
@@ -1066,6 +1076,8 @@ class FourParam(RfuncBase):
     environment::
 
         ps.FourParam.impulse
+
+    The function is explained in :cite:t:`bakker_calibration_2008`.
 
     """
 

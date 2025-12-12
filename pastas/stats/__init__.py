@@ -1,20 +1,5 @@
 # ruff: noqa: F401
-"""The stats sub-package contains statistical methods for Pastas.
-
-.. currentmodule:: pastas.stats
-
-.. autosummary::
-    :toctree: ./generated
-    :nosignatures:
-
-    core
-    metrics
-    dutch
-    sgi
-    signatures
-    tests
-
-"""
+"""The stats sub-package contains statistical methods for Pastas."""
 
 import pastas.stats.metrics as metrics
 import pastas.stats.signatures as signatures

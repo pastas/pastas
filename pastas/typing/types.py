@@ -1,3 +1,5 @@
+"""Type definitions and aliases for Pastas internals."""
+
 # Type hinting for Pastas library
 # Typing
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar

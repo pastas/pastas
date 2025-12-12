@@ -1,5 +1,6 @@
 """Tests for the Model class in pastas.model."""
 
+import logging
 from typing import Any
 
 import numpy as np
@@ -105,16 +106,7 @@ class TestModelComponents:
         ).all()
         assert (
             sm.parameters.dtypes.values
-            == np.array(
-                [
-                    np.dtypes.Float64DType(),
-                    np.dtypes.Float64DType(),
-                    np.dtypes.Float64DType(),
-                    np.dtypes.BoolDType(),
-                    "str",
-                    "str",
-                ]
-            )
+            == np.array([float, float, float, bool, "O", "O"])
         ).all()
 
     def test_set_oseries(self, ml_solved: ps.Model) -> None:
@@ -508,6 +500,22 @@ class TestModelSolving:
         assert "freq_obs" in report_with_freq_obs
         assert "7D" in report_with_freq_obs
 
+    def test_solve_with_warnings(self, ml_bad: ps.Model, caplog):
+        """Test that solving a problematic model generates warnings."""
+        with caplog.at_level(logging.WARNING):
+            ml_bad.solve(report=False)
+
+        assert len(caplog.records) == 3
+        assert caplog.records[0].message.startswith(
+            "Parameter 'recharge_f' on lower bound:"
+        )
+        assert caplog.records[1].message.startswith(
+            "Response tmax for 'recharge' > than calibration period."
+        )
+        assert caplog.records[2].message.startswith(
+            "Response tmax for 'recharge' > than warmup period."
+        )
+
 
 class TestModelContributions:
     """Test getting model contributions."""
@@ -616,3 +624,10 @@ class TestModelExportImport:
         assert copy_model.name == "copy_test"
         assert copy_model is not ml_noisemodel
         assert_frame_equal(copy_model.parameters, ml_noisemodel.parameters)
+
+    def test_save_float_load_int(self):
+        """Test saving and loading a model with float that can be converted to int."""
+        s = pd.Series(index=pd.date_range("2025-01-01", periods=10, freq="D"), data=1.0)
+        ml = ps.Model(s)
+        ml.to_file("test_float_int.pas")
+        _ = ps.io.load("test_float_int.pas")

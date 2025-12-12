@@ -1,4 +1,13 @@
-"""Import model."""
+"""This module provides functions to load and save Pastas models.
+
+Examples
+--------
+Load and save models::
+
+    ml.to_file("model.pas")
+    ml = ps.io.load("model.pas")
+
+"""
 
 from importlib import import_module
 from logging import getLogger

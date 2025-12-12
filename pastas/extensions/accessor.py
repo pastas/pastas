@@ -1,3 +1,7 @@
+"""Provides accessor registration for extending Pastas model classes with custom
+properties.
+"""
+
 # copied and adapted from pandas/core/accessor.py
 import logging
 
@@ -77,11 +81,11 @@ def _register_accessor(name: str, cls):
 
     Back in an interactive IPython session:
 
-        .. code-block:: ipython
+    .. code-block:: ipython
 
-            In [1]: from pastas.plotting.plotly import Plotly
-            In [2]: ml = ps.Model(oseries)
-            In [3]: ml.plotly.plot()  # plots interactive figure
+        In [1]: from pastas.plotting.plotly import Plotly
+        In [2]: ml = ps.Model(oseries)
+        In [3]: ml.plotly.plot()  # plots interactive figure
     """
 
     def decorator(accessor):
