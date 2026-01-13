@@ -226,7 +226,7 @@ class Model:
 
         """
         # Return a copy wrapped in ReadOnlyDataFrame to warn on modification attempts
-        return self._parameters.copy()
+        return self._parameters.copy(deep=True)
 
     @parameters.setter
     def parameters(self, value):
@@ -251,7 +251,7 @@ class Model:
         The settings attribute is read-only. Model settings are automatically
         updated through methods like solve() and initialize().
         """
-        return self._settings
+        return self._settings.copy()
 
     @settings.setter
     def settings(self, value):
