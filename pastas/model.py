@@ -37,7 +37,6 @@ from pastas.decorators import (
     deprecate_args_or_kwargs,
     get_stressmodel,
 )
-from pastas.immutables import ParameterDataFrame, SettingsDict
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
 from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
@@ -220,16 +219,14 @@ class Model:
         The parameters attribute is read-only. To modify parameter properties,
         use the set_parameter method instead.
 
-        Attempting to modify values in the returned DataFrame will trigger a
-        UserWarning to alert you that changes won't affect the model.
-
         See Also
         --------
         set_parameter
             Method to change parameter properties.
+
         """
         # Return a copy wrapped in ReadOnlyDataFrame to warn on modification attempts
-        return ParameterDataFrame(self._parameters.copy())
+        return self._parameters.copy()
 
     @parameters.setter
     def parameters(self, value):
@@ -253,12 +250,8 @@ class Model:
         -----
         The settings attribute is read-only. Model settings are automatically
         updated through methods like solve() and initialize().
-
-        Attempting to modify values in the returned dictionary will trigger a
-        UserWarning to alert you that changes won't affect the model.
         """
-        # Return a copy wrapped in ReadOnlyDict to warn on modification attempts
-        return SettingsDict(self._settings)
+        return self._settings
 
     @settings.setter
     def settings(self, value):
