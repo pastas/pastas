@@ -437,7 +437,9 @@ def parameters_leq_threshold(
 
     results = []
     for parameter in parameters:
-        results.append(parameter_ufunc_threshold(ml, parameter, np.less_equal, threshold))
+        results.append(
+            parameter_ufunc_threshold(ml, parameter, np.less_equal, threshold)
+        )
     return concat(results)
 
 
