@@ -2192,7 +2192,10 @@ class Model:
             corr = ""
 
         if warnings:
-            msg = self._generate_warnings_report()
+            msg = []
+            # model optimization unsuccessful
+            if not self._solve_success:
+                msg.append("Model parameters could not be estimated well.")
 
             # parameter bound warnings
             lowerhit, upperhit = self._check_parameters_bounds()
@@ -2221,7 +2224,6 @@ class Model:
                 for i in response_tmax_check.loc[mask].index:
                     msg.append(f"Response tmax for '{i}' > than warmup period.")
 
-            # create message
             if len(msg) > 0:
                 msg = [
                     f"\n\nWarnings! ({len(msg)})\n"
