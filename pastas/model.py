@@ -225,7 +225,6 @@ class Model:
             Method to change parameter properties.
 
         """
-        # Return a copy wrapped in ReadOnlyDataFrame to warn on modification attempts
         return self._parameters.copy(deep=True)
 
     @parameters.setter
