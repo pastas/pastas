@@ -1175,7 +1175,7 @@ class Model:
         """
         time_offsets = set()
         for stressmodel in self.stressmodels.values():
-            for st in stressmodel.stress:
+            for st in stressmodel.stresses:
                 if st.freq_original:
                     # calculate the offset from the default frequency
                     t = st.series_original.index

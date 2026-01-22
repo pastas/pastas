@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import Series, Timestamp, concat
+from pandas import DataFrame, Series, Timestamp, concat
 
 from pastas.decorators import PastasDeprecationWarning, model_tmin_tmax
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
@@ -269,7 +269,7 @@ class Plotting:
                 if adjust_height:
                     ax_contrib.set_ylim(ylims[i + 2])
                 if not split:
-                    title = [stress.name for stress in sm.stress]
+                    title = [stress.name for stress in sm.stresses]
                     if len(title) > 3:
                         title = title[:3] + ["..."]
                     ax_contrib.set_title(
@@ -483,7 +483,7 @@ class Plotting:
                 contribs[sm_name].values,
                 label=sm_name,
             )
-            title = [stress.name for stress in sm.stress]
+            title = [stress.name for stress in sm.stresses]
             if len(title) > 3:
                 title = title[:3] + ["..."]
             if title:
@@ -1242,7 +1242,7 @@ class Plotting:
             # Get the contributions for StressModels with multiple stresses
             contributions = []
             sml = self.ml.stressmodels[sm]
-            if (len(sml.stress) > 0) and (sml._name == "WellModel"):
+            if (len(sml.stresses) > 0) and (sml._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
                         wnam: f"C{iw + 1}"
@@ -1259,11 +1259,11 @@ class Plotting:
                 ax_step = axes[i]  # step response axis
                 ax_step.lines[0].remove()  # remove step response for r=1 m
                 if nsplit > 1:
-                    for istress in range(len(sml.stress)):
+                    for istress in range(len(sml.stresses)):
                         h = self.ml.get_contribution(
                             sm, istress=istress, tmin=tmin, tmax=tmax
                         )
-                        name = sml.stress[istress].name
+                        name = sml.stresses[istress].name
                         if name is None:
                             name = sm
                         contributions.append((name, h))
@@ -1563,7 +1563,10 @@ class Plotting:
                 s = self.ml.get_stress(name, tmin=tmin, tmax=tmax, istress=istress)
                 # if multiple stresses, sum stresses together
                 if isinstance(s, list):
-                    s = concat(s, axis=1).sum(axis=1, fill_value=0.0)
+                    s = concat(s, axis=1).sum(axis=1, skipna=True)
+                    stress_name = name
+                elif isinstance(s, DataFrame):
+                    s = s.sum("columns", skipna=True)
                     stress_name = name
                 else:
                     stress_name = s.name

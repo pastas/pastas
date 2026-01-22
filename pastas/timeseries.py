@@ -16,6 +16,8 @@ import pandas as pd
 from pandas import Series, Timedelta
 from pandas.tseries.frequencies import to_offset
 
+from pastas.typing import OseriesSettingsDict, StressSettingsDict
+
 from .rcparams import rcParams
 from .timeseries_utils import (
     _get_dt,
@@ -116,7 +118,7 @@ class TimeSeries:
         self,
         series: Series,
         name: str | None = None,
-        settings: str | dict[str, Any] | None = None,
+        settings: str | OseriesSettingsDict | StressSettingsDict | None = None,
         metadata: dict | None = None,
     ) -> None:
         # Make sure we have a Pandas Series and not a 1D-DataFrame
@@ -127,6 +129,14 @@ class TimeSeries:
                     "1D-DataFrame was provided, automatically transformed to "
                     "pandas.Series."
                 )
+        elif isinstance(series, TimeSeries):
+            if name is None and series.name is not None:
+                name = series.name
+            if settings is None and series.settings is not None:
+                settings = series.settings
+            if metadata is None and series.metadata is not None:
+                metadata = series.metadata
+            series = series.series
 
         # Store a copy of the original series
         self._series_original = series.copy()  # copy of the original series
@@ -209,7 +219,7 @@ class TimeSeries:
             "series_original. Please set series_original to update the series."
         )
 
-    def update_series(self, force_update: bool = False, **kwargs) -> None:
+    def update_series(self, force_update: bool = False, **kwargs):
         """Method to update the series with new options.
 
         Parameters
@@ -822,6 +832,9 @@ def _validate_series(series: Series, equidistant: bool = True):
             logger.error(msg)
             raise ValueError(msg)
 
+    if isinstance(series, TimeSeries):
+        series = series.series
+
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
         msg = "Expected a Pandas Series, got %s"
@@ -830,7 +843,7 @@ def _validate_series(series: Series, equidistant: bool = True):
 
     name = series.name  # Only Series have a name, DateFrame do not
 
-    # 1. Make sure the values are floats
+    # 1. Make sure the values are float
     if not pd.api.types.is_float_dtype(series):
         msg = "Values of time series %s are not dtype=float."
         logger.error(msg, name)
