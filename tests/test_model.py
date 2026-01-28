@@ -613,7 +613,7 @@ class TestModelExportImport:
         assert loaded_model.name == ml_noisemodel.name
         assert loaded_model.oseries.name == ml_noisemodel.oseries.name
         assert loaded_model.stressmodels.keys() == ml_noisemodel.stressmodels.keys()
-        for k, v in ml_noisemodel.settings:
+        for k, v in ml_noisemodel.settings.items():
             assert loaded_model.settings[k] == v
 
         # Check parameters
