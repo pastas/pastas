@@ -9,7 +9,7 @@ from logging import getLogger
 
 import numpy as np
 from numba import prange
-from pandas import DataFrame, Index, Series, Timedelta, to_timedelta
+from pandas import DataFrame, DatetimeIndex, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
 from pastas.typing import ArrayLike
@@ -442,7 +442,8 @@ def moment(x: Series, order: int) -> float:
     Parameters
     ----------
     x : Series
-        Impulse response values with index as time steps.
+        Impulse response values with a numeric index (float or int)
+        representing time steps. A DatetimeIndex is not supported.
     order : int
         The order of the moment to compute (0 through 5).
 
@@ -451,7 +452,13 @@ def moment(x: Series, order: int) -> float:
     moment : float
         The computed raw moment of the impulse response.
     """
-    return float(np.sum((x.index**order) * x.values))
+    index = x.index
+    if isinstance(index, DatetimeIndex):
+        raise TypeError(
+            "The index of the series must be numeric (float or int) representing "
+            "time steps, not a DatetimeIndex. Use a numeric index instead."
+        )
+    return float(np.sum((index**order) * x.values))
 
 
 # Helper functions
