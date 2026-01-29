@@ -14,7 +14,7 @@ from platform import python_version
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.12.0"
+__version__ = "1.13.1"
 
 
 def get_versions(
