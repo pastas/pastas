@@ -1631,7 +1631,9 @@ class Edelman(RfuncBase):
             b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
             return moment(b, order)
         else:
-            raise ValueError(f"Invalid method {method}. Choose 'discrete'.")
+            raise ValueError(
+                f"Invalid method {method}. Choose 'discrete' is supported for {self._name}."
+            )
 
 
 class Kraijenhoff(RfuncBase):
