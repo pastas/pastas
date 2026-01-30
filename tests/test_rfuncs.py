@@ -259,7 +259,7 @@ def test_moment_exact_not_implemented(rfunc_name: str) -> None:
     if rfunc_name == "Edelman":
         with pytest.raises(DeprecationWarning):
             _ = getattr(ps.rfunc, rfunc_name)()
-            return
+        return
 
     rfunc = getattr(ps.rfunc, rfunc_name)()
     p = rfunc.get_init_parameters("test").initial.to_numpy()
