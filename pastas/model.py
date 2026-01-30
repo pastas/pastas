@@ -2116,12 +2116,13 @@ class Model:
         model = {
             "nfev": self.solver.nfev,
             "nobs": self.observations().index.size,
-            "noise": str(self._settings["noise"]),
-            "tmin": str(self._settings["tmin"]),
-            "tmax": str(self._settings["tmax"]),
-            "freq": self._settings["freq"],
-            "warmup": str(self._settings["warmup"]),
-            "solver": self._settings["solver"],
+            "noise": str(self.settings["noise"]),
+            "tmin": str(self.settings["tmin"]),
+            "tmax": str(self.settings["tmax"]),
+            "freq": self.settings["freq"],
+            "freq_obs": str(self.settings["freq_obs"]),
+            "warmup": str(self.settings["warmup"]),
+            "solver": self.settings["solver"],
         }
 
         fit = {
