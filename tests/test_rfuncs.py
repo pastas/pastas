@@ -136,7 +136,10 @@ def test_moment_discrete_works(rfunc_name: str) -> None:
     rfunc_name : str
         Name of the response function class to test.
     """
-
+    if rfunc_name == "Edelman":
+        with pytest.raises(DeprecationWarning):
+            _ = getattr(ps.rfunc, rfunc_name)()
+        return
     rfunc = getattr(ps.rfunc, rfunc_name)(cutoff=0.999)
     p = rfunc.get_init_parameters("test").initial.to_numpy()
 
@@ -253,6 +256,11 @@ def test_moment_exact_not_implemented(rfunc_name: str) -> None:
     rfunc_name : str
         Name of the response function class to test.
     """
+    if rfunc_name == "Edelman":
+        with pytest.raises(DeprecationWarning):
+            _ = getattr(ps.rfunc, rfunc_name)()
+            return
+
     rfunc = getattr(ps.rfunc, rfunc_name)()
     p = rfunc.get_init_parameters("test").initial.to_numpy()
 
