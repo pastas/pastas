@@ -2192,7 +2192,10 @@ class Model:
             corr = ""
 
         if warnings:
-            msg = self._generate_warnings_report()
+            msg = []
+            # model optimization unsuccessful
+            if not self._solve_success:
+                msg.append("Model parameters could not be estimated well.")
 
             # parameter bound warnings
             lowerhit, upperhit = self._check_parameters_bounds()
