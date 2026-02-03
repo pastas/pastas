@@ -403,7 +403,7 @@ def time_weighted_resample(
     method : {"linear", "stepwise", "state", "flux"}, optional
         Interpretation of the original series:
         - "stepwise" or "flux": treat values as fluxes, piecewise-constant backfilled.
-        - "linear" or "state": treat values as state variables (stage), interpolate linearly.
+        - "linear", "state" or "stage": treat values as state variables (stage), interpolate linearly.
         Default is "stepwise".
     add_first_index : bool, optional
         If True, the first index value is added to the resulting series, with a NaN value.
@@ -435,6 +435,7 @@ def time_weighted_resample(
         "flux": "stepwise",
         "linear": "linear",
         "state": "linear",
+        "stage": "linear",
     }
     if method not in method_map:
         raise ValueError(f"Unknown method: {method}")
