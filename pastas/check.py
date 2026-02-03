@@ -225,7 +225,7 @@ def _response_memory(
             Time to the cutoff value, i.e. the memory of the response function.
         """
         t = rfunc.get_t(p, dt=1.0, cutoff=1.0 - (1.0 - cutoff) / 10.0)
-        step = rfunc.step(p, cutoff=1.0 - (1.0 - cutoff) / 10.0) / sm.rfunc.gain(p)
+        step = rfunc.step(p, cutoff=1.0 - (1.0 - cutoff) / 10.0) / rfunc.gain(p)
         tmem = np.interp(cutoff, step, t)
         return tmem
 
