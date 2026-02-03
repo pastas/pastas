@@ -219,9 +219,15 @@ class TestGetChecksLiterature:
         import pastas as ps
 
         # Create a model with Gamma RechargeModel
-        head = pd.read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze()
-        prec = pd.read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze()
-        evap = pd.read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze()
+        head = pd.read_csv(
+            "tests/data/obs.csv", index_col=0, parse_dates=True
+        ).squeeze()
+        prec = pd.read_csv(
+            "tests/data/rain.csv", index_col=0, parse_dates=True
+        ).squeeze()
+        evap = pd.read_csv(
+            "tests/data/evap.csv", index_col=0, parse_dates=True
+        ).squeeze()
 
         ml = ps.Model(head, name="gamma_recharge_model")
         sm = ps.RechargeModel(prec, evap, name="rch", rfunc=ps.Gamma())
@@ -239,9 +245,15 @@ class TestGetChecksLiterature:
         """Test zaadnoordijk_2019 with model containing multiple RechargeModels."""
         import pastas as ps
 
-        head = pd.read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze()
-        prec = pd.read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze()
-        evap = pd.read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze()
+        head = pd.read_csv(
+            "tests/data/obs.csv", index_col=0, parse_dates=True
+        ).squeeze()
+        prec = pd.read_csv(
+            "tests/data/rain.csv", index_col=0, parse_dates=True
+        ).squeeze()
+        evap = pd.read_csv(
+            "tests/data/evap.csv", index_col=0, parse_dates=True
+        ).squeeze()
 
         ml = ps.Model(head, name="multi_recharge_model")
         sm1 = ps.RechargeModel(prec, evap, name="rch1", rfunc=ps.Exponential())
@@ -264,7 +276,9 @@ class TestGetChecksLiterature:
         """Test that zaadnoordijk_2019 checks have the correct parameters."""
         checks_list = check.get_checks_literature("zaadnoordijk_2019", ml=ml_recharge)
         # Verify rsq threshold is 0.3 (not 0.7 like in brakenhoff)
-        rsq_check = [c for c in checks_list if c["func"].__name__ == "rsq_geq_threshold"]
+        rsq_check = [
+            c for c in checks_list if c["func"].__name__ == "rsq_geq_threshold"
+        ]
         assert len(rsq_check) == 1
         assert rsq_check[0]["threshold"] == 0.3
         # Verify correlation threshold is 0.2
