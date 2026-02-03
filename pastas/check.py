@@ -53,7 +53,7 @@ The following predefined checklists are available in this module:
 
 import logging
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 from matplotlib.colors import rgb2hex
@@ -862,8 +862,9 @@ checks_brakenhoff_2022 = [
 
 
 def get_checks_literature(
-    author: Literal["brakenhoff_2022", "zaadnoordijk_2019"], ml: Model | None = None
-) -> list[dict[str, Any]]:
+    author: Literal["brakenhoff_2022", "zaadnoordijk_2019"],
+    ml: Model | None = None,
+) -> list[str | Callable | dict]:
     """Get predefined checklists based on literature.
 
     Returns
