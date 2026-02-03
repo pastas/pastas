@@ -27,18 +27,18 @@ def _check_forecast_data(
 
     Parameters
     ----------
-    forecasts: dict
+    forecasts: dict[str, list[DataFrame]] | dict[str, dict[str, DataFrame]]
         Dictionary containing the forecasts data. The keys are the stressmodel names
-        and the values are lists of DataFrames containing the forecasts with a datetime
-        index and each column a time series (i.e., one ensemble member).
+        and the values are lists or a dict of DataFrames containing the forecasts with
+        a datetime index and each column a time series (i.e., one ensemble member).
 
     Returns
     -------
     n: int
         The number of ensemble members in the forecasts.
-    tmin: datetime
+    tmin: Timestamp | str
         The minimum datetime in the forecasts.
-    tmax: datetime
+    tmax: Timestamp | str
         The maximum datetime in the forecasts.
     index: DatetimeIndex
         The datetime index of the forecasts.
@@ -119,8 +119,8 @@ def forecast(
         Pastas Model instance.
     forecasts: dict
         Dictionary containing the forecasts data. The keys are the stressmodel names
-        and the values are lists of DataFrames containing the forecasts with a datetime
-        index and each column a time series (i.e., one ensemble member).
+        and the values are  lists or dicts of DataFrames containing the forecasts with
+        a datetime index and each column a time series (i.e., one ensemble member).
     p: array_like, optional
         List of parameter sets to use for the forecasts. If None, a single parameter set is used that defaults to the optimal model parameters. Default is None.
     post_process: bool, optional
