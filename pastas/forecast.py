@@ -21,24 +21,24 @@ logger = getLogger(__name__)
 
 
 def _check_forecast_data(
-    forecasts: dict[str, list[DataFrame]],
+    forecasts: dict[str, list[DataFrame]] | dict[str, dict[str, DataFrame]],
 ) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
     Parameters
     ----------
-    forecasts: dict
+    forecasts: dict[str, list[DataFrame]] | dict[str, dict[str, DataFrame]]
         Dictionary containing the forecasts data. The keys are the stressmodel names
-        and the values are lists of DataFrames containing the forecasts with a datetime
-        index and each column a time series (i.e., one ensemble member).
+        and the values are lists or a dict of DataFrames containing the forecasts with
+        a datetime index and each column a time series (i.e., one ensemble member).
 
     Returns
     -------
     n: int
         The number of ensemble members in the forecasts.
-    tmin: datetime
+    tmin: Timestamp | str
         The minimum datetime in the forecasts.
-    tmax: datetime
+    tmax: Timestamp | str
         The maximum datetime in the forecasts.
     index: DatetimeIndex
         The datetime index of the forecasts.
@@ -67,7 +67,7 @@ def _check_forecast_data(
             logger.warning(msg)
             continue
 
-        for fc in fc_data:
+        for fc in fc_data.values() if isinstance(fc_data, dict) else fc_data:
             # Check if DataFrame is empty
             if fc.empty:
                 msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}'"
@@ -107,7 +107,7 @@ def _check_forecast_data(
 
 def forecast(
     ml: Model,
-    forecasts: dict[str, list[DataFrame]],
+    forecasts: dict[str, list[DataFrame]] | dict[str, dict[str, DataFrame]],
     p: ArrayLike | None = None,
     post_process: bool = False,
 ) -> DataFrame:
@@ -119,8 +119,8 @@ def forecast(
         Pastas Model instance.
     forecasts: dict
         Dictionary containing the forecasts data. The keys are the stressmodel names
-        and the values are lists of DataFrames containing the forecasts with a datetime
-        index and each column a time series (i.e., one ensemble member).
+        and the values are  lists or dicts of DataFrames containing the forecasts with
+        a datetime index and each column a time series (i.e., one ensemble member).
     p: array_like, optional
         List of parameter sets to use for the forecasts. If None, a single parameter set is used that defaults to the optimal model parameters. Default is None.
     post_process: bool, optional
@@ -215,6 +215,7 @@ def forecast(
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
             sm = ml.stressmodels[sm_name]  # Select stressmodel
+            fc_data = fc_data.values() if isinstance(fc_data, dict) else fc_data
             for i, fc in enumerate(fc_data):
                 ts = concat(
                     [
