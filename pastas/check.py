@@ -53,6 +53,7 @@ The following predefined checklists are available in this module:
 
 import logging
 from collections.abc import Callable
+from typing import Any, Literal
 
 import numpy as np
 from matplotlib.colors import rgb2hex
@@ -256,7 +257,7 @@ def _response_memory(
             # get_tmax is a conservative approximation for Hantush,
             # so it is better to interpolate step response to compute the memory
             lbl = f"response_t{cutoff * 100:.0f}_{sm_name}"
-            p = ml.get_parameters(sm_name)
+            p = ml.get_parameters(sm_name)[0:3]
             tmem = interp_step(cutoff, p, sm.rfunc)
             check = tmem < threshold
             df.loc[lbl] = [
@@ -284,7 +285,7 @@ def _response_memory(
 
 
 def response_memory(
-    ml,
+    ml: Model,
     cutoff: float = 0.95,
     factor_length_oseries: float = 0.5,
     names: list[str] | str | None = None,
@@ -318,7 +319,7 @@ def response_memory(
 
 
 def response_memory_vs_warmup(
-    ml, cutoff: float = 0.95, names: list[str] | str | None = None
+    ml: Model, cutoff: float = 0.95, names: list[str] | str | None = None
 ):
     """Check if response function memory is shorter than warmup.
 
@@ -572,7 +573,7 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
     return df
 
 
-def guess_unit_or_dims(parameter, return_dims=True):
+def guess_unit_or_dims(parameter: str, return_dims=True):
     """Guess the unit or dimension of a parameter based on its name.
 
     Parameters
@@ -787,7 +788,7 @@ def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
     return df
 
 
-def print_check_report(df):
+def print_check_report(df: DataFrame):
     """Print a report of the check results.
 
     The check result is colored red (fail), green (pass) or yellow (pass with
@@ -859,22 +860,68 @@ checks_brakenhoff_2022 = [
     {"func": parameter_bounds},
 ]
 
-# list of checks, loosely based on Zaadnoordijk et al. (2019).
-checks_zaadnoordijk_2019 = [
-    {
-        "func": parameters_leq_threshold,
-        "parameters": ["recharge_a"],
-        "threshold": 500.0,
-    },
-    {"func": rsq_geq_threshold, "threshold": 0.3},
-    {"func": correlation_sim_vs_res, "threshold": 0.2},
-    # Adapted ljung-box for irregular time steps:
-    {"func": acf_stoffer_toloi_test, "p_threshold": 0.05},  # check for R^2 < 0.8
-    {"func": acf_stoffer_toloi_test, "p_threshold": 0.01},  # check for R^2 >= 0.8
-    # Only reliable when noise meets requirements of white noise:
-    {
-        "func": uncertainty_parameters,
-        "parameters": ["recharge_A", "recharge_n", "recharge_a"],
-        "n_std": 1.96,
-    },
-]
+
+def get_checks_literature(
+    author: Literal["brakenhoff_2022", "zaadnoordijk_2019"], ml: Model | None = None
+) -> list[dict[str, Any]]:
+    """Get predefined checklists based on literature.
+
+    Returns
+    -------
+    checks_brakenhoff_2022: list
+        Checklist based on Brakenhoff et al. (2022).
+    or
+    checks_zaadnoordijk_2019: list
+        Checklist based on Zaadnoordijk et al. (2019).
+    """
+    if author == "brakenhoff_2022":
+        return checks_brakenhoff_2022
+    elif author == "zaadnoordijk_2019":
+        if ml is None:
+            raise ValueError(
+                "Model instance 'ml' must be provided for Zaadnoordijk et al. (2019) checklist."
+            )
+
+        recharge_params = []
+        for name, sm in ml.stressmodels.items():
+            if sm._name == "RechargeModel":
+                if sm.rfunc._name == "Gamma":
+                    recharge_params.extend([f"{name}_A", f"{name}_n", f"{name}_a"])
+                elif sm.rfunc._name == "Exponential":
+                    recharge_params.extend([f"{name}_A", f"{name}_a"])
+
+        if not recharge_params:
+            raise ValueError(
+                "Zaadnoordijk et al. (2019) checklist requires a RechargeModel "
+                "with Gamma or Exponential response function."
+            )
+
+        # list of checks, loosely based on Zaadnoordijk et al. (2019).
+        checks_zaadnoordijk_2019 = [
+            {
+                "func": parameters_leq_threshold,
+                "parameters": [recharge_params[-1]],
+                "threshold": 500.0,
+            },
+            {"func": rsq_geq_threshold, "threshold": 0.3},
+            {"func": correlation_sim_vs_res, "threshold": 0.2},
+            # Adapted ljung-box for irregular time steps:
+            {
+                "func": acf_stoffer_toloi_test,
+                "p_threshold": 0.05,
+            },  # check for p value < 0.05
+            {
+                "func": acf_stoffer_toloi_test,
+                "p_threshold": 0.01,
+            },  # double check for p value < 0.01 for other usecases
+            # Only reliable when noise meets requirements of white noise:
+            {
+                "func": uncertainty_parameters,
+                "parameters": recharge_params,
+                "n_std": 1.96,
+            },
+        ]
+
+        return checks_zaadnoordijk_2019
+    else:
+        raise ValueError("Author must be 'brakenhoff_2022' or 'zaadnoordijk_2019'.")
