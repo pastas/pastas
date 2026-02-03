@@ -1,5 +1,7 @@
-"""This module provides functions for checking and validating Pastas models and their
-components.
+"""This module provides functions for checking Pastas models and their components.
+
+This can be useful to define checks that can be applied to multiple models to ensure
+they meet certain criteria.
 
 Examples
 --------
@@ -14,9 +16,14 @@ Run a checklist of standard checks on a Pastas model::
 
     ps.check.checklist(ml, checks)
 
-Or use the list of checks defined in Brakenhoff et al. (2022)::
+Or use a list of checks defined in literature. Note that these checks were derived for
+specific questions and hydrogeological contexts and are included as inspiration, but
+are by no means exhaustive or applicable to all problems.
 
-    ps.check.checklist(ml, ps.check.checks_brakenhoff_2022)
+Checklists can be obtained with::
+
+    checks = ps.check.get_checks_literature("brakenhoff_2022")
+    ps.check.checklist(ml, checks=checks)
 
 
 Checks
@@ -44,11 +51,11 @@ The following checks built-in checks are available in this module:
 
 Checklists
 ----------
-The following predefined checklists are available in this module:
+The following predefined checklists are available in this module, available via
+the `get_checks_literature()` function:
 
- - checks_brakenhoff_2022: checklist based on Brakenhoff et al. (2022)
- - checks_zaadnoordijk_2019: checklist based on Zaadnoordijk et al. (2019)
-
+ - brakenhoff_2022: checklist based on Brakenhoff et al. (2022)
+ - zaadnoordijk_2019: checklist based on Zaadnoordijk et al. (2019)
 """
 
 import logging
@@ -208,7 +215,7 @@ def _response_memory(
     # unit = "days"
     dim = "[T]"
 
-    def interp_step(cutoff: float, p: np.ndarray[float], rfunc: RfuncBase):
+    def interp_step(cutoff: float, p: np.ndarray, rfunc: RfuncBase):
         """Helper function to interpolate the step response to compute the memory.
 
         Parameters
@@ -423,7 +430,7 @@ def parameters_leq_threshold(
         Pastas model instance.
     parameters: list or str, optional
         List of parameter names to check the threshold for. Default is None, which
-        means all parameters are checked.
+        means all parameters are checked. If str, partial matches are allowed.
     threshold: float, optional
         Threshold value for the parameters. Default is 500.0.
 
@@ -435,7 +442,7 @@ def parameters_leq_threshold(
     if parameters is None:
         parameters = ml.parameters.index.tolist()
     elif isinstance(parameters, str):
-        parameters = [parameters]
+        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
 
     results = []
     for parameter in parameters:
@@ -454,7 +461,7 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
         Pastas model instance.
     parameters: list or str, optional
         List of parameter names to check the bounds for. Default is None, which
-        means all parameters are checked.
+        means all parameters are checked. If str, partial matches are allowed.
 
     Returns
     -------
@@ -464,7 +471,7 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
     if parameters is None:
         parameters = ml.parameters.index.tolist()
     elif isinstance(parameters, str):
-        parameters = [parameters]
+        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
     df = get_empty_check_dataframe()
     upper, lower = ml._check_parameters_bounds()
     for param in parameters:
@@ -501,7 +508,7 @@ def uncertainty_parameters(
         Pastas model instance.
     parameters: list or str, optional
         List of parameter names to check the uncertainty for. Default is None, which
-        means all parameters are checked.
+        means all parameters are checked. If str, partial matches are allowed.
     n_std: float, optional
         Number of standard deviations to compare the parameter to. Default is 1.96.
 
@@ -509,7 +516,7 @@ def uncertainty_parameters(
     if parameters is None:
         parameters = ml.parameters.index.tolist()
     elif isinstance(parameters, str):
-        parameters = [parameters]
+        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
 
     # loop through parameters
     results = []
@@ -863,45 +870,54 @@ checks_brakenhoff_2022 = [
 
 def get_checks_literature(
     author: Literal["brakenhoff_2022", "zaadnoordijk_2019"],
-    ml: Model | None = None,
+    recharge_model: str | None = None,
 ) -> list[str | Callable | dict]:
     """Get predefined checklists based on literature.
 
+    Notes
+    -----
+    These checklists are not exhaustive and were developed to address specific research
+    questions and hydrogeological contexts. They are provided as reference
+    implementations but may not be universally applicable across all modeling
+    scenarios.
+
+    The Brakenhoff et al. (2022) checklist was specifically designed to assess models
+    for quantifying the impact of groundwater pumping on heads.
+
+    The Zaadnoordijk et al. (2019) checklist was developed for checking linear recharge
+    models across diverse hydrogeological settings throughout the Netherlands. This
+    checklist requires the recharge model name to retrieve the corresponding
+    parameters. Applicability is limited to recharge models with the Gamma or
+    Exponential response functions.
+
+    Parameters
+    ----------
+    author: str
+        Author of the checklist to retrieve. Must be one of
+        ["brakenhoff_2022", "zaadnoordijk_2019"].
+    recharge_model: str, optional
+        Name of the recharge model. Required for "zaadnoordijk_2019" checklist to
+        obtain parameters related to the recharge model.
+
     Returns
     -------
-    checks_brakenhoff_2022: list
-        Checklist based on Brakenhoff et al. (2022).
-    or
-    checks_zaadnoordijk_2019: list
-        Checklist based on Zaadnoordijk et al. (2019).
+    checks: list
+        Checklist based on Brakenhoff et al. (2022) or Zaadnoordijk et al. (2019).
     """
     if author == "brakenhoff_2022":
         return checks_brakenhoff_2022
     elif author == "zaadnoordijk_2019":
-        if ml is None:
+        if recharge_model is None:
             raise ValueError(
-                "Model instance 'ml' must be provided for Zaadnoordijk et al. (2019) checklist."
-            )
-
-        recharge_params = []
-        for name, sm in ml.stressmodels.items():
-            if sm._name == "RechargeModel":
-                if sm.rfunc._name == "Gamma":
-                    recharge_params.extend([f"{name}_A", f"{name}_n", f"{name}_a"])
-                elif sm.rfunc._name == "Exponential":
-                    recharge_params.extend([f"{name}_A", f"{name}_a"])
-
-        if not recharge_params:
-            raise ValueError(
-                "Zaadnoordijk et al. (2019) checklist requires a RechargeModel "
-                "with Gamma or Exponential response function."
+                "Name of recharge model must be provided for "
+                "Zaadnoordijk et al. (2019) checklist."
             )
 
         # list of checks, loosely based on Zaadnoordijk et al. (2019).
         checks_zaadnoordijk_2019 = [
             {
                 "func": parameters_leq_threshold,
-                "parameters": [recharge_params[-1]],
+                "parameters": recharge_model,
                 "threshold": 500.0,
             },
             {"func": rsq_geq_threshold, "threshold": 0.3},
@@ -918,7 +934,7 @@ def get_checks_literature(
             # Only reliable when noise meets requirements of white noise:
             {
                 "func": uncertainty_parameters,
-                "parameters": recharge_params,
+                "parameters": recharge_model + "_a",
                 "n_std": 1.96,
             },
         ]
