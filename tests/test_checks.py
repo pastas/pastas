@@ -146,3 +146,137 @@ def test_check_functions_parameterized(
     assert "pass" in df.columns
     assert "statistic" in df.columns
     assert "threshold" in df.columns
+
+
+class TestGetChecksLiterature:
+    """Test the get_checks_literature function."""
+
+    def test_brakenhoff_2022_returns_checks(self) -> None:
+        """Test that brakenhoff_2022 returns the checks_brakenhoff_2022 list."""
+        checks_list = check.get_checks_literature("brakenhoff_2022")
+        assert isinstance(checks_list, list)
+        assert len(checks_list) > 0
+        # Verify that all checks have a 'func' key
+        for check_item in checks_list:
+            assert isinstance(check_item, dict)
+            assert "func" in check_item
+
+    def test_brakenhoff_2022_returns_expected_checks(self) -> None:
+        """Test that brakenhoff_2022 returns the expected checks."""
+        checks_list = check.get_checks_literature("brakenhoff_2022")
+        # Verify the structure matches checks_brakenhoff_2022
+        assert checks_list == check.checks_brakenhoff_2022
+        # Verify specific checks are present
+        func_names = [
+            item["func"].__name__ if callable(item["func"]) else item["func"]
+            for item in checks_list
+        ]
+        assert "rsq_geq_threshold" in func_names
+        assert "response_memory" in func_names
+        assert "acf_runs_test" in func_names
+        assert "uncertainty_gain" in func_names
+        assert "parameter_bounds" in func_names
+
+    def test_zaadnoordijk_2019_without_model_raises_error(self) -> None:
+        """Test that zaadnoordijk_2019 without a model raises ValueError."""
+        with pytest.raises(ValueError, match="Model instance 'ml' must be provided"):
+            check.get_checks_literature("zaadnoordijk_2019", ml=None)
+
+    def test_zaadnoordijk_2019_without_recharge_model_raises_error(
+        self, ml_sm: Model
+    ) -> None:
+        """Test that zaadnoordijk_2019 without RechargeModel raises ValueError."""
+        with pytest.raises(
+            ValueError,
+            match="Zaadnoordijk et al. \\(2019\\) checklist requires a RechargeModel",
+        ):
+            check.get_checks_literature("zaadnoordijk_2019", ml=ml_sm)
+
+    def test_zaadnoordijk_2019_with_exponential_recharge_model(
+        self, ml_recharge: Model
+    ) -> None:
+        """Test that zaadnoordijk_2019 works with Exponential RechargeModel."""
+        checks_list = check.get_checks_literature("zaadnoordijk_2019", ml=ml_recharge)
+        assert isinstance(checks_list, list)
+        assert len(checks_list) > 0
+        # Verify structure
+        for check_item in checks_list:
+            assert isinstance(check_item, dict)
+            assert "func" in check_item
+        # Verify expected checks are present
+        func_names = [
+            item["func"].__name__ if callable(item["func"]) else item["func"]
+            for item in checks_list
+        ]
+        assert "parameters_leq_threshold" in func_names
+        assert "rsq_geq_threshold" in func_names
+        assert "correlation_sim_vs_res" in func_names
+        assert "acf_stoffer_toloi_test" in func_names
+        assert "uncertainty_parameters" in func_names
+
+    def test_zaadnoordijk_2019_with_gamma_recharge_model(self) -> None:
+        """Test that zaadnoordijk_2019 works with Gamma RechargeModel."""
+        import pastas as ps
+
+        # Create a model with Gamma RechargeModel
+        head = pd.read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze()
+        prec = pd.read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze()
+        evap = pd.read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze()
+
+        ml = ps.Model(head, name="gamma_recharge_model")
+        sm = ps.RechargeModel(prec, evap, name="rch", rfunc=ps.Gamma())
+        ml.add_stressmodel(sm)
+
+        checks_list = check.get_checks_literature("zaadnoordijk_2019", ml=ml)
+        assert isinstance(checks_list, list)
+        assert len(checks_list) > 0
+        # Verify structure
+        for check_item in checks_list:
+            assert isinstance(check_item, dict)
+            assert "func" in check_item
+
+    def test_zaadnoordijk_2019_with_multiple_recharge_models(self) -> None:
+        """Test zaadnoordijk_2019 with model containing multiple RechargeModels."""
+        import pastas as ps
+
+        head = pd.read_csv("tests/data/obs.csv", index_col=0, parse_dates=True).squeeze()
+        prec = pd.read_csv("tests/data/rain.csv", index_col=0, parse_dates=True).squeeze()
+        evap = pd.read_csv("tests/data/evap.csv", index_col=0, parse_dates=True).squeeze()
+
+        ml = ps.Model(head, name="multi_recharge_model")
+        sm1 = ps.RechargeModel(prec, evap, name="rch1", rfunc=ps.Exponential())
+        ml.add_stressmodel(sm1)
+
+        checks_list = check.get_checks_literature("zaadnoordijk_2019", ml=ml)
+        assert isinstance(checks_list, list)
+        assert len(checks_list) > 0
+
+    def test_invalid_author_raises_error(self) -> None:
+        """Test that an invalid author name raises ValueError."""
+        with pytest.raises(
+            ValueError, match="Author must be 'brakenhoff_2022' or 'zaadnoordijk_2019'"
+        ):
+            check.get_checks_literature("invalid_author")
+
+    def test_zaadnoordijk_2019_checks_have_correct_parameters(
+        self, ml_recharge: Model
+    ) -> None:
+        """Test that zaadnoordijk_2019 checks have the correct parameters."""
+        checks_list = check.get_checks_literature("zaadnoordijk_2019", ml=ml_recharge)
+        # Verify rsq threshold is 0.3 (not 0.7 like in brakenhoff)
+        rsq_check = [c for c in checks_list if c["func"].__name__ == "rsq_geq_threshold"]
+        assert len(rsq_check) == 1
+        assert rsq_check[0]["threshold"] == 0.3
+        # Verify correlation threshold is 0.2
+        corr_check = [
+            c for c in checks_list if c["func"].__name__ == "correlation_sim_vs_res"
+        ]
+        assert len(corr_check) == 1
+        assert corr_check[0]["threshold"] == 0.2
+
+    def test_get_checks_literature_brakenhoff_does_not_require_model(self) -> None:
+        """Test that brakenhoff_2022 does not require a model instance."""
+        # Should not raise an error even though ml is None
+        checks_list = check.get_checks_literature("brakenhoff_2022", ml=None)
+        assert isinstance(checks_list, list)
+        assert len(checks_list) > 0
