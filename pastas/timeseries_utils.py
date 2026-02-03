@@ -12,12 +12,14 @@ from pandas import (
     api,
     date_range,
     infer_freq,
+    cut,
+    concat,
 )
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
-from .decorators import njit
+from .decorators import njit, PastasDeprecationWarning
 
 logger = logging.getLogger(__name__)
 
@@ -271,6 +273,10 @@ def get_sample_for_freq(
     return s.loc[get_sample(s.index, ref_tindex)]
 
 
+@PastasDeprecationWarning(
+    remove_version="3.0.0",
+    reason=("`timestep_weighted_resample` is replaced by `time_weighted_average`."),
+)
 def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> Series:
     """Resample a time series to a new time index, using an overlapping period
     weighted average.
@@ -380,6 +386,104 @@ def _ts_resample_slow(t_s, t_e, v, t_new):
         # determine timestep-weighted value
         v_new[i] = np.sum(dt * v[mask]) / np.sum(dt)
     return v_new
+
+
+def time_weighted_resample(
+    s: Series, index: Index, method: str = "stepwise", add_first_index: bool = True
+):
+    """
+    Time-weighted resampling of a time series to arbitrary periods.
+
+    Parameters
+    ----------
+    s : pandas.Series
+        Original time series with a datetime-like index.
+    index : pandas.Index
+        Target time index defining the boundaries of the new periods.
+    method : {"linear", "stepwise", "state", "flux"}, optional
+        Interpretation of the original series:
+        - "stepwise" or "flux": treat values as fluxes, piecewise-constant backfilled.
+        - "linear" or "state": treat values as state variables (stage), interpolate linearly.
+        Default is "stepwise".
+    add_first_index : bool, optional
+        If True, the first index value is added to the resulting series, with a NaN value.
+        This is useful when the resulting series needs to have the same index as the
+        target index. If False, the output series has length len(index)-1 and uses index[1:]
+        as its index. Default is True.
+
+    Raises
+    ------
+    ValueError
+        If `method` is not supported or input is not strictly increasing.
+
+    Returns
+    -------
+    s_new : pandas.Series
+        Resampled time series. Each value represents the time-weighted mean
+        over the corresponding period. Periods not fully covered by the original
+        data are NaN.
+    """
+    # Validate inputs
+    if not s.index.is_monotonic_increasing:
+        raise ValueError("Series index must be strictly increasing.")
+    if not index.is_monotonic_increasing:
+        raise ValueError("Target index must be strictly increasing.")
+
+    # Normalize method aliases
+    method_map = {
+        "stepwise": "stepwise",
+        "flux": "stepwise",
+        "linear": "linear",
+        "state": "linear",
+    }
+    if method not in method_map:
+        raise ValueError(f"Unknown method: {method}")
+    method = method_map[method]
+
+    # Ensure all target boundaries exist in the original series
+    missing = index.difference(s.index)
+    if not missing.empty:
+        s = concat([s, Series(np.nan, index=missing)]).sort_index()
+
+    # Construct continuous-time representation
+    if method == "linear":
+        s = s.interpolate(method="time")
+    else:
+        s = s.bfill()
+
+    # Limit to resampling domain
+    s = s.loc[index[0] : index[-1]]
+
+    # Compute time differences in seconds
+    dt = s.index.to_series().diff().iloc[1:].dt.total_seconds().values
+
+    if method == "linear":
+        # Trapezoidal rule (state variable)
+        mean_val = 0.5 * (s.values[:-1] + s.values[1:])
+    else:
+        # Left-constant flux over interval
+        mean_val = s.values[1:]
+
+    # Integrated values per original interval
+    integrated = mean_val * dt
+    s_int = Series(integrated, index=s.index[1:])
+
+    # Aggregate to new periods
+    bins = cut(s_int.index, index, right=True)
+    duration = np.diff(index).astype("timedelta64[s]").astype(float)
+
+    s_new = s_int.groupby(bins, observed=False).sum() / duration
+    s_new.index = index[1:]
+
+    # Mask incomplete periods
+    mask = (index[:-1] < s.first_valid_index()) | (index[1:] > s.last_valid_index())
+    s_new[mask] = np.nan
+
+    if add_first_index:
+        # Add first index with NaN value
+        s_new = concat([Series([np.nan], index=[index[0]]), s_new])
+
+    return s_new
 
 
 def get_equidistant_series_nearest(
