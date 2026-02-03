@@ -261,6 +261,7 @@ def _response_memory(
             check = tmem < threshold
             df.loc[lbl] = [
                 tmem,
+                "<",
                 threshold,
                 dim,
                 check,
