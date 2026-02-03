@@ -855,7 +855,7 @@ checks_brakenhoff_2022 = [
     {"func": rsq_geq_threshold, "threshold": 0.7},
     {"func": response_memory, "cutoff": 0.95, "factor_length_oseries": 0.5},
     {"func": acf_runs_test},
-    {"func": uncertainty_parameters, "n_std": 1.96},
+    {"func": uncertainty_gain, "n_std": 1.96},
     {"func": parameter_bounds},
 ]
 
