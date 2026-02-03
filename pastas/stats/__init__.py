@@ -4,7 +4,7 @@
 import pastas.stats.metrics as metrics
 import pastas.stats.signatures as signatures
 
-from .core import acf, ccf, mean, std, var
+from .core import acf, ccf, mean, moment, std, var
 from .dutch import gg, ghg, glg, gvg, q_ghg, q_glg, q_gvg
 from .metrics import (
     aic,
