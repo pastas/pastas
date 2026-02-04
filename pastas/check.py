@@ -888,7 +888,8 @@ def get_checks_literature(
     models across diverse hydrogeological settings throughout the Netherlands. This
     checklist requires the recharge model name to retrieve the corresponding
     parameters. Applicability is limited to recharge models with the Gamma or
-    Exponential response functions.
+    Exponential response functions. Checks contain duplicate checks with different
+    thresholds for the different check levels (MODOK, REGIMEOK, NWARN).
 
     Parameters
     ----------
@@ -915,28 +916,37 @@ def get_checks_literature(
 
         # list of checks, loosely based on Zaadnoordijk et al. (2019).
         checks_zaadnoordijk_2019 = [
+            # MODOK checks:
             {
                 "func": parameters_leq_threshold,
                 "parameters": recharge_model_name + "_a",
                 "threshold": 500.0,
             },
+            {"func": rsq_geq_threshold, "threshold": 0.1},
+            {"func": correlation_sim_vs_res, "threshold": 0.3},
+            # REGIMEOK checks:
             {"func": rsq_geq_threshold, "threshold": 0.3},
             {"func": correlation_sim_vs_res, "threshold": 0.2},
-            # Adapted ljung-box for irregular time steps:
             {
-                "func": acf_stoffer_toloi_test,
-                "p_threshold": 0.05,
-            },  # check for p value < 0.05
-            {
-                "func": acf_stoffer_toloi_test,
+                "func": acf_stoffer_toloi_test,  # Adapted ljungbox for irregular series
                 "p_threshold": 0.01,
-            },  # double check for p value < 0.01 for other usecases
+            },
+            # NWARN: criteria for warnings
             # Only reliable when noise meets requirements of white noise:
+            {"func": rsq_geq_threshold, "threshold": 0.8},
             {
                 "func": uncertainty_parameters,
                 "parameters": recharge_model_name,
                 "n_std": 1.96,
             },
+            {
+                "func": acf_stoffer_toloi_test,
+                "p_threshold": 0.05,
+            },  # check for R² < 0.8
+            {
+                "func": acf_stoffer_toloi_test,
+                "p_threshold": 0.01,
+            },  # check when R² > 0.8
         ]
 
         return checks_zaadnoordijk_2019
