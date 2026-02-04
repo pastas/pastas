@@ -870,7 +870,7 @@ checks_brakenhoff_2022 = [
 
 def get_checks_literature(
     author: Literal["brakenhoff_2022", "zaadnoordijk_2019"],
-    recharge_model: str | None = None,
+    recharge_model_name: str | None = None,
 ) -> list[str | Callable | dict]:
     """Get predefined checklists based on literature.
 
@@ -907,7 +907,7 @@ def get_checks_literature(
     if author == "brakenhoff_2022":
         return checks_brakenhoff_2022
     elif author == "zaadnoordijk_2019":
-        if recharge_model is None:
+        if recharge_model_name is None:
             raise ValueError(
                 "Name of recharge model must be provided for "
                 "Zaadnoordijk et al. (2019) checklist."
@@ -917,7 +917,7 @@ def get_checks_literature(
         checks_zaadnoordijk_2019 = [
             {
                 "func": parameters_leq_threshold,
-                "parameters": recharge_model,
+                "parameters": recharge_model_name,
                 "threshold": 500.0,
             },
             {"func": rsq_geq_threshold, "threshold": 0.3},
@@ -934,7 +934,7 @@ def get_checks_literature(
             # Only reliable when noise meets requirements of white noise:
             {
                 "func": uncertainty_parameters,
-                "parameters": recharge_model + "_a",
+                "parameters": recharge_model_name + "_a",
                 "n_std": 1.96,
             },
         ]

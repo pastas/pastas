@@ -177,12 +177,12 @@ class TestGetChecksLiterature:
     def test_zaadnoordijk_2019_without_recharge_model_raises_error(self) -> None:
         """Test that zaadnoordijk_2019 without a model raises ValueError."""
         with pytest.raises(ValueError, match="Name of recharge model must be provided"):
-            check.get_checks_literature("zaadnoordijk_2019", recharge_model=None)
+            check.get_checks_literature("zaadnoordijk_2019", recharge_model_name=None)
 
     def test_zaadnoordijk_2019_checks(self, ml_noisemodel: Model) -> None:
         """Test that zaadnoordijk_2019 checks work."""
         checks_list = check.get_checks_literature(
-            "zaadnoordijk_2019", recharge_model="rch"
+            "zaadnoordijk_2019", recharge_model_name="rch"
         )
         df = check.checklist(ml_noisemodel, checks=checks_list, report=False)
         assert isinstance(df, pd.DataFrame)
