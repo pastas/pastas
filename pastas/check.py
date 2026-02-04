@@ -917,7 +917,7 @@ def get_checks_literature(
         checks_zaadnoordijk_2019 = [
             {
                 "func": parameters_leq_threshold,
-                "parameters": recharge_model_name,
+                "parameters": recharge_model_name + "_a",
                 "threshold": 500.0,
             },
             {"func": rsq_geq_threshold, "threshold": 0.3},
@@ -934,7 +934,7 @@ def get_checks_literature(
             # Only reliable when noise meets requirements of white noise:
             {
                 "func": uncertainty_parameters,
-                "parameters": recharge_model_name + "_a",
+                "parameters": recharge_model_name,
                 "n_std": 1.96,
             },
         ]
