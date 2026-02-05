@@ -274,7 +274,7 @@ def get_sample_for_freq(
 
 
 @PastasDeprecationWarning(
-    remove_version="3.0.0",
+    remove_version="2.1",
     reason=("`timestep_weighted_resample` is replaced by `time_weighted_average`."),
 )
 def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> Series:
@@ -389,7 +389,11 @@ def _ts_resample_slow(t_s, t_e, v, t_new):
 
 
 def time_weighted_resample(
-    s: Series, index: Index, method: str = "stepwise", add_first_index: bool = True
+    s: Series,
+    index: Index,
+    method: str = "stepwise",
+    add_first_index: bool = True,
+    require_full_coverage: bool = False,
 ):
     """
     Time-weighted resampling of a time series to arbitrary periods.
@@ -410,6 +414,9 @@ def time_weighted_resample(
         This is useful when the resulting series needs to have the same index as the
         target index. If False, the output series has length len(index)-1 and uses index[1:]
         as its index. Default is True.
+    require_full_coverage : bool, optional
+        If True, periods that are not fully covered by the original data are masked with NaN. If False,
+        only periods completely outside the range of the original data are masked. Default is False.
 
     Raises
     ------
@@ -420,10 +427,22 @@ def time_weighted_resample(
     -------
     s_new : pandas.Series
         Resampled time series. Each value represents the time-weighted mean
-        over the corresponding period. Periods not fully covered by the original
+        over the corresponding period. Periods not covered by the original
         data are NaN.
     """
     # Validate inputs
+    if isinstance(s, DataFrame):
+        if len(s.columns) == 1:
+            s = s.iloc[:, 0]
+        elif len(s.columns) > 1:
+            # helpful specific message for multi-column DataFrames
+            msg = "DataFrame with multiple columns. Please select one."
+            logger.error(msg)
+            raise ValueError(msg)
+    if s.isna().any():
+        raise Exception("s cannot contain NaN values")
+    if not api.types.is_float_dtype(s):
+        raise Exception("s must be of dtype float")
     if not s.index.is_monotonic_increasing:
         raise ValueError("Series index must be strictly increasing.")
     if not index.is_monotonic_increasing:
@@ -440,6 +459,8 @@ def time_weighted_resample(
     if method not in method_map:
         raise ValueError(f"Unknown method: {method}")
     method = method_map[method]
+
+    s_org = s.copy()
 
     # Ensure all target boundaries exist in the original series
     missing = index.difference(s.index)
@@ -466,23 +487,44 @@ def time_weighted_resample(
         mean_val = s.values[1:]
 
     # Integrated values per original interval
-    integrated = mean_val * dt
-    s_int = Series(integrated, index=s.index[1:])
+    s_int = Series(mean_val * dt, index=s.index[1:])
+
+    # Duration
+    duration = Series(dt, index=s.index[1:])
+    duration[s_int.isna()] = 0
 
     # Aggregate to new periods
     bins = cut(s_int.index, index, right=True)
-    duration = np.diff(index).astype("timedelta64[s]").astype(float)
-
-    s_new = s_int.groupby(bins, observed=False).sum() / duration
+    s_new = (
+        s_int.groupby(bins, observed=False).sum()
+        / duration.groupby(bins, observed=False).sum()
+    )
     s_new.index = index[1:]
 
-    # Mask incomplete periods
-    mask = (index[:-1] < s.first_valid_index()) | (index[1:] > s.last_valid_index())
+    if require_full_coverage:
+        # Mask incomplete periods
+        mask = (index[:-1] < s_org.first_valid_index()) | (
+            index[1:] > s_org.last_valid_index()
+        )
+    else:
+        # Mask periods completely outside the original data range
+        mask = (index[1:] < s_org.first_valid_index()) | (
+            index[:-1] > s_org.last_valid_index()
+        )
     s_new[mask] = np.nan
 
     if add_first_index:
         # Add first index with NaN value
-        s_new = concat([Series([np.nan], index=[index[0]]), s_new])
+        if require_full_coverage or index[0] < s_org.first_valid_index():
+            first_value = np.nan
+        else:
+            first_value = s.iloc[0]
+        s_new = concat([Series(first_value, index=[index[0]]), s_new])
+
+    # copy name and attributes from original series
+    s_new.name = s_org.name
+    s_new.index.name = s_org.index.name
+    s_new.attrs = s_org.attrs.copy()
 
     return s_new
 
