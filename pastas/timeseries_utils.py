@@ -441,8 +441,6 @@ def time_weighted_resample(
             raise ValueError(msg)
     if s.isna().any():
         raise Exception("s cannot contain NaN values")
-    if not api.types.is_float_dtype(s):
-        raise Exception("s must be of dtype float")
     if not s.index.is_monotonic_increasing:
         raise ValueError("Series index must be strictly increasing.")
     if not index.is_monotonic_increasing:
