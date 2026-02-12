@@ -711,9 +711,9 @@ class ObservationSeries(TimeSeries):
                 series = self._fill_nan(series)
 
             if freq is not None and not series.empty:
-                # sample measurements, so that frequency is not higher than model keep
-                # the original timestamps, as they will be used during interpolation of
-                # the simulation
+                # Sample the measurements so that the observation frequency does not
+                # exceed the model frequency. Make sure to retain the original
+                # timestamps, as they will be used for interpolation of the simulation.
                 sim_index = _get_sim_index(tmin, tmax, freq, time_offset)
                 index = get_sample(series.index, sim_index)
                 series = series.loc[index]
