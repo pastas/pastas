@@ -63,14 +63,7 @@ def _check_forecast_data(
     index = None
 
     for sm_name, fc_data in forecasts.items():
-        if not isinstance(fc_data, dict) or not fc_data:
-            msg = f"Forecast data for stressmodel '{sm_name}' must be a non-empty dictionary"
-            logger.error(msg)
-            raise ValueError(msg)
-
-        if isinstance(fc_data, dict):
-            fc_data = list(fc_data.values())
-        else:
+        if isinstance(fc_data, list):
             deprecate_args_or_kwargs(
                 name="forecasts",
                 remove_version="2.0.0",
@@ -79,12 +72,16 @@ def _check_forecast_data(
                     " require a dictionary of DataFrames, with the appropriate keyword"
                     " arguments of the stressmodel as keys of the dictionary instead."
                 ),
-                force_raise=False,
             )
-        for fc in fc_data:
+        elif not isinstance(fc_data, dict) or not fc_data:
+            msg = f"Forecast data for stressmodel '{sm_name}' must be a non-empty dictionary"
+            logger.error(msg)
+            raise ValueError(msg)
+
+        for stress_name, fc in fc_data.items():
             # Check if DataFrame is empty
             if fc.empty:
-                msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}'"
+                msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}' for stress '{stress_name}'"
                 logger.error(msg)
                 continue
 
