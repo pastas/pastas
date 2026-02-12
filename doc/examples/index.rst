@@ -8,12 +8,19 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
 .. toctree::
     :maxdepth: 4
     :hidden:
-    :glob:
+    :caption: Basics
 
     prepare_timeseries
     basic_model
     fix_parameters
     calibration_options
+    modeling_timestep
+
+.. toctree::
+    :maxdepth: 4
+    :hidden:
+    :caption: Stressmodels
+
     adding_rivers
     adding_wells
     multiple_wells
@@ -24,107 +31,123 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     non_linear_recharge
     recharge_estimation
     snowmodel
+
+.. toctree::
+    :maxdepth: 4
+    :hidden:
+    :caption: Model Evaluation
+
     comparing_models
     diagnostic_checking
+    model_check_module
     timestep_analysis
     uncertainty
     uncertainty_emcee
     uncertainty_ls_mcmc
+
+.. toctree::
+    :maxdepth: 4
+    :hidden:
+    :caption: Applications
+
     standardized_groundwater_index
     signatures
     ensemble_predictions
+
+.. toctree::
+    :maxdepth: 4
+    :hidden:
+    :caption: Time Series Analysis Manual
+
+    stowa_preprocessing
+    stowa_model_structure
+    stowa_calibration
+    stowa_assessment
+    stowa_cases_contribution_assessment
+    stowa_cases_characteristics
+    stowa_cases_system_analysis
+    stowa_cases_forecasting
+
+.. toctree::
+    :maxdepth: 4
+    :hidden:
+    :caption: Pastas Performance
+
+    caching_for_performance
+
+.. toctree::
+    :maxdepth: 4
+    :hidden:
+    :caption: Groundwater Article
+
+    groundwater_paper/Ex1_simple_model/Example1
+    groundwater_paper/Ex2_monitoring_network/Example2
 
 
 Basics
 ------
 
-`Preprocessing user-provided time series`_
+:doc:`Preprocessing user-provided time series <prepare_timeseries>`
 
-`A basic model`_
+:doc:`A basic model <basic_model>`
 
-`Fixing parameters while fitting`_
+:doc:`Fixing parameters while fitting <fix_parameters>`
 
-`Calibration`_
+:doc:`Calibration <calibration_options>`
 
-`Modeling with different timesteps`_
-
-.. _Preprocessing user-provided time series: prepare_timeseries.html
-.. _A basic model: basic_model.html
-.. _Fixing parameters while fitting: fix_parameters.html
-.. _Calibration: calibration_options.html
-.. _Modeling with different timesteps: modeling_timestep.html
+:doc:`Modeling with different timesteps <modeling_timestep>`
 
 Stressmodels
 ------------
 
-`Adding surface water levels`_
+:doc:`Adding surface water levels <adding_rivers>`
 
-`Adding pumping wells`_
+:doc:`Adding pumping wells <adding_wells>`
 
-`Adding multiple wells`_
+:doc:`Adding multiple wells <multiple_wells>`
 
-`Adding trends`_
+:doc:`Adding trends <adding_trends>`
 
-`Changing response functions`_
-
-.. _Adding surface water levels: adding_rivers.html
-.. _Adding pumping wells: adding_wells.html
-.. _Adding multiple wells: multiple_wells.html
-.. _Adding trends: adding_trends.html
-.. _Changing response functions: changing_responses.html
+:doc:`Changing response functions <changing_responses>`
 
 Non-linear (Recharge) Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`Threshold non-linearities`_
+:doc:`Threshold non-linearities <threshold_non_linear>`
 
-`Non-linear recharge models`_
+:doc:`Non-linear recharge models <non_linear_recharge>`
 
-`Estimating recharge`_
+:doc:`Estimating recharge <recharge_estimation>`
 
-`Modeling snow`_
-
-.. _Threshold non-linearities: threshold_non_linear.html
-.. _Non-linear recharge models: non_linear_recharge.html
-.. _Estimating recharge: recharge_estimation.html
-.. _Modeling snow: snowmodel.html
+:doc:`Modeling snow <snowmodel>`
 
 
 Model Evaluation
 ----------------
 
-`Comparing models visually`_
+:doc:`Comparing models visually <comparing_models>`
 
-`Diagnostic checking`_
+:doc:`Diagnostic checking <diagnostic_checking>`
 
-`Reducing autocorrelation`_
+:doc:`Model check module <model_check_module>`
 
-`Uncertainty quantification`_
+:doc:`Reducing autocorrelation <timestep_analysis>`
 
-`MCMC uncertainty`_
+:doc:`Uncertainty quantification <uncertainty>`
 
-`MCMC vs. LS`_
+:doc:`MCMC uncertainty <uncertainty_emcee>`
 
-.. _Comparing models visually: comparing_models.html
-.. _Diagnostic checking: diagnostic_checking.html
-.. _`Reducing autocorrelation`: timestep_analysis.html
-.. _Uncertainty quantification: uncertainty.html
-.. _MCMC uncertainty: uncertainty_emcee.html
-.. _MCMC vs. LS: uncertainty_ls_mcmc.html
+:doc:`MCMC vs. LS <uncertainty_ls_mcmc>`
 
 
 Applications
 ------------
 
-`Standardized Groundwater Index`_
+:doc:`Standardized Groundwater Index <standardized_groundwater_index>`
 
-`Groundwater signatures`_
+:doc:`Groundwater signatures <signatures>`
 
-`Ensemble predictions`_
-
-.. _Standardized Groundwater Index: standardized_groundwater_index.html
-.. _Groundwater signatures: signatures.html
-.. _Ensemble predictions: ensemble_predictions.html
+:doc:`Ensemble predictions <ensemble_predictions>`
 
 
 Time Series Analysis Manual
@@ -137,34 +160,36 @@ Bakker, M., Brakenhoff, D., Collenteur, R., Ebbens, O., Mondeel, H., Klop, S., &
 Handleiding Tijdreeksanalyse (`STOWA rapport nr. 32 <https://www.stowa.nl/publicaties/handleiding-voor-het-uitvoeren-van-tijdreeksanalyses>`_).
 Stichting Toegepast Onderzoek Waterbeheer, Amersfoort.
 
-`Preprocessing`_
+:doc:`Preprocessing <stowa_preprocessing>`
 
-`Model structure`_
+:doc:`Model structure <stowa_model_structure>`
 
-`Model calibration`_
+:doc:`Model calibration <stowa_calibration>`
 
-`Model assessment`_
+:doc:`Model assessment <stowa_assessment>`
 
-`Case Study 1 Assessing contributions`_
+:doc:`Case Study 1 Assessing contributions <stowa_cases_contribution_assessment>`
 
-`Case Study 2 Determining characteristics`_
+:doc:`Case Study 2 Determining characteristics <stowa_cases_characteristics>`
 
-`Case Study 3 System analysis`_
+:doc:`Case Study 3 System analysis <stowa_cases_system_analysis>`
 
-`Case Study 4 Forecasting`_
-
-.. _Preprocessing: stowa_preprocessing.html
-.. _Model structure: stowa_model_structure.html
-.. _Model calibration: stowa_calibration.html
-.. _Model assessment: stowa_assessment.html
-.. _Case Study 1 Assessing contributions: stowa_cases_contribution_assessment.html
-.. _Case Study 2 Determining characteristics: stowa_cases_characteristics.html
-.. _Case Study 3 System analysis: stowa_cases_system_analysis.html
-.. _Case Study 4 Forecasting: stowa_cases_forecasting.html
+:doc:`Case Study 4 Forecasting <stowa_cases_forecasting>`
 
 
 Pastas Performance
 ------------------
-`Caching for performance`_
 
-.. _Caching for performance: caching_for_performance.html
+:doc:`Caching for performance <caching_for_performance>`
+
+
+Groundwater Article
+-------------------
+These notebooks are supplementary material to the following article in Groundwater:
+Collenteur, R.A., Bakker, M., Caljé, R., Klop, S.A. and Schaars, F. (2019).
+Pastas: Open Source Software for the Analysis of Groundwater Time Series.
+Groundwater, 57: 877-885. `doi:10.1111/gwat.12925 <https://doi.org/10.1111/gwat.12925>`_
+
+:doc:`Example 1 Modeling Groundwater Levels with Pastas <./groundwater_paper/Ex1_simple_model/Example1>`
+
+:doc:`Example 2 Analysis of groundwater monitoring networks using Pastas <./groundwater_paper/Ex2_monitoring_network/Example2>`

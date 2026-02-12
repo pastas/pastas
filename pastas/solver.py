@@ -581,8 +581,8 @@ class LeastSquares(LeastSquaresSolver):
                 keep_feasible=True,
             )
             # set to nan because that's what is used by the solver
-            self.ml.parameters.loc[vary, "pmin"] = np.nan
-            self.ml.parameters.loc[vary, "pmax"] = np.nan
+            self.ml._parameters.loc[self.vary, "pmin"] = np.nan
+            self.ml._parameters.loc[self.vary, "pmax"] = np.nan
         else:
             bounds = Bounds(
                 lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),

@@ -14,6 +14,7 @@ from logging import getLogger
 from numpy import array, empty, exp, linspace, ones
 from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, Timestamp, concat
 
+from pastas.decorators import deprecate_args_or_kwargs
 from pastas.noisemodels import ArNoiseModel
 from pastas.typing import ArrayLike, Model
 
@@ -21,24 +22,24 @@ logger = getLogger(__name__)
 
 
 def _check_forecast_data(
-    forecasts: dict[str, list[DataFrame]],
+    forecasts: dict[str, dict[str, DataFrame]],
 ) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
     Parameters
     ----------
-    forecasts: dict
+    forecasts: dict[str, list[DataFrame]] | dict[str, dict[str, DataFrame]]
         Dictionary containing the forecasts data. The keys are the stressmodel names
-        and the values are lists of DataFrames containing the forecasts with a datetime
-        index and each column a time series (i.e., one ensemble member).
+        and the values are lists or a dict of DataFrames containing the forecasts with
+        a datetime index and each column a time series (i.e., one ensemble member).
 
     Returns
     -------
     n: int
         The number of ensemble members in the forecasts.
-    tmin: datetime
+    tmin: Timestamp | str
         The minimum datetime in the forecasts.
-    tmax: datetime
+    tmax: Timestamp | str
         The maximum datetime in the forecasts.
     index: DatetimeIndex
         The datetime index of the forecasts.
@@ -62,16 +63,26 @@ def _check_forecast_data(
     index = None
 
     for sm_name, fc_data in forecasts.items():
-        if not fc_data:
-            msg = f"No forecast data provided for stressmodel '{sm_name}'"
-            logger.warning(msg)
-            continue
+        if isinstance(fc_data, list):
+            deprecate_args_or_kwargs(
+                name="forecasts",
+                remove_version="2.0.0",
+                reason=(
+                    "A list of DataFrames is deprecated. The forecast argument will"
+                    " require a dictionary of DataFrames, with the appropriate keyword"
+                    " arguments of the stressmodel as keys of the dictionary instead."
+                ),
+            )
+        elif not isinstance(fc_data, dict) or not fc_data:
+            msg = f"Forecast data for stressmodel '{sm_name}' must be a non-empty dictionary"
+            logger.error(msg)
+            raise ValueError(msg)
 
-        for fc in fc_data:
+        for stress_name, fc in fc_data.items():
             # Check if DataFrame is empty
             if fc.empty:
-                msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}'"
-                logger.warning(msg)
+                msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}' for stress '{stress_name}'"
+                logger.error(msg)
                 continue
 
             # Check if the number of columns is the same for all DataFrames
@@ -107,7 +118,7 @@ def _check_forecast_data(
 
 def forecast(
     ml: Model,
-    forecasts: dict[str, list[DataFrame]],
+    forecasts: dict[str, dict[str, DataFrame]],
     p: ArrayLike | None = None,
     post_process: bool = False,
 ) -> DataFrame:
@@ -119,8 +130,8 @@ def forecast(
         Pastas Model instance.
     forecasts: dict
         Dictionary containing the forecasts data. The keys are the stressmodel names
-        and the values are lists of DataFrames containing the forecasts with a datetime
-        index and each column a time series (i.e., one ensemble member).
+        and the values are  lists or dicts of DataFrames containing the forecasts with
+        a datetime index and each column a time series (i.e., one ensemble member).
     p: array_like, optional
         List of parameter sets to use for the forecasts. If None, a single parameter set is used that defaults to the optimal model parameters. Default is None.
     post_process: bool, optional
@@ -215,14 +226,11 @@ def forecast(
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
             sm = ml.stressmodels[sm_name]  # Select stressmodel
-            for i, fc in enumerate(fc_data):
-                ts = concat(
-                    [
-                        sm.stress[i].series_original.loc[: tmin - day],
-                        fc.iloc[:, member],
-                    ]
-                )
-                sm.stress[i].series_original = ts
+            for stress_name, fc in fc_data.items():
+                old_stress = getattr(sm, stress_name).series_original.loc[: tmin - day]
+                new_stress = fc.iloc[:, member]
+                ts = concat([old_stress, new_stress], axis=0)
+                setattr(sm, stress_name, ts)
 
         # 2. iterate over the parameter sets
         for i, param in enumerate(p):

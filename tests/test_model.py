@@ -445,7 +445,7 @@ class TestModelSolving:
 
         assert ml_solved.settings["tmin"] is not None
         assert ml_solved.settings["tmax"] is not None
-        assert ml_solved.oseries_calib is not None
+        assert ml_solved.observations() is not None
 
     def test_solve(self, ml_solved: ps.Model) -> None:
         """Test solving the model."""
@@ -612,6 +612,8 @@ class TestModelExportImport:
         assert loaded_model.name == ml_noisemodel.name
         assert loaded_model.oseries.name == ml_noisemodel.oseries.name
         assert loaded_model.stressmodels.keys() == ml_noisemodel.stressmodels.keys()
+        for k, v in ml_noisemodel.settings.items():
+            assert loaded_model.settings[k] == v
 
         # Check parameters
         assert_frame_equal(loaded_model.parameters, ml_noisemodel.parameters)
@@ -623,3 +625,10 @@ class TestModelExportImport:
         assert copy_model.name == "copy_test"
         assert copy_model is not ml_noisemodel
         assert_frame_equal(copy_model.parameters, ml_noisemodel.parameters)
+
+    def test_save_float_load_int(self):
+        """Test saving and loading a model with float that can be converted to int."""
+        s = pd.Series(index=pd.date_range("2025-01-01", periods=10, freq="D"), data=1.0)
+        ml = ps.Model(s)
+        ml.to_file("test_float_int.pas")
+        _ = ps.io.load("test_float_int.pas")

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import Series, Timestamp, concat
+from pandas import DataFrame, Series, Timestamp, concat
 
 from pastas.decorators import PastasDeprecationWarning, model_tmin_tmax
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
@@ -97,7 +97,7 @@ class Plotting:
 
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
-            o_nu = self.ml.oseries.series.drop(o.index).loc[
+            o_nu = self.ml.oseries.series_original.drop(o.index).loc[
                 o.index.min() : o.index.max()
             ]
             if not o_nu.empty:
@@ -182,7 +182,7 @@ class Plotting:
         """
         # Number of rows to make the figure with
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o_nu = self.ml.oseries.series.drop(o.index)
+        o_nu = self.ml.oseries.series_original.drop(o.index)
         if return_warmup:
             o_nu = o_nu[tmin - self.ml.settings["warmup"] : tmax]
         else:
@@ -269,7 +269,7 @@ class Plotting:
                 if adjust_height:
                     ax_contrib.set_ylim(ylims[i + 2])
                 if not split:
-                    title = [stress.name for stress in sm.stress]
+                    title = [stress.name for stress in sm.stresses]
                     if len(title) > 3:
                         title = title[:3] + ["..."]
                     ax_contrib.set_title(
@@ -333,8 +333,9 @@ class Plotting:
         return_warmup: bool = False,
         adjust_height: bool = True,
         figsize: tuple[float, float] | None = None,
-        layout: Literal["constrained", "tight", "compressed", "none"]
-        | None = "constrained",
+        layout: (
+            Literal["constrained", "tight", "compressed", "none"] | None
+        ) = "constrained",
         fig_kwargs: dict[str, Any] | None = None,
     ) -> dict[str, Axes]:
         """Plot the results of the model in a mosaic plot.
@@ -378,7 +379,7 @@ class Plotting:
 
         # get simulated time series
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o_nu = self.ml.oseries.series.drop(o.index)
+        o_nu = self.ml.oseries.series_original.drop(o.index)
         o_nu = (
             o_nu[tmin - self.ml.settings["warmup"] : tmax]
             if return_warmup
@@ -482,7 +483,7 @@ class Plotting:
                 contribs[sm_name].values,
                 label=sm_name,
             )
-            title = [stress.name for stress in sm.stress]
+            title = [stress.name for stress in sm.stresses]
             if len(title) > 3:
                 title = title[:3] + ["..."]
             if title:
@@ -501,9 +502,11 @@ class Plotting:
 
         # share x-axes of simulation, residuals and contributions
         share_xaxes([axd[k] for k in [x[0] for x in mosaic]])
-        axd["sim"].set_xlim(
-            tmin - self.ml.settings["warmup"], tmax
-        ) if return_warmup else axd["sim"].set_xlim(tmin, tmax)
+        (
+            axd["sim"].set_xlim(tmin - self.ml.settings["warmup"], tmax)
+            if return_warmup
+            else axd["sim"].set_xlim(tmin, tmax)
+        )
 
         # add legend to the upper response axes and share x-axes of responses
         response_axes = [axd[k] for k in [x[1] for x in mosaic] if k.startswith("rf_")]
@@ -518,9 +521,11 @@ class Plotting:
 
         for k in axd:
             axd[k].grid(True)
-            axd[k].yaxis.tick_right() if k.startswith("rf_") else axd[
-                k
-            ].yaxis.tick_left()
+            (
+                axd[k].yaxis.tick_right()
+                if k.startswith("rf_")
+                else axd[k].yaxis.tick_left()
+            )
 
         _ = self._plot_parameters_table(ax=axd["tab"], stderr=stderr)
 
@@ -752,7 +757,7 @@ class Plotting:
             set_axes_properties = False
 
         # plot simulation and observations in top graph
-        o_nu = self.ml.oseries.series.drop(o.index)
+        o_nu = self.ml.oseries.series_original.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
             o_nu.plot(
@@ -1237,7 +1242,7 @@ class Plotting:
             # Get the contributions for StressModels with multiple stresses
             contributions = []
             sml = self.ml.stressmodels[sm]
-            if (len(sml.stress) > 0) and (sml._name == "WellModel"):
+            if (len(sml.stresses) > 0) and (sml._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
                         wnam: f"C{iw + 1}"
@@ -1254,11 +1259,11 @@ class Plotting:
                 ax_step = axes[i]  # step response axis
                 ax_step.lines[0].remove()  # remove step response for r=1 m
                 if nsplit > 1:
-                    for istress in range(len(sml.stress)):
+                    for istress in range(len(sml.stresses)):
                         h = self.ml.get_contribution(
                             sm, istress=istress, tmin=tmin, tmax=tmax
                         )
-                        name = sml.stress[istress].name
+                        name = sml.stresses[istress].name
                         if name is None:
                             name = sm
                         contributions.append((name, h))
@@ -1558,7 +1563,10 @@ class Plotting:
                 s = self.ml.get_stress(name, tmin=tmin, tmax=tmax, istress=istress)
                 # if multiple stresses, sum stresses together
                 if isinstance(s, list):
-                    s = concat(s, axis=1).sum(axis=1, fill_value=0.0)
+                    s = concat(s, axis=1).sum(axis=1, skipna=True)
+                    stress_name = name
+                elif isinstance(s, DataFrame):
+                    s = s.sum("columns", skipna=True)
                     stress_name = name
                 else:
                     stress_name = s.name
