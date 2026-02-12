@@ -507,7 +507,8 @@ def diagnostics(
     df.loc["Runs test", cols] = "Autocorr.", stat, p
 
     # Do different tests depending on time step
-    if infer_freq(series.index):
+    # pandas 3.0 requires at least 3 dates to infer frequency
+    if len(series) >= 3 and infer_freq(series.index):
         # Ljung-Box test for autocorrelation
         stat, p = ljung_box(series, nparam=nparam, lags=lags)
         df.loc["Ljung-Box", cols] = "Autocorr.", stat, p
