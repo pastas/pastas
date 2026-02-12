@@ -1345,10 +1345,14 @@ class Model:
             ts_tmin = self.oseries.series_original.index.min()
         # Get tmin from the stressmodels
         elif use_stresses:
-            ts_tmin = Timestamp.max
-            for stressmodel in self.stressmodels.values():
-                if stressmodel.tmin < ts_tmin:
-                    ts_tmin = stressmodel.tmin
+            # pandas 3.0: if no stressmodels, use oseries as fallback
+            if self.stressmodels:
+                ts_tmin = Timestamp.max
+                for stressmodel in self.stressmodels.values():
+                    if stressmodel.tmin < ts_tmin:
+                        ts_tmin = stressmodel.tmin
+            else:
+                ts_tmin = self.oseries.series_original.index.min()
         # Get tmin and tmax from user provided values
         else:
             ts_tmin = Timestamp(tmin)
@@ -1412,10 +1416,14 @@ class Model:
             ts_tmax = self.oseries.series_original.index.max()
         # Get tmax from the stressmodels
         elif use_stresses:
-            ts_tmax = Timestamp.min
-            for stressmodel in self.stressmodels.values():
-                if stressmodel.tmax > ts_tmax:
-                    ts_tmax = stressmodel.tmax
+            # pandas 3.0: if no stressmodels, use oseries as fallback
+            if self.stressmodels:
+                ts_tmax = Timestamp.min
+                for stressmodel in self.stressmodels.values():
+                    if stressmodel.tmax > ts_tmax:
+                        ts_tmax = stressmodel.tmax
+            else:
+                ts_tmax = self.oseries.series_original.index.max()
         # Get tmax from user provided values
         else:
             ts_tmax = Timestamp(tmax)
