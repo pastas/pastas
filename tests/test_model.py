@@ -446,7 +446,7 @@ class TestModelSolving:
 
         assert ml_solved.settings["tmin"] is not None
         assert ml_solved.settings["tmax"] is not None
-        assert ml_solved.oseries_calib is not None
+        assert ml_solved.observations() is not None
 
     def test_solve(self, ml_solved: ps.Model) -> None:
         """Test solving the model."""

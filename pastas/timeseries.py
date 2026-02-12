@@ -10,6 +10,7 @@ Create a TimeSeries object::
 """
 
 from logging import getLogger
+from typing import Any, Self
 
 import pandas as pd
 from pandas import Series, Timedelta
@@ -17,8 +18,16 @@ from pandas.tseries.frequencies import to_offset
 
 from pastas.typing import OseriesSettingsDict, StressSettingsDict
 
+from .io.base import _unpack_series
 from .rcparams import rcParams
-from .timeseries_utils import _get_dt, _get_time_offset, _infer_fixed_freq, resample
+from .timeseries_utils import (
+    _get_dt,
+    _get_sim_index,
+    _get_time_offset,
+    _infer_fixed_freq,
+    get_sample,
+    resample,
+)
 from .utils import validate_name
 
 logger = getLogger(__name__)
@@ -129,19 +138,6 @@ class TimeSeries:
                 metadata = series.metadata
             series = series.series
 
-        # Make sure we have a workable Pandas Series, depends on type of time series
-        if settings == "oseries":
-            validate_oseries(series)
-        else:
-            if settings is not None and not isinstance(settings, str):
-                if settings["fill_nan"] == "drop":
-                    raise UserWarning(
-                        "The fill_nan setting 'drop' for a stress is not allowed "
-                        "because the stress time series need to be equidistant. "
-                        "Please change this."
-                    )
-            validate_stress(series)
-
         # Store a copy of the original series
         self._series_original = series.copy()  # copy of the original series
         self._series = None
@@ -182,6 +178,9 @@ class TimeSeries:
                     raise KeyError(msg, settings, self._predefined_settings.keys())
             self._update_settings(**settings)
 
+        # Make sure we have a workable Pandas Series, depends on type of time series
+        self._validate_series()
+        # Update the time series by calculating the attribute _series
         self.update_series(force_update=True, **self.settings)
 
     def __repr__(self) -> str:
@@ -300,6 +299,16 @@ class TimeSeries:
                 self.settings[key] = value
                 update = True
         return update
+
+    def _validate_series(self):
+        """Method to validate the time series"""
+        if self.settings["fill_nan"] == "drop":
+            raise UserWarning(
+                "The fill_nan setting 'drop' for a stress is not allowed "
+                "because the stress time series need to be equidistant. "
+                "Please change this."
+            )
+        return validate_stress(self.series_original)
 
     def _change_frequency(self, series: Series) -> Series:
         """Method to change the frequency of the time series."""
@@ -626,6 +635,97 @@ class TimeSeries:
         data["metadata"] = self.metadata
 
         return data
+
+    def copy(self, name: str | None = None) -> Self:
+        """Method to copy a TimeSeries.
+
+        Parameters
+        ----------
+        name: str, optional
+            String with the name of the model. If no name is provided, use the old name.
+
+        Returns
+        -------
+        ts: pastas.timeseries.TimeSeries
+            Copy of the original TimeSeries with no references to the old TimeSeries.
+
+        Examples
+        --------
+        >>> ts_copy = ts.copy(name="new_name")
+        """
+        if name is None:
+            name = self.name
+
+        series, metadata, setings = _unpack_series(self.to_dict())
+        ts = type(self)(series=series, name=name, settings=setings, metadata=metadata)
+        return ts
+
+
+class ObservationSeries(TimeSeries):
+    def __init__(
+        self,
+        series: Series,
+        name: str | None = None,
+        settings: str | dict[str, Any] | None = "oseries",
+        metadata: dict | None = None,
+    ) -> None:
+        super().__init__(series=series, name=name, settings=settings, metadata=metadata)
+
+    def update_series(self, force_update: bool = False, **kwargs) -> None:
+        """Method to update the series with new options.
+
+        Parameters
+        ----------
+        force_update: bool, optional
+            argument that is used to force an update, even when no changes are found.
+            Internally used by the __init__ method. Default is False.
+        freq: str, optional
+            String representing the desired frequency of the time series. Must be one
+            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the minimum time of the series
+            (E.g. '1980-01-01 00:00:00').
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the maximum time of the series
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
+
+        Notes
+        -----
+        The method will validate if any of the settings is changed to determine if
+        the series need to be updated.
+        """
+        if self._update_settings(**kwargs) or force_update:
+            tmin = self.settings["tmin"]
+            tmax = self.settings["tmax"]
+            freq = self.settings["freq"]
+            time_offset = self.settings["time_offset"]
+
+            # Get the original series to start with
+            series = self._series_original.copy(deep=True)
+            series = series.loc[tmin:tmax]
+
+            # Only fill_nans if necessary
+            if series.hasnans:
+                series = self._fill_nan(series)
+
+            if freq is not None and not series.empty:
+                # Sample the measurements so that the observation frequency does not
+                # exceed the model frequency. Make sure to retain the original
+                # timestamps, as they will be used for interpolation of the simulation.
+                sim_index = _get_sim_index(tmin, tmax, freq, time_offset)
+                index = get_sample(series.index, sim_index)
+                series = series.loc[index]
+
+            # Update the series with the new settings
+            series.name = self._series_original.name
+
+            self._series = series
+
+    def _validate_series(self):
+        """Method to validate the time series"""
+        return validate_oseries(self.series_original)
 
 
 def validate_stress(series: Series):
