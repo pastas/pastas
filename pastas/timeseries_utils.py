@@ -3,6 +3,7 @@
 import logging
 
 import numpy as np
+from packaging.version import parse as parse_version
 from pandas import (
     DataFrame,
     Index,
@@ -13,6 +14,7 @@ from pandas import (
     date_range,
     infer_freq,
 )
+from pandas import __version__ as pd_version
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
@@ -20,6 +22,32 @@ from scipy import interpolate
 from .decorators import njit
 
 logger = logging.getLogger(__name__)
+
+
+def _offset_to_timedelta(offset):
+    """Convert pandas offset to Timedelta for pandas 3.0 compatibility.
+
+    Parameters
+    ----------
+    offset : pandas.tseries.offsets.BaseOffset
+        Pandas offset object from to_offset().
+
+    Returns
+    -------
+    pandas.Timedelta
+        Converted timedelta.
+
+    Raises
+    ------
+    ValueError
+        If the offset cannot be converted directly to a Timedelta.
+    """
+    # For fixed frequency offsets in pandas 3.0+, use the nanos attribute
+    # which is available on all offset objects
+    if hasattr(offset, "nanos"):
+        return Timedelta(offset.nanos, "ns")
+    # Fallback: raise to signal that this offset can't be converted
+    raise ValueError(f"Cannot directly convert offset {offset} to Timedelta")
 
 
 def _frequency_is_supported(freq: str) -> str:
@@ -59,7 +87,7 @@ def _frequency_is_supported(freq: str) -> str:
     """
     offset = to_offset(freq)
     try:
-        Timedelta(offset)
+        _offset_to_timedelta(offset)
     except Exception as e:
         msg = "Frequency %s not supported."
         logger.error(msg, freq)
@@ -96,7 +124,7 @@ def _get_stress_dt(freq: str) -> float:
     # Get the frequency string and multiplier
     offset = to_offset(freq)
     try:
-        dt = Timedelta(offset) / Timedelta(1, "D")
+        dt = _offset_to_timedelta(offset) / Timedelta(1, "D")
     except Exception as e:
         logging.debug(e)
         num = offset.n
@@ -146,7 +174,12 @@ def _get_dt(freq: str) -> float:
         Number of days.
     """
     # Get the frequency string and multiplier
-    dt = Timedelta(to_offset(freq)) / Timedelta(1, "D")
+    offset = to_offset(freq)
+    if parse_version(pd_version) >= parse_version("3.0.0"):
+        dt = _offset_to_timedelta(offset) / Timedelta(1, "D")
+    else:
+        # Fallback for non-fixed offsets: re-run _get_stress_dt logic
+        dt = _get_stress_dt(freq)
     return dt
 
 
@@ -446,7 +479,8 @@ def get_equidistant_series_nearest(
     """
 
     # build new equidistant index
-    t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
+    offsets = _get_time_offset(series.index, freq).value_counts()
+    t_offset = offsets.idxmax() if len(offsets) > 0 else Timedelta(0)
     # use t_offset to pick time that will keep the most data without shifting in time
     # from the original series.
     idx = date_range(
@@ -543,7 +577,8 @@ def pandas_equidistant_sample(series: Series, freq: str) -> Series:
     """
     series = series.copy()
     # find most common offset relative to freq
-    t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
+    offsets = _get_time_offset(series.index, freq).value_counts()
+    t_offset = offsets.idxmax() if len(offsets) > 0 else Timedelta(0)
     # use t_offset to pick time that will keep the most data from the original series.
     new_idx = date_range(
         series.index[0].floor(freq) + t_offset,

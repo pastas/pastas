@@ -14,7 +14,7 @@ Run diagnostic tests on model after optimization::
 from logging import getLogger
 
 from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
-from pandas import DataFrame, Series, date_range, infer_freq
+from pandas import DataFrame, Series, Timedelta, date_range, infer_freq
 from scipy.stats import chi2, norm, normaltest, shapiro
 
 from pastas.stats.core import acf as get_acf
@@ -250,7 +250,7 @@ def runs_test(series: Series, cutoff: str = "median") -> tuple[float, float]:
     >>>     print("Reject the Null-hypothesis")
     """
     # Make dichotomous sequence
-    r = series.copy().to_numpy()
+    r = series.to_numpy().copy()
     if cutoff == "mean":
         cutoff = r.mean()
     elif cutoff == "median":
@@ -376,7 +376,11 @@ def stoffer_toloi(
         # get equidistant sample from original time series, checks which time offset
         # is the most common to maximize the number of values taken from the original
         # series.
-        t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
+        if len(series) == 0:
+            # Handle empty series - return NaN values
+            return (nan, nan)
+        offsets = _get_time_offset(series.index, freq).value_counts()
+        t_offset = offsets.idxmax() if len(offsets) > 0 else Timedelta(0)
         new_idx = date_range(
             series.index[0].floor(freq) + t_offset,
             series.index[-1].floor(freq) + t_offset,
