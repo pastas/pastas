@@ -46,8 +46,8 @@ from pastas.timeseries import ObservationSeries
 from pastas.timeseries_utils import (
     _frequency_is_supported,
     _get_dt,
-    _get_time_offset,
     _get_sim_index,
+    _get_time_offset,
 )
 from pastas.transform import ThresholdTransform
 from pastas.typing import ArrayLike, Solver, StressModel

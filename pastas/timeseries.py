@@ -18,17 +18,17 @@ from pandas.tseries.frequencies import to_offset
 
 from pastas.typing import OseriesSettingsDict, StressSettingsDict
 
+from .io.base import _unpack_series
 from .rcparams import rcParams
 from .timeseries_utils import (
     _get_dt,
-    _get_time_offset,
     _get_sim_index,
+    _get_time_offset,
     _infer_fixed_freq,
     get_sample,
     resample,
 )
 from .utils import validate_name
-from .io.base import _unpack_series
 
 logger = getLogger(__name__)
 
