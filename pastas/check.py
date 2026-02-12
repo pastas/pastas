@@ -1,5 +1,7 @@
-"""This module provides functions for checking and validating Pastas models and their
-components.
+"""This module provides functions for checking Pastas models and their components.
+
+This can be useful to define checks that can be applied to multiple models to ensure
+they meet certain criteria.
 
 Examples
 --------
@@ -14,18 +16,55 @@ Run a checklist of standard checks on a Pastas model::
 
     ps.check.checklist(ml, checks)
 
-Or use the list of checks defined in Brakenhoff et al. (2022)::
+Or use a list of checks defined in literature. Note that these checks were derived for
+specific questions and hydrogeological contexts and are included as inspiration, but
+are by no means exhaustive or applicable to all problems.
 
-    ps.check.checklist(ml, ps.check.checks_brakenhoff_2022)
+Checklists can be obtained with::
 
+    checks = ps.check.get_checks_literature("brakenhoff_2022")
+    ps.check.checklist(ml, checks=checks)
+
+
+Checks
+------
+The following checks built-in checks are available in this module:
+
+ - stat_ufunc_threshold: model statistic compared to threshold using ufunc
+ - rsq_geq_threshold: R^2 greater equal than threshold
+ - parameter_ufunc_threshold: single parameter value compared to threshold using ufunc
+ - parameters_leq_threshold: parameter values less equal than threshold
+ - response_memory: memory of response functions less than fraction of calibration
+   period
+ - response_memory_vs_warmup: memory of response functions less than warmup period
+ - uncertainty_gain: estimated gain less than n_std times std. deviation of the gain
+ - uncertainty_parameters: estimated parameter value less than n_std times std.
+   deviation
+ - parameter_bounds: parameter optimal values not on bounds
+ - acf_runs_test: check for significant autocorrelation in the noise using runs test
+ - acf_stoffer_toloi_test: check for significant autocorrelation in the noise using
+   Stoffer-Toloi test
+ - acf_ljung_box_test: check for significant autocorrelation in the noise using
+   Ljung-Box test (regular timesteps)
+ - correlation_sim_vs_res: correlation between simulated and residuals less than
+   threshold
+
+Checklists
+----------
+The following predefined checklists are available in this module, available via
+the `get_checks_literature()` function:
+
+ - brakenhoff_2022: checklist based on Brakenhoff et al. (2022)
+ - zaadnoordijk_2019: checklist based on Zaadnoordijk et al. (2019)
 """
 
 import logging
 from collections.abc import Callable
+from typing import Literal
 
 import numpy as np
 from matplotlib.colors import rgb2hex
-from pandas import DataFrame, Timedelta, concat
+from pandas import DataFrame, Series, Timedelta, concat
 
 from pastas.model import Model
 from pastas.rfunc import RfuncBase
@@ -44,7 +83,53 @@ operators = {
 }
 
 
-def _stat_ufunc_threshold(
+def get_empty_check_dataframe():
+    """Create an empty DataFrame for storing check results.
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        Empty DataFrame with the appropriate columns for storing check results.
+    """
+    df = DataFrame(
+        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"]
+    )
+    df.index.name = "check"
+    return df
+
+
+def _value_ufunc_threshold(
+    val: float,
+    ufunc: Callable,
+    threshold: float,
+    label: str,
+):
+    """Generic function to compare a value with a threshold using a ufunc.
+
+    Parameters
+    ----------
+    val: float
+        Value to be compared.
+    ufunc: callable
+        Numpy ufunc (e.g. np.greater_than) to compare the value with the threshold.
+    threshold: float
+        Threshold value for the statistic.
+    label: str
+        Label for the check.
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        DataFrame with the results of the check.
+    """
+    check = ufunc(val, threshold)
+    label = f"{label}{operators[ufunc.__name__]}{threshold}"
+    df = get_empty_check_dataframe()
+    df.loc[label] = [val, operators[ufunc.__name__], threshold, "-", check, ""]
+    return df
+
+
+def stat_ufunc_threshold(
     ml: Model,
     ufunc: Callable,
     statistic: str,
@@ -70,15 +155,7 @@ def _stat_ufunc_threshold(
         DataFrame with the results of the check.
     """
     val = getattr(ml.stats, statistic)()
-    check = ufunc(val, threshold)
-    label = f"{statistic}{operators[ufunc.__name__]}{threshold}"
-    df = DataFrame(
-        index=[label],
-        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"],
-    )
-    df.index.name = "check"
-    df.loc[label] = [val, operators[ufunc.__name__], threshold, "-", check, ""]
-    return df
+    return _value_ufunc_threshold(val, ufunc, threshold, statistic)
 
 
 def rsq_geq_threshold(ml: Model, threshold: float = 0.7):
@@ -96,7 +173,7 @@ def rsq_geq_threshold(ml: Model, threshold: float = 0.7):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    return _stat_ufunc_threshold(ml, np.greater_equal, "rsq", threshold)
+    return stat_ufunc_threshold(ml, np.greater_equal, "rsq", threshold)
 
 
 def _response_memory(
@@ -134,14 +211,11 @@ def _response_memory(
     elif names is not None and not isinstance(names, list):
         names = [names]
 
-    df = DataFrame(
-        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"]
-    )
-    df.index.name = "check"
+    df = get_empty_check_dataframe()
     # unit = "days"
     dim = "[T]"
 
-    def interp_step(cutoff: float, p: np.ndarray[float], rfunc: RfuncBase):
+    def interp_step(cutoff: float, p: np.ndarray, rfunc: RfuncBase):
         """Helper function to interpolate the step response to compute the memory.
 
         Parameters
@@ -159,7 +233,7 @@ def _response_memory(
             Time to the cutoff value, i.e. the memory of the response function.
         """
         t = rfunc.get_t(p, dt=1.0, cutoff=1.0 - (1.0 - cutoff) / 10.0)
-        step = rfunc.step(p, cutoff=1.0 - (1.0 - cutoff) / 10.0) / sm.rfunc.gain(p)
+        step = rfunc.step(p, cutoff=1.0 - (1.0 - cutoff) / 10.0) / rfunc.gain(p)
         tmem = np.interp(cutoff, step, t)
         return tmem
 
@@ -190,11 +264,12 @@ def _response_memory(
             # get_tmax is a conservative approximation for Hantush,
             # so it is better to interpolate step response to compute the memory
             lbl = f"response_t{cutoff * 100:.0f}_{sm_name}"
-            p = ml.get_parameters(sm_name)
+            p = ml.get_parameters(sm_name)[0:3]
             tmem = interp_step(cutoff, p, sm.rfunc)
             check = tmem < threshold
             df.loc[lbl] = [
                 tmem,
+                "<",
                 threshold,
                 dim,
                 check,
@@ -217,7 +292,7 @@ def _response_memory(
 
 
 def response_memory(
-    ml,
+    ml: Model,
     cutoff: float = 0.95,
     factor_length_oseries: float = 0.5,
     names: list[str] | str | None = None,
@@ -251,7 +326,7 @@ def response_memory(
 
 
 def response_memory_vs_warmup(
-    ml, cutoff: float = 0.95, names: list[str] | str | None = None
+    ml: Model, cutoff: float = 0.95, names: list[str] | str | None = None
 ):
     """Check if response function memory is shorter than warmup.
 
@@ -309,8 +384,72 @@ def uncertainty_gain(
     for sm_name in names:
         results.append(_uncertainty_parameter(ml, sm_name + "_A", n_std=n_std))
     df = concat(results)
-    df["dimensions"] = "[L] / (unit stress)"
+    df["dimensions"] = "[L] / [unit stress]"
     return df
+
+
+def parameter_ufunc_threshold(
+    ml: Model,
+    parameter: str,
+    ufunc: Callable,
+    threshold: float,
+):
+    """Generic function to compare a model statistic with a threshold using a ufunc.
+
+    Parameters
+    ----------
+    ml: pastas.Model
+        Pastas model instance.
+    parameter: str
+        Name of the parameter to be compared.
+    ufunc: callable
+        Numpy ufunc (e.g. np.greater_than) to compare the model statistic with the
+        threshold.
+    threshold: float
+        Threshold value for the statistic.
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        DataFrame with the results of the check.
+    """
+    val = ml.parameters.loc[parameter, "optimal"]
+    return _value_ufunc_threshold(val, ufunc, threshold, parameter)
+
+
+def parameters_leq_threshold(
+    ml: Model,
+    parameters: list[str] | str | None = None,
+    threshold: float = 500.0,
+):
+    """Check if parameter values are less than or equal to a threshold.
+
+    Parameters
+    ----------
+    ml: pastas.Model
+        Pastas model instance.
+    parameters: list or str, optional
+        List of parameter names to check the threshold for. Default is None, which
+        means all parameters are checked. If str, partial matches are allowed.
+    threshold: float, optional
+        Threshold value for the parameters. Default is 500.0.
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        DataFrame with the results of the check.
+    """
+    if parameters is None:
+        parameters = ml.parameters.index.tolist()
+    elif isinstance(parameters, str):
+        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
+
+    results = []
+    for parameter in parameters:
+        results.append(
+            parameter_ufunc_threshold(ml, parameter, np.less_equal, threshold)
+        )
+    return concat(results)
 
 
 def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
@@ -322,7 +461,7 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
         Pastas model instance.
     parameters: list or str, optional
         List of parameter names to check the bounds for. Default is None, which
-        means all parameters are checked.
+        means all parameters are checked. If str, partial matches are allowed.
 
     Returns
     -------
@@ -332,11 +471,8 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
     if parameters is None:
         parameters = ml.parameters.index.tolist()
     elif isinstance(parameters, str):
-        parameters = [parameters]
-    df = DataFrame(
-        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"]
-    )
-    df.index.name = "check"
+        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
+    df = get_empty_check_dataframe()
     upper, lower = ml._check_parameters_bounds()
     for param in parameters:
         bounds = (
@@ -372,7 +508,7 @@ def uncertainty_parameters(
         Pastas model instance.
     parameters: list or str, optional
         List of parameter names to check the uncertainty for. Default is None, which
-        means all parameters are checked.
+        means all parameters are checked. If str, partial matches are allowed.
     n_std: float, optional
         Number of standard deviations to compare the parameter to. Default is 1.96.
 
@@ -380,7 +516,7 @@ def uncertainty_parameters(
     if parameters is None:
         parameters = ml.parameters.index.tolist()
     elif isinstance(parameters, str):
-        parameters = [parameters]
+        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
 
     # loop through parameters
     results = []
@@ -406,10 +542,7 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    df = DataFrame(
-        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"]
-    )
-    df.index.name = "check"
+    df = get_empty_check_dataframe()
     # get stressmodel
     sm_name = "_".join(parameter.split("_")[:-1])
     if sm_name in ml.stressmodels:
@@ -447,7 +580,7 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
     return df
 
 
-def guess_unit_or_dims(parameter, return_dims=True):
+def guess_unit_or_dims(parameter: str, return_dims=True):
     """Guess the unit or dimension of a parameter based on its name.
 
     Parameters
@@ -465,7 +598,7 @@ def guess_unit_or_dims(parameter, return_dims=True):
     """
     if "_A" in parameter:
         sm = "_".join(parameter.split("_")[:-1])
-        unit = dim = f"[L] / (unit '{sm}' stress)"
+        unit = dim = f"[L] / [unit '{sm}' stress]"
     elif parameter == "noise_alpha":
         unit = "days"
         dim = "[T]"
@@ -518,6 +651,26 @@ def acf_stoffer_toloi_test(ml: Model, p_threshold: float = 0.05, **kwargs):
     return _diagnostic_test(ml, "stoffer_toloi", alpha=p_threshold, **kwargs)
 
 
+def acf_ljung_box_test(ml: Model, p_threshold: float = 0.05, **kwargs):
+    """Ljung-Box test to check if there is significant autocorrelation in the noise.
+
+    Parameters
+    ----------
+    ml: pastas.Model
+        Pastas model instance.
+    p_threshold: float, optional
+        Threshold value for the p-value of the Ljung-Box test. Default is 0.05.
+    **kwargs
+        Additional keyword arguments to pass to the Ljung-Box test.
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        DataFrame with the results of the check.
+    """
+    return _diagnostic_test(ml, "ljung_box", alpha=p_threshold, **kwargs)
+
+
 def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
     """Internal method to get the result of a diagnostic test.
 
@@ -546,12 +699,42 @@ def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
     _, p = dtest(noise.iloc[1:], **kwargs)
     check = p > alpha
     label = f"{test} (p > α)"
-    df = DataFrame(
-        index=[label],
-        columns=["statistic", "operator", "threshold", "dimensions", "pass", "comment"],
-    )
-    df.index.name = "check"
+    df = get_empty_check_dataframe()
     df.loc[label] = [p, ">", alpha, "-", check, ""]
+    return df
+
+
+def correlation_sim_vs_res(ml: Model, threshold: float = 0.2):
+    """Check if the correlation between simulated and residuals is less than threshold.
+
+    Parameters
+    ----------
+    ml: pastas.Model
+        Pastas model instance.
+    threshold: float
+        Threshold value for the correlation coefficient.
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        DataFrame with the results of the check.
+    """
+    sim = ml.simulate()
+    res = ml.residuals()
+
+    if sim.index.difference(res.index).size > 0:
+        logger.warning(
+            "Simulation and residuals have different time indices. "
+            "Interpolating simulation to residuals time index."
+        )
+    sim = Series(
+        index=res.index, data=np.interp(res.index.asi8, sim.index.asi8, sim.values)
+    )
+    label = f"|corr(sim, res)| < {threshold}"
+    val = np.abs(res.corr(sim))
+    check = val < threshold
+    df = get_empty_check_dataframe()
+    df.loc[label] = [val, operators["less_than"], threshold, "-", check, ""]
     return df
 
 
@@ -569,7 +752,7 @@ def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
              e.g. "rsq_geq_threshold".
            * If a callable, it must be a function that takes a model instance as an
              argument and return a DataFrame with columns:
-             ["statistic", "operator", "threshold", "dimensions", "pass", "comment"]].
+             ["statistic", "operator", "threshold", "dimensions", "pass", "comment"].
            * If a dict, it must have a key "func" with a function to perform the check,
              additional dictionary entries are passed to the function as kwargs.
     report: bool, optional
@@ -596,12 +779,23 @@ def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
         else:
             raise TypeError("Check must be str, callable, or dict.")
     df = concat(results)
+    # deal with duplicated index labels by appending .1, .2, etc.
+    if df.index.duplicated().any():
+        new_index = []
+        j = 0
+        for i, idx in enumerate(df.index):
+            if df.index.duplicated(keep=False)[i]:
+                new_index.append(f"{idx}.{j + 1}")
+                j += 1
+            else:
+                new_index.append(idx)
+        df.index = new_index
     if report:
         print_check_report(df)
     return df
 
 
-def print_check_report(df):
+def print_check_report(df: DataFrame):
     """Print a report of the check results.
 
     The check result is colored red (fail), green (pass) or yellow (pass with
@@ -645,11 +839,116 @@ def print_check_report(df):
         print(df)
 
 
+checks = {
+    f.__name__: f
+    for f in [
+        stat_ufunc_threshold,
+        rsq_geq_threshold,
+        parameter_ufunc_threshold,
+        parameters_leq_threshold,
+        response_memory,
+        response_memory_vs_warmup,
+        uncertainty_gain,
+        parameter_bounds,
+        uncertainty_parameters,
+        acf_runs_test,
+        acf_stoffer_toloi_test,
+        acf_ljung_box_test,
+        correlation_sim_vs_res,
+    ]
+}
+
 # list of checks, based on Brakenhoff et al. (2022).
 checks_brakenhoff_2022 = [
     {"func": rsq_geq_threshold, "threshold": 0.7},
     {"func": response_memory, "cutoff": 0.95, "factor_length_oseries": 0.5},
     {"func": acf_runs_test},
-    {"func": uncertainty_parameters, "n_std": 1.96},
+    {"func": uncertainty_gain, "n_std": 1.96},
     {"func": parameter_bounds},
 ]
+
+
+def get_checks_literature(
+    author: Literal["brakenhoff_2022", "zaadnoordijk_2019"],
+    recharge_model_name: str | None = None,
+) -> list[str | Callable | dict]:
+    """Get predefined checklists based on literature.
+
+    Notes
+    -----
+    These checklists are not exhaustive and were developed to address specific research
+    questions and hydrogeological contexts. They are provided as reference
+    implementations but may not be universally applicable across all modeling
+    scenarios.
+
+    The Brakenhoff et al. (2022) checklist was specifically designed to assess models
+    for quantifying the impact of groundwater pumping on heads.
+
+    The Zaadnoordijk et al. (2019) checklist was developed for checking linear recharge
+    models across diverse hydrogeological settings throughout the Netherlands. This
+    checklist requires the recharge model name to retrieve the corresponding
+    parameters. Applicability is limited to recharge models with the Gamma or
+    Exponential response functions. Checks contain duplicate checks with different
+    thresholds for the different check levels (MODOK, REGIMEOK, NWARN).
+
+    Parameters
+    ----------
+    author: str
+        Author of the checklist to retrieve. Must be one of
+        ["brakenhoff_2022", "zaadnoordijk_2019"].
+    recharge_model: str, optional
+        Name of the recharge model. Required for "zaadnoordijk_2019" checklist to
+        obtain parameters related to the recharge model.
+
+    Returns
+    -------
+    checks: list
+        Checklist based on Brakenhoff et al. (2022) or Zaadnoordijk et al. (2019).
+    """
+    if author == "brakenhoff_2022":
+        return checks_brakenhoff_2022
+    elif author == "zaadnoordijk_2019":
+        if recharge_model_name is None:
+            raise ValueError(
+                "Name of recharge model must be provided for "
+                "Zaadnoordijk et al. (2019) checklist."
+            )
+
+        # list of checks, loosely based on Zaadnoordijk et al. (2019).
+        checks_zaadnoordijk_2019 = [
+            # MODOK checks:
+            {
+                "func": parameters_leq_threshold,
+                "parameters": recharge_model_name + "_a",
+                "threshold": 500.0,
+            },
+            {"func": rsq_geq_threshold, "threshold": 0.1},
+            {"func": correlation_sim_vs_res, "threshold": 0.3},
+            # REGIMEOK checks:
+            {"func": rsq_geq_threshold, "threshold": 0.3},
+            {"func": correlation_sim_vs_res, "threshold": 0.2},
+            {
+                "func": acf_stoffer_toloi_test,  # Adapted ljungbox for irregular series
+                "p_threshold": 0.01,
+            },
+            # NWARN: criteria for warnings
+            # Only reliable when noise meets requirements of white noise:
+            {"func": rsq_geq_threshold, "threshold": 0.8},
+            {
+                "func": uncertainty_parameters,
+                "parameters": recharge_model_name,
+                "n_std": 1.96,
+            },
+            {
+                "func": acf_stoffer_toloi_test,
+                "p_threshold": 0.05,
+            },  # check for R² < 0.8
+            {
+                "func": acf_stoffer_toloi_test,
+                "p_threshold": 0.01,
+            },  # check when R² > 0.8
+        ]
+
+        return checks_zaadnoordijk_2019
+    else:
+        raise ValueError("Author must be 'brakenhoff_2022' or 'zaadnoordijk_2019'.")
