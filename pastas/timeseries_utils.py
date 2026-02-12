@@ -256,6 +256,10 @@ def _get_sim_index(tmin, tmax, freq, time_offset):
         model is simulated.
 
     """
+    # pandas 3.0: handle None time_offset
+    if time_offset is None:
+        from pandas import Timedelta
+        time_offset = Timedelta(0)
     tmin = tmin.floor(freq) + time_offset
     sim_index = date_range(tmin, tmax, freq=freq)
     return sim_index
@@ -286,6 +290,14 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
     if len(tindex) == 1:
         return tindex
     else:
+        # pandas 3.0: ensure both indices have the same unit before using asi8
+        from pandas import DatetimeIndex
+        if isinstance(tindex, DatetimeIndex) and isinstance(ref_tindex, DatetimeIndex):
+            # Convert both to nanosecond units for consistency
+            if hasattr(tindex, 'as_unit'):  # pandas >= 2.0
+                tindex = tindex.as_unit('ns')
+                ref_tindex = ref_tindex.as_unit('ns')
+        
         f = interpolate.interp1d(
             tindex.asi8,
             np.arange(0, tindex.size),

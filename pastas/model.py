@@ -602,7 +602,7 @@ class Model:
                 )
         if self.interpolate_simulation:
             # interpolate simulation to times of observations
-            sim_interpolated = np.interp(obs.index.asi8, sim.index.asi8, sim.values)
+            sim_interpolated = np.interp(obs.index.asi8, sim.index.asi8, sim.to_numpy(copy=True))
         else:
             # All the observation indexes are in the simulation
             sim_interpolated = sim.reindex(obs.index)
@@ -615,7 +615,7 @@ class Model:
             logger.warning("Nan-values were removed from the residuals.")
 
         if self.normalize_residuals:
-            res = res.subtract(res.values.mean())
+            res = res.subtract(np.mean(res))
 
         res.name = "Residuals"
         return res

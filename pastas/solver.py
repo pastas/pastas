@@ -134,12 +134,12 @@ class BaseSolver:
 
         if returnseparate:
             return (
-                self.ml.residuals(p).values,
-                self.ml.noise(p).values,
-                self.ml.noise_weights(p).values,
+                self.ml.residuals(p).to_numpy(copy=True),
+                self.ml.noise(p).to_numpy(copy=True),
+                self.ml.noise_weights(p).to_numpy(copy=True),
             )
 
-        return rv.values
+        return rv.to_numpy(copy=True)
 
     def prediction_interval(
         self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
@@ -337,7 +337,7 @@ class BaseSolver:
         array_like
             array with N parameter samples.
         """
-        p = self.ml.get_parameters(name=name)
+        p = self.ml.get_parameters(name=name).copy()
         pcov = self._get_covariance_matrix(name=name)
 
         if name is None:
@@ -516,8 +516,8 @@ class LeastSquares(BaseSolver):
         callback: CallBack | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
-        self.vary = self.ml.parameters.vary.values.astype(bool)
-        self.initial = self.ml.parameters.initial.values.copy()
+        self.vary = self.ml.parameters.vary.to_numpy(dtype=bool, copy=True)
+        self.initial = self.ml.parameters.initial.to_numpy(copy=True)
         parameters = self.ml.parameters.loc[self.vary]
 
         # Set the boundaries
