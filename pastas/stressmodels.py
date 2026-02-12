@@ -2010,10 +2010,11 @@ class RechargeModel(StressModelBase):
         p : array_like
             An array of the parameters of the stressmodel.
         """
-        if model is None:
-            p = self.parameters.initial.values
-        else:
-            p = model.get_parameters(self.name)
+        p = (
+            self.parameters.initial.values.copy()
+            if model is None
+            else model.get_parameters(self.name).copy()
+        )
 
         if istress is not None and isinstance(self.recharge, Linear):
             if istress == 0:

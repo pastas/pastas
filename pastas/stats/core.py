@@ -408,6 +408,10 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     normalized by the sum of all time steps. Note how weighted mean (:math:`\\bar{
     x}`) is used in this formula.
     """
+    # Handle edge case: cannot compute variance with 0 or 1 values
+    if x.size < 2:
+        return 0.0
+
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
     mu = np.average(x.to_numpy(), weights=w)
     sigma = (x.size / (x.size - 1) * w * (x.to_numpy() - mu) ** 2).sum()
