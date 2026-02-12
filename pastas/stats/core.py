@@ -102,7 +102,8 @@ def acf(
         fallback_bin_method=fallback_bin_method,
     )
     # drop value for lag=0 by default, unless explicitly included
-    if c.index[0] == Timedelta(0) and isinstance(lags, int):
+    # pandas 3.0: check if index is not empty before accessing first element
+    if len(c) > 0 and c.index[0] == Timedelta(0) and isinstance(lags, int):
         c = c.drop(c.index[0])
     c.name = "ACF"
     if full_output:
