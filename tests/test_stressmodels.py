@@ -139,14 +139,14 @@ class TestLinearTrend:
 
     def test_init(self) -> None:
         """Test initialization."""
-        sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        sm = LinearTrend(tstart="2001-01-01", tend="2002-01-01", name="trend1")
         assert sm.name == "trend1"
-        assert sm.start == "2001-01-01"
-        assert sm.end == "2002-01-01"
+        assert sm.tstart == "2001-01-01"
+        assert sm.tend == "2002-01-01"
 
     def test_simulate(self) -> None:
         """Test simulate method."""
-        sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        sm = LinearTrend(tstart="2001-01-01", tend="2002-01-01", name="trend1")
 
         # Set positive trend
         p = sm.parameters.initial.values
@@ -172,6 +172,33 @@ class TestLinearTrend:
         # No trend after end date
         post_trend = sim.loc["2002-01-01":]
         assert np.allclose(post_trend.diff().dropna().values, 0)
+
+    def test_deprecated_arguments(self, caplog) -> None:
+        """Test that deprecated 'start' and 'end' arguments raise warnings."""
+        # Test deprecated 'start' argument
+        caplog.clear()
+        sm = LinearTrend(start="2001-01-01", tend="2002-01-01", name="trend1")
+        assert len(caplog.records) == 1
+        assert "deprecated" in caplog.text.lower()
+        assert "start" in caplog.text
+        assert "tstart" in caplog.text
+        assert sm.tstart == "2001-01-01"
+
+        # Test deprecated 'end' argument
+        caplog.clear()
+        sm = LinearTrend(tstart="2001-01-01", end="2002-01-01", name="trend1")
+        assert len(caplog.records) == 1
+        assert "deprecated" in caplog.text.lower()
+        assert "end" in caplog.text
+        assert "tend" in caplog.text
+        assert sm.tend == "2002-01-01"
+
+        # Test both deprecated arguments
+        caplog.clear()
+        sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        assert len(caplog.records) == 2
+        assert sm.tstart == "2001-01-01"
+        assert sm.tend == "2002-01-01"
 
 
 class TestConstant:
