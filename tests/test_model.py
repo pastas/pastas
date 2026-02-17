@@ -1,6 +1,7 @@
 """Tests for the Model class in pastas.model."""
 
 import logging
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -631,5 +632,7 @@ class TestModelExportImport:
         """Test saving and loading a model with float that can be converted to int."""
         s = pd.Series(index=pd.date_range("2025-01-01", periods=10, freq="D"), data=1.0)
         ml = ps.Model(s)
-        ml.to_file("test_float_int.pas")
-        _ = ps.io.load("test_float_int.pas")
+        file = Path("test_float_int.pas")
+        ml.to_file(file)
+        _ = ps.io.load(file)
+        file.unlink()  # Clean up
