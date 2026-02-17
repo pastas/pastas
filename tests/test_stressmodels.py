@@ -173,7 +173,7 @@ class TestLinearTrend:
         post_trend = sim.loc["2002-01-01":]
         assert np.allclose(post_trend.diff().dropna().values, 0)
 
-    def test_deprecated_arguments(self, caplog) -> None:
+    def test_deprecated_start_end_parameters(self, caplog) -> None:
         """Test that deprecated 'start' and 'end' arguments raise warnings."""
         # Test deprecated 'start' argument
         caplog.clear()
