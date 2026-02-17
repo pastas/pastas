@@ -410,10 +410,10 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     normalized by the sum of all time steps. Note how weighted mean (:math:`\\bar{
     x}`) is used in this formula.
     """
-    x = x.to_numpy(copy=True)  # pandas 3.0: ensure writeable array
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
+    x = x.to_numpy(copy=True)  # pandas 3.0: ensure writeable array
     mu = np.average(x, weights=w)
-    sigma = (x.size / (x.size - 1) * w * (x - mu) ** 2).sum()
+    sigma = np.sum(x.size / (x.size - 1) * w * (x - mu) ** 2)
     return sigma
 
 
@@ -482,10 +482,11 @@ def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLi
         All time steps larger than max_gap are replace with the mean weight. Default
         value is 30 days.
     """
+    x_index = x.index.to_numpy(copy=True)
     if weighted:
-        w = np.append(0.0, np.diff(x.index.to_numpy()) / Timedelta("1D"))
+        w = np.append(0.0, np.diff(x_index) / Timedelta("1D"))
         w[w > max_gap] = max_gap
     else:
-        w = np.ones(x.index.size)
+        w = np.ones(x_index.size)
     w /= w.sum()
     return w
