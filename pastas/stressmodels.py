@@ -613,10 +613,10 @@ class LinearTrend(StressModelBase):
 
     Parameters
     ----------
-    start: str
+    tstart: str or Timestamp
         String with a date to start the trend (e.g., "2018-01-01"), will be
         transformed to an ordinal number internally.
-    end: str
+    tend: str or Timestamp
         String with a date to end the trend (e.g., "2018-01-01"), will be transformed
         to an ordinal number internally.
     name: str, optional
@@ -632,19 +632,52 @@ class LinearTrend(StressModelBase):
     _name = "LinearTrend"
 
     def __init__(
-        self, start: Timestamp | str, end: Timestamp | str, name: str = "trend"
+        self,
+        tstart: Timestamp | str = None,
+        tend: Timestamp | str = None,
+        name: str = "trend",
+        start: Timestamp | str = None,
+        end: Timestamp | str = None,
     ) -> None:
+        from pastas.decorators import deprecate_args_or_kwargs
+
+        # Handle deprecated arguments
+        if start is not None:
+            deprecate_args_or_kwargs(
+                "start",
+                "2.0.0",
+                "Please use 'tstart' instead of 'start'.",
+            )
+            if tstart is None:
+                tstart = start
+        if end is not None:
+            deprecate_args_or_kwargs(
+                "end",
+                "2.0.0",
+                "Please use 'tend' instead of 'end'.",
+            )
+            if tend is None:
+                tend = end
+
+        # Validate that required parameters are provided
+        if tstart is None:
+            raise TypeError(
+                "LinearTrend.__init__() missing required argument: 'tstart'"
+            )
+        if tend is None:
+            raise TypeError("LinearTrend.__init__() missing required argument: 'tend'")
+
         StressModelBase.__init__(
             self, name=name, tmin=Timestamp.min, tmax=Timestamp.max
         )
-        self.start = start
-        self.end = end
+        self.tstart = tstart
+        self.tend = tend
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters for the stress model."""
-        start = Timestamp(self.start).toordinal()
-        end = Timestamp(self.end).toordinal()
+        start = Timestamp(self.tstart).toordinal()
+        end = Timestamp(self.tend).toordinal()
         tmin = Timestamp.min.toordinal()
         tmax = Timestamp.max.toordinal()
 
@@ -713,8 +746,8 @@ class LinearTrend(StressModelBase):
         """
         data = {
             "class": self._name,
-            "start": self.start,
-            "end": self.end,
+            "tstart": self.tstart,
+            "tend": self.tend,
             "name": self.name,
         }
         return data
