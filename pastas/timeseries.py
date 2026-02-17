@@ -725,9 +725,9 @@ class ObservationSeries(TimeSeries):
                 # exceed the model frequency. Make sure to retain the original
                 # timestamps, as they will be used for interpolation of the simulation.
                 sim_index = _get_sim_index(tmin, tmax, freq, time_offset)
-                index = get_sample(series.index, sim_index)
+                obs_index = series.index.copy()
+                index = get_sample(obs_index, sim_index)
                 series = series.loc[index]
-
             # Update the series with the new settings
             series.name = self._series_original.name
 

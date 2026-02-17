@@ -411,7 +411,7 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     x}`) is used in this formula.
     """
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
-    x = x.to_numpy(copy=True)  # pandas 3.0: ensure writeable array
+    x = x.to_numpy(copy=True)
     mu = np.average(x, weights=w)
     sigma = np.sum(x.size / (x.size - 1) * w * (x - mu) ** 2)
     return sigma
