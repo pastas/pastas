@@ -633,11 +633,12 @@ class LinearTrend(StressModelBase):
 
     def __init__(
         self,
-        tstart: Timestamp | str = None,
-        tend: Timestamp | str = None,
+        tstart: Timestamp | str | None = None,
+        tend: Timestamp | str | None = None,
         name: str = "trend",
-        start: Timestamp | str = None,
-        end: Timestamp | str = None,
+        *,
+        start: Timestamp | str | None = None,
+        end: Timestamp | str | None = None,
     ) -> None:
         from pastas.decorators import deprecate_args_or_kwargs
 
