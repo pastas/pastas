@@ -107,7 +107,16 @@ class TestModelComponents:
         ).all()
         assert (
             sm.parameters.dtypes.values
-            == np.array([float, float, float, bool, "O", "O"])
+            == np.array(
+                [
+                    float,
+                    float,
+                    float,
+                    bool,
+                    pd.StringDtype("python", na_value=np.nan),
+                    pd.StringDtype("python", na_value=np.nan),
+                ]
+            )
         ).all()
 
     def test_set_oseries(self, ml_solved: ps.Model) -> None:
