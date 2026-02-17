@@ -1500,13 +1500,13 @@ class Model:
         else:
             p = self._parameters
 
-        if p.optimal.hasnans:
+        if p.loc[:, "optimal"].hasnans:
             logger.warning("Model is not optimized yet, initial parameters are used.")
-            parameters = p.initial
+            parameters = p.loc[:, "initial"]
         else:
-            parameters = p.optimal
+            parameters = p.loc[:, "optimal"]
 
-        return parameters.to_numpy(dtype=float)
+        return parameters.to_numpy(dtype=float, copy=True)
 
     def get_stressmodel_names(self) -> list[str]:
         """Returns list of stressmodel names."""
