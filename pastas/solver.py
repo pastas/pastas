@@ -516,9 +516,13 @@ class LeastSquares(BaseSolver):
         callback: CallBack | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
-        self.vary = self.ml.parameters.vary.to_numpy(dtype=bool, copy=True)
-        self.initial = self.ml.parameters.initial.to_numpy(copy=True)
-        parameters = self.ml.parameters.loc[self.vary]
+        self.vary = self.ml.parameters.loc[:, "vary"].to_numpy(dtype=bool, copy=True)
+        self.initial = self.ml.parameters.loc[:, "initial"].to_numpy(
+            dtype=float, copy=True
+        )
+        parameters = self.ml.parameters.loc[self.vary, :].copy()
+        pmin = parameters.loc[:, "pmin"].to_numpy(dtype=float, copy=True)
+        pmax = parameters.loc[:, "pmax"].to_numpy(dtype=float, copy=True)
 
         # Set the boundaries
         method = kwargs.pop("method") if "method" in kwargs else "trf"
@@ -537,15 +541,15 @@ class LeastSquares(BaseSolver):
             self.ml._parameters.loc[self.vary, "pmax"] = np.nan
         else:
             bounds = Bounds(
-                lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
-                ub=np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
+                lb=np.where(np.isnan(pmin), -np.inf, pmin),
+                ub=np.where(np.isnan(pmax), np.inf, pmax),
                 keep_feasible=True,
             )
 
         self.result = least_squares(
             self.objfunction,
             bounds=bounds,
-            x0=parameters.initial.values,
+            x0=self.initial[self.vary],
             args=(noise, weights, callback),
             method=method,
             **kwargs,
