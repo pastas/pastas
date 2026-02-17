@@ -589,10 +589,8 @@ class Model:
 
         # simulate model
         sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
-
         # Get the oseries calibration series
         obs = self.observations(tmin=tmin, tmax=tmax, freq=freq_obs)
-
         # Get simulation at the correct indices
         if self.interpolate_simulation is None:
             if obs.index.difference(sim.index).size != 0:
@@ -1028,10 +1026,12 @@ class Model:
             # Determine the residuals and set the constant to their mean
             self.normalize_residuals = False
             res = self.residuals(optimal).mean()
-            optimal[self._parameters.name == self.constant.name] = res
+            self._parameters.loc[
+                self._parameters.name == self.constant.name, "optimal"
+            ] = res
 
-        self._parameters.optimal = optimal
-        self._parameters.stderr = stderr
+        self._parameters.loc[:, "optimal"] = optimal
+        self._parameters.loc[:, "stderr"] = stderr
         self._solve_success = success  # store for fit_report
 
         if report:
@@ -1496,18 +1496,17 @@ class Model:
         p : array_like
             NumPy array with the parameters used in the time series model.
         """
-        if name:
-            p = self._parameters.loc[self._parameters.name == name]
-        else:
-            p = self._parameters
-
-        if p.loc[:, "optimal"].hasnans:
+        # select parameters from appropriate stressmodel or noisemodel
+        parameters = (
+            self._parameters.query("name == @name") if name else self._parameters
+        )
+        if parameters.loc[:, "optimal"].hasnans:
             logger.warning("Model is not optimized yet, initial parameters are used.")
-            parameters = p.loc[:, "initial"]
+            p = parameters.loc[:, "initial"]
         else:
-            parameters = p.loc[:, "optimal"]
+            p = parameters.loc[:, "optimal"]
 
-        return parameters.to_numpy(dtype=float, copy=True)
+        return p.to_numpy(dtype=float, copy=True)
 
     def get_stressmodel_names(self) -> list[str]:
         """Returns list of stressmodel names."""
