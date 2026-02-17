@@ -6,6 +6,7 @@ import numpy as np
 from packaging.version import parse as parse_version
 from pandas import (
     DataFrame,
+    DatetimeIndex,
     Index,
     Series,
     Timedelta,
@@ -24,7 +25,7 @@ from .decorators import njit
 logger = logging.getLogger(__name__)
 
 
-def _offset_to_timedelta(offset):
+def _offset_to_timedelta(offset: Timestamp) -> Timedelta:
     """Convert pandas offset to Timedelta for pandas 3.0 compatibility.
 
     Parameters
@@ -183,12 +184,12 @@ def _get_dt(freq: str) -> float:
     return dt
 
 
-def _get_time_offset(t: Timestamp, freq: str) -> Timedelta:
+def _get_time_offset(t: Timestamp | DatetimeIndex, freq: str) -> Timedelta:
     """Internal method to calculate the time offset of a Timestamp.
 
     Parameters
     ----------
-    t: pandas.Timestamp
+    t: pandas.Timestamp or pandas.DatetimeIndex
         Timestamp to calculate the offset from the desired freq for.
     freq: str
         String with the desired frequency.
@@ -196,7 +197,7 @@ def _get_time_offset(t: Timestamp, freq: str) -> Timedelta:
     Returns
     -------
     offset: pandas.Timedelta
-        Timedelta with the offset for the timestamp t.
+        Timedelta with the offset for the timestamp(s) t.
     """
     if freq is None:
         raise TypeError("frequency is None")
@@ -234,7 +235,7 @@ def _infer_fixed_freq(tindex: Index) -> str:
     return freq
 
 
-def _get_sim_index(tmin, tmax, freq, time_offset):
+def _get_sim_index(tmin: Timestamp, tmax: Timestamp, freq: str, time_offset: Timestamp):
     """Internal method to determine the simulation index
 
     Parameters
@@ -256,16 +257,12 @@ def _get_sim_index(tmin, tmax, freq, time_offset):
         model is simulated.
 
     """
-    # pandas 3.0: handle None time_offset
-    if time_offset is None:
-        from pandas import Timedelta
-        time_offset = Timedelta(0)
     tmin = tmin.floor(freq) + time_offset
     sim_index = date_range(tmin, tmax, freq=freq)
     return sim_index
 
 
-def get_sample(tindex: Index, ref_tindex: Index) -> Index:
+def get_sample(tindex: DatetimeIndex, ref_tindex: DatetimeIndex) -> DatetimeIndex:
     """Sample the index of a pandas Series or DataFrame so that the frequency is not
     higher than the frequency of ref_tindex.
 
@@ -278,7 +275,7 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
 
     Returns
     -------
-    pandas.Index
+    pandas.DatetimeIndex
         The sampled index, consisting of a subset of the original index tindex. The
         values in tindex that are closest to ref_index are returned.
 
@@ -290,14 +287,6 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
     if len(tindex) == 1:
         return tindex
     else:
-        # pandas 3.0: ensure both indices have the same unit before using asi8
-        from pandas import DatetimeIndex
-        if isinstance(tindex, DatetimeIndex) and isinstance(ref_tindex, DatetimeIndex):
-            # Convert both to nanosecond units for consistency
-            if hasattr(tindex, 'as_unit'):  # pandas >= 2.0
-                tindex = tindex.as_unit('ns')
-                ref_tindex = ref_tindex.as_unit('ns')
-        
         f = interpolate.interp1d(
             tindex.asi8,
             np.arange(0, tindex.size),
@@ -456,6 +445,26 @@ def _ts_resample_slow(t_s, t_e, v, t_new):
     return v_new
 
 
+def _get_nearest_offset_to_freq(tindex: DatetimeIndex, freq: str) -> Timedelta:
+    """Internal method to get the nearest offset to a frequency string.
+
+    Parameters
+    ----------
+    tindex : pandas.DatetimeIndex
+        The index to calculate the offset from.
+    freq : str
+        The frequency string to calculate the offset for.
+
+    Returns
+    -------
+    pandas.Timedelta
+        The nearest offset to the frequency string.
+    """
+    offsets = _get_time_offset(t=tindex, freq=freq).value_counts()
+    t_offset = offsets.idxmax() if len(offsets) > 0 else Timedelta(0)
+    return t_offset
+
+
 def get_equidistant_series_nearest(
     series: Series, freq: str, minimize_data_loss: bool = False
 ) -> Series:
@@ -491,8 +500,7 @@ def get_equidistant_series_nearest(
     """
 
     # build new equidistant index
-    offsets = _get_time_offset(series.index, freq).value_counts()
-    t_offset = offsets.idxmax() if len(offsets) > 0 else Timedelta(0)
+    t_offset = _get_nearest_offset_to_freq(tindex=series.index, freq=freq)
     # use t_offset to pick time that will keep the most data without shifting in time
     # from the original series.
     idx = date_range(

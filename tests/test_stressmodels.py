@@ -149,7 +149,9 @@ class TestLinearTrend:
         sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
 
         # Set positive trend
-        p = sm.parameters.initial.to_numpy(copy=True)  # Make writable copy for pandas 3.0
+        p = sm.parameters.initial.to_numpy(
+            copy=True
+        )  # Make writable copy for pandas 3.0
         p[0] = 1.0  # Set slope to positive value
 
         # Run simulation

@@ -121,22 +121,16 @@ def plot_series_with_gaps(
     if ax is None:
         _, ax = plt.subplots()
 
-    color = kwargs.pop("c", "k")
-    color = kwargs.pop("color", color)
-    scatter_kwargs = {"marker": "_", "s": 3.0, "color": color}
-    series.name = kwargs.pop("label") if "label" in kwargs else series.name
-
-    if len(series) < 2:
-        if len(series) == 1:
-            ax.scatter(series.index, series.values, label=series.name, **scatter_kwargs)
-        return ax
-
     td_diff = series.index[1:] - series.index[:-1]
     if gap is None:
         gapq = np.quantile(td_diff, 0.95)
         gap = max(gapq, Timedelta(50, unit="D"))
 
     s_split = np.append(0.0, np.cumsum(td_diff >= gap))
+
+    series.name = kwargs.pop("label") if "label" in kwargs else series.name
+    color = kwargs.pop("c", "k")
+    color = kwargs.pop("color", color)
     for i, gr in series.groupby(s_split):
         label = None if i > 0 else series.name
         if len(gr) == 1:
@@ -145,7 +139,7 @@ def plot_series_with_gaps(
                 series.name,
                 gap / Timedelta(1, "D"),
             )
-            ax.scatter(gr.index, gr.values, label=label, **scatter_kwargs)
+            ax.scatter(gr.index, gr.values, label=label, marker="_", s=3.0, color=color)
         ax.plot(gr.index, gr.values, label=label, color=color, **kwargs)
 
     return ax

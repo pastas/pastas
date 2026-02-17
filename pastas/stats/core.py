@@ -102,8 +102,7 @@ def acf(
         fallback_bin_method=fallback_bin_method,
     )
     # drop value for lag=0 by default, unless explicitly included
-    # pandas 3.0: check if index is not empty before accessing first element
-    if len(c) > 0 and c.index[0] == Timedelta(0) and isinstance(lags, int):
+    if c.index[0] == Timedelta(0) and isinstance(lags, int):
         c = c.drop(c.index[0])
     c.name = "ACF"
     if full_output:
@@ -411,13 +410,10 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     normalized by the sum of all time steps. Note how weighted mean (:math:`\\bar{
     x}`) is used in this formula.
     """
-    # Handle edge case: cannot compute variance with 0 or 1 values
-    if x.size < 2:
-        return 0.0
-
+    x = x.to_numpy(copy=True)  # pandas 3.0: ensure writeable array
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
-    mu = np.average(x.to_numpy(), weights=w)
-    sigma = (x.size / (x.size - 1) * w * (x.to_numpy() - mu) ** 2).sum()
+    mu = np.average(x, weights=w)
+    sigma = (x.size / (x.size - 1) * w * (x - mu) ** 2).sum()
     return sigma
 
 

@@ -1981,11 +1981,17 @@ class RechargeModel(StressModelBase):
         if p is None:
             p = self.parameters.initial.to_numpy(copy=True)
 
-        prec = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=0).to_numpy(copy=True)
-        evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=1).to_numpy(copy=True)
+        prec = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=0).to_numpy(
+            copy=True
+        )
+        evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=1).to_numpy(
+            copy=True
+        )
 
         if self.temp is not None:
-            temp = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=2).to_numpy(copy=True)
+            temp = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=2).to_numpy(
+                copy=True
+            )
         else:
             temp = None
         df = self.recharge.get_water_balance(

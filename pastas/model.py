@@ -602,7 +602,9 @@ class Model:
                 )
         if self.interpolate_simulation:
             # interpolate simulation to times of observations
-            sim_interpolated = np.interp(obs.index.asi8, sim.index.asi8, sim.to_numpy(copy=True))
+            sim_interpolated = np.interp(
+                obs.index.asi8, sim.index.asi8, sim.to_numpy(copy=True)
+            )
         else:
             # All the observation indexes are in the simulation
             sim_interpolated = sim.reindex(obs.index)
@@ -1345,14 +1347,10 @@ class Model:
             ts_tmin = self.oseries.series_original.index.min()
         # Get tmin from the stressmodels
         elif use_stresses:
-            # pandas 3.0: if no stressmodels, use oseries as fallback
-            if self.stressmodels:
-                ts_tmin = Timestamp.max
-                for stressmodel in self.stressmodels.values():
-                    if stressmodel.tmin < ts_tmin:
-                        ts_tmin = stressmodel.tmin
-            else:
-                ts_tmin = self.oseries.series_original.index.min()
+            ts_tmin = Timestamp.max
+            for stressmodel in self.stressmodels.values():
+                if stressmodel.tmin < ts_tmin:
+                    ts_tmin = stressmodel.tmin
         # Get tmin and tmax from user provided values
         else:
             ts_tmin = Timestamp(tmin)
@@ -1416,14 +1414,10 @@ class Model:
             ts_tmax = self.oseries.series_original.index.max()
         # Get tmax from the stressmodels
         elif use_stresses:
-            # pandas 3.0: if no stressmodels, use oseries as fallback
-            if self.stressmodels:
-                ts_tmax = Timestamp.min
-                for stressmodel in self.stressmodels.values():
-                    if stressmodel.tmax > ts_tmax:
-                        ts_tmax = stressmodel.tmax
-            else:
-                ts_tmax = self.oseries.series_original.index.max()
+            ts_tmax = Timestamp.min
+            for stressmodel in self.stressmodels.values():
+                if stressmodel.tmax > ts_tmax:
+                    ts_tmax = stressmodel.tmax
         # Get tmax from user provided values
         else:
             ts_tmax = Timestamp(tmax)

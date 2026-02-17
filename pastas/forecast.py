@@ -91,7 +91,7 @@ def _check_forecast_data(
                 ),
                 force_raise=False,
             )
-        for stress_name, fc in fc_data.items():
+        for fc in fc_data:
             # Check if DataFrame is empty
             if fc.empty:
                 msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}' for stress '{stress_name}'"

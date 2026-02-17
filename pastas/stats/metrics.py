@@ -290,14 +290,17 @@ def evp(
         return nan
 
     # Check both standard and weighted variance
-    obs_var_weighted = var(obs, weighted=weighted, max_gap=max_gap)
-    if obs.var() == 0.0 or obs_var_weighted == 0.0:
+    if obs.var() == 0.0:
         return 100.0
     else:
         return (
             max(
                 0.0,
-                (1 - var(err, weighted=weighted, max_gap=max_gap) / obs_var_weighted),
+                (
+                    1
+                    - var(err, weighted=weighted, max_gap=max_gap)
+                    / var(obs, weighted=weighted, max_gap=max_gap)
+                ),
             )
             * 100
         )
@@ -466,15 +469,6 @@ def rsq(
     mu = average(obs.to_numpy(), weights=w)
     rss = (w * err.to_numpy() ** 2.0).sum()
     tss = (w * (obs.to_numpy() - mu) ** 2.0).sum()
-
-    # Handle edge case when observation variance is zero (all values identical)
-    if tss == 0.0:
-        # If residuals are also zero, we have a perfect fit (rsq=1)
-        # Otherwise, no useful fit can be defined, return 0
-        if rss == 0.0:
-            return 1.0
-        else:
-            return 0.0
 
     if nparam:
         return 1.0 - (obs.size - 1.0) / (obs.size - nparam) * rss / tss

@@ -14,7 +14,7 @@ Run diagnostic tests on model after optimization::
 from logging import getLogger
 
 from numpy import arange, cumsum, finfo, median, nan, sqrt, zeros
-from pandas import DataFrame, Series, Timedelta, date_range, infer_freq
+from pandas import DataFrame, Series, date_range, infer_freq
 from scipy.stats import chi2, norm, normaltest, shapiro
 
 from pastas.stats.core import acf as get_acf
@@ -376,11 +376,7 @@ def stoffer_toloi(
         # get equidistant sample from original time series, checks which time offset
         # is the most common to maximize the number of values taken from the original
         # series.
-        if len(series) == 0:
-            # Handle empty series - return NaN values
-            return (nan, nan)
-        offsets = _get_time_offset(series.index, freq).value_counts()
-        t_offset = offsets.idxmax() if len(offsets) > 0 else Timedelta(0)
+        t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
         new_idx = date_range(
             series.index[0].floor(freq) + t_offset,
             series.index[-1].floor(freq) + t_offset,
@@ -508,7 +504,7 @@ def diagnostics(
 
     # Do different tests depending on time step
     # pandas 3.0 requires at least 3 dates to infer frequency
-    if len(series) >= 3 and infer_freq(series.index):
+    if infer_freq(series.index):
         # Ljung-Box test for autocorrelation
         stat, p = ljung_box(series, nparam=nparam, lags=lags)
         df.loc["Ljung-Box", cols] = "Autocorr.", stat, p
