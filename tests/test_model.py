@@ -186,22 +186,22 @@ class TestModelComponents:
         ml_basic.del_constant()
         assert ml_basic.constant is None
 
-    def test_add_transform(self, ml_basic: ps.Model) -> None:
+    def test_add_transform(self, ml_recharge: ps.Model) -> None:
         """Test adding a transform."""
         transform = ps.ThresholdTransform()
-        ml_basic.add_transform(transform)
+        ml_recharge.add_transform(transform)
 
-        assert ml_basic.transform is transform
+        assert ml_recharge.transform is transform
 
-    def test_del_transform(self, ml_basic: ps.Model) -> None:
+    def test_del_transform(self, ml_recharge: ps.Model) -> None:
         """Test deleting a transform."""
         # First add a transform
         transform = ps.ThresholdTransform()
-        ml_basic.add_transform(transform)
+        ml_recharge.add_transform(transform)
 
         # Then delete it
-        ml_basic.del_transform()
-        assert ml_basic.transform is None
+        ml_recharge.del_transform()
+        assert ml_recharge.transform is None
 
     def test_add_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test adding a noise model."""
