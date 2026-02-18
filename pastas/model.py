@@ -847,7 +847,7 @@ class Model:
             if self.transform is not None:
                 msg = "fit_constant needs to be True (for now) when a transform is used"
                 logger.error(msg)
-                raise Exception(msg)
+                raise ValueError(msg)
             self._parameters.at["constant_d", "vary"] = False
             self._parameters.at["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
@@ -1242,7 +1242,7 @@ class Model:
         if len(time_offsets) > 1:
             msg = "The time-offset with the frequency is not the same for all stresses."
             logger.error(msg)
-            raise Exception(msg)
+            raise ValueError(msg)
         if len(time_offsets) == 1:
             return next(iter(time_offsets))
         else:

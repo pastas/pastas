@@ -161,7 +161,7 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     name: str
         String with the name to check for illegal characters.
     raise_error: bool
-        raise Exception error if illegal character is found, default is False which
+        raise ValueError if illegal character is found, default is False which
         only logs a warning.
 
     Returns
@@ -199,7 +199,7 @@ def validate_name(name: str, raise_error: bool = False) -> str:
             )
             if raise_error:
                 logger.error(msg, name, char)
-                raise Exception(msg % (name, char))
+                raise ValueError(msg % (name, char))
             else:
                 logger.warning(msg, name, char)
 

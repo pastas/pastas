@@ -60,13 +60,14 @@ def load_dataset(name: str) -> DataFrame | dict[str, DataFrame]:
             "The requests package is required to load datasets from the pastas-data "
             "repository. Install requests using 'pip install requests'."
         )
+    from requests.exceptions import ConnectionError, RequestException
 
     # Get the folder from the pastas-data repository
     r = requests.get(f"{GITHUB_URL}/{name}/")
 
     # Check if requests status is okay, otherwise raise error and return status code
     if not r.status_code == 200:
-        raise Exception(f"Error: {r.status_code}. Reason: {r.reason}. ")
+        raise ConnectionError(f"Error: {r.status_code}. Reason: {r.reason}. ")
 
     # Get information about the files in the folder
     data = {}
@@ -89,7 +90,7 @@ def load_dataset(name: str) -> DataFrame | dict[str, DataFrame]:
     elif len(data) > 1:
         return data
     else:
-        raise Exception(
+        raise RequestException(
             f"No csv files found in the folder {name}. Check the pastas-data repository "
             "on GitHub for available datasets."
         )
@@ -119,13 +120,14 @@ def list_datasets(silent: bool = True) -> list[str]:
             "The requests package is required to load datasets from the pastas-data "
             "repository. Install requests using 'pip install requests'."
         )
+    from requests.exceptions import ConnectionError
 
     # Get the folder from the pastas-data repository
     r = requests.get(GITHUB_URL)
 
     # Check if requests status is okay, otherwise raise error and return status code
     if not r.status_code == 200:
-        raise Exception(f"Error: {r.status_code}. Reason: {r.reason}. ")
+        raise ConnectionError(f"Error: {r.status_code}. Reason: {r.reason}. ")
 
     # Get information about the files in the folder
     data = []

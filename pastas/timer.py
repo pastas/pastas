@@ -26,10 +26,6 @@ except ImportError:
     raise ImportError(msg) from None
 
 
-class ExceededMaxSolveTime(Exception):
-    """Custom Exception when model optimization exceeds threshold."""
-
-
 class SolveTimer(tqdm):
     """Progress indicator for model optimization.
 
@@ -79,7 +75,7 @@ class SolveTimer(tqdm):
         displayed = super().update(n)
         if self.max_time is not None:
             if self.format_dict["elapsed"] > self.max_time:
-                raise ExceededMaxSolveTime(
+                raise TimeoutError(
                     f"Model solve time exceeded {self.max_time} seconds!"
                 )
         return displayed
