@@ -21,7 +21,7 @@ def test_example(file) -> None:
         plt.close("all")
     except Exception as e:
         os.chdir(cwd)
-        raise RuntimeError(f"could not run {file}") from e
+        raise RuntimeError(f"could not run {file}, error: {e}")
     os.chdir(cwd)
 
 

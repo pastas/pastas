@@ -2109,12 +2109,12 @@ class TarsoModel(RechargeModel):
         if oseries is not None:
             if dmin is not None or dmax is not None:
                 msg = "Please specify either oseries or dmin and dmax"
-                raise (ValueError(msg))
+                raise ValueError(msg)
             dmin = oseries.min()
             dmax = oseries.max()
         elif dmin is None or dmax is None:
             msg = "Please specify either oseries or dmin and dmax"
-            raise (ValueError(msg))
+            raise ValueError(msg)
         if rfunc is None:
             rfunc = Exponential()
         if not isinstance(rfunc, Exponential):
@@ -2256,7 +2256,7 @@ class TarsoModel(RechargeModel):
                 # calculate time until d1 is reached
                 dtdr = -S * c * np.log((d1 - d - r[i] * c) / (h0 - d - r[i] * c))
                 if dtdr > dt:
-                    raise (ValueError("TarsoModel: dtdr > dt"))
+                    raise ValueError("TarsoModel: dtdr > dt")
                 # change parameters
                 high = newhigh
                 if high:

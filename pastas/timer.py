@@ -19,6 +19,17 @@ This will print the following to the console::
 
 """
 
+from pastas.decorators import PastasDeprecationWarning
+
+
+@PastasDeprecationWarning(
+    remove_version="2.0.0",
+    reason="The ExceededMaxSolveTime exception has been renamed to TimeoutError.",
+)
+class ExceededMaxSolveTime(Exception):
+    pass
+
+
 try:
     from tqdm.auto import tqdm
 except ImportError:
@@ -40,12 +51,6 @@ class SolveTimer(tqdm):
 
         Optimization progress: 73it [00:01, 67.68it/s]
 
-    Set maximum allowable time (in seconds) for solve, otherwise raise
-    ExceededMaxSolveTime exception::
-
-        with SolveTimer(max_time=60) as t:
-            ml.solve(callback=t.timer)
-
 
     Notes
     -----
@@ -60,8 +65,7 @@ class SolveTimer(tqdm):
         ----------
         max_time : float, optional
             maximum allowed time spent in solve(), by default None, which does
-            not impose a limit. If time is exceeded, raises
-            ExceededMaxSolveTime Exception.
+            not impose a limit. If time is exceeded, raises RunTimeError.
         """
         if "total" not in kwargs:
             kwargs["total"] = None

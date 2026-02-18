@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pastas.timer import ExceededMaxSolveTime, SolveTimer
+from pastas.timer import SolveTimer
 
 
 class TestSolveTimer:
@@ -80,6 +80,6 @@ def test_real_usage() -> None:
         mock_solve(callback=timer.timer)
 
     # Test with a max_time that will be exceeded
-    with pytest.raises(ExceededMaxSolveTime):
+    with pytest.raises(RuntimeError):
         with SolveTimer(max_time=0.02) as timer:
             mock_solve(callback=timer.timer)
