@@ -18,13 +18,14 @@ from pandas import (
 from pandas import __version__ as pd_version
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
+from pandas.tseries.offsets import BaseOffset
 
 from .decorators import njit
 
 logger = logging.getLogger(__name__)
 
 
-def _offset_to_timedelta(offset: Timestamp) -> Timedelta:
+def _offset_to_timedelta(offset: BaseOffset) -> Timedelta:
     """Convert pandas offset to Timedelta for pandas 3.0 compatibility.
 
     Parameters
@@ -234,7 +235,9 @@ def _infer_fixed_freq(tindex: Index) -> str:
     return freq
 
 
-def _get_sim_index(tmin: Timestamp, tmax: Timestamp, freq: str, time_offset: Timestamp):
+def _get_sim_index(
+    tmin: Timestamp, tmax: Timestamp, freq: str, time_offset: Timedelta
+) -> DatetimeIndex:
     """Internal method to determine the simulation index
 
     Parameters
@@ -495,10 +498,10 @@ def get_equidistant_series_nearest(
     s = Series(index=idx, dtype=float)
 
     # Initial fill
-    s.iloc[valid] = series.values[ind]
+    s.iloc[valid] = series.to_numpy(copy=True)[ind]
 
     matched_isna = np.zeros(len(idx), dtype=bool)
-    matched_isna[np.where(valid)[0]] = series.isna().to_numpy()[ind]
+    matched_isna[np.where(valid)[0]] = series.isna().to_numpy(copy=True)[ind]
 
     # ---- Duplicate resolution (each original value used once) ----
 
@@ -507,7 +510,7 @@ def get_equidistant_series_nearest(
     s.iloc[valid_positions[dup_mask]] = np.nan
 
     used_mask = np.zeros(len(series), dtype=bool)
-    source_isna = series.isna().to_numpy()
+    source_isna = series.isna().to_numpy(copy=True)
 
     # Mark non-duplicate matches as used (skip NaN source values)
     non_dup = ind[~dup_mask]
@@ -534,7 +537,7 @@ def get_equidistant_series_nearest(
 
             if unused.size > 0:
                 unused_idx = series_ns[unused]
-                unused_vals = series.iloc[unused].to_numpy()
+                unused_vals = series.iloc[unused].to_numpy(copy=True)
 
                 nan_positions = np.where(fillable)[0]
 
