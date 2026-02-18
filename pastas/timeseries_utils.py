@@ -482,6 +482,8 @@ def get_equidistant_series_nearest(
         series.index[-1].ceil(freq) + t_offset,
         freq=freq,
     )
+    idx_ns = idx.to_numpy(dtype=int)
+    series_ns = series.index.to_numpy(dtype=int)
 
     # Nearest matching
     ind = series.index.get_indexer(idx, method="nearest")
@@ -495,38 +497,57 @@ def get_equidistant_series_nearest(
     # Initial fill
     s.iloc[valid] = series.values[ind]
 
+    matched_isna = np.zeros(len(idx), dtype=bool)
+    matched_isna[np.where(valid)[0]] = series.isna().to_numpy()[ind]
+
     # ---- Duplicate resolution (each original value used once) ----
 
     dup_mask = Series(ind).duplicated(keep=False).values
-    s.iloc[np.where(valid)[0][dup_mask]] = np.nan
+    valid_positions = np.where(valid)[0]
+    s.iloc[valid_positions[dup_mask]] = np.nan
+
+    used_mask = np.zeros(len(series), dtype=bool)
+    source_isna = series.isna().to_numpy()
+
+    # Mark non-duplicate matches as used (skip NaN source values)
+    non_dup = ind[~dup_mask]
+    used_mask[non_dup] = ~source_isna[non_dup]
 
     for i in np.unique(ind[dup_mask]):
         dupe_positions = np.where(ind == i)[0]
 
         # choose closest in actual time distance
-        distances = np.abs(idx[dupe_positions].view("int64") - series.index[i].value)
+        distances = np.abs(idx_ns[dupe_positions] - series_ns[i])
 
         best = dupe_positions[np.argmin(distances)]
-        s.iloc[best] = series.iloc[i]
+        if not source_isna[i]:
+            s.iloc[best] = series.iloc[i]
+            used_mask[i] = True
 
     # ---- Minimize data loss ----
     if minimize_data_loss:
         nanmask = s.isna()
+        fillable = nanmask & ~matched_isna
 
-        if nanmask.any():
-            used = set(ind)
-            unused = list(set(range(len(series))) - used)
+        if fillable.any():
+            unused = np.where(~used_mask & ~source_isna)[0]
 
-            if unused:
-                unused_idx = series.index[unused]
-                unused_vals = series.iloc[unused]
+            if unused.size > 0:
+                unused_idx = series_ns[unused]
+                unused_vals = series.iloc[unused].to_numpy()
 
-                for t in s.index[nanmask]:
-                    distances = np.abs(unused_idx.view("int64") - t.value)
+                nan_positions = np.where(fillable)[0]
+
+                for pos in nan_positions:
+                    distances = np.abs(unused_idx - idx_ns[pos])
                     closest = np.argmin(distances)
 
                     if distances[closest] <= Timedelta(freq).value:
-                        s.loc[t] = unused_vals.iloc[closest]
+                        s.iloc[pos] = unused_vals[closest]
+                        unused_idx = np.delete(unused_idx, closest)
+                        unused_vals = np.delete(unused_vals, closest)
+                        if unused_idx.size == 0:
+                            break
 
     return s
 
