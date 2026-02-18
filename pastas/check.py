@@ -732,7 +732,7 @@ def correlation_sim_vs_res(ml: Model, threshold: float = 0.2):
         data=np.interp(
             res.index.to_numpy(dtype=int, copy=True),
             sim.index.to_numpy(dtype=int, copy=True),
-            sim.values.to_numpy(copy=True),
+            sim.to_numpy(copy=True),
         ),
     )
     label = f"|corr(sim, res)| < {threshold}"
