@@ -716,7 +716,7 @@ class LinearTrend(StressModelBase):
         if start is not None:
             deprecate_args_or_kwargs(
                 "start",
-                "2.0.0",
+                "3.0.0",
                 "Please use 'tstart' instead of 'start'.",
             )
             if tstart is None:
@@ -724,7 +724,7 @@ class LinearTrend(StressModelBase):
         if end is not None:
             deprecate_args_or_kwargs(
                 "end",
-                "2.0.0",
+                "3.0.0",
                 "Please use 'tend' instead of 'end'.",
             )
             if tend is None:
