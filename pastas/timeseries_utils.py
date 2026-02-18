@@ -46,7 +46,7 @@ def _offset_to_timedelta(offset: BaseOffset) -> Timedelta:
     # For fixed frequency offsets in pandas 3.0+, use the nanos attribute
     # which is available on all offset objects
     if hasattr(offset, "nanos"):
-        return Timedelta(offset.nanos, "ns")
+        return Timedelta(offset.nanos, unit="ns")
     # Fallback: raise to signal that this offset can't be converted
     raise ValueError(f"Cannot directly convert offset {offset} to Timedelta")
 
