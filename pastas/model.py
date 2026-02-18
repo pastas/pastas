@@ -602,7 +602,9 @@ class Model:
         if self.interpolate_simulation:
             # interpolate simulation to times of observations
             sim_interpolated = np.interp(
-                obs.index.asi8, sim.index.asi8, sim.to_numpy(copy=True)
+                obs.index.to_numpy(dtype=int, copy=True),
+                sim.index.to_numpy(dtype=int, copy=True),
+                sim.to_numpy(copy=True),
             )
         else:
             # All the observation indexes are in the simulation

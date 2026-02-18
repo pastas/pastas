@@ -404,10 +404,10 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         # set values after the end of the original series to NaN
         s_new[s_new.index > s.index[-1]] = np.nan
     else:
-        t_e = s.index.asi8
+        t_e = s.index.to_numpy(dtype=int, copy=True)
         t_s = t_e - dt
         v = s.values
-        t_new = index.asi8
+        t_new = index.to_numpy(dtype=int, copy=True)
         v_new = _ts_resample_slow(t_s, t_e, v, t_new)
         s_new = Series(v_new, index)
 
@@ -415,7 +415,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
 
 
 def _get_dt_array(index):
-    dt = np.diff(index.asi8)
+    dt = np.diff(index.to_numpy(dtype=int, copy=True))
     # assume the first value has an equal timestep as the second value
     dt = np.hstack((dt[0], dt))
     return dt

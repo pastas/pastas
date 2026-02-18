@@ -250,7 +250,7 @@ def runs_test(series: Series, cutoff: str = "median") -> tuple[float, float]:
     >>>     print("Reject the Null-hypothesis")
     """
     # Make dichotomous sequence
-    r = series.to_numpy().copy()
+    r = series.to_numpy(copy=True)
     if cutoff == "mean":
         cutoff = r.mean()
     elif cutoff == "median":
@@ -503,7 +503,6 @@ def diagnostics(
     df.loc["Runs test", cols] = "Autocorr.", stat, p
 
     # Do different tests depending on time step
-    # pandas 3.0 requires at least 3 dates to infer frequency
     if infer_freq(series.index):
         # Ljung-Box test for autocorrelation
         stat, p = ljung_box(series, nparam=nparam, lags=lags)
