@@ -1,6 +1,5 @@
 """Tests for the Model class in pastas.model."""
 
-import logging
 from pathlib import Path
 from typing import Any
 
@@ -503,19 +502,16 @@ class TestModelSolving:
 
     def test_solve_with_warnings(self, ml_bad: ps.Model, caplog):
         """Test that solving a problematic model generates warnings."""
-        with caplog.at_level(logging.WARNING):
-            ml_bad.solve(report=False)
 
-        assert len(caplog.records) == 3
-        assert caplog.records[0].message.startswith(
-            "Parameter 'recharge_f' on lower bound:"
-        )
-        assert caplog.records[1].message.startswith(
+        ml_bad.solve(report=False)
+        msg = ml_bad._generate_warnings_report()
+
+        assert len(msg) == 3
+        assert msg[0].startswith("Parameter 'recharge_f' on lower bound:")
+        assert msg[1].startswith(
             "Response tmax for 'recharge' > than calibration period."
         )
-        assert caplog.records[2].message.startswith(
-            "Response tmax for 'recharge' > than warmup period."
-        )
+        assert msg[2].startswith("Response tmax for 'recharge' > than warmup period.")
 
 
 class TestModelContributions:
