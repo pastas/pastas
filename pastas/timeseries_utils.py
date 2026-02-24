@@ -123,12 +123,11 @@ def _get_stress_dt(freq: str) -> float:
             # hour
             dt = num * 1.0 / 24.0
         else:
-            raise (ValueError("freq of {} not supported".format(freq)))
+            raise (ValueError(f"freq of {freq} not supported"))
 
     # Check if dt can be an integer, if so convert to int
-    if not isinstance(dt, int):
-        if dt.is_integer():
-            dt = int(dt)
+    if not isinstance(dt, int) and dt.is_integer():
+        dt = int(dt)
 
     return dt
 
@@ -146,8 +145,7 @@ def _get_dt(freq: str) -> float:
         Number of days.
     """
     # Get the frequency string and multiplier
-    dt = Timedelta(to_offset(freq)) / Timedelta(1, "D")
-    return dt
+    return Timedelta(to_offset(freq)) / Timedelta(1, "D")
 
 
 def _get_time_offset(t: Timestamp, freq: str) -> Timedelta:
@@ -355,8 +353,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
 def _get_dt_array(index):
     dt = np.diff(index.asi8)
     # assume the first value has an equal timestep as the second value
-    dt = np.hstack((dt[0], dt))
-    return dt
+    return np.hstack((dt[0], dt))
 
 
 @njit
@@ -553,8 +550,7 @@ def pandas_equidistant_nearest(
         series.index[0].floor(freq), series.index[-1].ceil(freq), freq=freq
     )
     # reindex with nearest and optional tolerance
-    spandas = series.reindex(idx, method="nearest", tolerance=tolerance)
-    return spandas
+    return series.reindex(idx, method="nearest", tolerance=tolerance)
 
 
 def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
@@ -579,14 +575,13 @@ def pandas_equidistant_asfreq(series: Series, freq: str) -> Series:
     # round to the nearest freq
     series.index = series.index.floor(freq)
     # keep first entry for each duplicate
-    spandas = (
+    return (
         series.reset_index()
         .drop_duplicates(subset="index", keep="first", inplace=False)
         .set_index("index")
         .asfreq(freq)
         .squeeze()
     )
-    return spandas
 
 
 def resample(

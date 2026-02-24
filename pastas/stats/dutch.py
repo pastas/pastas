@@ -566,7 +566,7 @@ def _gxg(
         elif output == "mean":
             return nan
         else:
-            ValueError("{output:} is not a valid output option".format(output=output))
+            raise ValueError(f"{output} is not a valid output option")
 
     # resample the series to values at the 14th and 28th of every month
     # first generate a daily series by averaging multiple measurements during the day
@@ -590,7 +590,7 @@ def _gxg(
             # generate an index at the 14th and 28th of every month
             buf = Timedelta(8, "d")
             ref_index = date_range(series.index.min() - buf, series.index.max() + buf)
-            mask = [(x.day == 14) or (x.day == 28) for x in ref_index]
+            mask = [x.day in {14, 28} for x in ref_index]
             ref_index = ref_index[mask]
             # only keep the days that are closest to series.index
             ref_index = get_sample(ref_index, series.index)
@@ -611,7 +611,7 @@ def _gxg(
 
     # and select the 14th and 28th of each month (if needed still)
     if select14or28:
-        mask = [(x.day == 14) or (x.day == 28) for x in series.index]
+        mask = [x.day in {14, 28} for x in series.index]
         series = series.loc[mask]
 
     # remove NaNs that may have formed in the process above
@@ -633,9 +633,7 @@ def _gxg(
         yearly = concat(collect)
 
     # return statements
-    if output.startswith("year"):
-        return yearly
-    elif output == "g3":
+    if output.startswith("year") or output == "g3":
         return yearly
     elif output == "mean":
         if yearly.notna().sum() < min_n_years:
@@ -643,7 +641,7 @@ def _gxg(
         else:
             return yearly.mean()
     else:
-        msg = "{} is not a valid output option".format(output)
+        msg = f"{output} is not a valid output option"
         raise (ValueError(msg))
 
 

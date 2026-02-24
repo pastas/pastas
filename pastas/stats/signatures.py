@@ -45,37 +45,37 @@ year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
 month_offset = "ME" if pandas_version >= parse_version("2.2.0") else "M"
 
 __all__ = [
-    "cv_period_mean",
-    "cv_date_min",
-    "cv_date_max",
-    "cv_fall_rate",
-    "cv_rise_rate",
-    "parde_seasonality",
+    "autocorr_time",
     "avg_seasonal_fluctuation",
-    "interannual_variation",
-    "low_pulse_count",
-    "high_pulse_count",
-    "low_pulse_duration",
-    "high_pulse_duration",
-    "bimodality_coefficient",
-    "mean_annual_maximum",
-    "rise_rate",
-    "fall_rate",
-    "reversals_avg",
-    "reversals_cv",
-    "colwell_contingency",
-    "colwell_constancy",
-    "recession_constant",
-    "recovery_constant",
-    "duration_curve_slope",
-    "duration_curve_ratio",
-    "richards_pathlength",
     "baselevel_index",
     "baselevel_stability",
-    "magnitude",
-    "autocorr_time",
-    "date_min",
+    "bimodality_coefficient",
+    "colwell_constancy",
+    "colwell_contingency",
+    "cv_date_max",
+    "cv_date_min",
+    "cv_fall_rate",
+    "cv_period_mean",
+    "cv_rise_rate",
     "date_max",
+    "date_min",
+    "duration_curve_ratio",
+    "duration_curve_slope",
+    "fall_rate",
+    "high_pulse_count",
+    "high_pulse_duration",
+    "interannual_variation",
+    "low_pulse_count",
+    "low_pulse_duration",
+    "magnitude",
+    "mean_annual_maximum",
+    "parde_seasonality",
+    "recession_constant",
+    "recovery_constant",
+    "reversals_avg",
+    "reversals_cv",
+    "richards_pathlength",
+    "rise_rate",
 ]
 
 logger = getLogger(__name__)
@@ -96,8 +96,7 @@ def _normalize(series: Series) -> Series:
         values. This results in a time series with values between zero and one.
 
     """
-    series = (series - series.min()) / (series.max() - series.min())
-    return series
+    return (series - series.min()) / (series.max() - series.min())
 
 
 def cv_period_mean(
@@ -140,8 +139,7 @@ def cv_period_mean(
         series = _normalize(series)
 
     series = series.resample(freq).mean()
-    cv = series.std(ddof=1) / series.mean()  # ddof=1 = > sample std
-    return cv
+    return series.std(ddof=1) / series.mean()  # ddof=1 = > sample std
 
 
 def _cv_date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
@@ -223,8 +221,7 @@ def cv_date_min(series: Series) -> float:
     is, and vice versa.
 
     """
-    cv = _cv_date_min_max(series, stat="min")
-    return cv
+    return _cv_date_min_max(series, stat="min")
 
 
 def cv_date_max(series: Series) -> float:
@@ -249,8 +246,7 @@ def cv_date_max(series: Series) -> float:
     and vice versa.
 
     """
-    cv = _cv_date_min_max(series, stat="max")
-    return cv
+    return _cv_date_min_max(series, stat="max")
 
 
 def parde_seasonality(series: Series, normalize: bool = True) -> float:
@@ -808,8 +804,7 @@ def _get_differences(series: Series, normalize: bool = False) -> Series:
         series = _normalize(series)
 
     dt = diff(series.index.to_numpy()) / Timedelta("1D")
-    differences = series.diff().iloc[1:] / dt
-    return differences
+    return series.diff().iloc[1:] / dt
 
 
 def rise_rate(
@@ -1188,9 +1183,7 @@ def _get_events_binned(
         h[h.diff() > 0] = nan
 
     # Split the data into events
-    events = []
-    for event in split(h.index, where(isnan(h.values))[0]):
-        events.append(h.loc[event])
+    events = [h.loc[event] for event in split(h.index, where(isnan(h.values))[0])]
     events = [ev[~isnan(ev.values)] for ev in events if not isinstance(ev, ndarray)]
 
     events_new = []
@@ -1223,8 +1216,7 @@ def _get_events_binned(
             if not value.empty:
                 binned[g[0].mid] = value.iat[0]
 
-    binned = binned[binned != 0].dropna()
-    return binned
+    return binned[binned != 0].dropna()
 
 
 def recession_constant(
@@ -1377,7 +1369,7 @@ def recovery_constant(
 
 def duration_curve_slope(
     series: Series,
-    l: float = 0.1,  # noqa: E741
+    l: float = 0.1,
     u: float = 0.9,
     normalize: bool = False,
 ) -> float:
@@ -1427,7 +1419,7 @@ def duration_curve_slope(
 
 def duration_curve_ratio(
     series: Series,
-    l: float = 0.1,  # noqa: E741
+    l: float = 0.1,
     u: float = 0.9,
     normalize: bool = True,
 ) -> float:

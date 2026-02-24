@@ -23,19 +23,19 @@ from pastas.decorators import PastasDeprecationWarning
 from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = [
-    "rmse",
-    "sse",
-    "mae",
-    "nse",
-    "nnse",
-    "evp",
-    "rsq",
-    "bic",
     "aic",
     "aicc",
-    "pearsonr",
+    "bic",
+    "evp",
     "kge",
+    "mae",
+    "nnse",
+    "nse",
+    "pearsonr",
     "picp",
+    "rmse",
+    "rsq",
+    "sse",
 ]
 
 logger = getLogger(__name__)
@@ -235,9 +235,8 @@ def pearsonr(
     sim = sim - average(sim, weights=w)
     obs = obs.to_numpy() - average(obs.to_numpy(), weights=w)
 
-    r = (w * sim * obs).sum() / sqrt((w * sim**2).sum() * (w * obs**2).sum())
+    return (w * sim * obs).sum() / sqrt((w * sim**2).sum() * (w * obs**2).sum())
 
-    return r
 
 
 def evp(
@@ -394,7 +393,7 @@ def nnse(
     So the optimal value for NNSE is 1, same as the NSE. However, an NNSE value
     of 0.5 corresponds to an NSE of 0, while the worst possible NNSE value is ~0.
     """
-    nnse = 1 / (
+    return 1 / (
         2
         - nse(
             obs=obs,
@@ -405,7 +404,6 @@ def nnse(
             max_gap=max_gap,
         )
     )
-    return nnse
 
 
 def rsq(
@@ -696,8 +694,7 @@ def kge(
             obs, weighted=weighted, max_gap=max_gap
         )
 
-    kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
-    return kge
+    return 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
 
 
 @PastasDeprecationWarning(

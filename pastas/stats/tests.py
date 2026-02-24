@@ -22,11 +22,11 @@ from pastas.timeseries_utils import _get_time_offset, get_equidistant_series_nea
 
 logger = getLogger(__name__)
 __all__ = [
+    "diagnostics",
     "durbin_watson",
     "ljung_box",
     "runs_test",
     "stoffer_toloi",
-    "diagnostics",
 ]
 
 
@@ -187,8 +187,7 @@ def ljung_box(
     pval = chi2.sf(q_stat, df=dof)
 
     if full_output:
-        result = DataFrame(data={"Q Stat": q_stat, "P-value": pval}, index=acf.index)
-        return result
+        return DataFrame(data={"Q Stat": q_stat, "P-value": pval}, index=acf.index)
     else:
         return q_stat[-1], pval[-1]
 
@@ -407,7 +406,7 @@ def stoffer_toloi(
     da = zeros(nlags)
     de = zeros(nlags)
 
-    for i in range(0, nlags):
+    for i in range(nlags):
         hh = y[: -i - 1] * y[i + 1 :]
         dz[i] = hh.sum() / nobs
         hh = yn[: -i - 1] * yn[i + 1 :]
@@ -516,7 +515,7 @@ def diagnostics(
         stat, p = stoffer_toloi(series, nparam=nparam, lags=lags)
         df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
-    df["Reject H0 ($\\alpha$={:.2f})".format(alpha)] = df.loc[:, "P-value"] < alpha
+    df[f"Reject H0 ($\\alpha$={alpha:.2f})"] = df.loc[:, "P-value"] < alpha
     df.loc[:, "P-value"] = df.loc[:, "P-value"].apply(float_fmt.format)
     df.loc[:, "Statistic"] = df.loc[:, "Statistic"].apply(float_fmt.format)
     return df

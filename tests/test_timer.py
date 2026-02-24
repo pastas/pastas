@@ -80,6 +80,5 @@ def test_real_usage() -> None:
         mock_solve(callback=timer.timer)
 
     # Test with a max_time that will be exceeded
-    with pytest.raises(ExceededMaxSolveTime):
-        with SolveTimer(max_time=0.02) as timer:
-            mock_solve(callback=timer.timer)
+    with pytest.raises(ExceededMaxSolveTime), SolveTimer(max_time=0.02) as timer:
+        mock_solve(callback=timer.timer)

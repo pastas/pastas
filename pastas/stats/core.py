@@ -410,8 +410,7 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     """
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
     mu = np.average(x.to_numpy(), weights=w)
-    sigma = (x.size / (x.size - 1) * w * (x.to_numpy() - mu) ** 2).sum()
-    return sigma
+    return (x.size / (x.size - 1) * w * (x.to_numpy() - mu) ** 2).sum()
 
 
 def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:

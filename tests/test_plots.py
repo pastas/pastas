@@ -54,7 +54,7 @@ def test_step_response(ml_basic: Model) -> None:
 
 
 def test_diagnostics(ml_noisemodel: Model) -> None:
-    _ = ml_noisemodel.plots.diagnostics(acf_options=dict(min_obs=10))
+    _ = ml_noisemodel.plots.diagnostics(acf_options={"min_obs": 10})
     plt.close()
 
 

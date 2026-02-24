@@ -171,8 +171,7 @@ class BaseSolver:
         data = data + sigr * np.random.randn(data.shape[0], data.shape[1])
 
         q = [alpha / 2, 1 - alpha / 2]
-        rv = data.quantile(q, axis=1).transpose()
-        return rv
+        return data.quantile(q, axis=1).transpose()
 
     def ci_simulation(
         self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
@@ -315,7 +314,7 @@ class BaseSolver:
         )
 
     def get_parameter_sample(
-        self, name: str | None = None, n: int = None, max_iter: int = 10
+        self, name: str | None = None, n: int | None = None, max_iter: int = 10
     ) -> ArrayLike:
         """Method to obtain a parameter sets for monte carlo analyses.
 
@@ -373,12 +372,12 @@ class BaseSolver:
             suggestion = "You could try increasing 'max_iter'."
             if samples.shape[0] == 0:
                 raise Exception(
-                    "No parameter samples were found within %s runs. " % max_iter
+                    f"No parameter samples were found within {max_iter} runs. "
                     + suggestion
                 )
             else:
                 logger.warning(
-                    "Parameter sample size is smaller than n: %s/%s. " % (max_iter, n)
+                    f"Parameter sample size is smaller than n: {max_iter}/{n}. "
                     + suggestion
                 )
         return samples[:n, :]
@@ -442,9 +441,8 @@ class BaseSolver:
         else:
             index = self.ml.parameters.index
 
-        pcov = self.pcov.reindex(index=index, columns=index).fillna(0)
+        return self.pcov.reindex(index=index, columns=index).fillna(0)
 
-        return pcov
 
     @staticmethod
     def _get_correlations(pcov: DataFrame) -> DataFrame:
@@ -467,17 +465,15 @@ class BaseSolver:
         with np.errstate(divide="ignore", invalid="ignore"):
             corr = pcov / np.outer(v, v)
         corr[pcov == 0] = 0
-        pcor = DataFrame(data=corr, index=index, columns=index)
-        return pcor
+        return DataFrame(data=corr, index=index, columns=index)
 
     def to_dict(self) -> dict:
-        data = {
+        return {
             "class": self._name,
             "pcov": self.pcov,
             "nfev": self.nfev,
             "obj_func": self.obj_func,
         }
-        return data
 
 
 class LeastSquares(BaseSolver):
@@ -714,7 +710,7 @@ class LmfitSolve(BaseSolver):
     ) -> None:
         try:
             global lmfit
-            import lmfit as lmfit  # Import Lmfit here, so it is no dependency
+            import lmfit  # Import Lmfit here, so it is no dependency
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg) from None
@@ -747,9 +743,8 @@ class LmfitSolve(BaseSolver):
 
         # Set all parameter attributes
         pcov = None
-        if hasattr(self.result, "covar"):
-            if self.result.covar is not None:
-                pcov = self.result.covar
+        if hasattr(self.result, "covar") and self.result.covar is not None:
+            pcov = self.result.covar
 
         names = self.result.var_names
         self.pcov = DataFrame(pcov, index=names, columns=names, dtype=float)
@@ -767,9 +762,8 @@ class LmfitSolve(BaseSolver):
         stderr = np.array([p.stderr for p in self.result.params.values()])
 
         idx = None
-        if "is_weighted" in kwargs:
-            if not kwargs["is_weighted"]:
-                idx = -1
+        if "is_weighted" in kwargs and not kwargs["is_weighted"]:
+            idx = -1
 
         return success, optimal[:idx], stderr[:idx]
 
@@ -862,7 +856,7 @@ class EmceeSolve(BaseSolver):
         # Check if emcee is installed, if not, return error
         try:
             global emcee
-            import emcee as emcee  # Import emcee here, so it is no dependency
+            import emcee  # Import emcee here, so it is no dependency
         except ImportError:
             msg = "emcee not installed. Please install emcee first."
             raise ImportError(msg) from None
@@ -1050,11 +1044,10 @@ class EmceeSolve(BaseSolver):
             callback=callback,
         )
 
-        lnlike = self.objective_function.compute(
+        return self.objective_function.compute(
             rv, par[-self.objective_function.nparam :]
         )
 
-        return lnlike
 
     def log_prior(self, p: ArrayLike) -> float:
         """Probability of parameter set given the priors.

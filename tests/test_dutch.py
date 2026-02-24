@@ -259,12 +259,12 @@ def test_fill_methods() -> None:
     # Verify that different methods give different results
     methods_with_values = [m for m in methods if not np.isnan(results[m])]
     if len(methods_with_values) > 1:
-        values_set = set([round(results[m], 5) for m in methods_with_values])
+        values_set = {round(results[m], 5) for m in methods_with_values}
         # At least some methods should produce different results
         assert len(values_set) > 1
 
 
-class TestGXG(object):
+class TestGXG:
     def test_ghg(self) -> None:
         idx = pd.to_datetime(["20160114", "20160115", "20160128", "20160214"])
         s = pd.Series([10.0, 3.0, 30.0, 20.0], index=idx)
@@ -336,7 +336,7 @@ class TestGXG(object):
         assert np.isnan(v)
 
 
-class TestQGXG(object):
+class TestQGXG:
     def test_q_ghg(self) -> None:
         n = 101
         idx = pd.date_range("20160101", freq="d", periods=n)

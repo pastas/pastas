@@ -1,6 +1,6 @@
 """Tests for the objective functions in pastas.objective_functions."""
 
-from typing import Any, Type
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -138,7 +138,7 @@ class TestGaussianLikelihoodAr1:
 @pytest.mark.parametrize(
     "likelihood_class", [GaussianLikelihood, GaussianLikelihoodAr1]
 )
-def test_likelihood_parameter_types(likelihood_class: Type[Any]) -> None:
+def test_likelihood_parameter_types(likelihood_class: type[Any]) -> None:
     """Test parameter types returned by get_init_parameters."""
     likelihood = likelihood_class()
     params = likelihood.get_init_parameters("test")

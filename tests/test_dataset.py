@@ -9,7 +9,7 @@ def test_load_multiple_csv() -> None:
     dataset = load_dataset("collenteur_2023")
     assert isinstance(dataset, dict)
     assert len(dataset) > 1
-    for key, value in dataset.items():
+    for value in dataset.values():
         assert isinstance(value, DataFrame)
 
 
