@@ -183,7 +183,7 @@ class Model:
         self.interpolate_simulation = None
         self.normalize_residuals = False
         self.solver = None
-        self._solve_success = False
+        self._solve_success = None
 
         # Load other modules
         self.stats = Statistics(self)
@@ -247,7 +247,7 @@ class Model:
         Notes
         -----
         The settings attribute is read-only. Model settings are automatically
-        updated through methods like solve() and initialize().
+        updated through methods like ml.solve() and ml.set_settings().
         """
         return self._settings.copy()
 
@@ -256,7 +256,7 @@ class Model:
         raise AttributeError(
             "Direct assignment to 'settings' is not allowed. "
             "Model settings are managed internally and updated through methods "
-            "like ml.solve() and ml.initialize()."
+            "like ml.solve() and ml.set_settings()."
         )
 
     def add_stressmodel(
@@ -807,32 +807,16 @@ class Model:
             )
             deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
 
-        # Set the settings
-        self._settings["weights"] = weights
-        self._settings["fit_constant"] = fit_constant
-        self._settings["freq_obs"] = freq_obs
-
-        # Set the frequency & warmup
-        if freq:
-            self._settings["freq"] = _frequency_is_supported(freq)
-
-        if warmup is not None:
-            self._settings["warmup"] = Timedelta(warmup, "D")
-
-        # Set time offset from the frequency and the series in the stressmodels
-        self._settings["time_offset"] = self._get_time_offset(self._settings["freq"])
-
-        # Set tmin and tmax
-        self._settings["tmin"] = self.get_tmin(tmin)
-        self._settings["tmax"] = self.get_tmax(tmax)
-
-        # make sure calibration data is renewed
-        self.sim_index = self._get_sim_index(
-            self._settings["tmin"],
-            self._settings["tmax"],
-            self._settings["freq"],
-            self._settings["warmup"],
-            update_sim_index=True,
+        self.set_settings(
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            warmup=warmup,
+            noise=noise,
+            weights=weights,
+            initial=initial,
+            fit_constant=fit_constant,
+            freq_obs=freq_obs,
         )
 
         # make sure to update self.oseries.series by running self.observations
@@ -1058,6 +1042,83 @@ class Model:
     )
     def oseries_calib(self):
         return self.oseries.series
+
+    def set_settings(
+        self,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        freq: str | None = None,
+        warmup: float | None = None,
+        fit_constant: bool = True,
+        freq_obs: str | None = None,
+        weights: Series | None = None,
+    ) -> None:
+        """Method to safely change the model settings.
+
+        Parameters
+        ----------
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
+        freq: str, optional
+            String with the frequency the stressmodels are simulated. Must be one of
+            the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+        warmup: float, optional
+            Warmup period (in Days) for which the simulation is calculated, but not
+            used for the calibration period.
+        fit_constant: bool, optional
+            Argument that determines if the constant is fitted as a parameter. If it
+            is set to False, the constant is set equal to the mean of the residuals.
+        freq_obs: str, optional
+            String with the frequency of the observations that the model will be
+            calibrated on. Must be one of the following (D, h, m, s, ms, us, ns) or a
+            multiple of that e.g. "7D". Should generally be larger than the frequency
+            of the original observations and the model frequency (freq). If freq_obs
+            is not set, the frequency of the model (freq) will be used.
+        weights: pandas.Series, optional
+            Pandas Series with values by which the residuals or noise time series are
+            multiplied, index-based. Must have the same indices as the oseries. If
+            None, equal weights are used. This can be used to put extra/less weight on
+            certain periods (e.g., droughts) or measurements (i.e. outliers), and make
+            more complex calibration schemes (see, for example, :cite:`colllenteur_analysis_2023`). Note that the weights are only used during optimization and not when computing the goodness-of-fit metrics.
+
+
+        """
+        if tmin is not None:
+            self._settings["tmin"] = self.get_tmin(tmin)
+
+        if tmax is not None:
+            self._settings["tmax"] = self.get_tmax(tmax)
+
+        if freq is not None:
+            self._settings["freq"] = _frequency_is_supported(freq)
+
+        # Set time offset from the frequency and the series in the stressmodels
+        self._settings["time_offset"] = self._get_time_offset(self._settings["freq"])
+
+        if warmup is not None:
+            self._settings["warmup"] = Timedelta(warmup, "D")
+
+        self._settings["fit_constant"] = fit_constant
+
+        if freq_obs is not None:
+            self._settings["freq_obs"] = _frequency_is_supported(freq_obs)
+
+        self._settings["weights"] = weights
+
+        # make sure calibration data is renewed
+        self.sim_index = self._get_sim_index(
+            self._settings["tmin"],
+            self._settings["tmax"],
+            self._settings["freq"],
+            self._settings["warmup"],
+            update_sim_index=True,
+        )
 
     def set_parameter(
         self,
