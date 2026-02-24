@@ -147,13 +147,6 @@ commands = [
         "format",
         "--check",
     ],
-        [
-        "ruff",
-        "check",
-        "--extend-select",
-        "I",
-        "--preview",
-    ],
 ]
 
 [tool.tox.env.ruff_preview]
