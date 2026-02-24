@@ -12,7 +12,6 @@ Load and save models::
 from importlib import import_module
 from logging import getLogger
 from os import path
-from pathlib import Path
 
 from packaging import version
 
@@ -22,14 +21,13 @@ from pastas.typing import Model
 logger = getLogger(__name__)
 
 
-def load(fname: str | Path, **kwargs) -> Model:
+def load(fname: str, **kwargs) -> Model:
     """Method to load a Pastas Model from file.
 
     Parameters
     ----------
-    fname: str | Path
-        string with the name of the file to be imported
-        including the file extension.
+    fname: str
+        string with the name of the file to be imported including the file extension.
     kwargs:
         extension specific keyword arguments
 

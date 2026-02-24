@@ -187,8 +187,6 @@ def _infer_fixed_freq(tindex: Index) -> str:
     str
         frequency string
     """
-    if tindex.empty:
-        return None
     freq = infer_freq(tindex)
     if freq is None:
         return freq
@@ -199,33 +197,6 @@ def _infer_fixed_freq(tindex: Index) -> str:
         return f"{dt}D"
 
     return freq
-
-
-def _get_sim_index(tmin, tmax, freq, time_offset):
-    """Internal method to determine the simulation index
-
-    Parameters
-    ----------
-    tmin : pandas.Timestamp
-        Timestamp of the end date for the simulation period.
-    tmax : pandas.Timestamp
-        Timestamp of the start date for the simulation period.
-    freq : str
-        String representing the desired frequency of the time series. Must be one
-        of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-    time_offset : pandas.Timedelta
-        Timedelta with the offset for the timestamp t.
-
-    Returns
-    -------
-    sim_index: pandas.DatetimeIndex
-        Pandas DatetimeIndex instance with the datetimes values for which the
-        model is simulated.
-
-    """
-    tmin = tmin.floor(freq) + time_offset
-    sim_index = date_range(tmin, tmax, freq=freq)
-    return sim_index
 
 
 def get_sample(tindex: Index, ref_tindex: Index) -> Index:
