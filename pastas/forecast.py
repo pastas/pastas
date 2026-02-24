@@ -257,9 +257,8 @@ def forecast(
         [range(n), range(nparam), ["mean", "var"]],
         names=["ensemble_member", "param_member", "forecast"],
     )
-    df = DataFrame(data=result_array.T, index=index, columns=mi, dtype=float)
+    return DataFrame(data=result_array.T, index=index, columns=mi, dtype=float)
 
-    return df
 
 
 def get_overall_mean_and_variance(df: DataFrame) -> tuple[DataFrame, DataFrame]:

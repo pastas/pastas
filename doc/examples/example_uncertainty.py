@@ -22,7 +22,6 @@ ml.add_stressmodel(sm)
 
 # Solve
 ml.solve()
-#
 df = ml.solver.prediction_interval()
 inside = (obs > df.loc[obs.index, 0.025]) & (obs < df.loc[obs.index, 0.975])
 print("percentage inside:", np.count_nonzero(inside) / len(inside) * 100)

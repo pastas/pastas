@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Pastas documentation build configuration file, created by
 # sphinx-quickstart on Wed May 11 12:38:06 2016.
@@ -49,7 +48,7 @@ master_doc = "index"  # The master toctree document.
 
 # General information about the project.
 project = "Pastas"
-copyright = "{}, The Pastas Team".format(year)
+copyright = f"{year}, The Pastas Team"
 author = "R.A. Collenteur, M. Bakker, R. Calje, F. Schaars"
 
 # The version.

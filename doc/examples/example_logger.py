@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This example is meant to show the logger methods of pastas
 

@@ -84,15 +84,9 @@ def _load_model(data: dict) -> Model:
     oseries = data["oseries"]["series"]
     metadata = data["oseries"]["metadata"]
 
-    if "constant" in data.keys():
-        constant = data["constant"]
-    else:
-        constant = False
+    constant = data.get("constant", False)
 
-    if "name" in data.keys():
-        name = data["name"]
-    else:
-        name = None
+    name = data.get("name", None)
 
     ml = ps.Model(
         oseries=oseries,
@@ -101,14 +95,14 @@ def _load_model(data: dict) -> Model:
         metadata=metadata,
     )
 
-    if "settings" in data.keys():
+    if "settings" in data:
         if "noise" in data["settings"]:
             if not data["settings"]["noise"] and "noisemodel" in data:
                 # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
                 # remove noisemodel from data
                 data.pop("noisemodel")
         ml._settings.update(data["settings"])
-    if "file_info" in data.keys():
+    if "file_info" in data:
         ml.file_info.update(data["file_info"])
 
     # Add stressmodels
@@ -117,13 +111,13 @@ def _load_model(data: dict) -> Model:
         ml.add_stressmodel(sm)
 
     # Add transform
-    if "transform" in data.keys():
+    if "transform" in data:
         transform = getattr(ps.transform, data["transform"].pop("class"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
 
     # Add noisemodel if present
-    if "noisemodel" in data.keys():
+    if "noisemodel" in data:
         # fixes to read pas-files from before pastas version 1.5
         # TODO: uncomment in pastas 2.0.0
         # if data["noisemodel"]["class"] == "NoiseModel":
@@ -134,7 +128,7 @@ def _load_model(data: dict) -> Model:
         ml.add_noisemodel(n)
 
     # Add solver object to the model from pas-files < 1.3.0  TODO Deprecate
-    if "fit" in data.keys():
+    if "fit" in data:
         logger.warning(
             "The solver object is stored in the model.solver attribute since Pastas "
             "1.3. Please update your pas-file to the new format by loading and saving "
@@ -144,7 +138,7 @@ def _load_model(data: dict) -> Model:
         ml.add_solver(solver(**data["fit"]))
 
     # Add solver object to the model
-    if "solver" in data.keys():
+    if "solver" in data:
         solver = getattr(ps.solver, data["solver"].pop("class"))
         ml.add_solver(solver(**data["solver"]))
 
@@ -172,7 +166,7 @@ def _load_stressmodel(ts, data):
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts.pop("class"))
 
-    if "rfunc" in ts.keys():
+    if "rfunc" in ts:
         rfunc_class = ts["rfunc"].pop("class")  # Determine response class
         rfunc_up = ts["rfunc"].pop("up", None)  # get up value
         rfunc_gsf = ts["rfunc"].pop("gain_scale_factor", None)  # get gain_scale_factor
@@ -180,7 +174,7 @@ def _load_stressmodel(ts, data):
         rfunc.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
         ts["rfunc"] = rfunc
 
-    if "recharge" in ts.keys():
+    if "recharge" in ts:
         recharge_class = ts["recharge"].pop("class")
         ts["recharge"] = getattr(ps.recharge, recharge_class)(**ts["recharge"])
 
@@ -188,7 +182,7 @@ def _load_stressmodel(ts, data):
     settings = []
 
     # Unpack the stress time series
-    if "stress" in ts.keys():
+    if "stress" in ts:
         # Only in the case of the wellmodel stresses are a list
         if isinstance(ts["stress"], list):
             for i, stress in enumerate(ts["stress"]):
@@ -202,19 +196,19 @@ def _load_stressmodel(ts, data):
             metadata.append(meta)
             settings.append(setting)
 
-    if "prec" in ts.keys():
+    if "prec" in ts:
         series, meta, setting = _unpack_series(ts["prec"])
         ts["prec"] = series
         metadata.append(meta)
         settings.append(setting)
 
-    if "evap" in ts.keys():
+    if "evap" in ts:
         series, meta, setting = _unpack_series(ts["evap"])
         ts["evap"] = series
         metadata.append(meta)
         settings.append(setting)
 
-    if "temp" in ts.keys() and ts["temp"] is not None:
+    if "temp" in ts and ts["temp"] is not None:
         series, meta, setting = _unpack_series(ts["temp"])
         ts["temp"] = series
         metadata.append(meta)
@@ -225,8 +219,7 @@ def _load_stressmodel(ts, data):
     if settings:
         ts["settings"] = settings if len(settings) > 1 else settings[0]
 
-    sm = stressmodel(**ts)
-    return sm
+    return stressmodel(**ts)
 
 
 def _unpack_series(data: dict):

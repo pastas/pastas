@@ -36,8 +36,7 @@ logger = getLogger(__name__)
 
 def load(fname: str) -> dict:
     with open(fname, "r") as file:
-        data = json.load(file, object_hook=pastas_hook)
-    return data
+        return json.load(file, object_hook=pastas_hook)
 
 
 def pastas_hook(obj: dict):
@@ -58,7 +57,7 @@ def pastas_hook(obj: dict):
             if isinstance(obj[key], Series):
                 obj[key].index = obj[key].index.tz_localize(None)
         elif key in ["time_offset", "warmup"]:
-            if isinstance(value, int) or isinstance(value, float):
+            if isinstance(value, (int, float)):
                 obj[key] = Timedelta(value, "d")
             else:
                 obj[key] = Timedelta(value)
@@ -115,4 +114,4 @@ class PastasEncoder(json.JSONEncoder):
         elif isinstance(o, integer):
             return int(o)
         else:
-            return super(PastasEncoder, self).default(o)
+            return super().default(o)
