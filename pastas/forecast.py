@@ -30,7 +30,8 @@ logger = getLogger(__name__)
 
 
 def _check_forecast_data(
-    forecasts: dict[str, list[DataFrame | Series]] | dict[str, dict[str, DataFrame | Series]],
+    forecasts: dict[str, list[DataFrame | Series]]
+    | dict[str, dict[str, DataFrame | Series]],
 ) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
@@ -132,7 +133,8 @@ def _check_forecast_data(
 
 def forecast(
     ml: Model,
-    forecasts: dict[str, list[DataFrame | Series]] | dict[str, dict[str, DataFrame | Series]],
+    forecasts: dict[str, list[DataFrame | Series]]
+    | dict[str, dict[str, DataFrame | Series]],
     p: ArrayLike | None = None,
     post_process: bool = False,
 ) -> DataFrame:
