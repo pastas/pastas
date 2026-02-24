@@ -567,7 +567,7 @@ class CompareModels:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
-            if self.ml.noisemodel is not None:
+            if ml.noisemodel is not None:
                 noise = ml.noise(tmin=self.tmin, tmax=self.tmax)
                 axs[axn] = plot_series_with_gaps(
                     series=noise,

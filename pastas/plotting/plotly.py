@@ -231,7 +231,7 @@ class Plotly:
         traces.append(trace_res)
 
         # noise
-        if self._model.settings["noise"]:
+        if self._model.noisemodel is not None:
             noise = self._model.noise(tmin=tmin, tmax=tmax)
             trace_noise = go.Scattergl(
                 x=noise.index,
@@ -435,7 +435,7 @@ class Plotly:
 
         # add titles for subplots
         rnlabel = [
-            "residuals / noise" if self._model.settings["noise"] else "residuals"
+            "residuals / noise" if self._model.noisemodel is not None else "residuals"
         ]
         labels = rnlabel + list(self._model.stressmodels.keys())
         for i, lbl in enumerate(labels):
@@ -525,7 +525,7 @@ class Plotly:
         """
         # prepare data
         sim = self._model.simulate()
-        if self._model.settings["noise"]:
+        if self._model.noisemodel is not None:
             series = self._model.noise()
             resnoisename = "noise"
         else:

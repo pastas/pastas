@@ -169,7 +169,7 @@ class Bokeh:
 
         ranges = ranges.drop(ranges.iloc[:2].idxmin())
 
-        if self._model.settings["noise"]:
+        if self._model.noisemodel is not None:
             ranges = ranges.drop("Noise")
 
         heights = (ranges / ranges.sum() * (height - 50)).values.astype(int)
@@ -234,7 +234,7 @@ class Bokeh:
             legend_label="Residuals",
         )
 
-        if self._model.settings["noise"]:
+        if self._model.noisemodel is not None:
             res_plot.line("index", "Noise", source=source, legend_label="Noise")
             res_plot.scatter("index", "Noise", source=source, legend_label="Noise")
 
