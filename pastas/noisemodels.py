@@ -38,9 +38,7 @@ class NoiseModelBase:
         self.nparam = 1
         self.name = "noise"
         self.norm = None
-        self.parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
-        )
+        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
 
     def set_init_parameters(self, oseries: Series | None = None) -> None:
         if oseries is not None:
@@ -54,7 +52,6 @@ class NoiseModelBase:
             5000.0,
             True,
             "noise",
-            "uniform",
         )
 
     @set_parameter
@@ -96,16 +93,6 @@ class NoiseModelBase:
         The preferred method for parameter setting is through the model.
         """
         self.parameters.at[name, "vary"] = value
-
-    @set_parameter
-    def _set_dist(self, name: str, value: str) -> None:
-        """Internal method to set distribution of prior of the parameter.
-
-        Notes
-        -----
-        The preferred method for parameter setting is through the model.
-        """
-        self.parameters.at[name, "dist"] = str(value)
 
     def to_dict(self) -> dict:
         """Method to return a dict to store the noise model"""
@@ -311,7 +298,6 @@ class ArmaNoiseModel(NoiseModelBase):
             5000.0,
             True,
             "noise",
-            "uniform",
         )
         self.parameters.loc["noise_beta"] = (
             1.0,
@@ -319,7 +305,6 @@ class ArmaNoiseModel(NoiseModelBase):
             np.inf,
             True,
             "noise",
-            "uniform",
         )
 
     def simulate(self, res: Series, p: ArrayLike) -> Series:

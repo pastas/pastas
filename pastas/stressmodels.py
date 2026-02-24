@@ -106,9 +106,7 @@ class StressModelBase:
             rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
-        self.parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
-        )
+        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
 
         if CACHETOOLS_AVAILABLE:
             if max_cache_size is None:
@@ -176,7 +174,7 @@ class StressModelBase:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.at[name, "dist"] = str(value)
+        self.parameters.at[name] = str(value)
 
     def set_stress(self, *args, **kwargs) -> None:
         """Placeholder for the set_stress method."""
@@ -624,7 +622,6 @@ class StepModel(StressModelBase):
             tmax,
             False,
             self.name,
-            "uniform",
         )
 
     def simulate(
@@ -732,7 +729,6 @@ class LinearTrend(StressModelBase):
             np.inf,
             True,
             self.name,
-            "uniform",
         )
         self.parameters.loc[self.name + "_tstart"] = (
             start,
@@ -740,7 +736,6 @@ class LinearTrend(StressModelBase):
             tmax,
             False,
             self.name,
-            "uniform",
         )
         self.parameters.loc[self.name + "_tend"] = (
             end,
@@ -748,7 +743,6 @@ class LinearTrend(StressModelBase):
             tmax,
             False,
             self.name,
-            "uniform",
         )
 
     def simulate(
@@ -834,7 +828,6 @@ class Constant(StressModelBase):
             np.nan,
             True,
             self.name,
-            "uniform",
         )
 
     @staticmethod
@@ -2135,7 +2128,6 @@ class TarsoModel(RechargeModel):
                 "pmax": np.nan,
                 "vary": True,
                 "name": self.name,
-                "dist": "uniform",
             }
         )
         p0.loc[f"{self.name}_d"] = pd0
@@ -2151,7 +2143,6 @@ class TarsoModel(RechargeModel):
                 "pmax": self.dmax,
                 "vary": True,
                 "name": self.name,
-                "dist": "uniform",
             }
         )
         p1.loc[f"{self.name}_d"] = pd1
@@ -2478,7 +2469,6 @@ class ChangeModel(StressModelBase):
             np.inf,
             True,
             self.name,
-            "uniform",
         )
         self.parameters.loc[self.name + "_tchange"] = (
             tchange,
@@ -2486,7 +2476,6 @@ class ChangeModel(StressModelBase):
             tmax,
             False,
             self.name,
-            "uniform",
         )
         self.parameters.name = self.name
 

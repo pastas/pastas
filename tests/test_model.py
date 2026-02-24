@@ -100,7 +100,6 @@ class TestModelComponents:
                     "pmax",
                     "vary",
                     "name",
-                    "dist",
                 ]
             )
         ).all()

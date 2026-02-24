@@ -12,62 +12,39 @@ Solve a model with a specific solver::
 """
 
 import importlib
+from abc import ABC, abstractmethod
 from collections.abc import Callable
+from functools import partial
 from logging import getLogger
 from typing import Literal
 
 import numpy as np
 from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
-from scipy.optimize import Bounds, least_squares
+from scipy.optimize import Bounds, OptimizeResult, least_squares
 
-from pastas.decorators import temporarily_disable_cache
+from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cache
 from pastas.objective_functions import GaussianLikelihood
 from pastas.typing import ArrayLike, CallBack, Model
 
 logger = getLogger(__name__)
 
 
-class BaseSolver:
-    _name = "BaseSolver"
-    __doc__ = """All solver instances inherit from the BaseSolver class.
+class BaseSolver(ABC):
+    """All solver instances inherit from the BaseSolver class.
 
     Attributes
     ----------
-    pcov: pandas.DataFrame
-        Pandas DataFrame with the correlation between the optimized parameters.
-    pcor: pandas.DataFrame
-        Based on pcov, cannot be parsed.
-        Pandas DataFrame with the correlation between the optimized parameters.
-    nfev: int
-        Number of times the model is called during optimization.
-    result: object
-        The object returned by the minimization method that is used. It depends
-        on the solver what is actually returned.
-
+    ml: pastas.Model
+        The Pastas Model instance that is being solved.
+    _name: str
+        Name of the solver class.
     """
 
-    def __init__(
-        self,
-        pcov: DataFrame | None = None,
-        nfev: int | None = None,
-        obj_func: Callable | None = None,
-        **kwargs,
-    ) -> None:
-        self.ml = None
-        self.pcov = pcov  # Covariances of the parameters
-        if pcov is None:
-            self.pcor = None  # Correlation between parameters
-        else:
-            self.pcor = self._get_correlations(pcov)
-        self.nfev = nfev  # number of function evaluations
-        self.obj_func = obj_func
-        self.result = None  # Object returned by the optimization method
-        if kwargs:
-            logger.warning(
-                "kwargs to the solver instance are ignored, please provide the"
-                "kwargs to the model.solve method."
-            )
+    _name = "BaseSolver"
+
+    def __init__(self) -> None:
+        self.ml: Model | None = None
 
     def set_model(self, ml: Model):
         """Method to set the Pastas Model instance.
@@ -84,62 +61,74 @@ class BaseSolver:
             )
         self.ml = ml
 
-    def misfit(
-        self,
-        p: ArrayLike,
-        noise: bool,
-        weights: Series | None = None,
-        callback: CallBack | None = None,
-        returnseparate: bool = False,
-    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
-        """This method is called by all solvers to obtain a series that are
-        minimized in the optimization process. It handles the application of
-        the weights, a noisemodel and other optimization options.
+    def to_dict(self) -> dict:
+        return {"class": self._name}
 
-        Parameters
-        ----------
-        p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
-        noise: Boolean
-        weights: pandas.Series, optional
-            pandas Series by which the residual or noise series are
-            multiplied. Typically values between 0 and 1.
-        callback: ufunc, optional
-            function that is called after each iteration. the parameters are
-            provided to the func. E.g. "callback(parameters)"
-        returnseparate: bool, optional
-            return residuals, noise, noiseweights
+    @abstractmethod
+    def solve(self) -> tuple[bool, ArrayLike, ArrayLike]:
+        """Abstract method that has to be implemented by all solvers.
 
         Returns
         -------
-        rv: array_like
-            residuals array (if noise=False) or noise array (if noise=True)
+        success: bool
+            Boolean indicating whether the optimization was successful.
+        optimal: array_like
+            array_like object with the optimal parameter values as floats.
+        stderr: array_like
+            array_like object with the standard error of the parameters as
+            floats.
+
         """
-        # Get the residuals or the noise
-        if noise:
-            rv = self.ml.noise(p) * self.ml.noise_weights(p)
+        pass
 
-        else:
-            rv = self.ml.residuals(p)
 
-        # Determine if weights need to be applied
-        if weights is not None:
-            weights = weights.reindex(rv.index)
-            weights.fillna(1.0, inplace=True)
-            rv = rv.multiply(weights)
-
-        if callback:
-            callback(p)
-
-        if returnseparate:
-            return (
-                self.ml.residuals(p).values,
-                self.ml.noise(p).values,
-                self.ml.noise_weights(p).values,
+class LeastSquaresSolver(BaseSolver):
+    def __init__(
+        self,
+        pcov: DataFrame | None = None,
+        nfev: int | None = None,
+        **kwargs,
+    ) -> None:
+        super().__init__()
+        self.pcov = pcov
+        self.nfev = nfev
+        self.result: OptimizeResult | "lmfit.minimizer.MinimizerResult" | None = None
+        if kwargs:
+            logger.warning(
+                f"The following keyword arguments are ignored to the Solver {self._name}: "
+                f"{', '.join(kwargs.keys())}"
             )
 
-        return rv.values
+    @property
+    def pcor(self) -> DataFrame | None:
+        if self.pcov is None:
+            return None
+        else:
+            return self._get_correlations(self.pcov)
+
+    @staticmethod
+    def _get_correlations(pcov: DataFrame) -> DataFrame:
+        """Internal method to obtain the parameter correlations from the
+        covariance matrix.
+
+        Parameters
+        ----------
+        pcov: pandas.DataFrame
+            n x n Pandas DataFrame with the covariances.
+
+        Returns
+        -------
+        pcor: pandas.DataFrame
+            n x n Pandas DataFrame with the correlations.
+        """
+        index = pcov.index
+        pcov = pcov.to_numpy()
+        v = np.sqrt(np.diag(pcov))
+        with np.errstate(divide="ignore", invalid="ignore"):
+            corr = pcov / np.outer(v, v)
+        corr[pcov == 0] = 0
+        pcor = DataFrame(data=corr, index=index, columns=index)
+        return pcor
 
     def prediction_interval(
         self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
@@ -446,6 +435,63 @@ class BaseSolver:
 
         return pcov
 
+    def misfit(
+        self,
+        p: ArrayLike,
+        noise: bool,
+        weights: Series | None = None,
+        callback: CallBack | None = None,
+        returnseparate: bool = False,
+    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
+        """This method is called by all solvers to obtain a series that are
+        minimized in the optimization process. It handles the application of
+        the weights, a noisemodel and other optimization options.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        noise: Boolean
+        weights: pandas.Series, optional
+            pandas Series by which the residual or noise series are
+            multiplied. Typically values between 0 and 1.
+        callback: ufunc, optional
+            function that is called after each iteration. the parameters are
+            provided to the func. E.g. "callback(parameters)"
+        returnseparate: bool, optional
+            return residuals, noise, noiseweights
+
+        Returns
+        -------
+        rv: array_like
+            residuals array (if noise=False) or noise array (if noise=True)
+        """
+        # Get the residuals or the noise
+        if noise:
+            rv = self.ml.noise(p) * self.ml.noise_weights(p)
+
+        else:
+            rv = self.ml.residuals(p)
+
+        # Determine if weights need to be applied
+        if weights is not None:
+            weights = weights.reindex(rv.index)
+            weights.fillna(1.0, inplace=True)
+            rv = rv.multiply(weights)
+
+        if callback:
+            callback(p)
+
+        if returnseparate:
+            return (
+                self.ml.residuals(p).values,
+                self.ml.noise(p).values,
+                self.ml.noise_weights(p).values,
+            )
+
+        return rv.values
+
     @staticmethod
     def _get_correlations(pcov: DataFrame) -> DataFrame:
         """Internal method to obtain the parameter correlations from the
@@ -471,16 +517,18 @@ class BaseSolver:
         return pcor
 
     def to_dict(self) -> dict:
-        data = {
-            "class": self._name,
-            "pcov": self.pcov,
-            "nfev": self.nfev,
-            "obj_func": self.obj_func,
-        }
+        data = super().to_dict()
+        data.update(
+            {
+                "pcov": self.pcov,
+                "nfev": self.nfev,
+                "obj_func": self.obj_func,
+            }
+        )
         return data
 
 
-class LeastSquares(BaseSolver):
+class LeastSquares(LeastSquaresSolver):
     """Solver based on Scipy's least_squares method :cite:p:`virtanen_scipy_2020`.
 
     Notes
@@ -507,7 +555,7 @@ class LeastSquares(BaseSolver):
         nfev: int | None = None,
         **kwargs,
     ) -> None:
-        BaseSolver.__init__(self, pcov=pcov, nfev=nfev, **kwargs)
+        super().__init__(pcov=pcov, nfev=nfev, **kwargs)
 
     def solve(
         self,
@@ -516,9 +564,9 @@ class LeastSquares(BaseSolver):
         callback: CallBack | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
-        self.vary = self.ml.parameters.vary.values.astype(bool)
-        self.initial = self.ml.parameters.initial.values.copy()
-        parameters = self.ml.parameters.loc[self.vary]
+        vary = self.ml.parameters.vary.values.astype(bool)
+        initial = self.ml.parameters.initial.values.copy()
+        parameters = self.ml.parameters.loc[vary]
 
         # Set the boundaries
         method = kwargs.pop("method") if "method" in kwargs else "trf"
@@ -542,40 +590,72 @@ class LeastSquares(BaseSolver):
                 keep_feasible=True,
             )
 
-        self.result = least_squares(
+        objfunction = partial(
             self.objfunction,
+            noise=noise,
+            weights=weights,
+            initial=initial,
+            vary=vary,
+            callback=callback,
+        )
+        self.result = least_squares(
+            objfunction,
             bounds=bounds,
-            x0=parameters.initial.values,
-            args=(noise, weights, callback),
+            x0=initial[vary],
             method=method,
             **kwargs,
         )
+        self.nfev = self.result.nfev
+        self.obj_func = self.result.cost
 
         self.pcov = DataFrame(
             LeastSquares.get_covariances(
-                self.result.jac, self.result.cost, method=method, absolute_sigma=False
+                self.result.jac, self.obj_func, method=method, absolute_sigma=False
             ),
             index=parameters.index,
             columns=parameters.index,
         )
-        self.pcor = self._get_correlations(self.pcov)
-        self.nfev = self.result.nfev
-        self.obj_func = self.result.cost
 
         # Prepare return values
         success = self.result.success
-        optimal = self.initial
-        optimal[self.vary] = self.result.x
+        optimal = initial
+        optimal[vary] = self.result.x
         stderr = np.zeros(len(optimal)) * np.nan
-        stderr[self.vary] = np.sqrt(np.diag(self.pcov))
+        stderr[vary] = np.sqrt(np.diag(self.pcov))
 
         return success, optimal, stderr
 
     def objfunction(
-        self, p: ArrayLike, noise: bool, weights: Series, callback: CallBack
+        self,
+        p: ArrayLike,
+        noise: bool,
+        weights: Series,
+        initial: ArrayLike,
+        vary: ArrayLike,
+        callback: CallBack,
     ) -> ArrayLike:
-        par = self.initial
-        par[self.vary] = p
+        """Objective function that is minimized by the least_squares solver.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        noise: Boolean
+            If True, minimizes the sum of squared noise computed by the NoiseModel.
+        weights: pandas.Series
+            pandas Series by which the residual or noise series are
+            multiplied. Typically values between 0 and 1.
+        initial: array_like
+            array_like object with the initial parameter values.
+        vary: array_like
+            array_like object with booleans indicating which parameters (p) are varied.
+        callback: ufunc
+            function that is called after each iteration. the parameters are
+            provided to the func.
+        """
+        par = initial
+        par[vary] = p
         return self.misfit(p=par, noise=noise, weights=weights, callback=callback)
 
     @staticmethod
@@ -693,7 +773,7 @@ class LeastSquares(BaseSolver):
         return pcov
 
 
-class LmfitSolve(BaseSolver):
+class LmfitSolve(LeastSquaresSolver):
     """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
         This is basically a wrapper around the scipy solvers, adding some cool
@@ -730,46 +810,54 @@ class LmfitSolve(BaseSolver):
     ) -> tuple[bool, ArrayLike, ArrayLike]:
         # Deal with the parameters
         parameters = lmfit.Parameters()
-        p = self.ml.parameters.loc[:, ["initial", "pmin", "pmax", "vary"]]
-        for k in p.index:
-            pp = np.where(p.loc[k].isnull(), None, p.loc[k])
-            parameters.add(k, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
+        for pname, params in self.ml.parameters.loc[
+            :, ["initial", "pmin", "pmax", "vary"]
+        ].iterrows():
+            pp = np.where(params.isnull(), None, params)
+            parameters.add(pname, value=pp[0], min=pp[1], max=pp[2], vary=pp[3])
 
         # Create the Minimizer object and minimize
+        objfunction = partial(
+            self.objfunction,
+            noise=noise,
+            weights=weights,
+            callback=callback,
+        )
         self.mini = lmfit.Minimizer(
-            userfcn=self.objfunction,
+            userfcn=objfunction,
             calc_covar=True,
-            fcn_args=(noise, weights, callback),
             params=parameters,
             **kwargs,
         )
         self.result = self.mini.minimize(method=method)
+        names = self.result.var_names
 
         # Set all parameter attributes
-        pcov = None
-        if hasattr(self.result, "covar"):
-            if self.result.covar is not None:
-                pcov = self.result.covar
-
-        names = self.result.var_names
-        self.pcov = DataFrame(pcov, index=names, columns=names, dtype=float)
-        self.pcor = self._get_correlations(self.pcov)
+        covar = (
+            self.result.covar
+            if hasattr(self.result, "covar") and self.result.covar is not None
+            else None
+        )
+        self.pcov = (
+            DataFrame(
+                covar,
+                index=names,
+                columns=names,
+                dtype=float,
+            )
+            if covar is not None
+            else None
+        )
 
         # Set all optimization attributes
         self.nfev = self.result.nfev
         self.obj_func = self.result.chisqr
 
-        if hasattr(self.result, "success"):
-            success = self.result.success
-        else:
-            success = True
+        success = self.result.success if hasattr(self.result, "success") else True
         optimal = np.array([p.value for p in self.result.params.values()])
         stderr = np.array([p.stderr for p in self.result.params.values()])
 
-        idx = None
-        if "is_weighted" in kwargs:
-            if not kwargs["is_weighted"]:
-                idx = -1
+        idx = -1 if "is_weighted" in kwargs and not kwargs["is_weighted"] else None
 
         return success, optimal[:idx], stderr[:idx]
 
@@ -851,7 +939,7 @@ class EmceeSolve(BaseSolver):
 
     def __init__(
         self,
-        objective_function=None,
+        objfunction: Callable[[ArrayLike], float] | None = None,
         nwalkers: int = 20,
         backend=None,
         moves=None,
@@ -867,26 +955,28 @@ class EmceeSolve(BaseSolver):
             msg = "emcee not installed. Please install emcee first."
             raise ImportError(msg) from None
 
-        BaseSolver.__init__(self, pcov=None, nfev=None, **kwargs)
+        if "objective_function" in kwargs:
+            deprecate_args_or_kwargs(
+                "objective_function",
+                "2.0.0",
+                reason="Use the argument objfunction instead",
+            )
+            objfunction = kwargs.pop("objective_function")
 
-        # Set Attributes
-        self.obj_func = np.nan
-        self.nfev = np.nan
+        super().__init__(**kwargs)
 
         # Set sampler properties
         self.sampler = None
-        self.parallel = parallel
         self.backend = backend
         self.moves = moves
+        self.parallel = parallel
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
-        self.priors = None
+        self.priors: list[DataFrame] = []
 
         # Set objective function
-        if objective_function is None:
-            objective_function = GaussianLikelihood()
-        self.objective_function = objective_function
-        self.parameters = self.objective_function.get_init_parameters("ln")
+        self.objfunction = GaussianLikelihood() if objfunction is None else objfunction
+        self.parameters = self.objfunction.get_init_parameters("ln")
 
     def solve(
         self,
@@ -966,10 +1056,10 @@ class EmceeSolve(BaseSolver):
         optimal[self.vary] = chains[self.sampler.get_log_prob().argmax()]
 
         # Set the optimal values for the objective function parameters
-        self.parameters.loc[:, "optimal"] = optimal[-self.objective_function.nparam :]
+        self.parameters.loc[:, "optimal"] = optimal[-self.objfunction.nparam :]
 
         # Don't estimate stderr for now
-        optimal = optimal[: -self.objective_function.nparam]
+        optimal = optimal[: -self.objfunction.nparam]
         stderr = np.zeros(len(optimal)) * np.nan
 
         success = True

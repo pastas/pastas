@@ -222,7 +222,7 @@ class TestParameterSetting:
 
         # Test setting distribution
         model._set_dist("noise_alpha", "normal")
-        assert model.parameters.loc["noise_alpha", "dist"] == "normal"
+        assert model.parameters.loc["noise_alpha"] == "normal"
 
 
 def test_irregular_time_steps(irregular_residual_series: Series) -> None:

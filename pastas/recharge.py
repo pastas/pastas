@@ -107,8 +107,8 @@ class Linear(RechargeBase):
             Pandas DataFrame with the parameters.
         """
         parameters = DataFrame(
-            [(-1.0, -2.0, 0.0, True, name, "uniform")],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            [(-1.0, -2.0, 0.0, True, name)],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
             index=[name + "_f"],
         )
 
@@ -222,13 +222,13 @@ class FlexModel(RechargeBase):
         """
         parameters = DataFrame(
             [
-                (250.0, 1e-5, 1e3, True, name, "uniform"),  # srmax
-                (0.25, 1e-5, 1.0, False, name, "uniform"),  # lp
-                (100.0, 1e-5, 1e4, True, name, "uniform"),  # ks
-                (2.0, 1e-5, 20.0, True, name, "uniform"),  # gamma
-                (1.0, 0.25, 2.0, True, name, "uniform"),  # kv
+                (250.0, 1e-5, 1e3, True, name),  # srmax
+                (0.25, 1e-5, 1.0, False, name),  # lp
+                (100.0, 1e-5, 1e4, True, name),  # ks
+                (2.0, 1e-5, 20.0, True, name),  # gamma
+                (1.0, 0.25, 2.0, True, name),  # kv
             ],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
             index=[
                 name + "_srmax",
                 name + "_lp",
@@ -238,14 +238,12 @@ class FlexModel(RechargeBase):
             ],
         )
         if self.interception:
-            parameters.loc[name + "_simax"] = (2.0, 0.0, 10.0, False, name, "uniform")
+            parameters.loc[name + "_simax"] = (2.0, 0.0, 10.0, False, name)
         if self.gw_uptake:
-            parameters.loc[name + "_gf"] = (1.0, 0.0, 1.0, True, name, "uniform")
+            parameters.loc[name + "_gf"] = (1.0, 0.0, 1.0, True, name)
         if self.snow:
-            # see also https://doi.org/10.5194/egusphere-2025-1214
-            parameters.loc[name + "_tt"] = (0.0, -10.0, 10.0, False, name, "uniform")
-            parameters.loc[name + "_k"] = (4.0, 0.5, 20.0, True, name, "uniform")
-
+            parameters.loc[name + "_tt"] = (0.0, -10.0, 10.0, False, name)
+            parameters.loc[name + "_k"] = (2.0, 1.0, 20.0, True, name)
         return parameters
 
     def simulate(
@@ -631,15 +629,15 @@ class Berendrecht(RechargeBase):
         """
         parameters = DataFrame(
             [
-                (0.9, 0.7, 1.3, False, name, "uniform"),  # fi
-                (1.0, 0.7, 1.3, False, name, "uniform"),  # fc
-                (0.25, 1e-5, 1.0, False, name, "uniform"),  # sr
-                (250.0, 20.0, 1e3, True, name, "uniform"),  # de
-                (2.0, -4.0, 50.0, True, name, "uniform"),  # l
-                (0.5, 1e-5, 0.5, False, name, "uniform"),  # m
-                (100.0, 1.0, 1e4, True, name, "uniform"),  # ks
+                (0.9, 0.7, 1.3, False, name),  # fi
+                (1.0, 0.7, 1.3, False, name),  # fc
+                (0.25, 1e-5, 1.0, False, name),  # sr
+                (250.0, 20.0, 1e3, True, name),  # de
+                (2.0, -4.0, 50.0, True, name),  # l
+                (0.5, 1e-5, 0.5, False, name),  # m
+                (100.0, 1.0, 1e4, True, name),  # ks
             ],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
             index=[
                 name + "_fi",
                 name + "_fc",
@@ -807,13 +805,13 @@ class Peterson(RechargeBase):
         """
         parameters = DataFrame(
             [
-                (1.5, 0.5, 3.0, True, name, "uniform"),  # scap
-                (1.0, 0.0, 1.5, True, name, "uniform"),  # alpha
-                (1.0, 0.0, 3.0, True, name, "uniform"),  # ksat
-                (0.5, 0.0, 1.5, True, name, "uniform"),  # beta
-                (1.0, 0.0, 2.0, True, name, "uniform"),  # gamma
+                (1.5, 0.5, 3.0, True, name),  # scap
+                (1.0, 0.0, 1.5, True, name),  # alpha
+                (1.0, 0.0, 3.0, True, name),  # ksat
+                (0.5, 0.0, 1.5, True, name),  # beta
+                (1.0, 0.0, 2.0, True, name),  # gamma
             ],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
             index=[
                 name + "_scap",
                 name + "_alpha",
