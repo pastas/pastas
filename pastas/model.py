@@ -76,11 +76,6 @@ class Model:
         can be non-equidistant.
     constant: bool, optional
         Add a constant to the model (Default=True).
-    noisemodel: bool, optional
-        The noisemodel argument is deprecated and will be removed in Pastas version
-        2.0.0. To add a noisemodel, use ml.add_noisemodel(n), where is an instance
-        of a noisemodel (e.g., n = ps.ArNoiseModel()). The use of the noisemodel
-        argument will raise a ValueError.
     name: str, optional
         String with the name of the model, used in plotting and saving.
     metadata: dict, optional
@@ -111,7 +106,6 @@ class Model:
         self,
         oseries: Series,
         constant: bool = True,
-        noisemodel=None,  # will be removed in version 2.0.0
         name: str | None = None,
         metadata: dict[str, Any] | None = None,
         freq: str = "D",
@@ -156,28 +150,6 @@ class Model:
             )
         else:
             self.constant = None
-
-        if noisemodel is not None:
-            if noisemodel is True:
-                msg = (
-                    "The new default is that no noisemodel is added "
-                    "anymore and a noisemodel has to be added explicitly to a Pastas "
-                    "model by the user. To fix this error, do not pass a "
-                    "noisemodel keyword to Model and use `ml.add_noisemodel`, if a "
-                    "noisemodel is desired. See this issue on GitHub for more "
-                    "information: https://github.com/pastas/pastas/issues/735"
-                )
-            elif noisemodel is False:
-                msg = (
-                    "The new default is that no noisemodel is added "
-                    "anymore, so passing noisemodel=False is not needed anymore. To "
-                    "fix this error, do not pass noisemodel=False to Model."
-                )
-            deprecate_args_or_kwargs(
-                name="noisemodel",
-                version="1.5.0",
-                reason=msg,
-            )
 
         # File Information
         self.file_info: dict[str, Any] = self._get_file_info()
@@ -386,8 +358,6 @@ class Model:
 
         Notes
         -----
-        As of Pastas version 1.5.0, a noisemodel should be added to the model using this
-        method, and is not added by default anymore when constructing as Pastas Model.
         If a noisemodel is present, it will always be used during optimization.
 
         """
@@ -690,7 +660,7 @@ class Model:
         --------
         This method returns None if no noise model is present in the model.
         """
-        if self.noisemodel is None or self._settings["noise"] is False:
+        if self.noisemodel is None:
             logger.warning(
                 "Noise cannot be calculated if there is no noisemodel present or is "
                 "not used during parameter estimation."
@@ -709,7 +679,7 @@ class Model:
         noise = self.noisemodel.simulate(res, p)
         return noise
 
-    def noise_weights(
+    def _noise_weights(
         self,
         p: list | None = None,
         tmin: Timestamp | str | None = None,
@@ -814,9 +784,7 @@ class Model:
         ----------
         solver: pastas.solver.Solver
             Instance of a pastas Solver class used to solve the model. Options are:
-            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve(). An instance
-            (e.g. ps.LeastSquares()) is needed as of Pastas 0.23, not a class (e.g.
-            ps.LeastSquares)!
+            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve().
 
         See Also
         --------
@@ -833,7 +801,6 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
-        noise: bool | None = None,
         solver: Solver | None = None,
         report: bool | Literal["full"] = True,
         initial: bool = True,
@@ -862,12 +829,6 @@ class Model:
         warmup: float, optional
             Warmup period (in Days) for which the simulation is calculated, but not
             used for the calibration period.
-        noise: bool, optional
-            This argument is deprecated and will be removed in Pastas version 2.0.0.
-            To solve using a noisemodel (i.e. noise=True), add a noisemodel to the
-            model using ml.add_noisemodel(n), where n is an instance of a noisemodel
-            (e.g., n = ps.ArNoiseModel()). To solve without a noisemodel (noise=False),
-            remove the noisemodel first (if present) using ml.del_noisemodel().
         solver: Class pastas.solver.Solver, optional
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
@@ -1000,8 +961,9 @@ class Model:
             self.add_solver(solver=solver)
 
         # Solve model
+        noise = True if self.noisemodel else False
         success, optimal, stderr = self.solver.solve(
-            noise=self.settings["noise"], weights=weights, **kwargs
+            noise=noise, weights=weights, **kwargs
         )
         if not success:
             logger.warning("Model parameters could not be estimated well.")
@@ -1513,15 +1475,11 @@ class Model:
 
         return tmax
 
-    def get_init_parameters(
-        self, noise: bool | None = None, initial: bool = True
-    ) -> DataFrame:
+    def get_init_parameters(self, initial: bool = True) -> DataFrame:
         """Method to get all initial parameters from the individual objects.
 
         Parameters
         ----------
-        noise: bool, optional
-            Add the parameters for the noisemodel to the parameters Dataframe or not.
         initial: bool, optional
             True to get initial parameters, False to get optimized parameters.
 
@@ -1530,9 +1488,6 @@ class Model:
         parameters: pandas.DataFrame
             pandas.Dataframe with the parameters.
         """
-        if noise is None:
-            noise = self.settings["noise"]
-
         frames = []
 
         for sm in self.stressmodels.values():
@@ -1541,7 +1496,7 @@ class Model:
             frames.append(self.constant.parameters)
         if self.transform:
             frames.append(self.transform.parameters)
-        if self.noisemodel and noise:
+        if self.noisemodel is not None:
             frames.append(self.noisemodel.parameters)
 
         if not frames:
@@ -2202,7 +2157,7 @@ class Model:
         model = {
             "nfev": self.solver.nfev,
             "nobs": self.observations().index.size,
-            "noise": str(self.settings["noise"]),
+            "noise": str(True if self.noisemodel is not None else False),
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
