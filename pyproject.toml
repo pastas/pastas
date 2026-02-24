@@ -141,12 +141,25 @@ commands = [
         "check",
         "--extend-select",
         "I",
-        "--preview",
     ],
     [
         "ruff",
         "format",
         "--check",
+    ],
+]
+
+[tool.tox.env.ruff_preview]
+description = "run ruff checks preview mode"
+extras = ["ruffing"]
+commands = [
+    [
+        "ruff",
+        "check",
+        "--extend-select",
+        "I",
+        "--preview",
+        "--exit-zero",
     ],
 ]
 
