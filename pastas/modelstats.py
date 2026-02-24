@@ -459,7 +459,7 @@ class Statistics:
         pastas.stats.bic
         """
         nparam = self.ml.parameters["vary"].sum()
-        if self.ml.noisemodel is not None:
+        if self.ml.settings["noise"]:
             res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
                 tmin=tmin, tmax=tmax
             )
@@ -489,7 +489,7 @@ class Statistics:
         pastas.stats.aic
         """
         nparam = self.ml.parameters["vary"].sum()
-        if self.ml.noisemodel is not None:
+        if self.ml.settings["noise"]:
             res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
                 tmin=tmin, tmax=tmax
             )
@@ -519,7 +519,7 @@ class Statistics:
         pastas.stats.aicc
         """
         nparam = self.ml.parameters["vary"].sum()
-        if self.ml.noisemodel is not None:
+        if self.ml.settings["noise"]:
             res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
                 tmin=tmin, tmax=tmax
             )

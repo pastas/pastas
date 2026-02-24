@@ -986,21 +986,6 @@ class Model:
 
     @property
     @PastasDeprecationWarning(
-        version="2.0.0",
-        reason="Use 'ml.solver' instead.",
-    )
-    def fit(self):
-        """Deprecated attribute, use ml.solver instead."""
-        msg = (
-            "Attribute 'fit' is deprecated and will be removed in a future version. "
-            "Use 'solver' instead."
-        )
-        logger.warning(msg)
-
-        return self.solver
-
-    @property
-    @PastasDeprecationWarning(
         version="2.0.0", reason="Use 'ml.observations()' instead."
     )
     def oseries_calib(self):
