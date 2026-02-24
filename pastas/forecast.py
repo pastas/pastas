@@ -12,7 +12,15 @@ Generate forecasts using ensembles of stress forecasts::
 from logging import getLogger
 
 from numpy import array, empty, exp, linspace, ones
-from pandas import DataFrame, DatetimeIndex, MultiIndex, Series, Timedelta, Timestamp, concat
+from pandas import (
+    DataFrame,
+    DatetimeIndex,
+    MultiIndex,
+    Series,
+    Timedelta,
+    Timestamp,
+    concat,
+)
 
 from pastas.decorators import deprecate_args_or_kwargs
 from pastas.noisemodels import ArNoiseModel
