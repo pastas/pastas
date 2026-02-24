@@ -67,10 +67,9 @@ class RechargeBase:
             dictionary with all necessary information to reconstruct the StressModel
             object.
         """
-        data = {
+        return {
             "class": self._name,
         }
-        return data
 
 
 class Linear(RechargeBase):
@@ -106,13 +105,12 @@ class Linear(RechargeBase):
         parameters: pandas.DataFrame
             Pandas DataFrame with the parameters.
         """
-        parameters = DataFrame(
+        return DataFrame(
             [(-1.0, -2.0, 0.0, True, name, "uniform")],
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
             index=[name + "_f"],
         )
 
-        return parameters
 
     def simulate(
         self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, **kwargs
@@ -551,22 +549,19 @@ class FlexModel(RechargeBase):
 
     def check_snow_balance(self, prec: ArrayLike, temp: ArrayLike, **kwargs) -> float:
         ss, ps, m = self.get_snow_balance(prec, temp)
-        error = ss[0] - ss[-1] + (ps + m).sum()
-        return error
+        return ss[0] - ss[-1] + (ps + m).sum()
 
     def check_interception_balance(
         self, prec: ArrayLike, evap: ArrayLike, **kwargs
     ) -> float:
         si, ei, pi = self.get_interception_balance(prec, evap)
-        error = si[0] - si[-1] + (pi + ei).sum()
-        return error
+        return si[0] - si[-1] + (pi + ei).sum()
 
     def check_root_zone_balance(
         self, prec: ArrayLike, evap: ArrayLike, **kwargs
     ) -> float:
         sr, r, ea, q, pe = self.get_root_zone_balance(prec, evap)
-        error = sr[0] - sr[-1] + (r + ea + q + pe).sum()
-        return error
+        return sr[0] - sr[-1] + (r + ea + q + pe).sum()
 
     def to_dict(self):
         """Method to export the recharge model object.
@@ -577,13 +572,12 @@ class FlexModel(RechargeBase):
             dictionary with all necessary information to reconstruct the recharge
             object.
         """
-        data = {
+        return {
             "class": self._name,
             "interception": self.interception,
             "snow": self.snow,
             "gw_uptake": self.gw_uptake,
         }
-        return data
 
 
 class Berendrecht(RechargeBase):
@@ -629,7 +623,7 @@ class Berendrecht(RechargeBase):
         parameters: pandas.DataFrame
             Pandas DataFrame with the parameters.
         """
-        parameters = DataFrame(
+        return DataFrame(
             [
                 (0.9, 0.7, 1.3, False, name, "uniform"),  # fi
                 (1.0, 0.7, 1.3, False, name, "uniform"),  # fc
@@ -650,7 +644,6 @@ class Berendrecht(RechargeBase):
                 name + "_ks",
             ],
         )
-        return parameters
 
     def simulate(
         self,
@@ -709,7 +702,7 @@ class Berendrecht(RechargeBase):
         fc: float = 1.0,
         sr: float = 0.5,
         de: float = 250.0,
-        l: float = -2.0,  # noqa: E741
+        l: float = -2.0,
         m: float = 0.5,
         ks: float = 50.0,
         dt: float = 1.0,
@@ -746,8 +739,7 @@ class Berendrecht(RechargeBase):
     ) -> DataFrame:
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
         s = s * p[3]  # Because S is computed dimensionless in this model
-        data = DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
-        return data
+        return DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
 
 
 class Peterson(RechargeBase):
@@ -805,7 +797,7 @@ class Peterson(RechargeBase):
         parameters: pandas.DataFrame
             Pandas DataFrame with the parameters.
         """
-        parameters = DataFrame(
+        return DataFrame(
             [
                 (1.5, 0.5, 3.0, True, name, "uniform"),  # scap
                 (1.0, 0.0, 1.5, True, name, "uniform"),  # alpha
@@ -822,7 +814,6 @@ class Peterson(RechargeBase):
                 name + "_gamma",
             ],
         )
-        return parameters
 
     def simulate(
         self,
@@ -902,5 +893,4 @@ class Peterson(RechargeBase):
         self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, dt: float = 1.0, **kwargs
     ) -> DataFrame:
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
-        data = DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
-        return data
+        return DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])

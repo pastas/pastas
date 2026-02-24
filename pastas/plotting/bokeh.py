@@ -117,7 +117,7 @@ class Bokeh:
             "index",
             "Simulation",
             source=source,
-            legend_label=r"Simulation (R2 = {:.2f})".format(rsq),
+            legend_label=rf"Simulation (R2 = {rsq:.2f})",
             line_width=2,
         )
         p.legend.ncols = 2
@@ -201,7 +201,7 @@ class Bokeh:
             "index",
             "Simulation",
             source=source,
-            legend_label=r"Simulation (R2 = {:.2f})".format(rsq),
+            legend_label=rf"Simulation (R2 = {rsq:.2f})",
         )
         p.legend.ncols = 2
 

@@ -129,7 +129,7 @@ class Plotly:
                 "y": 1.02,
             },
             "dragmode": "pan",
-            "margin": dict(t=70, b=40, l=40, r=10),
+            "margin": {"t": 70, "b": 40, "l": 40, "r": 10},
         }
 
         return go.Figure(data=traces, layout=go.Layout(layout))
@@ -352,44 +352,44 @@ class Plotly:
             p.loc[:, "stderr"] = stderr_values.abs().apply(_table_formatter_stderr)
 
         tab = go.Table(
-            domain=dict(x=[x_pos + dx, 1.0], y=[y_pos[2] + dy, 1.0]),
-            header=dict(
-                values=values,
-                font=dict(size=12),
-                align=["left", "center", "center"],
-                height=40,
-            ),
-            cells=dict(
-                values=[p[k].tolist() for k in p.columns],
-                align=["left", "right", "right"],
-                height=30,
-            ),
+            domain={"x": [x_pos + dx, 1.0], "y": [y_pos[2] + dy, 1.0]},
+            header={
+                "values": values,
+                "font": {"size": 12},
+                "align": ["left", "center", "center"],
+                "height": 40,
+            },
+            cells={
+                "values": [p[k].tolist() for k in p.columns],
+                "align": ["left", "right", "right"],
+                "height": 30,
+            },
             columnwidth=[100, 70, 70] if stderr else [100, 70],
         )
 
         traces.append(tab)
 
-        layout_dict = dict(
+        layout_dict = {
             # top left (row 0, col 0) - oseries/simulation plot
-            xaxis=dict(
-                domain=[0.0, x_pos - dx],
-                anchor=f"y{nrows}",
-            ),
-            yaxis=dict(
-                domain=[ybots[0], ytops[0]],
-                anchor="x",
-            ),
+            "xaxis": {
+                "domain": [0.0, x_pos - dx],
+                "anchor": f"y{nrows}",
+            },
+            "yaxis": {
+                "domain": [ybots[0], ytops[0]],
+                "anchor": "x",
+            },
             # row 1, col 0 - residuals/noise plot
-            xaxis2=dict(
-                domain=[0.0, x_pos - dx],
-                anchor="y2",
-            ),
-            yaxis2=dict(
-                domain=[ybots[1], ytops[1]],
-                anchor="x2",
-                scaleanchor="y",
-            ),
-        )
+            "xaxis2": {
+                "domain": [0.0, x_pos - dx],
+                "anchor": "y2",
+            },
+            "yaxis2": {
+                "domain": [ybots[1], ytops[1]],
+                "anchor": "x2",
+                "scaleanchor": "y",
+            },
+        }
         # add layout for stressmodels
         # unfortunately I can only get it to work with numbering down the
         # columns, e.g.
@@ -405,29 +405,29 @@ class Plotly:
             iax_contrib = 3 + ism  # 3, 4, 5, ..., (1-based)
 
             # contributions subplot
-            layout_dict[f"xaxis{iax_contrib}"] = dict(
-                domain=[0.0, x_pos - dx],
-                anchor=f"y{iax_contrib}",
-            )
-            layout_dict[f"yaxis{iax_contrib}"] = dict(
-                domain=[ybots[irow], ytops[irow]],
-                anchor=f"x{iax_contrib}",
-                scaleanchor="y",
-            )
+            layout_dict[f"xaxis{iax_contrib}"] = {
+                "domain": [0.0, x_pos - dx],
+                "anchor": f"y{iax_contrib}",
+            }
+            layout_dict[f"yaxis{iax_contrib}"] = {
+                "domain": [ybots[irow], ytops[irow]],
+                "anchor": f"x{iax_contrib}",
+                "scaleanchor": "y",
+            }
         # add response axes
         for ism in range(nsm):
             irow = 2 + ism  # 2, 3, 4, ..., (0-based)
             iax_response = 3 + nsm + ism
 
             # step response subplot
-            layout_dict[f"xaxis{iax_response}"] = dict(
-                domain=[x_pos + dx, 1],
-                anchor=f"y{naxes}",
-            )
-            layout_dict[f"yaxis{iax_response}"] = dict(
-                domain=[ybots[irow], ytops[irow]],
-                anchor=f"x{3 + nsm}",
-            )
+            layout_dict[f"xaxis{iax_response}"] = {
+                "domain": [x_pos + dx, 1],
+                "anchor": f"y{naxes}",
+            }
+            layout_dict[f"yaxis{iax_response}"] = {
+                "domain": [ybots[irow], ytops[irow]],
+                "anchor": f"x{3 + nsm}",
+            }
 
         layout = go.Layout(layout_dict)
 
@@ -448,9 +448,9 @@ class Plotly:
                 yanchor="middle",
                 showarrow=False,
                 text=lbl,
-                font=dict(
-                    size=12,
-                ),
+                font={
+                    "size": 12,
+                },
                 align="left",
             )
 
@@ -464,9 +464,9 @@ class Plotly:
             yanchor="middle",
             showarrow=False,
             text="Model parameters (n<sub>c</sub>=7)",
-            font=dict(
-                size=12,
-            ),
+            font={
+                "size": 12,
+            },
             align="left",
         )
 
@@ -480,9 +480,9 @@ class Plotly:
             yanchor="middle",
             showarrow=False,
             text="Step response",
-            font=dict(
-                size=12,
-            ),
+            font={
+                "size": 12,
+            },
             align="left",
         )
 
@@ -501,7 +501,7 @@ class Plotly:
             },
             # height=1000,
             # width=1000,
-            margin=dict(t=60, b=20, l=10, r=25),
+            margin={"t": 60, "b": 20, "l": 10, "r": 25},
             dragmode="pan",
         )
         update_labels = {f"yaxis{i}": {"title": "[m]"} for i in range(3, nrows + 1)}
@@ -632,7 +632,7 @@ class Plotly:
                 name="Histogram",
                 showlegend=False,
                 histnorm="probability density",
-                marker=dict(color="rgba(31,119,180,1)"),
+                marker={"color": "rgba(31,119,180,1)"},
             ),
             row=3,
             col=1,
@@ -644,10 +644,10 @@ class Plotly:
                 y=pdf,
                 mode="lines",
                 name="PDF",
-                line=dict(
-                    dash="dash",
-                    color="black",
-                ),
+                line={
+                    "dash": "dash",
+                    "color": "black",
+                },
                 showlegend=False,
             ),
             row=3,
@@ -689,9 +689,9 @@ class Plotly:
             yanchor="top",
             showarrow=False,
             text=f"R<sup>2</sup>={r:.3f}",
-            font=dict(
-                size=12,
-            ),
+            font={
+                "size": 12,
+            },
             align="left",
         )
 
@@ -703,14 +703,14 @@ class Plotly:
                 y=series,
                 mode="markers",
                 showlegend=False,
-                marker=dict(
-                    size=5,
-                    color="rgba(31,119,180,0.5)",
-                    line=dict(
-                        color="black",
-                        width=0.25,
-                    ),
-                ),
+                marker={
+                    "size": 5,
+                    "color": "rgba(31,119,180,0.5)",
+                    "line": {
+                        "color": "black",
+                        "width": 0.25,
+                    },
+                },
             ),
             row=4,
             col=1,
@@ -722,14 +722,14 @@ class Plotly:
                 y=np.sqrt(series.abs()),
                 mode="markers",
                 showlegend=False,
-                marker=dict(
-                    size=5,
-                    color="rgba(31,119,180,0.5)",
-                    line=dict(
-                        color="black",
-                        width=0.25,
-                    ),
-                ),
+                marker={
+                    "size": 5,
+                    "color": "rgba(31,119,180,0.5)",
+                    "line": {
+                        "color": "black",
+                        "width": 0.25,
+                    },
+                },
             ),
             row=4,
             col=2,
@@ -766,7 +766,6 @@ class Plotly:
         fig.layout.annotations[3].update(x=0.60, font={"size": 13})
         fig.layout.annotations[4].update(x=0.05, font={"size": 13})
 
-        #
         fig.update_layout(
             legend={
                 "traceorder": "grouped",
@@ -778,6 +777,6 @@ class Plotly:
             },
             # width=750,
             # height=1000,
-            margin=dict(t=60, b=20, l=25, r=10),
+            margin={"t": 60, "b": 20, "l": 25, "r": 10},
         )
         return fig

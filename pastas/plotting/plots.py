@@ -16,7 +16,7 @@ from pastas.typing import ArrayLike, Axes, Figure, Model
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency", "TrackSolve"]
+__all__ = ["TrackSolve", "acf", "compare", "cum_frequency", "diagnostics", "series"]
 
 
 def compare(
@@ -444,7 +444,7 @@ def diagnostics(
     ax3.get_lines()[1].set_color("k")
 
     # Plot R2 here because probplot has suboptimal positioning
-    ax3.text(0.5, 0.1, "$R^2={:.2f}$".format(r**2), transform=ax3.transAxes)
+    ax3.text(0.5, 0.1, f"$R^2={r**2:.2f}$", transform=ax3.transAxes)
 
     if heteroscedasicity and sim is not None:
         # Plot residuals vs. simulation
@@ -683,8 +683,7 @@ class TrackSolve:
         noise: array_like
             array containing noise.
         """
-        noise = self.ml.noise(p=params, tmin=self.tmin, tmax=self.tmax)
-        return noise
+        return self.ml.noise(p=params, tmin=self.tmin, tmax=self.tmax)
 
     def _residuals(self, params: ArrayLike) -> ArrayLike:
         """calculate residuals.
@@ -699,8 +698,7 @@ class TrackSolve:
         res: array_like
             array containing residuals.
         """
-        res = self.ml.residuals(p=params, tmin=self.tmin, tmax=self.tmax)
-        return res
+        return self.ml.residuals(p=params, tmin=self.tmin, tmax=self.tmax)
 
     def _simulate(self) -> Series:
         """simulate model with last entry in self.parameters.
@@ -710,13 +708,12 @@ class TrackSolve:
         sim: pd.Series
             Series containing model evaluation.
         """
-        sim = self.ml.simulate(
+        return self.ml.simulate(
             p=self.parameters.iloc[-1, :].values,
             tmin=self.tmin,
             tmax=self.tmax,
             freq=self.ml.settings["freq"],
         )
-        return sim
 
     def initialize_figure(
         self, figsize: tuple[int] = (10, 8), dpi: int = 100
@@ -760,7 +757,7 @@ class TrackSolve:
         (self.simplot,) = self.ax0.plot(sim.index, sim, label="simulation")
         self.ax0.set_ylabel("head")
         self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
+            f"Iteration: {self.itercount} (EVP: {self.evp[-1]:.2f}%)"
         )
         self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
         omax = self.obs.max()
@@ -895,7 +892,7 @@ class TrackSolve:
 
         # update title
         self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
+            f"Iteration: {self.itercount} (EVP: {self.evp[-1]:.2f}%)"
         )
         plt.pause(1e-10)
         self.fig.canvas.draw()

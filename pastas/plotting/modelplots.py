@@ -43,10 +43,9 @@ class Plotting:
         self.ml = ml  # Store a reference to the model class
 
     def __repr__(self) -> str:
-        msg = (
+        return (
             "This module contains all the built-in plotting options that are available."
         )
-        return msg
 
     @model_tmin_tmax
     def plot(
@@ -599,13 +598,11 @@ class Plotting:
         responses = [x for x in responses if x is not None]
         if responses:
             xlim_left = min(
-                [
-                    x.index[0] if block_or_step == "step" else x.index[1]
+                x.index[0] if block_or_step == "step" else x.index[1]
                     for x in responses
                     if x is not None
-                ]
             )
-            xlim_right = max([x.index[-1] for x in responses])
+            xlim_right = max(x.index[-1] for x in responses)
             for i, response in enumerate(responses):
                 if i == 0:
                     label = f"{block_or_step.capitalize()} response"
@@ -1154,7 +1151,7 @@ class Plotting:
             # the part of each pie is determined by the std of the contribution
             frac = [contrib.std() for contrib in contribs]
         else:
-            msg = "Unknown value for partition: {}".format(partition)
+            msg = f"Unknown value for partition: {partition}"
             raise (Exception(msg))
 
         # make sure the unexplained part is 100 - evp %
@@ -1338,8 +1335,7 @@ class Plotting:
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         stresses = _get_stress_series(self.ml, split=split)
-        axes = series(obs, stresses=stresses, **kwargs)
-        return axes
+        return series(obs, stresses=stresses, **kwargs)
 
     @model_tmin_tmax
     def summary(
@@ -1430,7 +1426,7 @@ class Plotting:
         -------
         fig: matplotlib.pyplot.Figure instance
         """
-        fname = "{}.pdf".format(self.ml.name) if fname is None else fname
+        fname = f"{self.ml.name}.pdf" if fname is None else fname
         pdf = PdfPages(fname)
         fig = self.summary(
             tmin=tmin,
@@ -1470,8 +1466,7 @@ class Plotting:
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         stresses = _get_stress_series(self.ml, split=split)
         series = [obs] + list(stresses)
-        axd = pairplot(data=series, bins=bins)
-        return axd
+        return pairplot(data=series, bins=bins)
 
     @model_tmin_tmax
     def contribution(
