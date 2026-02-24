@@ -159,6 +159,7 @@ commands = [
         "--extend-select",
         "I",
         "--preview",
+        "--exit-zero",
     ],
 ]
 
