@@ -57,7 +57,7 @@ def bench():
     if hasattr(ml, "solver"):
         nfev = ml.solver.nfev
     else:
-        nfev = ml.fit.nfev
+        nfev = ml.solver.nfev
     results = {
         **versions,
         "nfev": nfev,

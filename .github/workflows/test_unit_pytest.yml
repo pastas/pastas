@@ -9,6 +9,7 @@ on:
     branches:
       - master
       - dev
+      - dev2
 
 concurrency:
   # Group by workflow name and ref (branch or pull request ref).
@@ -26,10 +27,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Test suite with py310-ubuntu
-            python: "3.10"
-            toxenv: py310
-            experimental: false
           - name: Test suite with py311-ubuntu
             python: "3.11"
             toxenv: py311

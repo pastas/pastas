@@ -137,7 +137,7 @@
         "nparam": 2
     },
     "noisemodel": {
-        "class": "NoiseModel",
+        "class": "ArNoiseModel",
         "norm": true
     },
     "fit": {

@@ -587,7 +587,7 @@ class HantushWellModel(RfuncBase):
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.distances is None:
             raise (
-                Exception(
+                ValueError(
                     "distances is None. Set using method set_distances() or use "
                     "Hantush."
                 )

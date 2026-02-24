@@ -140,7 +140,7 @@
         "nparam": 2
     },
     "noisemodel": {
-        "type": "NoiseModel"
+        "type": "ArNoiseModel"
     },
     "fit": {
         "name": "LeastSquares",
