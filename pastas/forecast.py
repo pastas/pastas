@@ -12,7 +12,7 @@ Generate forecasts using ensembles of stress forecasts::
 from logging import getLogger
 
 from numpy import array, empty, exp, linspace, ones
-from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, Timestamp, concat
+from pandas import DataFrame, DatetimeIndex, MultiIndex, Series, Timedelta, Timestamp, concat
 
 from pastas.decorators import deprecate_args_or_kwargs
 from pastas.noisemodels import ArNoiseModel
@@ -22,7 +22,7 @@ logger = getLogger(__name__)
 
 
 def _check_forecast_data(
-    forecasts: dict[str, list[DataFrame]] | dict[str, dict[str, DataFrame]],
+    forecasts: dict[str, list[DataFrame | Series]] | dict[str, dict[str, DataFrame | Series]],
 ) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
@@ -82,6 +82,9 @@ def _check_forecast_data(
                 force_raise=False,
             )
         for fc in fc_data:
+            # Convert Series to a 1-column DataFrame
+            if isinstance(fc, Series):
+                fc = fc.to_frame()
             # Check if DataFrame is empty
             if fc.empty:
                 msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}'"
@@ -121,7 +124,7 @@ def _check_forecast_data(
 
 def forecast(
     ml: Model,
-    forecasts: dict[str, list[DataFrame]] | dict[str, dict[str, DataFrame]],
+    forecasts: dict[str, list[DataFrame | Series]] | dict[str, dict[str, DataFrame | Series]],
     p: ArrayLike | None = None,
     post_process: bool = False,
 ) -> DataFrame:
@@ -231,6 +234,9 @@ def forecast(
             sm = ml.stressmodels[sm_name]  # Select stressmodel
             fc_data = fc_data.values() if isinstance(fc_data, dict) else fc_data
             for i, fc in enumerate(fc_data):
+                # Convert Series to a 1-column DataFrame
+                if isinstance(fc, Series):
+                    fc = fc.to_frame()
                 ts = concat(
                     [
                         sm.stress[i].series_original.loc[: tmin - day],
