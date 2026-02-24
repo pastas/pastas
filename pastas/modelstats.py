@@ -460,7 +460,7 @@ class Statistics:
         """
         nparam = self.ml.parameters["vary"].sum()
         if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml.noise_weights(
+            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
                 tmin=tmin, tmax=tmax
             )
         else:
@@ -490,7 +490,7 @@ class Statistics:
         """
         nparam = self.ml.parameters["vary"].sum()
         if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml.noise_weights(
+            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
                 tmin=tmin, tmax=tmax
             )
         else:
@@ -520,7 +520,7 @@ class Statistics:
         """
         nparam = self.ml.parameters["vary"].sum()
         if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml.noise_weights(
+            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
                 tmin=tmin, tmax=tmax
             )
         else:
