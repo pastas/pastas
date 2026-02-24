@@ -17,7 +17,7 @@ from collections import OrderedDict
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
-from typing import Any
+from typing import Any, Literal
 
 # External Dependencies
 import numpy as np
@@ -882,7 +882,7 @@ class Model:
         warmup: float | None = None,
         noise: bool | None = None,
         solver: Solver | None = None,
-        report: bool | str = True,
+        report: bool | Literal["full"] = True,
         initial: bool = True,
         weights: Series | None = None,
         fit_constant: bool = True,
@@ -918,7 +918,7 @@ class Model:
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
             of Pastas 0.23, not a class!
-        report: bool | str, optional
+        report: bool | Literal["full"], optional
             Print a report to the screen after optimization finished. Set to
             True (default) to print a standard report, "full" to print a
             report including the correlation matrix and standard errors of the
