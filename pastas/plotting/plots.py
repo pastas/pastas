@@ -620,7 +620,7 @@ class TrackSolve:
         self.rmse_res = np.array([rmse(res=res)])
 
         # calculate RMSE noise
-        if self.ml.settings["noise"] and self.ml.noisemodel is not None:
+        if self.ml.noisemodel is not None:
             noise = self._noise(self.ml.parameters.initial.values)
             self.rmse_noise = np.array([rmse(res=noise)])
 
@@ -652,7 +652,7 @@ class TrackSolve:
         r_res = self._residuals(params)
         self.rmse_res = np.r_[self.rmse_res, rmse(res=r_res)]
 
-        if self.ml.settings["noise"] and self.ml.noisemodel is not None:
+        if self.ml.noisemodel is not None:
             n_res = self._noise(params)
             self.rmse_noise = np.r_[self.rmse_noise, rmse(res=n_res)]
 
@@ -783,7 +783,7 @@ class TrackSolve:
         self.ax1.set_ylim(1e-2, 2 * self.rmse_res[-1])
         self.ax1.set_ylabel("RMSE")
 
-        if self.ml.settings["noise"] and self.ml.noisemodel is not None:
+        if self.ml.noisemodel is not None:
             (self.n_rmse_plot_line,) = self.ax1.plot(
                 [0], self.rmse_noise[0:1], c="C0", ls="solid", label="noise"
             )
@@ -803,7 +803,7 @@ class TrackSolve:
         legend_handles = []
         for pname, row in self.ml.parameters.iterrows():
             if pname.startswith("noise"):
-                if not self.ml.settings["noise"] or self.ml.noisemodel is None:
+                if self.ml.noisemodel is None:
                     continue
             (pa,) = self.ax2.plot(
                 [0], np.abs(row.initial), marker=".", ls="none", label=pname
@@ -875,7 +875,7 @@ class TrackSolve:
             np.array([self.itercount]), np.array([self.rmse_res[-1]])
         )
 
-        if self.ml.settings["noise"] and self.ml.noisemodel is not None:
+        if self.ml.noisemodel is not None:
             # update rmse noise
             self.n_rmse_plot_line.set_data(
                 range(self.itercount + 1), np.array(self.rmse_noise)
