@@ -141,12 +141,18 @@ commands = [
         "check",
         "--extend-select",
         "I",
-        "--preview",
     ],
     [
         "ruff",
         "format",
         "--check",
+    ],
+        [
+        "ruff",
+        "check",
+        "--extend-select",
+        "I",
+        "--preview",
     ],
 ]
 
