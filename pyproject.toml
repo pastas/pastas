@@ -156,6 +156,20 @@ commands = [
     ],
 ]
 
+[tool.tox.env.ruff_preview]
+description = "run ruff checks preview mode"
+extras = ["ruffing"]
+commands = [
+    [
+        "ruff",
+        "check",
+        "--extend-select",
+        "I",
+        "--preview",
+        "--exit-zero",
+    ],
+]
+
 [tool.tox.env.codespell]
 description = "run spelling checks"
 extras = ["codespelling"]
