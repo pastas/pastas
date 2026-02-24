@@ -18,7 +18,7 @@ maintainers = [
     { name = "O.N. Ebbens", email = "o.ebbens@artesia-water.nl" },
     { name = "M.A. Vonk", email = "vonk.mart@gmail.com" },
 ]
-requires-python = ">= 3.11"
+requires-python = ">= 3.10"
 dependencies = [
     "numpy >= 2.0.0",
     "matplotlib >= 3.9.0",
@@ -33,6 +33,7 @@ classifiers = [
     'Intended Audience :: Other Audience',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
@@ -100,7 +101,7 @@ ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
 [tool.tox]
 requires = ["tox>=4"]
-env_list = ["py311", "py312", "py313", "py314", "ruff", "notebooks"]
+env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
 
 [tool.tox.env_run_base]
 description = "run unit tests"

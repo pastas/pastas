@@ -1,6 +1,5 @@
 """Tests for utility functions in pastas.utils."""
 
-import logging
 from typing import Any
 
 import pandas as pd
@@ -23,7 +22,7 @@ class TestGetStressTminTmax:
 
         # Verify tmin and tmax make sense relative to stress data
         for sm_name in ml_solved.stressmodels:
-            for stress in ml_solved.stressmodels[sm_name].stresses:
+            for stress in ml_solved.stressmodels[sm_name].stress:
                 stress_tmin = stress.series_original.index.min()
                 stress_tmax = stress.series_original.index.max()
                 # tmin should be <= each stress's max time
@@ -53,7 +52,6 @@ class TestValidateName:
         """Test with invalid name on Linux platform."""
         name = "invalid/name with space"
 
-        caplog.set_level(logging.WARNING, logger="pastas.utils")
         result = validate_name(name)
         assert result == name
         assert "contains illegal character" in caplog.text

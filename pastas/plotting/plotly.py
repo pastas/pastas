@@ -72,7 +72,7 @@ class Plotly:
         traces = []
 
         o = self._model.observations()
-        o_nu = self._model.oseries.series_original.drop(o.index)
+        o_nu = self._model.oseries.series.drop(o.index)
 
         # add oseries
         if not o_nu.empty:
@@ -174,7 +174,7 @@ class Plotly:
 
         # oseries
         o = self._model.observations(tmin=tmin, tmax=tmax)
-        o_nu = self._model.oseries.series_original.drop(o.index)
+        o_nu = self._model.oseries.series.drop(o.index)
 
         trace_oseries_nu = go.Scattergl(
             x=o_nu.index,

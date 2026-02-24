@@ -113,9 +113,7 @@ def ml_sm(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
     """Return a model with multiple stress models."""
     ml = ps.Model(head, name="multistress_model")
     sm1 = ps.StressModel(prec, name="prec", rfunc=ps.Exponential(), settings="prec")
-    sm2 = ps.StressModel(
-        evap, name="evap", rfunc=ps.Exponential(), settings="evap", up=False
-    )
+    sm2 = ps.StressModel(evap, name="evap", rfunc=ps.Exponential(), settings="evap")
     ml.add_stressmodel([sm1, sm2])
     return ml
 

@@ -131,8 +131,13 @@ class TestStatistics:
 
     def test_kge_2012(self, ml_solved: ps.Model) -> None:
         """Test KGE 2012 calculation."""
-        with pytest.raises(DeprecationWarning):
-            _ = ml_solved.stats.kge_2012()
+        kge_2012 = ml_solved.stats.kge_2012()
+
+        # Should return a float value
+        assert isinstance(kge_2012, float)
+
+        # KGE 2012 should be <= 1.0 (theoretical maximum)
+        assert kge_2012 <= 1.0
 
     def test_information_criteria(self, ml_solved: ps.Model) -> None:
         """Test information criteria calculations."""

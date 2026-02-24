@@ -13,8 +13,8 @@ ax = ml.plots.results()
 
 # get the precipitation and evaporation
 sm = ml.stressmodels["Recharge"]
-prec = sm.prec.series_original
-evap = sm.evap.series_original
+prec = sm.stress[0].series_original
+evap = sm.stress[1].series_original
 
 # delete all the stressmodels and the constant
 ml.del_stressmodel("Recharge")
