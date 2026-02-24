@@ -644,7 +644,7 @@ def _gxg(
             return yearly.mean()
     else:
         msg = "{} is not a valid output option".format(output)
-        raise (ValueError(msg))
+        raise ValueError(msg)
 
 
 def _q_gxg(

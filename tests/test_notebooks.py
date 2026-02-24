@@ -44,7 +44,7 @@ def test_notebook(file) -> None:
             print(f"Notebook {file} ran successfully.")
         except Exception as e:
             os.chdir(cwd)
-            raise Exception(e)
+            raise RuntimeError(f"Could not run notebook {file}, error: {e}")
     os.chdir(cwd)
 
 

@@ -19,15 +19,22 @@ This will print the following to the console::
 
 """
 
+from pastas.decorators import PastasDeprecationWarning
+
+
+@PastasDeprecationWarning(
+    remove_version="2.0.0",
+    reason="The ExceededMaxSolveTime exception has been renamed to TimeoutError.",
+)
+class ExceededMaxSolveTime(Exception):
+    pass
+
+
 try:
     from tqdm.auto import tqdm
 except ImportError:
     msg = "SolveTimer requires 'tqdm' to be installed."
     raise ImportError(msg) from None
-
-
-class ExceededMaxSolveTime(Exception):
-    """Custom Exception when model optimization exceeds threshold."""
 
 
 class SolveTimer(tqdm):
@@ -44,12 +51,6 @@ class SolveTimer(tqdm):
 
         Optimization progress: 73it [00:01, 67.68it/s]
 
-    Set maximum allowable time (in seconds) for solve, otherwise raise
-    ExceededMaxSolveTime exception::
-
-        with SolveTimer(max_time=60) as t:
-            ml.solve(callback=t.timer)
-
 
     Notes
     -----
@@ -64,8 +65,7 @@ class SolveTimer(tqdm):
         ----------
         max_time : float, optional
             maximum allowed time spent in solve(), by default None, which does
-            not impose a limit. If time is exceeded, raises
-            ExceededMaxSolveTime Exception.
+            not impose a limit. If time is exceeded, raises RunTimeError.
         """
         if "total" not in kwargs:
             kwargs["total"] = None
@@ -79,7 +79,7 @@ class SolveTimer(tqdm):
         displayed = super().update(n)
         if self.max_time is not None:
             if self.format_dict["elapsed"] > self.max_time:
-                raise ExceededMaxSolveTime(
+                raise TimeoutError(
                     f"Model solve time exceeded {self.max_time} seconds!"
                 )
         return displayed

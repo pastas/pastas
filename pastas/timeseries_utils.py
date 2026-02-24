@@ -346,9 +346,9 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
 
     if fast:
         if s.isna().any():
-            raise Exception("s cannot contain NaN values when fast=True")
+            raise ValueError("s cannot contain NaN values when fast=True")
         if not api.types.is_float_dtype(s):
-            raise Exception("s must be of dtype float")
+            raise ValueError("s must be of dtype float")
 
         # first multiply by the timestep
         s_new = s * dt
