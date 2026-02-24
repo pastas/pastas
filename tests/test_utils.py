@@ -1,6 +1,5 @@
 """Tests for utility functions in pastas.utils."""
 
-import logging
 from typing import Any
 
 import pandas as pd
@@ -53,7 +52,6 @@ class TestValidateName:
         """Test with invalid name on Linux platform."""
         name = "invalid/name with space"
 
-        caplog.set_level(logging.WARNING, logger="pastas.utils")
         result = validate_name(name)
         assert result == name
         assert "contains illegal character" in caplog.text

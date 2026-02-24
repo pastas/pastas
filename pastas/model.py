@@ -17,7 +17,6 @@ from collections import OrderedDict
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
-from pathlib import Path
 from typing import Any
 
 # External Dependencies
@@ -2399,12 +2398,12 @@ class Model:
 
         return data
 
-    def to_file(self, fname: str | Path, series: bool | str = True, **kwargs) -> None:
+    def to_file(self, fname: str, series: bool | str = True, **kwargs) -> None:
         """Method to save the Pastas model to a file.
 
         Parameters
         ----------
-        fname: str | Path
+        fname: str
             String with the name and the extension of the file. File extension has to
             be supported by Pastas. E.g. "model.pas"
         series: bool | str, optional

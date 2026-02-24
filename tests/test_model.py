@@ -1,6 +1,6 @@
 """Tests for the Model class in pastas.model."""
 
-from pathlib import Path
+import logging
 from typing import Any
 
 import numpy as np
@@ -502,16 +502,19 @@ class TestModelSolving:
 
     def test_solve_with_warnings(self, ml_bad: ps.Model, caplog):
         """Test that solving a problematic model generates warnings."""
+        with caplog.at_level(logging.WARNING):
+            ml_bad.solve(report=False)
 
-        ml_bad.solve(report=False)
-        msg = ml_bad._generate_warnings_report()
-
-        assert len(msg) == 3
-        assert msg[0].startswith("Parameter 'recharge_f' on lower bound:")
-        assert msg[1].startswith(
+        assert len(caplog.records) == 3
+        assert caplog.records[0].message.startswith(
+            "Parameter 'recharge_f' on lower bound:"
+        )
+        assert caplog.records[1].message.startswith(
             "Response tmax for 'recharge' > than calibration period."
         )
-        assert msg[2].startswith("Response tmax for 'recharge' > than warmup period.")
+        assert caplog.records[2].message.startswith(
+            "Response tmax for 'recharge' > than warmup period."
+        )
 
 
 class TestModelContributions:
@@ -628,7 +631,5 @@ class TestModelExportImport:
         """Test saving and loading a model with float that can be converted to int."""
         s = pd.Series(index=pd.date_range("2025-01-01", periods=10, freq="D"), data=1.0)
         ml = ps.Model(s)
-        file = Path("test_float_int.pas")
-        ml.to_file(file)
-        _ = ps.io.load(file)
-        file.unlink()  # Clean up
+        ml.to_file("test_float_int.pas")
+        _ = ps.io.load("test_float_int.pas")
