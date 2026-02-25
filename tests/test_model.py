@@ -200,7 +200,6 @@ class TestModelComponents:
         ml_basic.add_noisemodel(noise)
 
         assert ml_basic.noisemodel is noise
-        assert ml_basic.settings["noise"] is True
 
     def test_del_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test deleting a noise model."""
@@ -211,7 +210,6 @@ class TestModelComponents:
         # Then delete it
         ml_basic.del_noisemodel()
         assert ml_basic.noisemodel is None
-        assert ml_basic.settings["noise"] is False
 
 
 @pytest.mark.integration

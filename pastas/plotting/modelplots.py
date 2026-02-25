@@ -248,7 +248,7 @@ class Plotting:
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
         ax2 = plot_series_with_gaps(res, ax=ax2, color="k")
-        if self.ml.settings["noise"] and self.ml.noisemodel:
+        if self.ml.noisemodel is not None:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
             ax2 = plot_series_with_gaps(noise, ax=ax2, color="C0")
         ax2.axhline(0.0, color="k", linestyle="--", zorder=0)
@@ -470,7 +470,7 @@ class Plotting:
 
         # plot residuals (and noise if present)
         _ = plot_series_with_gaps(res, ax=axd["res"], color="k")
-        if self.ml.settings["noise"] and self.ml.noisemodel:
+        if self.ml.noisemodel is not None:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
             _ = plot_series_with_gaps(noise, ax=axd["res"], color="C0")
         axd["res"].axhline(0.0, color="k", linestyle="--", zorder=0)
@@ -874,7 +874,7 @@ class Plotting:
         scipy.stats.probplot
             Method use to plot the probability plot.
         """
-        if self.ml.settings["noise"]:
+        if self.ml.noisemodel is not None:
             res = self.ml.noise(tmin=tmin, tmax=tmax).iloc[1:]
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
