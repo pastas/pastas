@@ -2127,7 +2127,7 @@ class Model:
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
-            "weights": "Yes" if str(self.settings["weights"]) else "No",
+            "weights": "Yes" if self.settings["weights"] is not None else "No",
         }
 
         if output is not None:
