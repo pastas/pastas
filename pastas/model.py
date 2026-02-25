@@ -2317,12 +2317,13 @@ class Model:
             pandas series with boolean values of the parameters that are close to the
             maximum (pmax) values.
         """
-        upperhit = Series(index=self._parameters.index, dtype=bool)
         lowerhit = Series(index=self._parameters.index, dtype=bool)
+        upperhit = Series(index=self._parameters.index, dtype=bool)
 
         for p in self._parameters.index:
-            pmax = self._parameters.at[p, "pmax"]
+            optimal = self._parameters.at[p, "optimal"]
             pmin = self._parameters.at[p, "pmin"]
+            pmax = self._parameters.at[p, "pmax"]
 
             # calculate atol based on minimum, with max 1e-8
             # otherwise set 1 order of magnitude lower than minimum value
@@ -2332,18 +2333,12 @@ class Model:
                 atol = np.min([1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
 
             # deal with NaNs in parameter bounds
-            if np.isnan(pmax):
-                pmax = np.inf
-            if np.isnan(pmin):
-                pmax = -np.inf
+            pmin = -np.inf if np.isnan(pmin) else pmin
+            pmax = np.inf if np.isnan(pmax) else pmax
 
             # determine hits
-            upperhit.at[p] = np.allclose(
-                self._parameters.at[p, "optimal"], pmax, atol=atol, rtol=1e-5
-            )
-            lowerhit.at[p] = np.allclose(
-                self._parameters.at[p, "optimal"], pmin, atol=atol, rtol=1e-5
-            )
+            lowerhit.at[p] = np.allclose(optimal, pmin, atol=atol, rtol=1e-5)
+            upperhit.at[p] = np.allclose(optimal, pmax, atol=atol, rtol=1e-5)
 
         return lowerhit, upperhit
 
