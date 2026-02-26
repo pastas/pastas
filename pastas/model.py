@@ -589,10 +589,8 @@ class Model:
 
         # simulate model
         sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
-
         # Get the oseries calibration series
         obs = self.observations(tmin=tmin, tmax=tmax, freq=freq_obs)
-
         # Get simulation at the correct indices
         if self.interpolate_simulation is None:
             if obs.index.difference(sim.index).size != 0:
@@ -603,7 +601,11 @@ class Model:
                 )
         if self.interpolate_simulation:
             # interpolate simulation to times of observations
-            sim_interpolated = np.interp(obs.index.asi8, sim.index.asi8, sim.values)
+            sim_interpolated = np.interp(
+                obs.index.to_numpy(dtype=int, copy=True),
+                sim.index.to_numpy(dtype=int, copy=True),
+                sim.to_numpy(copy=True),
+            )
         else:
             # All the observation indexes are in the simulation
             sim_interpolated = sim.reindex(obs.index)
@@ -616,7 +618,7 @@ class Model:
             logger.warning("Nan-values were removed from the residuals.")
 
         if self.normalize_residuals:
-            res = res.subtract(res.values.mean())
+            res = res.subtract(np.mean(res))
 
         res.name = "Residuals"
         return res
@@ -1026,10 +1028,12 @@ class Model:
             # Determine the residuals and set the constant to their mean
             self.normalize_residuals = False
             res = self.residuals(optimal).mean()
-            optimal[self._parameters.name == self.constant.name] = res
+            self._parameters.loc[
+                self._parameters.name == self.constant.name, "optimal"
+            ] = res
 
-        self._parameters.optimal = optimal
-        self._parameters.stderr = stderr
+        self._parameters.loc[:, "optimal"] = optimal
+        self._parameters.loc[:, "stderr"] = stderr
         self._solve_success = success  # store for fit_report
 
         if report:
@@ -1494,18 +1498,17 @@ class Model:
         p : array_like
             NumPy array with the parameters used in the time series model.
         """
-        if name:
-            p = self._parameters.loc[self._parameters.name == name]
-        else:
-            p = self._parameters
-
-        if p.optimal.hasnans:
+        # select parameters from appropriate stressmodel or noisemodel
+        parameters = (
+            self._parameters.query("name == @name") if name else self._parameters
+        )
+        if parameters.loc[:, "optimal"].hasnans:
             logger.warning("Model is not optimized yet, initial parameters are used.")
-            parameters = p.initial
+            p = parameters.loc[:, "initial"]
         else:
-            parameters = p.optimal
+            p = parameters.loc[:, "optimal"]
 
-        return parameters.to_numpy(dtype=float)
+        return p.to_numpy(dtype=float, copy=True)
 
     def get_stressmodel_names(self) -> list[str]:
         """Returns list of stressmodel names."""

@@ -134,12 +134,12 @@ class BaseSolver:
 
         if returnseparate:
             return (
-                self.ml.residuals(p).values,
-                self.ml.noise(p).values,
-                self.ml.noise_weights(p).values,
+                self.ml.residuals(p).to_numpy(copy=True),
+                self.ml.noise(p).to_numpy(copy=True),
+                self.ml.noise_weights(p).to_numpy(copy=True),
             )
 
-        return rv.values
+        return rv.to_numpy(copy=True)
 
     def prediction_interval(
         self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
@@ -337,7 +337,7 @@ class BaseSolver:
         array_like
             array with N parameter samples.
         """
-        p = self.ml.get_parameters(name=name)
+        p = self.ml.get_parameters(name=name).copy()
         pcov = self._get_covariance_matrix(name=name)
 
         if name is None:
@@ -516,9 +516,13 @@ class LeastSquares(BaseSolver):
         callback: CallBack | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
-        self.vary = self.ml.parameters.vary.values.astype(bool)
-        self.initial = self.ml.parameters.initial.values.copy()
-        parameters = self.ml.parameters.loc[self.vary]
+        self.vary = self.ml.parameters.loc[:, "vary"].to_numpy(dtype=bool, copy=True)
+        self.initial = self.ml.parameters.loc[:, "initial"].to_numpy(
+            dtype=float, copy=True
+        )
+        parameters = self.ml.parameters.loc[self.vary, :].copy()
+        pmin = parameters.loc[:, "pmin"].to_numpy(dtype=float, copy=True)
+        pmax = parameters.loc[:, "pmax"].to_numpy(dtype=float, copy=True)
 
         # Set the boundaries
         method = kwargs.pop("method") if "method" in kwargs else "trf"
@@ -537,15 +541,15 @@ class LeastSquares(BaseSolver):
             self.ml._parameters.loc[self.vary, "pmax"] = np.nan
         else:
             bounds = Bounds(
-                lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
-                ub=np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
+                lb=np.where(np.isnan(pmin), -np.inf, pmin),
+                ub=np.where(np.isnan(pmax), np.inf, pmax),
                 keep_feasible=True,
             )
 
         self.result = least_squares(
             self.objfunction,
             bounds=bounds,
-            x0=parameters.initial.values,
+            x0=self.initial[self.vary],
             args=(noise, weights, callback),
             method=method,
             **kwargs,

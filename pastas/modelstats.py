@@ -391,7 +391,12 @@ class Statistics:
         if self.ml.interpolate_simulation:
             # interpolate simulation to times of observations
             sim_interpolated = Series(
-                interp(obs.index.asi8, sim.index.asi8, sim.values), index=obs.index
+                interp(
+                    obs.index.to_numpy(dtype=int, copy=True),
+                    sim.index.to_numpy(dtype=int, copy=True),
+                    sim.to_numpy(copy=True),
+                ),
+                index=obs.index,
             )
         else:
             # All the observation indexes are in the simulation

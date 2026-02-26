@@ -3,8 +3,10 @@
 import logging
 
 import numpy as np
+from packaging.version import parse as parse_version
 from pandas import (
     DataFrame,
+    DatetimeIndex,
     Index,
     Series,
     Timedelta,
@@ -13,13 +15,40 @@ from pandas import (
     date_range,
     infer_freq,
 )
+from pandas import __version__ as pd_version
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
-from scipy import interpolate
+from pandas.tseries.offsets import BaseOffset
 
 from .decorators import njit
 
 logger = logging.getLogger(__name__)
+
+
+def _offset_to_timedelta(offset: BaseOffset) -> Timedelta:
+    """Convert pandas offset to Timedelta for pandas 3.0 compatibility.
+
+    Parameters
+    ----------
+    offset : pandas.tseries.offsets.BaseOffset
+        Pandas offset object from to_offset().
+
+    Returns
+    -------
+    pandas.Timedelta
+        Converted timedelta.
+
+    Raises
+    ------
+    ValueError
+        If the offset cannot be converted directly to a Timedelta.
+    """
+    # For fixed frequency offsets in pandas 3.0+, use the nanos attribute
+    # which is available on all offset objects
+    if hasattr(offset, "nanos"):
+        return Timedelta(offset.nanos, unit="ns")
+    # Fallback: raise to signal that this offset can't be converted
+    raise ValueError(f"Cannot directly convert offset {offset} to Timedelta")
 
 
 def _frequency_is_supported(freq: str) -> str:
@@ -59,7 +88,7 @@ def _frequency_is_supported(freq: str) -> str:
     """
     offset = to_offset(freq)
     try:
-        Timedelta(offset)
+        _offset_to_timedelta(offset)
     except Exception as e:
         msg = "Frequency %s not supported."
         logger.error(msg, freq)
@@ -96,7 +125,7 @@ def _get_stress_dt(freq: str) -> float:
     # Get the frequency string and multiplier
     offset = to_offset(freq)
     try:
-        dt = Timedelta(offset) / Timedelta(1, "D")
+        dt = _offset_to_timedelta(offset) / Timedelta(1, "D")
     except Exception as e:
         logging.debug(e)
         num = offset.n
@@ -146,16 +175,21 @@ def _get_dt(freq: str) -> float:
         Number of days.
     """
     # Get the frequency string and multiplier
-    dt = Timedelta(to_offset(freq)) / Timedelta(1, "D")
+    offset = to_offset(freq)
+    if parse_version(pd_version) >= parse_version("3.0.0"):
+        dt = _offset_to_timedelta(offset) / Timedelta(1, "D")
+    else:
+        # Fallback for non-fixed offsets: re-run _get_stress_dt logic
+        dt = _get_stress_dt(freq)
     return dt
 
 
-def _get_time_offset(t: Timestamp, freq: str) -> Timedelta:
+def _get_time_offset(t: Timestamp | DatetimeIndex, freq: str) -> Timedelta:
     """Internal method to calculate the time offset of a Timestamp.
 
     Parameters
     ----------
-    t: pandas.Timestamp
+    t: pandas.Timestamp or pandas.DatetimeIndex
         Timestamp to calculate the offset from the desired freq for.
     freq: str
         String with the desired frequency.
@@ -163,7 +197,7 @@ def _get_time_offset(t: Timestamp, freq: str) -> Timedelta:
     Returns
     -------
     offset: pandas.Timedelta
-        Timedelta with the offset for the timestamp t.
+        Timedelta with the offset for the timestamp(s) t.
     """
     if freq is None:
         raise TypeError("frequency is None")
@@ -201,7 +235,9 @@ def _infer_fixed_freq(tindex: Index) -> str:
     return freq
 
 
-def _get_sim_index(tmin, tmax, freq, time_offset):
+def _get_sim_index(
+    tmin: Timestamp, tmax: Timestamp, freq: str, time_offset: Timedelta
+) -> DatetimeIndex:
     """Internal method to determine the simulation index
 
     Parameters
@@ -228,7 +264,7 @@ def _get_sim_index(tmin, tmax, freq, time_offset):
     return sim_index
 
 
-def get_sample(tindex: Index, ref_tindex: Index) -> Index:
+def get_sample(tindex: DatetimeIndex, ref_tindex: DatetimeIndex) -> DatetimeIndex:
     """Sample the index of a pandas Series or DataFrame so that the frequency is not
     higher than the frequency of ref_tindex.
 
@@ -241,7 +277,7 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
 
     Returns
     -------
-    pandas.Index
+    pandas.DatetimeIndex
         The sampled index, consisting of a subset of the original index tindex. The
         values in tindex that are closest to ref_index are returned.
 
@@ -252,16 +288,16 @@ def get_sample(tindex: Index, ref_tindex: Index) -> Index:
     """
     if len(tindex) == 1:
         return tindex
-    else:
-        f = interpolate.interp1d(
-            tindex.asi8,
-            np.arange(0, tindex.size),
-            kind="nearest",
-            bounds_error=False,
-            fill_value="extrapolate",
-        )
-        ind = np.unique(f(ref_tindex.asi8).astype(int))
-        return tindex[ind]
+
+    # Sort for nearest matching
+    tindex = tindex.sort_values()
+
+    indexer = tindex.get_indexer(ref_tindex, method="nearest")
+
+    # Drop invalid matches
+    indexer = indexer[indexer >= 0]
+
+    return tindex[np.unique(indexer)]
 
 
 def get_sample_for_freq(
@@ -371,10 +407,10 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         # set values after the end of the original series to NaN
         s_new[s_new.index > s.index[-1]] = np.nan
     else:
-        t_e = s.index.asi8
+        t_e = s.index.to_numpy(dtype=int, copy=True)
         t_s = t_e - dt
         v = s.values
-        t_new = index.asi8
+        t_new = index.to_numpy(dtype=int, copy=True)
         v_new = _ts_resample_slow(t_s, t_e, v, t_new)
         s_new = Series(v_new, index)
 
@@ -382,7 +418,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
 
 
 def _get_dt_array(index):
-    dt = np.diff(index.asi8)
+    dt = np.diff(index.to_numpy(dtype=int, copy=True))
     # assume the first value has an equal timestep as the second value
     dt = np.hstack((dt[0], dt))
     return dt
@@ -411,115 +447,111 @@ def _ts_resample_slow(t_s, t_e, v, t_new):
     return v_new
 
 
-def get_equidistant_series_nearest(
-    series: Series, freq: str, minimize_data_loss: bool = False
-) -> Series:
-    """Get equidistant time series using nearest reindexing.
-
-    This method will shift observations to the nearest equidistant timestep to create
-    an equidistant time series, if necessary. Each observation is guaranteed to only
-    be used once in the equidistant time series.
+def _get_nearest_offset_to_freq(tindex: DatetimeIndex, freq: str) -> Timedelta:
+    """Internal method to get the nearest offset to a frequency string.
 
     Parameters
     ----------
-    series : pandas.Series
-        original (non-equidistant) time series
+    tindex : pandas.DatetimeIndex
+        The index to calculate the offset from.
     freq : str
-        frequency of the new equidistant time series (i.e. "h", "D", "7D", etc.)
-    minimize_data_loss : bool, optional
-        if set to True, method will attempt use any unsampled points from original
-        time series to fill some remaining NaNs in the new equidistant time series.
-        Default is False. This only happens in rare cases.
+        The frequency string to calculate the offset for.
 
     Returns
     -------
-    s : pandas.Series
-        equidistant time series
-
-    Notes
-    -----
-    This method creates an equidistant time series with specified freq using the nearest
-    sampling (meaning observations can be shifted in time), with additional filling
-    logic that ensures each original measurement is only included once in the new
-    time series. Values are filled as close as possible to their original timestamp
-    in the new equidistant time series.
+    pandas.Timedelta
+        The nearest offset to the frequency string.
     """
+    offsets = _get_time_offset(t=tindex, freq=freq).value_counts()
+    t_offset = offsets.idxmax() if len(offsets) > 0 else Timedelta(0)
+    return t_offset
 
-    # build new equidistant index
-    t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
-    # use t_offset to pick time that will keep the most data without shifting in time
-    # from the original series.
+
+def get_equidistant_series_nearest(
+    series: Series, freq: str, minimize_data_loss: bool = False
+) -> Series:
+
+    if len(series) == 0:
+        return series
+
+    # Must be sorted for nearest matching
+    series = series.sort_index()
+
+    # Build equidistant index
+    t_offset = _get_nearest_offset_to_freq(series.index, freq)
+
     idx = date_range(
         series.index[0].floor(freq) + t_offset,
         series.index[-1].ceil(freq) + t_offset,
         freq=freq,
     )
+    idx_ns = idx.to_numpy(dtype=int)
+    series_ns = series.index.to_numpy(dtype=int)
 
-    # get linear interpolated index from original series
-    fl = interpolate.interp1d(
-        series.index.asi8,
-        np.arange(0, series.index.size),
-        kind="linear",
-        bounds_error=False,
-        fill_value="extrapolate",
-    )
-    ind_linear = fl(idx.asi8)
+    # Nearest matching
+    ind = series.index.get_indexer(idx, method="nearest")
 
-    # get the nearest index from original series
-    f = interpolate.interp1d(
-        series.index.asi8,
-        np.arange(0, series.index.size),
-        kind="nearest",
-        bounds_error=False,
-        fill_value="extrapolate",
-    )
-    ind = f(idx.asi8).astype(int)
+    # Remove out-of-range matches
+    valid = ind >= 0
+    ind = ind[valid]
 
-    # create a new equidistant series
-    s = Series(index=idx, data=np.nan)
+    s = Series(index=idx, dtype=float)
 
-    # fill in the nearest value for each timestamp in equidistant series
-    s.loc[idx] = series.values[ind]
+    # Initial fill
+    s.iloc[valid] = series.to_numpy(copy=True)[ind]
 
-    # remove duplicates, each observation can only be used once
-    mask = Series(ind).duplicated(keep=False).values
-    # mask all duplicates and set to NaN
-    s.loc[mask] = np.nan
+    matched_isna = np.zeros(len(idx), dtype=bool)
+    matched_isna[np.where(valid)[0]] = series.isna().to_numpy(copy=True)[ind]
 
-    # look through duplicates which equidistant timestamp is the closest
-    # then fill value from original series for closest timestamp
-    for i in np.unique(ind[mask]):
-        # mask duplicates
-        dupe_mask = ind == i
-        # get location of first duplicate
-        first_dupe = np.nonzero(dupe_mask)[0][0]
-        # get index for closest equidistant timestamp
-        i_nearest = np.argmin(np.abs(ind_linear - ind)[dupe_mask])
-        # fill value
-        s.iloc[first_dupe + i_nearest] = series.values[i]
+    # ---- Duplicate resolution (each original value used once) ----
 
-    # This next part is an ugly bit of code to fill up any
-    # nans if there are unused values in the original time series
-    # that lie close enough to our missing datapoint in the new equidisant
-    # series.
+    dup_mask = Series(ind).duplicated(keep=False).values
+    valid_positions = np.where(valid)[0]
+    s.iloc[valid_positions[dup_mask]] = np.nan
+
+    used_mask = np.zeros(len(series), dtype=bool)
+    source_isna = series.isna().to_numpy(copy=True)
+
+    # Mark non-duplicate matches as used (skip NaN source values)
+    non_dup = ind[~dup_mask]
+    used_mask[non_dup] = ~source_isna[non_dup]
+
+    for i in np.unique(ind[dup_mask]):
+        dupe_positions = np.where(ind == i)[0]
+
+        # choose closest in actual time distance
+        distances = np.abs(idx_ns[dupe_positions] - series_ns[i])
+
+        best = dupe_positions[np.argmin(distances)]
+        if not source_isna[i]:
+            s.iloc[best] = series.iloc[i]
+            used_mask[i] = True
+
+    # ---- Minimize data loss ----
     if minimize_data_loss:
-        # find remaining nans
         nanmask = s.isna()
-        if nanmask.sum() > 0:
-            # get unused (not sampled) timestamps from original series
-            unused = set(range(series.index.size)) - set(ind)
-            if len(unused) > 0:
-                # dropna: do not consider unused nans
-                missing_ts = series.iloc[list(unused)].dropna().index
-                # loop through nan timestamps in new series
-                for t in s.loc[nanmask].index:
-                    # find closest unused value
-                    closest = np.argmin(np.abs(missing_ts - t))
-                    # check if value is not farther away that freq to avoid
-                    # weird behavior
-                    if np.abs(missing_ts[closest] - t) <= Timedelta(freq):
-                        # fill value
-                        s.loc[t] = series.loc[missing_ts[closest]]
+        fillable = nanmask & ~matched_isna
+
+        if fillable.any():
+            unused = np.where(~used_mask & ~source_isna)[0]
+
+            if unused.size > 0:
+                unused_idx = series_ns[unused]
+                unused_vals = series.iloc[unused].to_numpy(copy=True)
+
+                nan_positions = np.where(fillable)[0]
+
+                for pos in nan_positions:
+                    distances = np.abs(unused_idx - idx_ns[pos])
+                    closest = np.argmin(distances)
+
+                    if distances[closest] <= Timedelta(freq).value:
+                        s.iloc[pos] = unused_vals[closest]
+                        unused_idx = np.delete(unused_idx, closest)
+                        unused_vals = np.delete(unused_vals, closest)
+                        if unused_idx.size == 0:
+                            break
+
     return s
 
 
@@ -543,7 +575,8 @@ def pandas_equidistant_sample(series: Series, freq: str) -> Series:
     """
     series = series.copy()
     # find most common offset relative to freq
-    t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
+    offsets = _get_time_offset(series.index, freq).value_counts()
+    t_offset = offsets.idxmax() if len(offsets) > 0 else Timedelta(0)
     # use t_offset to pick time that will keep the most data from the original series.
     new_idx = date_range(
         series.index[0].floor(freq) + t_offset,

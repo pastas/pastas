@@ -289,6 +289,7 @@ def evp(
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
+    # Check both standard and weighted variance
     if obs.var() == 0.0:
         return 100.0
     else:

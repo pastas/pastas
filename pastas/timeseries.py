@@ -13,6 +13,7 @@ from logging import getLogger
 from typing import Any, Self
 
 import pandas as pd
+from packaging.version import parse as parse_version
 from pandas import Series, Timedelta
 from pandas.tseries.frequencies import to_offset
 
@@ -23,8 +24,10 @@ from .rcparams import rcParams
 from .timeseries_utils import (
     _get_dt,
     _get_sim_index,
+    _get_stress_dt,
     _get_time_offset,
     _infer_fixed_freq,
+    _offset_to_timedelta,
     get_sample,
     resample,
 )
@@ -354,7 +357,14 @@ class TimeSeries:
             elif method == "interpolate":
                 series = series.asfreq(freq).interpolate(method="time")
             elif method == "divide":
-                dt = series.index.to_series().diff() / Timedelta(to_offset(freq))
+                if parse_version(pd.__version__) >= parse_version("3.0.0"):
+                    dt = series.index.to_series().diff() / _offset_to_timedelta(
+                        to_offset(freq)
+                    )
+                else:
+                    dt = series.index.to_series().diff() / Timedelta(
+                        _get_stress_dt(freq), "D"
+                    )
                 series = series / dt
                 series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):
@@ -715,9 +725,9 @@ class ObservationSeries(TimeSeries):
                 # exceed the model frequency. Make sure to retain the original
                 # timestamps, as they will be used for interpolation of the simulation.
                 sim_index = _get_sim_index(tmin, tmax, freq, time_offset)
-                index = get_sample(series.index, sim_index)
+                obs_index = series.index.copy()
+                index = get_sample(obs_index, sim_index)
                 series = series.loc[index]
-
             # Update the series with the new settings
             series.name = self._series_original.name
 

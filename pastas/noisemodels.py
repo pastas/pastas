@@ -172,10 +172,9 @@ class ArNoiseModel(NoiseModelBase):
             Series of the noise.
         """
         alpha = p[0]
-        odelt = np.diff(res.index.to_numpy()) / Timedelta("1D")
-        v = np.append(
-            res.values[0], res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        )
+        odelt = np.diff(res.index.to_numpy(copy=True)) / Timedelta("1D")
+        resv = res.to_numpy(copy=True)
+        v = np.append(resv[0], resv[1:] - np.exp(-odelt / alpha) * resv[:-1])
         return Series(data=v, index=res.index, name="Noise")
 
     def weights(self, res: Series, p: ArrayLike) -> Series:

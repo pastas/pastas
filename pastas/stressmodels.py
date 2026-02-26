@@ -1908,13 +1908,13 @@ class RechargeModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
         if istress is None:
-            prec = self.prec.series.values
-            evap = self.evap.series.values
+            prec = self.prec.series.to_numpy(copy=True)
+            evap = self.evap.series.to_numpy(copy=True)
             temp = None
             if self.temp is not None:
-                temp = self.temp.series.values
+                temp = self.temp.series.to_numpy(copy=True)
             if p is None:
-                p = self.parameters.initial.values
+                p = self.parameters.initial.to_numpy(copy=True)
             stress = self.recharge.simulate(
                 prec=prec, evap=evap, p=p[-self.recharge.nparam :], **{"temp": temp}
             )
@@ -1979,13 +1979,19 @@ class RechargeModel(StressModelBase):
         >>> wb.plot(subplots=True)
         """
         if p is None:
-            p = self.parameters.initial.values
+            p = self.parameters.initial.to_numpy(copy=True)
 
-        prec = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=0).values
-        evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=1).values
+        prec = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=0).to_numpy(
+            copy=True
+        )
+        evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=1).to_numpy(
+            copy=True
+        )
 
         if self.temp is not None:
-            temp = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=2).values
+            temp = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=2).to_numpy(
+                copy=True
+            )
         else:
             temp = None
         df = self.recharge.get_water_balance(
@@ -2010,10 +2016,11 @@ class RechargeModel(StressModelBase):
         p : array_like
             An array of the parameters of the stressmodel.
         """
-        if model is None:
-            p = self.parameters.initial.values
-        else:
-            p = model.get_parameters(self.name)
+        p = (
+            self.parameters.initial.to_numpy(copy=True)
+            if model is None
+            else model.get_parameters(self.name).copy()
+        )
 
         if istress is not None and isinstance(self.recharge, Linear):
             if istress == 0:
@@ -2183,7 +2190,7 @@ class TarsoModel(RechargeModel):
         dt: float = 1.0,
     ) -> Series:
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
-        h = self.tarso(p[: -self.recharge.nparam], stress.values, dt)
+        h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(copy=True), dt)
         sim = Series(h, name=self.name, index=stress.index)
         return sim
 

@@ -149,7 +149,7 @@ class TestLinearTrend:
         sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
 
         # Set positive trend
-        p = sm.parameters.initial.values
+        p = sm.parameters.loc[:, "initial"].to_numpy(copy=True)
         p[0] = 1.0  # Set slope to positive value
 
         # Run simulation
