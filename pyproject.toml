@@ -167,3 +167,6 @@ commands = [
 description = "run spelling checks"
 extras = ["codespelling"]
 commands = [["codespell"]]
+
+[dependency-groups]
+dev = ["tox", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
