@@ -139,14 +139,14 @@ class TestLinearTrend:
 
     def test_init(self) -> None:
         """Test initialization."""
-        sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        sm = LinearTrend(tstart="2001-01-01", tend="2002-01-01", name="trend1")
         assert sm.name == "trend1"
-        assert sm.start == "2001-01-01"
-        assert sm.end == "2002-01-01"
+        assert sm.tstart == "2001-01-01"
+        assert sm.tend == "2002-01-01"
 
     def test_simulate(self) -> None:
         """Test simulate method."""
-        sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        sm = LinearTrend(tstart="2001-01-01", tend="2002-01-01", name="trend1")
 
         # Set positive trend
         p = sm.parameters.initial.values
