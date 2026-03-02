@@ -81,6 +81,9 @@ rtd = [
 ]
 dev = ["tox", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
 
+[dependency-groups]
+dev = ["pastas[dev]"]
+
 [tool.setuptools.dynamic]
 version = { attr = "pastas.version.__version__" }
 
@@ -167,3 +170,4 @@ commands = [
 description = "run spelling checks"
 extras = ["codespelling"]
 commands = [["codespell"]]
+
