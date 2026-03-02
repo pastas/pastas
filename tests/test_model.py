@@ -500,6 +500,7 @@ class TestModelSolving:
         assert "freq_obs" in report_with_freq_obs
         assert "7D" in report_with_freq_obs
 
+    @pytest.mark.usefixtures("caplog")
     def test_solve_with_warnings(self, ml_bad: ps.Model, caplog):
         """Test that solving a problematic model generates warnings."""
         with caplog.at_level(logging.WARNING):

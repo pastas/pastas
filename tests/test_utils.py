@@ -48,6 +48,7 @@ class TestValidateName:
         result = validate_name(name)
         assert result == name
 
+    @pytest.mark.usefixtures("caplog")
     def test_invalid_name_linux(self, caplog: Any) -> None:
         """Test with invalid name on Linux platform."""
         name = "invalid/name with space"
