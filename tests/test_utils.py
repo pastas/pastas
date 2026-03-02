@@ -1,5 +1,6 @@
 """Tests for utility functions in pastas.utils."""
 
+import logging
 from typing import Any
 
 import pandas as pd
@@ -48,14 +49,14 @@ class TestValidateName:
         result = validate_name(name)
         assert result == name
 
-    @pytest.mark.usefixtures("caplog")
     def test_invalid_name_linux(self, caplog: Any) -> None:
         """Test with invalid name on Linux platform."""
         name = "invalid/name with space"
 
-        result = validate_name(name)
-        assert result == name
-        assert "contains illegal character" in caplog.text
+        with caplog.at_level(logging.INFO, logger="pastas.utils"):
+            result = validate_name(name)
+            assert result == name
+            assert "contains illegal character" in caplog.text
 
     def test_invalid_name_raise_error(self) -> None:
         """Test with invalid name and raise_error=True."""

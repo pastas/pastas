@@ -500,22 +500,21 @@ class TestModelSolving:
         assert "freq_obs" in report_with_freq_obs
         assert "7D" in report_with_freq_obs
 
-    @pytest.mark.usefixtures("caplog")
     def test_solve_with_warnings(self, ml_bad: ps.Model, caplog):
         """Test that solving a problematic model generates warnings."""
-        with caplog.at_level(logging.WARNING):
+        with caplog.at_level(logging.INFO, logger="pastas.model"):
             ml_bad.solve(report=False)
 
-        assert len(caplog.records) == 3
-        assert caplog.records[0].message.startswith(
-            "Parameter 'recharge_f' on lower bound:"
-        )
-        assert caplog.records[1].message.startswith(
-            "Response tmax for 'recharge' > than calibration period."
-        )
-        assert caplog.records[2].message.startswith(
-            "Response tmax for 'recharge' > than warmup period."
-        )
+            assert len(caplog.get_records("call")) == 3
+            assert caplog.records[0].message.startswith(
+                "Parameter 'recharge_f' on lower bound:"
+            )
+            assert caplog.records[1].message.startswith(
+                "Response tmax for 'recharge' > than calibration period."
+            )
+            assert caplog.records[2].message.startswith(
+                "Response tmax for 'recharge' > than warmup period."
+            )
 
 
 class TestModelContributions:
