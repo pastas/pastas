@@ -74,6 +74,18 @@ class TestCheckForecastData:
         assert tmax == index[-1]
         assert (result_index == index).all()
 
+    def test_series_input(self) -> None:
+        """Test that a Series is converted to a 1-column DataFrame."""
+        index: DatetimeIndex = pd.date_range("2023-01-01", periods=10, freq="D")
+        s1: Series = pd.Series(np.random.rand(10), index=index)
+        s2: Series = pd.Series(np.random.rand(10), index=index)
+        forecasts: dict[str, list[Series]] = {"sm1": [s1, s2]}
+        n, tmin, tmax, result_index = _check_forecast_data(forecasts)
+        assert n == 1
+        assert tmin == index[0]
+        assert tmax == index[-1]
+        assert (result_index == index).all()
+
 
 class TestGetOverallMeanAndVariance:
     index: DatetimeIndex
@@ -188,3 +200,13 @@ class TestForecast:
         assert isinstance(result, pd.DataFrame)
         assert result.shape[0] == 5
         assert result.shape[1] >= 1
+
+    def test_forecast_series_input(self, ml_noisemodel: Model) -> None:
+        """Test that Series inputs are accepted and converted to DataFrames."""
+        index: DatetimeIndex = pd.date_range("2015-11-30", periods=5, freq="D")
+        s1: Series = pd.Series(np.ones(5), index=index)
+        s2: Series = pd.Series(np.ones(5) * 2, index=index)
+        series_data: dict[str, list[Series]] = {"rch": [s1, s2]}
+        result = forecast(ml_noisemodel, series_data, post_process=False)
+        assert isinstance(result, pd.DataFrame)
+        assert not result.empty
