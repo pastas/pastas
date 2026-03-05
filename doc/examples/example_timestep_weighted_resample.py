@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from pastas.timeseries_utils import timestep_weighted_resample
+from pastas.timeseries_utils import timestep_weighted_resample, time_weighted_resample
 
 # make a daily series from monthly (mostly) values, without specifying the
 # frequency of the original series
@@ -11,11 +11,13 @@ series0 = pd.Series(np.random.rand(len(index)), index)
 new_index = series0.resample("D").mean().index
 series1 = timestep_weighted_resample(series0, new_index, fast=False)
 series2 = timestep_weighted_resample(series0, new_index, fast=True)
+series3 = time_weighted_resample(series0, new_index)
 
 plt.figure()
 series0.plot(label="Monthly")
-series1.plot(label="Daily")
-series2.plot(label="Daily (fast)", linestyle="--")
+series1.plot(label="Daily", linewidth=6)
+series2.plot(label="Daily (fast)", linestyle="--", linewidth=4)
+series3.plot(label="Daily (time-weighted)", linestyle="-", linewidth=2)
 plt.legend()
 
 # make a precipitation-series at 0:00 from values at 9:00
@@ -23,9 +25,11 @@ index = pd.date_range("2000-1-1 9:00", "2000-1-10 9:00")
 series0 = pd.Series(np.random.rand(len(index)), index)
 series1 = timestep_weighted_resample(series0, series0.index.normalize(), fast=False)
 series2 = timestep_weighted_resample(series0, series0.index.normalize(), fast=True)
+series3 = time_weighted_resample(series0, series0.index.normalize())
 
 plt.figure()
 series0.plot(label="Original (9:00)")
-series1.plot(label="Resampled (0:00)")
-series2.plot(label="Resampled (0:00, fast)", linestyle="--")
+series1.plot(label="Resampled (0:00)", linewidth=6)
+series2.plot(label="Resampled (0:00, fast)", linestyle="--", linewidth=4)
+series3.plot(label="Resampled (0:00, time-weighted)", linestyle="-", linewidth=2)
 plt.legend()
