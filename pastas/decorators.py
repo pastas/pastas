@@ -112,38 +112,52 @@ def model_tmin_tmax(function: Callable) -> Callable:
     return _model_tmin_tmax
 
 
-def PastasDeprecationWarning(remove_version: str, reason: str = "") -> Any:
+def PastasDeprecationWarning(deprecate_version: str, remove_version: str, reason: str = "") -> Any:
     """Provide a warning or error when a Pastas class, method or function is deprecated.
 
-    Logs a warning if the current Pastas version is lower than the version in which the
-    class, function or method is removed. Raises a DeprecationWarning if the current
-    Pastas version is higher than the version in which the class, function or method was
-    removed.
+    This decorator manages deprecation of classes, functions, or methods across Pastas versions.
+    The behavior depends on the current version:
+
+    - If current version < deprecate_version: logs a warning and allows execution to continue
+    - If deprecate_version <= current version < remove_version: raises DeprecationWarning
+    - If current version >= remove_version: raises ModuleNotFoundError which indicates
+    that it can be removed from the codebase entirely
 
     Parameters
     ----------
+    deprecate_version: str
+        The version in which the function or class begins raising a DeprecationWarning.
     remove_version: str
-        The version in which the function or class will be removed.
+        The version in which the function or class will be removed from Pastas and raise ModuleNotFoundError.
     reason: str, optional
-        The reason why the function or class is deprecated. Or provide a message
-        that tells the user which alternative should be used.
+        The reason why the function or class is deprecated, or a message directing users
+        to an alternative. Default is an empty string.
+
+    Returns
+    -------
+    callable
+        A decorator that wraps the target class or function.
     """
 
     def wrapper(obj: Any):
         name = obj.__name__
 
         def _function(*args, **kwargs):
-            if CURRENT_PASTAS_VERSION < parse_version(remove_version):
+            DEPRECATE_VERSION = parse_version(deprecate_version)
+            REMOVE_VERSION = parse_version(remove_version)
+            if CURRENT_PASTAS_VERSION < DEPRECATE_VERSION:
                 msg = (
-                    "%s is deprecated and will be removed in Pastas version %s. "
-                    % (name, remove_version)
-                ) + reason
+                    f"{name} is deprecated and will not available anymore"
+                    f" in Pastas version {DEPRECATE_VERSION}. {reason}"
+                )
                 logger.warning(msg)
+            elif CURRENT_PASTAS_VERSION >= REMOVE_VERSION:
+                raise ModuleNotFoundError("no module named '%s'" % name)
             else:
                 msg = (
-                    "%s is deprecated and was removed in Pastas version %s. "
-                    % (name, remove_version)
-                ) + reason
+                    f"{name} is deprecated and is not available since"
+                    f" Pastas version {DEPRECATE_VERSION}. {reason}"
+                )
                 raise DeprecationWarning(msg)
 
             return obj(*args, **kwargs)
@@ -154,41 +168,60 @@ def PastasDeprecationWarning(remove_version: str, reason: str = "") -> Any:
 
 
 def deprecate_args_or_kwargs(
-    name: str, remove_version: str, reason: str = "", force_raise: bool = False
+    name: str, deprecate_version: str, remove_version: str, reason: str = "", force_raise: bool = False
 ):
     """Provide a warning or error when a function argument is deprecated.
+
+    This function raises errors or warnings based on the current Pastas version and the
+    deprecation timeline. The behavior is:
+
+    - If current version < deprecate_version: logs a warning (or raises if force_raise=True)
+    - If deprecate_version <= current version < remove_version: raises DeprecationWarning
+    - If current version >= remove_version: raises TypeError which indicates that it can be
+    removed from the codebase entirely
 
     Parameters
     ----------
     name: str
         The name of the argument that is deprecated.
+    deprecate_version: str
+        The version in which the argument becomes deprecated.
     remove_version: str
-        The version in which the argument will be removed.
+        The version in which the argument will be removed and TypeError will be raised.
     reason: str, optional
-        The reason why the argument is deprecated. Or provide a message that tells the
-        user which alternative should be used.
+        The reason why the argument is deprecated, or a message directing users to
+        an alternative. Default is an empty string.
     force_raise: bool, optional
-        If True, raise a DeprecationWarning even if remove_version is still in the
-        future. Default is False.
-    """
-    if (not force_raise) and (CURRENT_PASTAS_VERSION < parse_version(remove_version)):
-        msg = (
-            "The '%s' argument is deprecated and will be removed in Pastas version %s. "
-            % (name, remove_version)
-        ) + reason
-        logger.warning(msg)
-    else:
-        if force_raise:
-            msg = (
-                "The %s argument is deprecated and will be removed in Pastas version %s. "
-                % (name, remove_version)
-            ) + reason
-        else:
-            msg = (
-                "The %s argument is deprecated and was removed in Pastas version %s. "
-                % (name, remove_version)
-            ) + reason
+        If True, raise DeprecationWarning immediately even if the current version has
+        not yet reached deprecate_version. Default is False.
 
+    Raises
+    ------
+    DeprecationWarning
+        If between deprecate_version and remove_version (inclusive), or if force_raise=True
+        and current version < deprecate_version.
+    TypeError
+        If current version >= remove_version and the argument is used.
+    """
+    DEPRECATE_VERSION = parse_version(deprecate_version)
+    REMOVE_VERSION = parse_version(remove_version)
+
+    if CURRENT_PASTAS_VERSION < DEPRECATE_VERSION:
+        msg = (
+            f"The {name} argument is deprecated and will not available"
+            f" anymore in Pastas version {DEPRECATE_VERSION}. {reason}"
+        )
+        if force_raise:
+            raise DeprecationWarning(msg)
+        else:
+            logger.warning(msg)
+    elif CURRENT_PASTAS_VERSION >= REMOVE_VERSION:
+        raise TypeError("got an unexpected keyword argument '%s'" % name)
+    else:
+        msg = (
+            f"The {name} argument is deprecated and is not available "
+            f"anymore since Pastas version {DEPRECATE_VERSION}. {reason}"
+        )
         raise DeprecationWarning(msg)
 
 
