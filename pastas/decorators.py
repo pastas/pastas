@@ -154,7 +154,7 @@ def PastasDeprecationWarning(
                 )
                 logger.warning(msg)
             elif CURRENT_PASTAS_VERSION >= REMOVE_VERSION:
-                raise ModuleNotFoundError("no module named '%s'" % name)
+                raise AttributeError("module has no attribute '%s'" % name)
             else:
                 msg = (
                     f"{name} is deprecated and is not available since"
