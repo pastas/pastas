@@ -18,16 +18,16 @@ def test_class_deprecation() -> None:
 
     # class is currently deprecated (between deprecate and remove versions) - should raise DeprecationWarning
     @PastasDeprecationWarning(
-        deprecate_version="1.0.0", remove_version="2.0.0", reason="Boo!"
+        deprecate_version="1.0.0", remove_version="10.0.0", reason="Boo!"
     )
     class Deprecated:
         def __init__(self, a: Any) -> None:
             self.a = a
 
-    with pytest.raises(DeprecationWarning):
+    with pytest.raises(DeprecationWarning, match="deprecated and is not available"):
         Deprecated(1)
 
-    # class was already removed in past version - should raise ModuleNotFoundError
+    # class was already removed in past version - should raise AttributeError
     @PastasDeprecationWarning(
         deprecate_version="0.1.0", remove_version="1.0.0", reason="Boo!"
     )
@@ -35,7 +35,7 @@ def test_class_deprecation() -> None:
         def __init__(self, a: Any) -> None:
             self.a = a
 
-    with pytest.raises(ModuleNotFoundError):
+    with pytest.raises(AttributeError, match="module has no attribute"):
         Deprecated(1)
 
 
@@ -60,16 +60,16 @@ def test_classmethod_deprecation() -> None:
             self.a = a
 
         @PastasDeprecationWarning(
-            deprecate_version="1.0.0", remove_version="2.0.0", reason="Boo!"
+            deprecate_version="1.0.0", remove_version="10.0.0", reason="Boo!"
         )
         def foo(self, b: Any) -> Any:
             return self.a + b
 
-    with pytest.raises(DeprecationWarning):
+    with pytest.raises(DeprecationWarning, match="deprecated and is not available"):
         d = Deprecated(1)
         d.foo(2)
 
-    # method was already removed in past version - should raise ModuleNotFoundError
+    # method was already removed in past version - should raise AttributeError
     class Deprecated:
         def __init__(self, a: Any) -> None:
             self.a = a
@@ -80,7 +80,7 @@ def test_classmethod_deprecation() -> None:
         def foo(self, b: Any) -> Any:
             return self.a + b
 
-    with pytest.raises(ModuleNotFoundError):
+    with pytest.raises(AttributeError, match="module has no attribute"):
         d = Deprecated(1)
         d.foo(2)  # raises error
 
@@ -97,22 +97,22 @@ def test_function_deprecation() -> None:
 
     # function is currently deprecated (between deprecate and remove versions) - should raise DeprecationWarning
     @PastasDeprecationWarning(
-        deprecate_version="1.0.0", remove_version="2.0.0", reason="Boo!"
+        deprecate_version="1.0.0", remove_version="10.0.0", reason="Boo!"
     )
     def foo(a: Any) -> None:
         print(a)
 
-    with pytest.raises(DeprecationWarning):
+    with pytest.raises(DeprecationWarning, match="deprecated and is not available"):
         foo(1)
 
-    # function was already removed in past version - should raise ModuleNotFoundError
+    # function was already removed in past version - should raise AttributeError
     @PastasDeprecationWarning(
         deprecate_version="0.1.0", remove_version="1.0.0", reason="Boo!"
     )
     def foo(a: Any) -> None:
         print(a)
 
-    with pytest.raises(ModuleNotFoundError):
+    with pytest.raises(AttributeError, match="module has no attribute"):
         foo(1)  # raises error
 
 
@@ -123,7 +123,7 @@ def test_deprecate_args_or_kwargs() -> None:
     )
 
     # force error even for future deprecation
-    with pytest.raises(DeprecationWarning):
+    with pytest.raises(DeprecationWarning, match="will not be available"):
         deprecate_args_or_kwargs(
             "test",
             deprecate_version="999.0.0",
@@ -133,13 +133,13 @@ def test_deprecate_args_or_kwargs() -> None:
         )
 
     # raise error when between deprecate and remove versions
-    with pytest.raises(DeprecationWarning):
+    with pytest.raises(DeprecationWarning, match="is not available"):
         deprecate_args_or_kwargs(
-            "test", deprecate_version="1.0.0", remove_version="2.0.0", reason="Boo!"
+            "test", deprecate_version="1.0.0", remove_version="10.0.0", reason="Boo!"
         )
 
     # raise TypeError when remove version has been reached
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="got an unexpected keyword argument"):
         deprecate_args_or_kwargs(
             "test", deprecate_version="0.1.0", remove_version="1.0.0", reason="Boo!"
         )
