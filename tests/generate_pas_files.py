@@ -114,8 +114,6 @@ def add_tarsomodel(
     ml: ps.Model,
     prec: pd.Series,
     evap: pd.Series,
-    dmin: float,
-    dmax: float,
 ) -> None:
     """Add a TarsoModel to the model using explicit drainage level bounds.
 
@@ -127,10 +125,6 @@ def add_tarsomodel(
         Precipitation time series.
     evap : pd.Series
         Evaporation time series.
-    dmin : float
-        Lower boundary of the upper drainage level.
-    dmax : float
-        Upper boundary of the upper drainage level.
 
     Notes
     -----
@@ -138,7 +132,7 @@ def add_tarsomodel(
     transform. Create the model with ``constant=False`` and add no other
     stressmodels beforehand.
     """
-    tm = ps.TarsoModel(prec, evap, dmin=dmin, dmax=dmax, name="tarso")
+    tm = ps.TarsoModel(prec, evap, oseries=ml.oseries.series_original, name="tarso")
     ml.add_stressmodel(tm)
 
 
@@ -356,7 +350,7 @@ def composer(
 # ---------------------------------------------------------------------------
 
 
-def generate(oseries: pd.Series, output_dir: Path) -> None:
+def generate(series: pd.Series, output_dir: Path) -> None:
     """Generate all .pas files for the current Pastas version.
 
     Parameters
@@ -389,9 +383,9 @@ def generate(oseries: pd.Series, output_dir: Path) -> None:
             composer(
                 add_stressmodel,
                 _variant_fname(rfunc, kwargs),
-                oseries,
+                series,
                 output_dir,
-                stress=oseries,
+                stress=series,
                 rfunc_name=rfunc,
                 rfunc_kwargs=kwargs,
             )
@@ -406,13 +400,13 @@ def generate(oseries: pd.Series, output_dir: Path) -> None:
         },
     }
     recharge_names = ["Linear", "FlexModel", "Berendrecht", "Peterson"]
-    stresses = {"prec": oseries, "evap": oseries, "temp": oseries}
+    stresses = {"prec": series, "evap": series, "temp": series}
     for recharge in recharge_names:
         for kwargs in recharge_variants.get(recharge, {"default": {}}).values():
             composer(
                 add_rechargemodel,
                 _variant_fname(recharge, kwargs),
-                oseries,
+                series,
                 output_dir,
                 stresses=stresses,
                 recharge_name=recharge,
@@ -423,19 +417,19 @@ def generate(oseries: pd.Series, output_dir: Path) -> None:
     composer(
         add_tarsomodel,
         "TarsoModel.pas",
-        oseries,
+        series,
         output_dir,
         constant=False,
-        prec=oseries,
-        evap=oseries,
+        prec=series,
+        evap=series,
     )
 
     # -- WellModel -----------------------------------------------------------
-    well_stresses = [oseries.rename("well1"), oseries.rename("well2")]
+    well_stresses = [series.rename("well1"), series.rename("well2")]
     composer(
         add_wellmodel,
         "WellModel.pas",
-        oseries,
+        series,
         output_dir,
         stresses=well_stresses,
         distances=[100.0, 200.0],
@@ -446,19 +440,19 @@ def generate(oseries: pd.Series, output_dir: Path) -> None:
     composer(
         add_changemodel,
         "ChangeModel.pas",
-        oseries,
+        series,
         output_dir,
-        stress=oseries,
+        stress=series,
     )
 
     # -- LinearTrend ---------------------------------------------------------
-    composer(add_lineartrend, "LinearTrend.pas", oseries, output_dir)
+    composer(add_lineartrend, "LinearTrend.pas", series, output_dir)
 
     # -- StepModel -----------------------------------------------------------
-    composer(add_stepmodel, "StepModel.pas", oseries, output_dir)
+    composer(add_stepmodel, "StepModel.pas", series, output_dir)
 
     # -- ThresholdTransform (requires at least one stressmodel) --------------
-    ml = create_model(oseries)
+    ml = create_model(series)
     add_rechargemodel(ml, stresses, "Linear", {})
     add_thresholdtransform(ml)
     save_model(ml, output_dir, "ThresholdTransform.pas")
@@ -468,7 +462,7 @@ def generate(oseries: pd.Series, output_dir: Path) -> None:
         composer(
             add_noisemodel,
             f"{noise}.pas",
-            oseries,
+            series,
             output_dir,
             noise_name=noise,
         )
@@ -478,15 +472,15 @@ def generate(oseries: pd.Series, output_dir: Path) -> None:
         composer(
             add_solver,
             f"solver_{solver}.pas",
-            oseries,
+            series,
             output_dir,
-            stress=oseries,
+            stress=series,
             solver_name=solver,
         )
 
     # -- Model with / without Constant ---------------------------------------
     for constant in [True, False]:
-        ml = create_model(oseries, constant=constant)
+        ml = create_model(series, constant=constant)
         save_model(ml, output_dir, f"model_constant={constant}.pas")
 
 
