@@ -149,8 +149,8 @@ def PastasDeprecationWarning(
             REMOVE_VERSION = parse_version(remove_version)
             if CURRENT_PASTAS_VERSION < DEPRECATE_VERSION:
                 msg = (
-                    f"{name} is deprecated and will not available anymore"
-                    f" in Pastas version {DEPRECATE_VERSION}. {reason}"
+                    f"{name} is deprecated and will not be available "
+                    f"from Pastas version >={DEPRECATE_VERSION}. {reason}"
                 )
                 logger.warning(msg)
             elif CURRENT_PASTAS_VERSION >= REMOVE_VERSION:
@@ -214,7 +214,7 @@ def deprecate_args_or_kwargs(
 
     if CURRENT_PASTAS_VERSION < DEPRECATE_VERSION:
         msg = (
-            f"The {name} argument is deprecated and will not available"
+            f"The {name} argument is deprecated and will not be available"
             f" from Pastas version >={DEPRECATE_VERSION}. {reason}"
         )
         if force_raise:
@@ -225,8 +225,8 @@ def deprecate_args_or_kwargs(
         raise TypeError("got an unexpected keyword argument '%s'" % name)
     else:
         msg = (
-            f"The {name} argument is deprecated and is not available "
-            f"since Pastas version {DEPRECATE_VERSION}. {reason}"
+            f"The {name} argument is deprecated and is not available"
+            f" since Pastas version {DEPRECATE_VERSION}. {reason}"
         )
         raise DeprecationWarning(msg)
 
