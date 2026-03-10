@@ -122,7 +122,7 @@ def PastasDeprecationWarning(
 
     - If current version < deprecate_version: logs a warning and allows execution to continue
     - If deprecate_version <= current version < remove_version: raises DeprecationWarning
-    - If current version >= remove_version: raises ModuleNotFoundError which indicates
+    - If current version >= remove_version: raises AttributeError which indicates
     that it can be removed from the codebase entirely
 
     Parameters
@@ -130,7 +130,8 @@ def PastasDeprecationWarning(
     deprecate_version: str
         The version in which the function or class begins raising a DeprecationWarning.
     remove_version: str
-        The version in which the function or class will be removed from Pastas and raise ModuleNotFoundError.
+        The version in which the function or class will be removed from the Pastas codebase
+        and raises an AttributeError.
     reason: str, optional
         The reason why the function or class is deprecated, or a message directing users
         to an alternative. Default is an empty string.
