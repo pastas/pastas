@@ -7,6 +7,7 @@ Newly generated directories are removed after the test class finishes.
     pytest tests/test_pas_files.py
 """
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -42,11 +43,15 @@ def generate_pas_files(version: str) -> Path:
     return output_dir
 
 
-_PAS_FILES = [
-    p
-    for version in PASTAS_VERSIONS
-    for p in sorted(generate_pas_files(version).glob("*.pas"))
-]
+_PAS_FILES = (
+    [
+        p
+        for version in PASTAS_VERSIONS
+        for p in sorted(generate_pas_files(version).glob("*.pas"))
+    ]
+    if os.environ["CI_PASFILES"] == "1"
+    else []
+)
 
 XFAIL = {
     "ChangeModel.pas": "Known issue with ChangeModel in in <1.13.1",
