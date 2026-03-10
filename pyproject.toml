@@ -95,7 +95,11 @@ fix = true
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
-markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
+markers = [
+    "notebooks: run notebooks",
+    "bnotebooks: run benchmark notebooks",
+    "pasfiles: test pas file I/O between pastas versions",
+]
 
 [tool.codespell]
 skip = "*.pdf,*.csv,*.txt"
@@ -109,7 +113,14 @@ env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
 [tool.tox.env_run_base]
 description = "run unit tests"
 extras = ["ci"]
-commands = [["pytest", "tests", "-m", "not notebooks and not bnotebooks"]]
+commands = [
+    [
+        "pytest",
+        "tests",
+        "-m",
+        "not notebooks and not bnotebooks and not pasfiles",
+    ],
+]
 
 [tool.tox.env.all]
 description = "run all unit tests (including Notebooks) and obtain coverage"
@@ -122,7 +133,7 @@ commands = [
         "pytest",
         "tests",
         "-m",
-        "not bnotebooks",
+        "not bnotebooks and not pasfiles",
     ],
     [
         "coverage",
@@ -138,36 +149,14 @@ commands = [["pytest", "tests", "-m", "bnotebooks"]]
 [tool.tox.env.ruff]
 description = "run ruff checks"
 extras = ["ruffing"]
-commands = [
-    [
-        "ruff",
-        "check",
-        "--extend-select",
-        "I",
-    ],
-    [
-        "ruff",
-        "format",
-        "--check",
-    ],
-]
+commands = [["ruff", "check", "--extend-select", "I"], ["ruff", "format", "--check"]]
 
 [tool.tox.env.ruff_preview]
 description = "run ruff checks preview mode"
 extras = ["ruffing"]
-commands = [
-    [
-        "ruff",
-        "check",
-        "--extend-select",
-        "I",
-        "--preview",
-        "--exit-zero",
-    ],
-]
+commands = [["ruff", "check", "--extend-select", "I", "--preview", "--exit-zero"]]
 
 [tool.tox.env.codespell]
 description = "run spelling checks"
 extras = ["codespelling"]
 commands = [["codespell"]]
-

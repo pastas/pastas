@@ -1,0 +1,43 @@
+name: CI PASFILES IO
+
+on:
+  # Trigger the workflow on push or pull request on master,
+  # and only on pull-requests on dev branch
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
+concurrency:
+  # Group by workflow name and ref (branch or pull request ref).
+  # For pushes the ref is the branch (refs/heads/<branch>).
+  # For PR events the ref is refs/pull/<number>/merge — same across commits for that PR.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test_pasfiles:
+    name: Test .pas files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install uv with Python 3.13
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: "3.13"
+          activate-environment: true
+
+      - name: Install the project
+        run: |
+          uv sync --extra "dev"
+
+      - name: Run pytest
+        run: |
+          uv run pytest -m "pasfiles"
