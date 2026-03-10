@@ -701,7 +701,8 @@ def kge(
 
 
 @PastasDeprecationWarning(
-    remove_version="2.0",
+    deprecate_version="2.0.0",
+    remove_version="2.2.0",
     reason="""This function `kge_2012` will be deprecated in Pastas version 2.0. Please
     use `pastas.stats.kge(modified=True)` to get the same outcome.""",
 )

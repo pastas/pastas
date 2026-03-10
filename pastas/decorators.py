@@ -112,7 +112,9 @@ def model_tmin_tmax(function: Callable) -> Callable:
     return _model_tmin_tmax
 
 
-def PastasDeprecationWarning(deprecate_version: str, remove_version: str, reason: str = "") -> Any:
+def PastasDeprecationWarning(
+    deprecate_version: str, remove_version: str, reason: str = ""
+) -> Any:
     """Provide a warning or error when a Pastas class, method or function is deprecated.
 
     This decorator manages deprecation of classes, functions, or methods across Pastas versions.
@@ -168,7 +170,11 @@ def PastasDeprecationWarning(deprecate_version: str, remove_version: str, reason
 
 
 def deprecate_args_or_kwargs(
-    name: str, deprecate_version: str, remove_version: str, reason: str = "", force_raise: bool = False
+    name: str,
+    deprecate_version: str,
+    remove_version: str,
+    reason: str = "",
+    force_raise: bool = False,
 ):
     """Provide a warning or error when a function argument is deprecated.
 

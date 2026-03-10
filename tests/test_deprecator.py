@@ -6,16 +6,20 @@ from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 
 
 def test_class_deprecation() -> None:
-    # deprecate class in future version
-    @PastasDeprecationWarning(remove_version="999.0.0", reason="Boo!")
+    # class will be removed in future version - should log warning
+    @PastasDeprecationWarning(
+        deprecate_version="999.0.0", remove_version="1000.0.0", reason="Boo!"
+    )
     class Deprecated:
         def __init__(self, a: Any) -> None:
             self.a = a
 
-    Deprecated(1)
+    Deprecated(1)  # logs warning, continues execution
 
-    # class was deprecated in older version
-    @PastasDeprecationWarning(remove_version="1.0.0", reason="Boo!")
+    # class is currently deprecated (between deprecate and remove versions) - should raise DeprecationWarning
+    @PastasDeprecationWarning(
+        deprecate_version="1.0.0", remove_version="2.0.0", reason="Boo!"
+    )
     class Deprecated:
         def __init__(self, a: Any) -> None:
             self.a = a
@@ -23,61 +27,119 @@ def test_class_deprecation() -> None:
     with pytest.raises(DeprecationWarning):
         Deprecated(1)
 
-
-def test_classmethod_deprecation() -> None:
-    # deprecate class in future version
+    # class was already removed in past version - should raise ModuleNotFoundError
+    @PastasDeprecationWarning(
+        deprecate_version="0.1.0", remove_version="1.0.0", reason="Boo!"
+    )
     class Deprecated:
         def __init__(self, a: Any) -> None:
             self.a = a
 
-        @PastasDeprecationWarning(remove_version="999.0.0", reason="Boo!")
+    with pytest.raises(ModuleNotFoundError):
+        Deprecated(1)
+
+
+def test_classmethod_deprecation() -> None:
+    # method will be removed in future version - should log warning
+    class Deprecated:
+        def __init__(self, a: Any) -> None:
+            self.a = a
+
+        @PastasDeprecationWarning(
+            deprecate_version="999.0.0", remove_version="1000.0.0", reason="Boo!"
+        )
         def foo(self, b: Any) -> Any:
             return self.a + b
 
     d = Deprecated(1)
-    d.foo(2)  # warning
+    d.foo(2)  # logs warning, continues execution
 
-    # class was deprecated in older version
+    # method is currently deprecated (between deprecate and remove versions) - should raise DeprecationWarning
     class Deprecated:
         def __init__(self, a: Any) -> None:
             self.a = a
 
-        @PastasDeprecationWarning(remove_version="1.0.0", reason="Boo!")
+        @PastasDeprecationWarning(
+            deprecate_version="1.0.0", remove_version="2.0.0", reason="Boo!"
+        )
         def foo(self, b: Any) -> Any:
             return self.a + b
 
     with pytest.raises(DeprecationWarning):
         d = Deprecated(1)
+        d.foo(2)
+
+    # method was already removed in past version - should raise ModuleNotFoundError
+    class Deprecated:
+        def __init__(self, a: Any) -> None:
+            self.a = a
+
+        @PastasDeprecationWarning(
+            deprecate_version="0.1.0", remove_version="1.0.0", reason="Boo!"
+        )
+        def foo(self, b: Any) -> Any:
+            return self.a + b
+
+    with pytest.raises(ModuleNotFoundError):
+        d = Deprecated(1)
         d.foo(2)  # raises error
 
 
 def test_function_deprecation() -> None:
-    # deprecate function in future version
-    @PastasDeprecationWarning(remove_version="999.0.0", reason="Boo!")
+    # function will be removed in future version - should log warning
+    @PastasDeprecationWarning(
+        deprecate_version="999.0.0", remove_version="1000.0.0", reason="Boo!"
+    )
     def foo(a: Any) -> None:
         print(a)
 
-    foo(1)  # warning
+    foo(1)  # logs warning, continues execution
 
-    # function was deprecated in older version
-    @PastasDeprecationWarning(remove_version="1.0.0", reason="Boo!")
+    # function is currently deprecated (between deprecate and remove versions) - should raise DeprecationWarning
+    @PastasDeprecationWarning(
+        deprecate_version="1.0.0", remove_version="2.0.0", reason="Boo!"
+    )
     def foo(a: Any) -> None:
         print(a)
 
     with pytest.raises(DeprecationWarning):
+        foo(1)
+
+    # function was already removed in past version - should raise ModuleNotFoundError
+    @PastasDeprecationWarning(
+        deprecate_version="0.1.0", remove_version="1.0.0", reason="Boo!"
+    )
+    def foo(a: Any) -> None:
+        print(a)
+
+    with pytest.raises(ModuleNotFoundError):
         foo(1)  # raises error
 
 
 def test_deprecate_args_or_kwargs() -> None:
     # log warning for future deprecation
-    deprecate_args_or_kwargs("test", remove_version="999.0.0", reason="Boo!")
+    deprecate_args_or_kwargs(
+        "test", deprecate_version="999.0.0", remove_version="1000.0.0", reason="Boo!"
+    )
 
     # force error even for future deprecation
     with pytest.raises(DeprecationWarning):
         deprecate_args_or_kwargs(
-            "test", remove_version="999.0.0", reason="Boo!", force_raise=True
+            "test",
+            deprecate_version="999.0.0",
+            remove_version="1000.0.0",
+            reason="Boo!",
+            force_raise=True,
         )
 
-    # raise error for past deprecation
+    # raise error when between deprecate and remove versions
     with pytest.raises(DeprecationWarning):
-        deprecate_args_or_kwargs("test", remove_version="1.0.0", reason="Boo!")
+        deprecate_args_or_kwargs(
+            "test", deprecate_version="1.0.0", remove_version="2.0.0", reason="Boo!"
+        )
+
+    # raise TypeError when remove version has been reached
+    with pytest.raises(TypeError):
+        deprecate_args_or_kwargs(
+            "test", deprecate_version="0.1.0", remove_version="1.0.0", reason="Boo!"
+        )
