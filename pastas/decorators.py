@@ -215,7 +215,7 @@ def deprecate_args_or_kwargs(
     if CURRENT_PASTAS_VERSION < DEPRECATE_VERSION:
         msg = (
             f"The {name} argument is deprecated and will not available"
-            f" anymore in Pastas version {DEPRECATE_VERSION}. {reason}"
+            f" from Pastas version >={DEPRECATE_VERSION}. {reason}"
         )
         if force_raise:
             raise DeprecationWarning(msg)
