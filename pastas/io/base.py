@@ -12,6 +12,7 @@ Load and save models::
 from importlib import import_module
 from logging import getLogger
 from os import path
+from pathlib import Path
 
 from packaging import version
 
@@ -21,13 +22,14 @@ from pastas.typing import Model
 logger = getLogger(__name__)
 
 
-def load(fname: str, **kwargs) -> Model:
+def load(fname: str | Path, **kwargs) -> Model:
     """Method to load a Pastas Model from file.
 
     Parameters
     ----------
-    fname: str
-        string with the name of the file to be imported including the file extension.
+    fname: str | Path
+        string with the name of the file to be imported
+        including the file extension.
     kwargs:
         extension specific keyword arguments
 
@@ -107,7 +109,7 @@ def _load_model(data: dict) -> Model:
                 # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
                 # remove noisemodel from data
                 data.pop("noisemodel")
-        ml.settings.update(data["settings"])
+        ml._settings.update(data["settings"])
     if "file_info" in data.keys():
         ml.file_info.update(data["file_info"])
 
@@ -141,21 +143,19 @@ def _load_model(data: dict) -> Model:
             "the file with Pastas 1.3."
         )
         solver = getattr(ps.solver, data["fit"].pop("class"))
-        ml.solver = solver(**data["fit"])
-        ml.solver.set_model(ml)
+        ml.add_solver(solver(**data["fit"]))
 
     # Add solver object to the model
     if "solver" in data.keys():
         solver = getattr(ps.solver, data["solver"].pop("class"))
-        ml.solver = solver(**data["solver"])
-        ml.solver.set_model(ml)
+        ml.add_solver(solver(**data["solver"]))
 
     # Add parameters, use update to maintain correct order
-    ml.parameters = ml.get_init_parameters(noise=ml.settings["noise"])
-    ml.parameters.update(data["parameters"])
+    ml._parameters = ml.get_init_parameters(noise=ml._settings["noise"])
+    ml._parameters.update(data["parameters"])
 
     # Convert parameters to numeric
-    ml.parameters = ml.parameters.infer_objects()
+    ml._parameters = ml._parameters.infer_objects()
 
     # When parameter initial values and bounds changed
     for pname, pdata in ml.parameters.iterrows():

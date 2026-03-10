@@ -39,6 +39,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
 
     comparing_models
     diagnostic_checking
+    model_check_module
     timestep_analysis
     uncertainty
     uncertainty_emcee
@@ -127,6 +128,8 @@ Model Evaluation
 :doc:`Comparing models visually <comparing_models>`
 
 :doc:`Diagnostic checking <diagnostic_checking>`
+
+:doc:`Model check module <model_check_module>`
 
 :doc:`Reducing autocorrelation <timestep_analysis>`
 

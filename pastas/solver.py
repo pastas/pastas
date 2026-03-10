@@ -372,7 +372,7 @@ class BaseSolver:
         if samples.shape[0] < n:
             suggestion = "You could try increasing 'max_iter'."
             if samples.shape[0] == 0:
-                raise Exception(
+                raise RuntimeError(
                     "No parameter samples were found within %s runs. " % max_iter
                     + suggestion
                 )
@@ -533,8 +533,8 @@ class LeastSquares(BaseSolver):
                 keep_feasible=True,
             )
             # set to nan because that's what is used by the solver
-            self.ml.parameters.loc[self.vary, "pmin"] = np.nan
-            self.ml.parameters.loc[self.vary, "pmax"] = np.nan
+            self.ml._parameters.loc[self.vary, "pmin"] = np.nan
+            self.ml._parameters.loc[self.vary, "pmax"] = np.nan
         else:
             bounds = Bounds(
                 lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),

@@ -18,6 +18,9 @@ jobs:
           - name: Formatting and linting with ruff
             python: "3.11"
             toxenv: ruff
+          - name: Formatting and linting with ruff (Preview Mode)
+            python: "3.11"
+            toxenv: ruff_preview
     env:
       # Color Output
       # Rich (pip)

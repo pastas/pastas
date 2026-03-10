@@ -42,3 +42,4 @@ doc/about/references.bib
 *.nbc
 *.nbi
 *.pdf
+*.lock

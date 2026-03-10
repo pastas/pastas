@@ -97,7 +97,7 @@ class Plotting:
 
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
-            o_nu = self.ml.oseries.series.drop(o.index).loc[
+            o_nu = self.ml.oseries.series_original.drop(o.index).loc[
                 o.index.min() : o.index.max()
             ]
             if not o_nu.empty:
@@ -182,7 +182,7 @@ class Plotting:
         """
         # Number of rows to make the figure with
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o_nu = self.ml.oseries.series.drop(o.index)
+        o_nu = self.ml.oseries.series_original.drop(o.index)
         if return_warmup:
             o_nu = o_nu[tmin - self.ml.settings["warmup"] : tmax]
         else:
@@ -333,8 +333,9 @@ class Plotting:
         return_warmup: bool = False,
         adjust_height: bool = True,
         figsize: tuple[float, float] | None = None,
-        layout: Literal["constrained", "tight", "compressed", "none"]
-        | None = "constrained",
+        layout: (
+            Literal["constrained", "tight", "compressed", "none"] | None
+        ) = "constrained",
         fig_kwargs: dict[str, Any] | None = None,
     ) -> dict[str, Axes]:
         """Plot the results of the model in a mosaic plot.
@@ -378,7 +379,7 @@ class Plotting:
 
         # get simulated time series
         o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o_nu = self.ml.oseries.series.drop(o.index)
+        o_nu = self.ml.oseries.series_original.drop(o.index)
         o_nu = (
             o_nu[tmin - self.ml.settings["warmup"] : tmax]
             if return_warmup
@@ -501,9 +502,11 @@ class Plotting:
 
         # share x-axes of simulation, residuals and contributions
         share_xaxes([axd[k] for k in [x[0] for x in mosaic]])
-        axd["sim"].set_xlim(
-            tmin - self.ml.settings["warmup"], tmax
-        ) if return_warmup else axd["sim"].set_xlim(tmin, tmax)
+        (
+            axd["sim"].set_xlim(tmin - self.ml.settings["warmup"], tmax)
+            if return_warmup
+            else axd["sim"].set_xlim(tmin, tmax)
+        )
 
         # add legend to the upper response axes and share x-axes of responses
         response_axes = [axd[k] for k in [x[1] for x in mosaic] if k.startswith("rf_")]
@@ -518,9 +521,11 @@ class Plotting:
 
         for k in axd:
             axd[k].grid(True)
-            axd[k].yaxis.tick_right() if k.startswith("rf_") else axd[
-                k
-            ].yaxis.tick_left()
+            (
+                axd[k].yaxis.tick_right()
+                if k.startswith("rf_")
+                else axd[k].yaxis.tick_left()
+            )
 
         _ = self._plot_parameters_table(ax=axd["tab"], stderr=stderr)
 
@@ -746,13 +751,13 @@ class Plotting:
         else:
             if len(axes) != nrows:
                 msg = "Makes sure the number of axes equals the number of series"
-                raise Exception(msg)
+                raise ValueError(msg)
             fig = axes[0].figure
             o_label = ""
             set_axes_properties = False
 
         # plot simulation and observations in top graph
-        o_nu = self.ml.oseries.series.drop(o.index)
+        o_nu = self.ml.oseries.series_original.drop(o.index)
         if not o_nu.empty:
             # plot parts of the oseries that are not used in grey
             o_nu.plot(
@@ -1155,7 +1160,7 @@ class Plotting:
             frac = [contrib.std() for contrib in contribs]
         else:
             msg = "Unknown value for partition: {}".format(partition)
-            raise (Exception(msg))
+            raise ValueError(msg)
 
         # make sure the unexplained part is 100 - evp %
         evp = self.ml.stats.evp(tmin=tmin, tmax=tmax) / 100

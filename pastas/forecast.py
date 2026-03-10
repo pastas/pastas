@@ -14,6 +14,7 @@ from logging import getLogger
 from numpy import array, empty, exp, linspace, ones
 from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, Timestamp, concat
 
+from pastas.decorators import deprecate_args_or_kwargs
 from pastas.noisemodels import ArNoiseModel
 from pastas.typing import ArrayLike, Model
 
@@ -27,18 +28,18 @@ def _check_forecast_data(
 
     Parameters
     ----------
-    forecasts: dict
+    forecasts: dict[str, list[DataFrame]] | dict[str, dict[str, DataFrame]]
         Dictionary containing the forecasts data. The keys are the stressmodel names
-        and the values are lists of DataFrames containing the forecasts with a datetime
-        index and each column a time series (i.e., one ensemble member).
+        and the values are lists or a dict of DataFrames containing the forecasts with
+        a datetime index and each column a time series (i.e., one ensemble member).
 
     Returns
     -------
     n: int
         The number of ensemble members in the forecasts.
-    tmin: datetime
+    tmin: Timestamp | str
         The minimum datetime in the forecasts.
-    tmax: datetime
+    tmax: Timestamp | str
         The maximum datetime in the forecasts.
     index: DatetimeIndex
         The datetime index of the forecasts.
@@ -62,7 +63,17 @@ def _check_forecast_data(
     index = None
 
     for sm_name, fc_data in forecasts.items():
-        if not isinstance(fc_data, dict) or not fc_data:
+        if isinstance(fc_data, list):
+            deprecate_args_or_kwargs(
+                name="forecasts",
+                remove_version="2.0.0",
+                reason=(
+                    "A list of DataFrames is deprecated. The forecast argument will"
+                    " require a dictionary of DataFrames, with the appropriate keyword"
+                    " arguments of the stressmodel as keys of the dictionary instead."
+                ),
+            )
+        elif not isinstance(fc_data, dict) or not fc_data:
             msg = f"Forecast data for stressmodel '{sm_name}' must be a non-empty dictionary"
             logger.error(msg)
             raise ValueError(msg)
@@ -70,7 +81,7 @@ def _check_forecast_data(
         for stress_name, fc in fc_data.items():
             # Check if DataFrame is empty
             if fc.empty:
-                msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}'"
+                msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}' for stress '{stress_name}'"
                 logger.error(msg)
                 continue
 
@@ -119,8 +130,8 @@ def forecast(
         Pastas Model instance.
     forecasts: dict
         Dictionary containing the forecasts data. The keys are the stressmodel names
-        and the values are lists of DataFrames containing the forecasts with a datetime
-        index and each column a time series (i.e., one ensemble member).
+        and the values are  lists or dicts of DataFrames containing the forecasts with
+        a datetime index and each column a time series (i.e., one ensemble member).
     p: array_like, optional
         List of parameter sets to use for the forecasts. If None, a single parameter set is used that defaults to the optimal model parameters. Default is None.
     post_process: bool, optional
