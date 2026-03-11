@@ -43,7 +43,7 @@ jobs:
             toxenv: py313
             experimental: false
           - name: Test suite with py314-ubuntu
-            python: "3.14-dev"
+            python: "3.14"
             toxenv: py314
             experimental: true
           - name: Test suite for all unit tests including Notebooks
