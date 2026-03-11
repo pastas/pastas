@@ -68,7 +68,9 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv pip install tox-uv
+        run: |
+          uv venv
+          uv pip install tox-uv
 
       - name: Setup tox environment
         run: uv run tox -e ${{ matrix.toxenv }} --notest
