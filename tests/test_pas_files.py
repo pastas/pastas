@@ -17,7 +17,7 @@ import pytest
 import pastas as ps
 
 # Pastas versions to generate and test — extend as needed.
-PASTAS_VERSIONS = ["1.13.1"]
+PASTAS_VERSIONS = ["1.13.2"]
 
 DATADIR = Path(__file__).parent / "data"
 

@@ -40,6 +40,10 @@ jobs:
         run: |
           uv sync --extra "dev"
 
+      - name: Print versions
+        run: |
+          python -c "import pastas as ps; ps.show_versions(optional=True)"
+
       - name: Run pytest
         run: |
           uv run pytest -m "pasfiles"
