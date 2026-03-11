@@ -79,7 +79,7 @@ rtd = [
     "myst_nb",
     "sphinx-autoapi",
 ]
-dev = ["tox", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
+dev = ["tox-uv", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
 
 [dependency-groups]
 dev = ["pastas[dev]"]
@@ -103,7 +103,8 @@ ignore-regex = "[A-Za-z0-9+/]{100,}"                           # base64-encoded 
 ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
 [tool.tox]
-requires = ["tox>=4"]
+requires = ["tox-uv>=1.0"]
+package = "wheel"
 env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
 
 [tool.tox.env_run_base]
@@ -170,4 +171,3 @@ commands = [
 description = "run spelling checks"
 extras = ["codespelling"]
 commands = [["codespell"]]
-
