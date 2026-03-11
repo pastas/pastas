@@ -16,10 +16,8 @@ jobs:
       matrix:
         include:
           - name: Formatting and linting with ruff
-            python: "3.11"
             toxenv: ruff
-          - name: Formatting and linting with ruff (Preview Mode)
-            python: "3.11"
+          - name: Formatting and linting with ruff in preview mode
             toxenv: ruff_preview
     env:
       # Color Output
@@ -35,7 +33,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: ${{ matrix.python }}
+          python-version: "3.11"
           enable-cache: true
 
       - name: Install dependencies
