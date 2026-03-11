@@ -122,16 +122,6 @@ def test_deprecate_args_or_kwargs() -> None:
         "test", deprecate_version="999.0.0", remove_version="1000.0.0", reason="Boo!"
     )
 
-    # force error even for future deprecation
-    with pytest.raises(DeprecationWarning, match="will not be available"):
-        deprecate_args_or_kwargs(
-            "test",
-            deprecate_version="999.0.0",
-            remove_version="1000.0.0",
-            reason="Boo!",
-            force_raise=True,
-        )
-
     # raise error when between deprecate and remove versions
     with pytest.raises(DeprecationWarning, match="is not available"):
         deprecate_args_or_kwargs(

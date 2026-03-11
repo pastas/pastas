@@ -175,14 +175,13 @@ def deprecate_args_or_kwargs(
     deprecate_version: str,
     remove_version: str,
     reason: str = "",
-    force_raise: bool = False,
 ):
     """Provide a warning or error when a function argument is deprecated.
 
     This function raises errors or warnings based on the current Pastas version and the
     deprecation timeline. The behavior is:
 
-    - If current version < deprecate_version: logs a warning (or raises if force_raise=True)
+    - If current version < deprecate_version: logs a warning
     - If deprecate_version <= current version < remove_version: raises DeprecationWarning
     - If current version >= remove_version: raises TypeError which indicates that it can be
     removed from the codebase entirely
@@ -198,15 +197,11 @@ def deprecate_args_or_kwargs(
     reason: str, optional
         The reason why the argument is deprecated, or a message directing users to
         an alternative. Default is an empty string.
-    force_raise: bool, optional
-        If True, raise DeprecationWarning immediately even if the current version has
-        not yet reached deprecate_version. Default is False.
 
     Raises
     ------
     DeprecationWarning
-        If between deprecate_version and remove_version (inclusive), or if force_raise=True
-        and current version < deprecate_version.
+        If between deprecate_version and remove_version and current version < deprecate_version.
     TypeError
         If current version >= remove_version and the argument is used.
     """
@@ -218,10 +213,7 @@ def deprecate_args_or_kwargs(
             f"The {name} argument is deprecated and will not be available"
             f" from Pastas version >={DEPRECATE_VERSION}. {reason}"
         )
-        if force_raise:
-            raise DeprecationWarning(msg)
-        else:
-            logger.warning(msg)
+        logger.warning(msg)
     elif CURRENT_PASTAS_VERSION >= REMOVE_VERSION:
         raise TypeError("got an unexpected keyword argument '%s'" % name)
     else:

@@ -170,10 +170,9 @@ class Model:
                 )
             deprecate_args_or_kwargs(
                 name="noisemodel",
-                deprecate_version="2.0.0",
-                remove_version="2.2.0",
+                deprecate_version="1.5.0",
+                remove_version="2.0.0",
                 reason=msg,
-                force_raise=True,
             )
 
         # File Information
@@ -809,10 +808,9 @@ class Model:
             )
             deprecate_args_or_kwargs(
                 name="noise",
-                deprecate_version="2.0.0",
-                remove_version="2.2.0",
+                deprecate_version="1.5.0",
+                remove_version="2.0.0",
                 reason=msg,
-                force_raise=True,
             )
 
         # Set the settings
@@ -994,10 +992,9 @@ class Model:
                 )
             deprecate_args_or_kwargs(
                 name="noise",
-                deprecate_version="2.0.0",
-                remove_version="2.2.0",
+                deprecate_version="1.5.0",
+                remove_version="2.0.0",
                 reason=msg,
-                force_raise=True,
             )
 
         if initialize:
