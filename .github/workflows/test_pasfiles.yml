@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   test_pasfiles:
-    name: Test .pas files
+    name: Test suite for .pas files
     runs-on: ubuntu-latest
     env:
       CI_PASFILES: "1"
