@@ -10,16 +10,16 @@ from pandas import (
     Timedelta,
     Timestamp,
     api,
+    concat,
+    cut,
     date_range,
     infer_freq,
-    cut,
-    concat,
 )
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
-from .decorators import njit, PastasDeprecationWarning
+from .decorators import PastasDeprecationWarning, njit
 
 logger = logging.getLogger(__name__)
 

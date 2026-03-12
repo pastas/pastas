@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from pastas.timeseries_utils import timestep_weighted_resample, time_weighted_resample
+from pastas.timeseries_utils import time_weighted_resample, timestep_weighted_resample
 
 # make a daily series from monthly (mostly) values, without specifying the
 # frequency of the original series
