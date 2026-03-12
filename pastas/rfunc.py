@@ -854,6 +854,12 @@ class Hantush(RfuncBase):
         self.nparam = 3
         self.quad = quad
         self.approximate_tmax = approximate_tmax
+        if self.quad and not self.approximate_tmax:
+            logger.warning(
+                "Using quad_step with approximate_tmax=False can lead to long "
+                "computation times for get_tmax. Consider setting "
+                "approximate_tmax=True or quad=False."
+            )
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -916,7 +922,7 @@ class Hantush(RfuncBase):
 
         A, a, b = p[0], p[1], p[2]
 
-        # Use Brentq's method (derivative-free, often faster than brentq)
+        # Use Brentq's method
         # t0 is always an upper bound on the solution
         t_lower = t0 * 0.75
         tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
