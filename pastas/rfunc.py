@@ -926,7 +926,7 @@ class Hantush(RfuncBase):
         tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
         root, info = brentq(
             f=self._f_step,
-            a=t0 * 0.75,
+            a=0.0,
             b=t0,
             xtol=tol,
             maxiter=100,  # generally converges within 10 iterations
