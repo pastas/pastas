@@ -142,6 +142,11 @@ commands = [
     ],
 ]
 
+[tool.tox.env.pasfiles]
+description = "test pas file I/O between pastas versions"
+extras = ["ci"]
+commands = [["pytest", "tests", "-m", "pasfiles"]]
+
 [tool.tox.env.notebooks]
 description = "run the benchmark notebooks"
 extras = ["ci"]
@@ -150,12 +155,33 @@ commands = [["pytest", "tests", "-m", "bnotebooks"]]
 [tool.tox.env.ruff]
 description = "run ruff checks"
 extras = ["ruffing"]
-commands = [["ruff", "check", "--extend-select", "I"], ["ruff", "format", "--check"]]
+commands = [
+    [
+        "ruff",
+        "check",
+        "--extend-select",
+        "I",
+    ],
+    [
+        "ruff",
+        "format",
+        "--check",
+    ],
+]
 
 [tool.tox.env.ruff_preview]
 description = "run ruff checks preview mode"
 extras = ["ruffing"]
-commands = [["ruff", "check", "--extend-select", "I", "--preview", "--exit-zero"]]
+commands = [
+    [
+        "ruff",
+        "check",
+        "--extend-select",
+        "I",
+        "--preview",
+        "--exit-zero",
+    ],
+]
 
 [tool.tox.env.codespell]
 description = "run spelling checks"

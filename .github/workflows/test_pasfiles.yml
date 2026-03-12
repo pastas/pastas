@@ -1,4 +1,4 @@
-name: CI PASFILES IO
+name: CI PASFILES
 
 on:
   # Trigger the workflow on push or pull request on master,
@@ -25,25 +25,30 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI_PASFILES: "1"
+      # Color Output
+      # Rich (pip)
+      FORCE_COLOR: 1
+      # Tox
+      PY_COLORS: 1
+      # Pytest
+      PYTEST_ADDOPTS: "--color=yes"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Install uv with Python 3.13
+      - name: Set up uv
         uses: astral-sh/setup-uv@v7
         with:
+          python-version: "3.11"
           enable-cache: true
-          python-version: "3.13"
-          activate-environment: true
 
-      - name: Install the project
+      - name: Install dependencies
         run: |
-          uv sync --extra "dev"
+          uv venv
+          uv pip install tox-uv
 
-      - name: Print versions
-        run: |
-          python -c "import pastas as ps; ps.show_versions(optional=True)"
+      - name: Setup tox environment
+        run: uv run tox -e pasfiles --notest
 
-      - name: Run pytest
-        run: |
-          uv run pytest -m "pasfiles"
+      - name: Test
+        run: uv run tox -e pasfiles --skip-pkg-install
