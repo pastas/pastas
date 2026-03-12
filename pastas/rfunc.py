@@ -923,13 +923,10 @@ class Hantush(RfuncBase):
         A, a, b = p[0], p[1], p[2]
 
         # Use Brentq's method
-        # t0 is always an upper bound on the solution
-        t_lower = t0 * 0.75
         tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
-
         root, info = brentq(
             f=self._f_step,
-            a=t_lower,
+            a=t0 * 0.75,
             b=t0,
             xtol=tol,
             maxiter=100,  # generally converges within 10 iterations
@@ -943,13 +940,13 @@ class Hantush(RfuncBase):
                 "Root finding for tmax converged successfully. Brentq RootResults: %s",
                 info,
             )
+            return root
+        else:
+            logger.warning(
                 "Root finding for tmax did not converge, returning approximate tmax. "
                 "Consider setting approximate_tmax=True for the Hantush response. "
                 "Brentq RootResults: %s",
                 info,
-                    "Brentq RootResults: %s",
-                    info,
-                )
             )
             return t0
 
