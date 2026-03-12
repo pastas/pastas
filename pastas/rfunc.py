@@ -918,7 +918,7 @@ class Hantush(RfuncBase):
 
         # Use Brentq's method (derivative-free, often faster than brentq)
         # t0 is always an upper bound on the solution
-        t_bracket_lower = t0 * 0.75
+        t_lower = t0 * 0.75
         tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
 
         root, info = brentq(
@@ -926,14 +926,17 @@ class Hantush(RfuncBase):
             a=t_bracket_lower,
             b=t0,
             xtol=tol,
-            maxiter=100,
+            maxiter=100,  # generally converges within 10 iterations
             args=(A, a, b, cutoff),
             full_output=True,
             disp=False,
         )
         # Check the convergence flag directly
         if info.converged:
-            logger.debug("Root finding for tmax converged successfully. Brentq RootResults: %s", info)
+            logger.debug(
+                "Root finding for tmax converged successfully. Brentq RootResults: %s",
+                info,
+            )
             return root
         else:
             logger.warning(
