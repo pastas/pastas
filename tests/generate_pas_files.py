@@ -1,5 +1,5 @@
 # /// script
-# requires-python = "~=3.13"
+# requires-python = "~=3.11"
 # dependencies = [
 #   "lmfit"
 # ]
@@ -308,9 +308,9 @@ def _variant_fname(base: str, kwargs: dict[str, Any]) -> str:
     Returns
     -------
     str
-        Filename string such as ``"Hantush_quad=True.pas"``.
+        Filename string such as ``"Hantush_quad-True.pas"``.
     """
-    suffix = "_".join(f"{k}={v}" for k, v in kwargs.items())
+    suffix = "_".join(f"{k}-{v}" for k, v in kwargs.items())
     return f"{base}{'_' if suffix else ''}{suffix}.pas"
 
 
@@ -481,7 +481,7 @@ def generate(series: pd.Series, output_dir: Path) -> None:
     # -- Model with / without Constant ---------------------------------------
     for constant in [True, False]:
         ml = create_model(series, constant=constant)
-        save_model(ml, output_dir, f"model_constant={constant}.pas")
+        save_model(ml, output_dir, f"model_constant-{constant}.pas")
 
 
 if __name__ == "__main__":
