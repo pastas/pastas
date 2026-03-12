@@ -926,14 +926,17 @@ class Hantush(RfuncBase):
             a=t_lower,
             b=t0,
             xtol=tol,
-            maxiter=100, # generally converges within 10 iterations
+            maxiter=100,  # generally converges within 10 iterations
             args=(A, a, b, cutoff),
             full_output=True,
             disp=False,
         )
         # Check the convergence flag directly
         if info.converged:
-            logger.debug("Root finding for tmax converged successfully. Brentq RootResults: %s", info)
+            logger.debug(
+                "Root finding for tmax converged successfully. Brentq RootResults: %s",
+                info,
+            )
             return root
         else:
             logger.warning(

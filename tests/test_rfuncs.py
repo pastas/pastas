@@ -267,3 +267,131 @@ def test_moment_exact_not_implemented(rfunc_name: str) -> None:
     # Call exact method - should raise ValueError for unimplemented methods
     with pytest.raises(ValueError, match="Invalid method"):
         rfunc.moment(p, order=0, method="exact")  # type: ignore
+
+
+# Tests for Hantush approximate_tmax option
+@pytest.mark.parametrize("approximate_tmax", [True, False])
+def test_hantush_approximate_tmax_parameter(approximate_tmax: bool) -> None:
+    """Test that Hantush approximate_tmax parameter works and is preserved.
+
+    Parameters
+    ----------
+    approximate_tmax : bool
+        Whether to use approximate (True) or exact (False) tmax calculation.
+    """
+    rfunc = ps.Hantush(approximate_tmax=approximate_tmax)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Test that both modes can compute tmax without error
+    tmax = rfunc.get_tmax(p)
+    assert np.isfinite(tmax) and tmax > 0, f"Invalid tmax: {tmax}"
+
+    # Test that to_dict preserves the parameter
+    data = rfunc.to_dict()
+    assert data["approximate_tmax"] == approximate_tmax
+
+
+@pytest.mark.parametrize("quad", [True, False])
+@pytest.mark.parametrize("approximate_tmax", [True, False])
+def test_hantush_quad_and_approximate_tmax_combinations(
+    quad: bool, approximate_tmax: bool
+) -> None:
+    """Test all combinations of quad and approximate_tmax parameters for Hantush.
+
+    Parameters
+    ----------
+    quad : bool
+        Whether to use numerical integration for step response.
+    approximate_tmax : bool
+        Whether to use approximate (True) or exact (False) tmax calculation.
+    """
+    rfunc = ps.Hantush(quad=quad, approximate_tmax=approximate_tmax)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Test that step response can be computed
+    step = rfunc.step(p)
+    assert len(step) > 0, "Step response should be non-empty"
+    assert np.all(np.isfinite(step)), "Step response should have finite values"
+
+    # Test that tmax can be computed
+    tmax = rfunc.get_tmax(p)
+    assert np.isfinite(tmax) and tmax > 0, f"Invalid tmax: {tmax}"
+
+    # Test that to_dict preserves both parameters
+    data = rfunc.to_dict()
+    assert data["quad"] == quad, (
+        f"quad parameter not preserved: {data['quad']} vs {quad}"
+    )
+    assert data["approximate_tmax"] == approximate_tmax, (
+        f"approximate_tmax parameter not preserved: {data['approximate_tmax']} vs {approximate_tmax}"
+    )
+
+
+def test_hantush_exact_vs_approximate_tmax() -> None:
+    """Test that exact tmax differs from approximate and hits target cutoff better.
+
+    The exact method should find a tmax that achieves the target cutoff more
+    accurately than the approximation, which is based on Lambert W asymptotic expansion.
+    """
+    rfunc_approx = ps.Hantush(approximate_tmax=True)
+    rfunc_exact = ps.Hantush(approximate_tmax=False)
+
+    p = rfunc_approx.get_init_parameters("test").initial.to_numpy()
+    tmax_approx = rfunc_approx.get_tmax(p)
+    tmax_exact = rfunc_exact.get_tmax(p)
+
+    # Exact tmax should be different from approximate (smaller)
+    assert tmax_exact < tmax_approx, (
+        f"Exact tmax ({tmax_exact}) should be smaller than approximate ({tmax_approx})"
+    )
+
+    # Exact tmax should achieve cutoff more accurately
+    A = p[0]
+    cutoff = rfunc_exact.cutoff
+
+    # Compute step response at each tmax
+    step_approx = (
+        rfunc_approx.step(p, dt=1.0, cutoff=cutoff, maxtmax=1)[int(tmax_approx)] / A
+        if int(tmax_approx)
+        < len(rfunc_approx.step(p, dt=1.0, cutoff=cutoff, maxtmax=1))
+        else rfunc_approx.numpy_step(A, p[1], p[2], np.array([tmax_approx]))[0] / A
+    )
+    step_exact = rfunc_exact.numpy_step(A, p[1], p[2], np.array([tmax_exact]))[0] / A
+
+    # The exact method should achieve cutoff more closely
+    error_approx = abs(step_approx - cutoff)
+    error_exact = abs(step_exact - cutoff)
+
+    assert error_exact < error_approx, (
+        f"Exact method should achieve cutoff more accurately. "
+        f"Approximate error: {error_approx:.6f}, Exact error: {error_exact:.6f}"
+    )
+
+
+def test_hantush_approximate_tmax_to_dict_roundtrip() -> None:
+    """Test that approximate_tmax parameter survives to_dict/from_dict roundtrip."""
+    for use_exact in [True, False]:
+        # Create original rfunc
+        rfunc1 = ps.Hantush(approximate_tmax=not use_exact, cutoff=0.95)
+
+        # Export to dict
+        data = rfunc1.to_dict()
+
+        # Create new rfunc from dict
+        rfunc_class = data.pop("class")
+        rfunc_up = data.pop("up", None)
+        rfunc_gsf = data.pop("gain_scale_factor", None)
+        rfunc2 = getattr(ps.rfunc, rfunc_class)(**data)
+        rfunc2.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
+
+        # Verify approximate_tmax is preserved
+        assert rfunc2.approximate_tmax == rfunc1.approximate_tmax, (
+            f"approximate_tmax not preserved: {rfunc1.approximate_tmax} vs {rfunc2.approximate_tmax}"
+        )
+
+        # Verify behavior is identical
+        p = rfunc1.get_init_parameters("test").initial.to_numpy()
+        tmax1 = rfunc1.get_tmax(p)
+        tmax2 = rfunc2.get_tmax(p)
+
+        assert tmax1 == tmax2, f"tmax values differ after roundtrip: {tmax1} vs {tmax2}"
