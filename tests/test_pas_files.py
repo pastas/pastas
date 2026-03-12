@@ -22,12 +22,13 @@ PASTAS_VERSIONS = ["1.13.2"]
 DATADIR = Path(__file__).parent / "data"
 
 # Tracks directories created during this session so teardown_class can clean up.
-_GENERATED_DIRS: list[Path] = []
+GENERATED_DIRS: list[Path] = []
 
 
 def generate_pas_files(version: str) -> Path:
     output_dir = DATADIR / f"pas_files_{version}"
-    if not output_dir.exists():
+    # Generate if directory doesn't exist or is empty
+    if not output_dir.exists() or not list(output_dir.glob("*.pas")):
         subprocess.run(
             [
                 "uv",
@@ -39,11 +40,11 @@ def generate_pas_files(version: str) -> Path:
             check=True,
             cwd=str(Path(__file__).parent),
         )
-        _GENERATED_DIRS.append(output_dir)
+        GENERATED_DIRS.append(output_dir)
     return output_dir
 
 
-_PAS_FILES = (
+PAS_FILES = (
     [
         p
         for version in PASTAS_VERSIONS
@@ -62,8 +63,8 @@ class TestPasFiles:
     @pytest.mark.pasfiles
     @pytest.mark.parametrize(
         "pas_file",
-        _PAS_FILES,
-        ids=[f"{p.parent.name}/{p.stem}" for p in _PAS_FILES],
+        PAS_FILES,
+        ids=[f"{p.parent.name}/{p.stem}" for p in PAS_FILES],
     )
     def test_load(self, pas_file: Path) -> None:
         if str(pas_file.name) in XFAIL:
@@ -72,6 +73,6 @@ class TestPasFiles:
 
     @classmethod
     def teardown_class(cls) -> None:
-        for directory in _GENERATED_DIRS:
+        for directory in GENERATED_DIRS:
             shutil.rmtree(directory, ignore_errors=True)
-        _GENERATED_DIRS.clear()
+        GENERATED_DIRS.clear()
