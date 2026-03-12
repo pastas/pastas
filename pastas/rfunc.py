@@ -17,7 +17,7 @@ from numpy import pi
 from pandas import DataFrame, Series
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
-from scipy.optimize import newton
+from scipy.optimize import brentq
 from scipy.special import (
     erfc,
     erfcinv,
@@ -893,59 +893,57 @@ class Hantush(RfuncBase):
         # tmax = (L1 - L2 + L2 / L1) * a
         return tmax
 
-    def _f_newton_step(
-        self, A: float, a: float, b: float, t: float, cutoff: float
-    ) -> float:
-        """Objective function for the Newton-Raphson solver."""
-        t = np.array([t], dtype=float)
+    def _f_step(self, t: float, A: float, a: float, b: float, cutoff: float) -> float:
+        """Objective function for root finding (t varies, other params fixed)."""
+        t_arr = np.array([t], dtype=float)
         if self.quad:
-            step_val = self.quad_step(A=A, a=a, b=b, t=t)[0]
+            step_val = self.quad_step(A=A, a=a, b=b, t=t_arr)[0]
         else:
-            step_val = self.numpy_step(A=A, a=a, b=b, t=t)[0]
+            step_val = self.numpy_step(A=A, a=a, b=b, t=t_arr)[0]
         return (step_val / A) - cutoff
-
-    def _fprime_newton_impulse(
-        self, A: float, a: float, b: float, t: float, cutoff: float
-    ) -> float:
-        """Derivative function (impulse) for the Newton-Raphson solver."""
-        _ = cutoff  # Unused but required for the signature
-        t = np.array([t], dtype=float)
-        p = [A, a, b]
-        return self.impulse(t=t, p=p)[0] / A
 
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
         """
         Calculates tmax. Toggles between the fast NumPy approximation and
-        the exact Newton-Raphson method based on self.approximation.
+        the exact root finding method based on self.approximation.
         """
+
         cutoff = self.cutoff if cutoff is None else cutoff
 
         t0 = self.get_tmax_approximation(p, cutoff)
-        tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 1e-1)
         if self.approximation:
             return t0
 
         A, a, b = p[0], p[1], p[2]
 
-        # set tol to 1e-2 the order of t0 and cap the max at 0.1 day for large t0
+        # Use Brentq's method (derivative-free, often faster than brentq)
+        # t0 is always an upper bound on the solution
+        t_bracket_lower = t0 * 0.75
         tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
 
-        # Pass the instance methods directly, suppress errors, and get full output
-        root, info = newton(
-            func=self._f_newton_step,
-            x0=t0,
-            fprime=self._fprime_newton_impulse,
+        root, info = brentq(
+            f=self._f_step,
+            a=t_bracket_lower,
+            b=t0,
+            xtol=tol,
+            maxiter=100,
             args=(A, a, b, cutoff),
-            tol=tol,
-            maxiter=100,  # generally 10 is enough, but increase to 100 to be safe for edge cases
             full_output=True,
             disp=False,
         )
-
         # Check the convergence flag directly
         if info.converged:
+            logger.debug("Root finding for tmax converged successfully. Brentq RootResults: %s", info)
             return root
         else:
+            logger.warning(
+                (
+                    "Root finding for tmax did not converge, returning approximate tmax."
+                    "Consider setting approximation=True for the Hantush response."
+                    "Brentq RootResults: %s",
+                    info,
+                )
+            )
             return t0
 
     @staticmethod
