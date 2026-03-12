@@ -825,9 +825,9 @@ class Hantush(RfuncBase):
         proportion after which the step function is cut off.
     quad: bool, optional
         Use the method 'quad_step' to compute the step_response using numerical integration.
-    approximation: bool, optional
-        If True, get_tmax will use the lambertw asymptotic approximation of tmax. If False,
-        it will use the exact Newton-Raphson numerical solver.
+    approximate_tmax: bool, optional
+        If True, get_tmax will use the fast Lambert W approximation (default). If False,
+        it will use the exact numerical root finding method.
 
     Notes
     -----
@@ -847,13 +847,13 @@ class Hantush(RfuncBase):
         self,
         cutoff: float = 0.999,
         quad: bool = False,
-        approximation: bool = True,
+        approximate_tmax: bool = True,
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 3
         self.quad = quad
-        self.approximation = approximation
+        self.approximate_tmax = approximate_tmax
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -905,13 +905,13 @@ class Hantush(RfuncBase):
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
         """
         Calculates tmax. Toggles between the fast NumPy approximation and
-        the exact root finding method based on self.approximation.
+        the exact root finding method based on self.approximate_tmax.
         """
 
         cutoff = self.cutoff if cutoff is None else cutoff
 
         t0 = self.get_tmax_approximation(p, cutoff)
-        if self.approximation:
+        if self.approximate_tmax:
             return t0
 
         A, a, b = p[0], p[1], p[2]
@@ -923,26 +923,23 @@ class Hantush(RfuncBase):
 
         root, info = brentq(
             f=self._f_step,
-            a=t_bracket_lower,
+            a=t_lower,
             b=t0,
             xtol=tol,
-            maxiter=100,  # generally converges within 10 iterations
+            maxiter=100, # generally converges within 10 iterations
             args=(A, a, b, cutoff),
             full_output=True,
             disp=False,
         )
         # Check the convergence flag directly
         if info.converged:
-            logger.debug(
-                "Root finding for tmax converged successfully. Brentq RootResults: %s",
-                info,
-            )
+            logger.debug("Root finding for tmax converged successfully. Brentq RootResults: %s", info)
             return root
         else:
             logger.warning(
                 (
-                    "Root finding for tmax did not converge, returning approximate tmax."
-                    "Consider setting approximation=True for the Hantush response."
+                    "Root finding for tmax did not converge, returning approximate tmax. "
+                    "Consider setting approximate_tmax=True for the Hantush response. "
                     "Brentq RootResults: %s",
                     info,
                 )
@@ -1050,7 +1047,7 @@ class Hantush(RfuncBase):
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
             "quad": self.quad,
-            "approximation": self.approximation,
+            "approximate_tmax": self.approximate_tmax,
         }
         return data
 
