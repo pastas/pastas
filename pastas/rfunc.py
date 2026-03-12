@@ -937,12 +937,10 @@ class Hantush(RfuncBase):
                 "Root finding for tmax converged successfully. Brentq RootResults: %s",
                 info,
             )
-            return root
-        else:
-            logger.warning(
-                (
-                    "Root finding for tmax did not converge, returning approximate tmax. "
-                    "Consider setting approximate_tmax=True for the Hantush response. "
+                "Root finding for tmax did not converge, returning approximate tmax. "
+                "Consider setting approximate_tmax=True for the Hantush response. "
+                "Brentq RootResults: %s",
+                info,
                     "Brentq RootResults: %s",
                     info,
                 )
