@@ -17,6 +17,7 @@ from numpy import pi
 from pandas import DataFrame, Series
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
+from scipy.optimize import newton
 from scipy.special import (
     erfc,
     erfcinv,
@@ -823,10 +824,11 @@ class Hantush(RfuncBase):
     cutoff: float, optional
         proportion after which the step function is cut off.
     quad: bool, optional
-        Use the method 'numba_quad' to compute the step_response.
+        Use the method 'quad_step' to compute the step_response using numerical integration.
+    approximation: bool, optional
+        If True, get_tmax will use the lambertw asymptotic approximation of tmax. If False,
+        it will use the exact Newton-Raphson numerical solver.
 
-    Notes
-    -----
     Notes
     -----
     The impulse response function for this class can be viewed on the Documentation
@@ -845,11 +847,13 @@ class Hantush(RfuncBase):
         self,
         cutoff: float = 0.999,
         quad: bool = False,
+        approximation: bool = True,
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.nparam = 3
         self.quad = quad
+        self.approximation = approximation
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -870,13 +874,79 @@ class Hantush(RfuncBase):
         )
         return parameters
 
-    def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
-        # approximate formula for tmax
-        if cutoff is None:
-            cutoff = self.cutoff
+    def get_tmax_approximation(
+        self, p: ArrayLike, cutoff: float | None = None
+    ) -> float:
+        """
+        Approximates tmax using the Lambert W function.
+        """
+        cutoff = self.cutoff if cutoff is None else cutoff
         a, b = p[1], p[2]
-        rho = 2 * np.sqrt(b)
-        return lambertw(1 / ((1 - cutoff) * k0(rho))).real * a
+
+        k0rho = k0(2 * np.sqrt(b))
+        z = 1.0 / ((1.0 - cutoff) * k0rho)
+        tmax = lambertw(z).real * a
+
+        # a NumPy asymptotic expansion of LambertW which is 3 times faster
+        # L1 = np.log(z)
+        # L2 = np.log(L1)
+        # tmax = (L1 - L2 + L2 / L1) * a
+        return tmax
+
+    def _f_newton_step(
+        self, A: float, a: float, b: float, t: float, cutoff: float
+    ) -> float:
+        """Objective function for the Newton-Raphson solver."""
+        t = np.array([t], dtype=float)
+        if self.quad:
+            step_val = self.quad_step(A=A, a=a, b=b, t=t)[0]
+        else:
+            step_val = self.numpy_step(A=A, a=a, b=b, t=t)[0]
+        return (step_val / A) - cutoff
+
+    def _fprime_newton_impulse(
+        self, A: float, a: float, b: float, t: float, cutoff: float
+    ) -> float:
+        """Derivative function (impulse) for the Newton-Raphson solver."""
+        _ = cutoff  # Unused but required for the signature
+        t = np.array([t], dtype=float)
+        p = [A, a, b]
+        return self.impulse(t=t, p=p)[0] / A
+
+    def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
+        """
+        Calculates tmax. Toggles between the fast NumPy approximation and
+        the exact Newton-Raphson method based on self.approximation.
+        """
+        cutoff = self.cutoff if cutoff is None else cutoff
+
+        t0 = self.get_tmax_approximation(p, cutoff)
+        tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 1e-1)
+        if self.approximation:
+            return t0
+
+        A, a, b = p[0], p[1], p[2]
+
+        # set tol to 1e-2 the order of t0 and cap the max at 0.1 day for large t0
+        tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
+
+        # Pass the instance methods directly, suppress errors, and get full output
+        root, info = newton(
+            func=self._f_newton_step,
+            x0=t0,
+            fprime=self._fprime_newton_impulse,
+            args=(A, a, b, cutoff),
+            tol=tol,
+            maxiter=100,  # generally 10 is enough, but increase to 100 to be safe for edge cases
+            full_output=True,
+            disp=False,
+        )
+
+        # Check the convergence flag directly
+        if info.converged:
+            return root
+        else:
+            return t0
 
     @staticmethod
     def gain(p: ArrayLike) -> float:
@@ -889,22 +959,27 @@ class Hantush(RfuncBase):
 
     @staticmethod
     def numpy_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
-        rho = 2 * np.sqrt(b)
-        rhosq = rho**2
+        rho = 2.0 * np.sqrt(b)
         k0rho = k0(rho)
+        exp1_rho = exp1(rho)
+        w = (exp1_rho - k0rho) / (exp1_rho - exp1(rho / 2.0))
+        w_minus_1 = w - 1.0
         tau = t / a
-        tau_mask = tau < rho / 2
-        tau1 = tau[tau_mask]
-        tau2 = tau[~tau_mask]
-        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
-        F = np.zeros_like(tau)
-        F[tau_mask] = w * exp1(rhosq / (4 * tau1)) - (w - 1) * exp1(
-            tau1 + rhosq / (4 * tau1)
-        )
-        F[~tau_mask] = (
-            2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(tau2 + rhosq / (4 * tau2))
-        )
-        return A * F / (2 * k0rho)
+        b_over_tau = b / tau
+
+        F = np.empty_like(tau)
+        mask = tau < (rho / 2.0)
+        inv_mask = ~mask
+
+        tau1 = tau[mask]
+        b_tau1 = b_over_tau[mask]
+        F[mask] = w * exp1(b_tau1) - w_minus_1 * exp1(tau1 + b_tau1)
+
+        tau2 = tau[inv_mask]
+        b_tau2 = b_over_tau[inv_mask]
+        F[inv_mask] = 2.0 * k0rho - w * exp1(tau2) + w_minus_1 * exp1(tau2 + b_tau2)
+
+        return A * F / (2.0 * k0rho)
 
     def quad_step(self, A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
         F = np.zeros_like(t)
@@ -974,6 +1049,7 @@ class Hantush(RfuncBase):
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
             "quad": self.quad,
+            "approximation": self.approximation,
         }
         return data
 
