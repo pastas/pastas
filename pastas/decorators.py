@@ -12,8 +12,9 @@ from typing import Any
 
 from packaging.version import parse as parse_version
 from pandas import Timestamp
-from pastas.version import __version__
 from typing_extensions import deprecated  # available in warnings from python 3.13
+
+from pastas.version import __version__
 
 try:
     from cachetools import cachedmethod

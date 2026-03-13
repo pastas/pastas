@@ -25,6 +25,7 @@ dependencies = [
     "pandas >= 2.2.2, < 3.0",
     "scipy >= 1.13.0",
     "numba >= 0.60.0",
+    "typing_extensions >= 4.5.0",
 ]
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
 classifiers = [
