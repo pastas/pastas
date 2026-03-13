@@ -82,8 +82,7 @@ def _check_forecast_data(
         else:
             deprecate_args_or_kwargs(
                 name="forecasts",
-                deprecate_version="2.0.0",
-                remove_version="2.2.0",
+                version="2.0.0",
                 reason=(
                     "A list of DataFrames is deprecated. The forecast argument will"
                     " require a dictionary of DataFrames, with the appropriate keyword"

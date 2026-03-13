@@ -1540,8 +1540,7 @@ class DoubleExponential(RfuncBase):
 
 
 @PastasDeprecationWarning(
-    deprecate_version="2.0.0",
-    remove_version="2.2.0",
+    version="2.0.0",
     reason=(
         "Please use the pastas-plugins library if you want to keep using this "
         "response function (https://github.com/pastas/pastas/issues/475)."
