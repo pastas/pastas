@@ -118,16 +118,13 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
     This decorator manages deprecation of classes, functions, or methods across Pastas versions.
     The behavior depends on the current version:
 
-    - If current version < deprecate_version: logs a warning and allows execution to continue
-    - If deprecate_version <= current version < remove_version: raises DeprecationWarning
-    - If current version >= remove_version: raises AttributeError which indicates
+    - If current version < version: logs a warning and allows execution to continue
+    - If current version >= version: raises AttributeError which indicates
     that it can be removed from the codebase entirely
 
     Parameters
     ----------
-    deprecate_version: str
-        The version in which the function or class begins raising a DeprecationWarning.
-    remove_version: str
+    version: str
         The version in which the function or class will be removed from the Pastas codebase
         and raises an AttributeError.
     reason: str, optional
@@ -174,18 +171,15 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
     This function raises errors or warnings based on the current Pastas version and the
     deprecation timeline. The behavior is:
 
-    - If current version < deprecate_version: logs a warning
-    - If deprecate_version <= current version < remove_version: raises DeprecationWarning
-    - If current version >= remove_version: raises TypeError which indicates that it can be
+    - If current version < version: logs a warning
+    - If current version >= version: raises TypeError which indicates that it can be
     removed from the codebase entirely
 
     Parameters
     ----------
     name: str
         The name of the argument that is deprecated.
-    deprecate_version: str
-        The version in which the argument becomes deprecated.
-    remove_version: str
+    version: str
         The version in which the argument will be removed and TypeError will be raised.
     reason: str, optional
         The reason why the argument is deprecated, or a message directing users to
@@ -194,9 +188,9 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
     Raises
     ------
     DeprecationWarning
-        If between deprecate_version and remove_version and current version < deprecate_version.
+        If current version < version and the argument is used.
     TypeError
-        If current version >= remove_version and the argument is used.
+        If current version >= version and the argument is used.
     """
     VERSION = parse_version(version)
     if CURRENT_PASTAS_VERSION < VERSION:
