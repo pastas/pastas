@@ -9,10 +9,9 @@ from contextlib import contextmanager
 from functools import wraps
 from logging import getLogger
 from typing import Any
-
+from warnings import warn
 from packaging.version import parse as parse_version
 from pandas import Timestamp
-from typing_extensions import deprecated  # available in warnings from python 3.13
 
 from pastas.version import __version__
 
@@ -148,9 +147,7 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
                     f"{name} is deprecated and will not be available "
                     f"from Pastas version >={VERSION}. {reason}"
                 )
-                deprecated(message=msg, category=DeprecationWarning)(obj)(
-                    *args, **kwargs
-                )
+                warn(message=msg, category=DeprecationWarning)
             else:
                 msg = (
                     f"module has no attribute '{name}'",
@@ -199,7 +196,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
             f"The {name} argument is deprecated and will not be available"
             f" from Pastas version >={VERSION}. {reason}"
         )
-        deprecated(message=msg, category=DeprecationWarning)(lambda: None)()
+        warn(message=msg, category=DeprecationWarning)
     else:
         msg = (
             f"got an unexpected keyword argument {name}"
