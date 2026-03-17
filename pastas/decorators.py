@@ -121,13 +121,12 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
 
     - If current version < version: logs a warning and allows execution to continue
     - If current version >= version: raises AttributeError which indicates
-    that it can be removed from the codebase entirely
+    that it can be removed from the codebase entirely in the (near) future.
 
     Parameters
     ----------
     version: str
-        The version in which the function or class will be removed from the Pastas codebase
-        and raises an AttributeError.
+        The version in which the function, method or class raises an AttributeError.
     reason: str, optional
         The reason why the function or class is deprecated, or a message directing users
         to an alternative. Default is an empty string.
@@ -146,7 +145,7 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
             if CURRENT_PASTAS_VERSION < VERSION:
                 msg = (
                     f"{name} is deprecated and will not be available "
-                    f"from Pastas version >={VERSION}. {reason}"
+                    f"from Pastas version >= {VERSION}. {reason}"
                 )
                 warn(message=msg, category=DeprecationWarning)
             else:
@@ -172,14 +171,14 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
 
     - If current version < version: logs a warning
     - If current version >= version: raises TypeError which indicates that it can be
-    removed from the codebase entirely
+    removed from the codebase entirely in the (near) future.
 
     Parameters
     ----------
     name: str
         The name of the argument that is deprecated.
     version: str
-        The version in which the argument will be removed and TypeError will be raised.
+        The version in which using the argument will raise a TypeError.
     reason: str, optional
         The reason why the argument is deprecated, or a message directing users to
         an alternative. Default is an empty string.
@@ -195,7 +194,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
     if CURRENT_PASTAS_VERSION < VERSION:
         msg = (
             f"The {name} argument is deprecated and will not be available"
-            f" from Pastas version >={VERSION}. {reason}"
+            f" from Pastas version >= {VERSION}. {reason}"
         )
         warn(message=msg, category=DeprecationWarning)
     else:
