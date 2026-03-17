@@ -6,7 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "pastas"
 dynamic = ["version"]
 description = "Pastas is an open-source Python framework for the analysis of groundwater time series."
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = "LICENSE"
 readme = "README.md"
 authors = [{ name = "Collenteur et al. 2019" }]
 maintainers = [
@@ -31,14 +32,13 @@ classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Science/Research',
     'Intended Audience :: Other Audience',
-    'License :: OSI Approved :: MIT License',
+    'Topic :: Scientific/Engineering :: Hydrology',
     'Programming Language :: Python :: 3 :: Only',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
-    'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
 [project.urls]
