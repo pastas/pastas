@@ -532,8 +532,8 @@ class Model:
 
         if sim.hasnans:
             msg = (
-                f"Simulation contains with parameters {p} contains "
-                "NaN-values. Check the parameters and/or if time "
+                f"Simulation with parameters {p} contains NaN"
+                "-values. Check the parameters and/or if the time "
                 "series settings are provided for each stress model "
                 "(e.g. `ps.StressModel(stress, settings='prec')`!"
             )
