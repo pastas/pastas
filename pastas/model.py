@@ -532,8 +532,9 @@ class Model:
 
         if sim.hasnans:
             msg = (
-                "Simulation contains NaN-values. Check if time series settings "
-                "are provided for each stress model "
+                f"Simulation contains with parameters {p} contains "
+                "NaN-values. Check the parameters and/or if time "
+                "series settings are provided for each stress model "
                 "(e.g. `ps.StressModel(stress, settings='prec')`!"
             )
             logger.error(msg)
