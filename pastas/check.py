@@ -67,7 +67,6 @@ from matplotlib.colors import rgb2hex
 from pandas import DataFrame, Series, Timedelta, concat
 
 from pastas.model import Model
-from pastas.rfunc import RfuncBase
 from pastas.stats import tests as diagnostic_tests
 
 logger = logging.getLogger(__name__)
@@ -215,28 +214,6 @@ def _response_memory(
     # unit = "days"
     dim = "[T]"
 
-    def interp_step(cutoff: float, p: np.ndarray, rfunc: RfuncBase):
-        """Helper function to interpolate the step response to compute the memory.
-
-        Parameters
-        ----------
-        cutoff: float
-            Compute the time to for this cutoff value for the step response.
-        p: array
-            Parameters of the response function.
-        rfunc: pastas.rfunc
-            Response function instance.
-
-        Returns
-        -------
-        tmem: float
-            Time to the cutoff value, i.e. the memory of the response function.
-        """
-        t = rfunc.get_t(p, dt=1.0, cutoff=1.0 - (1.0 - cutoff) / 10.0)
-        step = rfunc.step(p, cutoff=1.0 - (1.0 - cutoff) / 10.0) / rfunc.gain(p)
-        tmem = np.interp(cutoff, step, t)
-        return tmem
-
     for sm_name in names:
         sm = ml.stressmodels[sm_name]
         if sm._name == "WellModel":
@@ -250,7 +227,10 @@ def _response_memory(
                     f" {label}"
                 )
                 p = sm.get_parameters(ml, istress=iw)
-                tmem = interp_step(cutoff, p, sm.rfunc)
+                rfunc = sm.rfunc
+                t = rfunc.get_t(p, dt=1.0, cutoff=1.0 - (1.0 - cutoff) / 10.0)
+                step = rfunc.step(p, cutoff=1.0 - (1.0 - cutoff) / 10.0) / rfunc.gain(p)
+                tmem = np.interp(cutoff, step, t)
                 check = tmem < threshold
                 df.loc[lbl] = [
                     tmem,
@@ -260,26 +240,17 @@ def _response_memory(
                     check,
                     "",
                 ]
-        elif sm.rfunc._name == "Hantush":
-            # get_tmax is a conservative approximation for Hantush,
-            # so it is better to interpolate step response to compute the memory
-            lbl = f"response_t{cutoff * 100:.0f}_{sm_name}"
-            p = ml.get_parameters(sm_name)[0:3]
-            tmem = interp_step(cutoff, p, sm.rfunc)
-            check = tmem < threshold
-            df.loc[lbl] = [
-                tmem,
-                "<",
-                threshold,
-                dim,
-                check,
-                "",
-            ]
         else:
-            # for response functions where get_tmax is exact
-            tmem = ml.get_response_tmax(sm_name, cutoff=cutoff)
-            check = tmem < threshold
+            if sm.rfunc._name == "Hantush":
+                # get_tmax for Hantush has an approximation which can be overrriden
+                rfunc = type(sm.rfunc)(quad=sm.rfunc.quad, approximate_tmax=False)
+                p = ml.get_parameters(sm_name)[0:3]
+                tmem = rfunc.get_tmax(p, cutoff=cutoff)
+            else:
+                # for response functions where get_tmax is exact
+                tmem = ml.get_response_tmax(sm_name, cutoff=cutoff)
             lbl = f"t{cutoff * 100:.0f}_{sm_name} < {label}"
+            check = tmem < threshold
             df.loc[lbl] = [
                 tmem,
                 "<",
