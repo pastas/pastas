@@ -162,18 +162,17 @@ class Model:
                     "noisemodel is desired. See this issue on GitHub for more "
                     "information: https://github.com/pastas/pastas/issues/735"
                 )
-                deprecate_args_or_kwargs(
-                    "noisemodel", "2.0.0", reason=msg, force_raise=True
-                )
             elif noisemodel is False:
                 msg = (
                     "The new default is that no noisemodel is added "
                     "anymore, so passing noisemodel=False is not needed anymore. To "
                     "fix this error, do not pass noisemodel=False to Model."
                 )
-                deprecate_args_or_kwargs(
-                    "noisemodel", "2.0.0", reason=msg, force_raise=True
-                )
+            deprecate_args_or_kwargs(
+                name="noisemodel",
+                version="1.5.0",
+                reason=msg,
+            )
 
         # File Information
         self.file_info = self._get_file_info()
@@ -807,7 +806,11 @@ class Model:
                 "ml.del_noisemodel() before solving. See this issue on GitHub for "
                 "more information: https://github.com/pastas/pastas/issues/735"
             )
-            deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
+            deprecate_args_or_kwargs(
+                name="noise",
+                version="1.5.0",
+                reason=msg,
+            )
 
         # Set the settings
         self._settings["weights"] = weights
@@ -979,7 +982,6 @@ class Model:
                     "GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
-                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
             elif noise is False:
                 msg = (
                     "To solve without a noisemodel, remove the noisemodel "
@@ -987,7 +989,11 @@ class Model:
                     "solving. See this issue on GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
-                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
+            deprecate_args_or_kwargs(
+                name="noise",
+                version="1.5.0",
+                reason=msg,
+            )
 
         if initialize:
             self.initialize(
@@ -1043,7 +1049,10 @@ class Model:
             self._generate_warnings_report()  # log warnings even if no report
 
     @property
-    @PastasDeprecationWarning(remove_version="2.0.0", reason="Use 'ml.solver' instead.")
+    @PastasDeprecationWarning(
+        version="2.0.0",
+        reason="Use 'ml.solver' instead.",
+    )
     def fit(self):
         """Deprecated attribute, use ml.solver instead."""
         msg = (
@@ -2133,7 +2142,11 @@ class Model:
 
         if output is not None:
             msg = "Use 'corr=True' instead."
-            deprecate_args_or_kwargs("output", "2.0.0", reason=msg)
+            deprecate_args_or_kwargs(
+                name="output",
+                version="2.0.0",
+                reason=msg,
+            )
             if isinstance(output, str) and output == "full":
                 corr = True
 

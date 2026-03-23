@@ -82,13 +82,12 @@ def _check_forecast_data(
         else:
             deprecate_args_or_kwargs(
                 name="forecasts",
-                remove_version="2.0.0",
+                version="2.0.0",
                 reason=(
                     "A list of DataFrames is deprecated. The forecast argument will"
                     " require a dictionary of DataFrames, with the appropriate keyword"
                     " arguments of the stressmodel as keys of the dictionary instead."
                 ),
-                force_raise=False,
             )
         for fc in fc_data:
             # Convert Series to a 1-column DataFrame
