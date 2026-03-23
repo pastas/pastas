@@ -53,10 +53,10 @@ class TestValidateName:
         """Test with invalid name on Linux platform."""
         name = "invalid/name with space"
 
-        caplog.set_level(logging.WARNING, logger="pastas.utils")
-        result = validate_name(name)
-        assert result == name
-        assert "contains illegal character" in caplog.text
+        with caplog.at_level(logging.INFO, logger="pastas.utils"):
+            result = validate_name(name)
+            assert result == name
+            assert "contains illegal character" in caplog.text
 
     def test_invalid_name_raise_error(self) -> None:
         """Test with invalid name and raise_error=True."""

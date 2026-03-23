@@ -16,7 +16,7 @@ to commit code changes to GitHub open source projects. Let's start!
 ----------------
 Before you start, it is a good idea to check if there are any issues that you
 can help with. You can find a list of issues that are open on the `GitHub
-Issues page <https://github.com/pastas/pastas/labels/good-first-issue>`_` with
+Issues page <https://github.com/pastas/pastas/labels/good-first-issue>`_ with
 the tag "good-first-issue". These issues are a good place to start if you are
 new to Pastas and want to contribute to the project.
 
@@ -40,6 +40,17 @@ development dependencies such as `tox`, `ruff`, `pre-commit` and `pytest`.
 .. note::
     Make sure to make changes in a new branch that branches
     of the Dev-branch. This way you can easily create a Pull Request later on.
+
+An alternative to installing Pastas in development mode is to use `uv` to create a new
+environment with all development dependencies. For more information on the `uv` package
+manager and how to use it, check out https://docs.astral.sh/uv//. After installing
+`uv`, you can fork Pastas on your local machine, move into the folder, and can create a
+new environment with the following command:
+
+    uv sync
+
+This will automatically create a new environment and install all dependencies,
+including the development dependencies.
 
 3. Write Code
 -------------
