@@ -885,8 +885,37 @@ class Hantush(RfuncBase):
     def get_tmax_approximation(
         self, p: ArrayLike, cutoff: float | None = None
     ) -> float:
-        """
-        Approximates tmax using the Lambert W function.
+        """Approximates the time (tmax) when the step response reaches a specified cutoff.
+
+        This analytical approximation is derived by evaluating the tail of the
+        impulse response integral. The derivation relies on the following steps:
+        1.  The tail integral is mapped to dimensionless time x = t/a.
+        2.  Deep in the tail, the b/t term in the exponent is assumed negligible,
+            reducing the integral to the standard Exponential Integral, E1(x).
+        3.  E1(x) is approximated by its leading asymptotic term: exp(-x) / x.
+        4.  Equating this to the remaining area (1 - cutoff) yields an equation
+            of the form x * exp(x) = z, which is classically solved using the
+            Lambert W function: x = W(z).
+
+        To prevent crashing the calculation when rho is large (causing k0 to
+        underflow and z to overflow), the math is translated into log-space.
+        The exponentially scaled Bessel function (k0e) and the Wright Omega
+        function (the exact analytical solution to y + ln(y) = log_z)
+        are used. This provides a globally continuous, unbreakable equivalent to
+        lambertw(z).
+
+        Parameters
+        ----------
+        p : list[float]
+            Parameters of the response function [A, a, b].
+        cutoff : float, optional
+            The fraction of the total step response area reached at tmax.
+            Must be strictly between 0 and 1. Default is 0.999.
+
+        Returns
+        -------
+        float
+            The approximated tmax value.
         """
         cutoff = self.cutoff if cutoff is None else cutoff
         a, b = p[1], p[2]
