@@ -6,7 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "pastas"
 dynamic = ["version"]
 description = "Pastas is an open-source Python framework for the analysis of groundwater time series."
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 authors = [{ name = "Collenteur et al. 2019" }]
 maintainers = [
@@ -31,13 +32,12 @@ classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Science/Research',
     'Intended Audience :: Other Audience',
-    'License :: OSI Approved :: MIT License',
+    'Topic :: Scientific/Engineering :: Hydrology',
     'Programming Language :: Python :: 3 :: Only',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
-    'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
 [project.urls]
@@ -78,7 +78,10 @@ rtd = [
     "myst_nb",
     "sphinx-autoapi",
 ]
-dev = ["tox", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
+dev = ["tox-uv", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
+
+[dependency-groups]
+dev = ["pastas[dev]"]
 
 [tool.setuptools.dynamic]
 version = { attr = "pastas.version.__version__" }
@@ -99,8 +102,9 @@ ignore-regex = "[A-Za-z0-9+/]{100,}"                           # base64-encoded 
 ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
 [tool.tox]
-requires = ["tox>=4"]
-env_list = ["py311", "py312", "py313", "py314", "ruff", "notebooks"]
+requires = ["tox-uv>=1.0"]
+package = "wheel"
+env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
 
 [tool.tox.env_run_base]
 description = "run unit tests"

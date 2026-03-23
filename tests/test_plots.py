@@ -66,7 +66,7 @@ def test_stresses(ml_noisemodel: Model) -> None:
 
 
 def test_contributions_pie(ml_noisemodel: Model) -> None:
-    with pytest.raises(DeprecationWarning):
+    with pytest.raises(AttributeError):
         _ = ml_noisemodel.plots.contributions_pie()
         plt.close()
 
