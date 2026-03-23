@@ -303,8 +303,8 @@ def get_sample_for_freq(
 
 
 @PastasDeprecationWarning(
-    remove_version="2.1",
-    reason=("`timestep_weighted_resample` is replaced by `time_weighted_resample`."),
+    version="2.1",
+    reason="`timestep_weighted_resample` is replaced by `time_weighted_resample`.",
 )
 def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> Series:
     """Resample a time series to a new time index, using an overlapping period

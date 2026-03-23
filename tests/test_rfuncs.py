@@ -8,7 +8,7 @@ import pastas as ps
 @pytest.mark.parametrize("up", [True, False])
 def test_rfunc(rfunc_name: str, up: bool) -> None:
     if rfunc_name == "Edelman":
-        with pytest.raises(DeprecationWarning):
+        with pytest.raises(AttributeError):
             _ = getattr(ps.rfunc, rfunc_name)()
     else:
         rfunc = getattr(ps.rfunc, rfunc_name)()
@@ -24,7 +24,7 @@ def test_rfunc(rfunc_name: str, up: bool) -> None:
 @pytest.mark.parametrize("up", [True, False])
 def test_to_dict_rfuncs(rfunc_name: str, up: bool) -> None:
     if rfunc_name == "Edelman":
-        with pytest.raises(DeprecationWarning):
+        with pytest.raises(AttributeError):
             _ = getattr(ps.rfunc, rfunc_name)()
     else:
         rfunc1 = getattr(ps.rfunc, rfunc_name)(cutoff=0.5)
@@ -53,7 +53,7 @@ def test_to_dict_rfuncs(rfunc_name: str, up: bool) -> None:
 @pytest.mark.parametrize("up", [True, False, None])
 def test_gain_methods(rfunc_name: str, up: bool) -> None:
     if rfunc_name == "Edelman":
-        with pytest.raises(DeprecationWarning):
+        with pytest.raises(AttributeError):
             _ = getattr(ps.rfunc, rfunc_name)()
     else:
         rfunc = getattr(ps.rfunc, rfunc_name)()
@@ -137,7 +137,7 @@ def test_moment_discrete_works(rfunc_name: str) -> None:
         Name of the response function class to test.
     """
     if rfunc_name == "Edelman":
-        with pytest.raises(DeprecationWarning):
+        with pytest.raises(AttributeError):
             _ = getattr(ps.rfunc, rfunc_name)()
         return
     rfunc = getattr(ps.rfunc, rfunc_name)(cutoff=0.999)
@@ -257,7 +257,7 @@ def test_moment_exact_not_implemented(rfunc_name: str) -> None:
         Name of the response function class to test.
     """
     if rfunc_name == "Edelman":
-        with pytest.raises(DeprecationWarning):
+        with pytest.raises(AttributeError):
             _ = getattr(ps.rfunc, rfunc_name)()
         return
 

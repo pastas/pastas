@@ -1067,7 +1067,7 @@ class Model:
 
     @property
     @PastasDeprecationWarning(
-        remove_version="2.0.0", reason="Use 'ml.observations()' instead."
+        version="2.0.0", reason="Use 'ml.observations()' instead."
     )
     def oseries_calib(self):
         return self.oseries.series
