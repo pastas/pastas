@@ -27,9 +27,11 @@ from scipy.special import (
     gammainc,
     gammaincinv,
     k0,
+    k0e,
     k1,
     kv,
     lambertw,
+    wrightomega,
 )
 
 from .decorators import latexfun, njit
@@ -888,15 +890,16 @@ class Hantush(RfuncBase):
         """
         cutoff = self.cutoff if cutoff is None else cutoff
         a, b = p[1], p[2]
+        rho = 2.0 * np.sqrt(b)
 
-        k0rho = k0(2 * np.sqrt(b))
-        z = 1.0 / ((1.0 - cutoff) * k0rho)
-        tmax = lambertw(z).real * a
+        # Compute log-space equivalent of z = 1 / ((1 - cutoff) * k0(rho))
+        # to prevent large values of rho returning 0.0 for k0(rho)
+        # and thus z = inf, which causes lambertw to return inf.
+        # ln(k0(rho)) = ln(k0e(rho)) - rho
+        log_z = rho - np.log(1 - cutoff) - np.log(k0e(rho))
 
-        # a NumPy asymptotic expansion of LambertW which is 3 times faster
-        # L1 = np.log(z)
-        # L2 = np.log(L1)
-        # tmax = (L1 - L2 + L2 / L1) * a
+        # wrightomega(L) = lambertw(exp(L))
+        tmax = wrightomega(log_z).real * a
         return tmax
 
     def _f_step(self, t: float, A: float, a: float, b: float, cutoff: float) -> float:
