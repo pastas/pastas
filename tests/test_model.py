@@ -1,5 +1,6 @@
 """Tests for the Model class in pastas.model."""
 
+import logging
 from pathlib import Path
 from typing import Any
 

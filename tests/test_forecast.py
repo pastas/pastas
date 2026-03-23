@@ -81,7 +81,7 @@ class TestCheckForecastData:
         index: DatetimeIndex = pd.date_range("2023-01-01", periods=10, freq="D")
         s1: Series = pd.Series(np.random.rand(10), index=index)
         s2: Series = pd.Series(np.random.rand(10), index=index)
-        forecasts: dict[str, list[Series]] = {"sm1": [s1, s2]}
+        forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": s1, "evap": s2}}
         n, tmin, tmax, result_index = _check_forecast_data(forecasts)
         assert n == 1
         assert tmin == index[0]
@@ -208,7 +208,7 @@ class TestForecast:
         index: DatetimeIndex = pd.date_range("2015-11-30", periods=5, freq="D")
         s1: Series = pd.Series(np.ones(5), index=index)
         s2: Series = pd.Series(np.ones(5) * 2, index=index)
-        series_data: dict[str, list[Series]] = {"rch": [s1, s2]}
+        series_data: dict[str, dict[str, DataFrame]] = {"rch": {"prec": s1, "evap": s2}}
         result = forecast(ml_noisemodel, series_data, post_process=False)
         assert isinstance(result, pd.DataFrame)
         assert not result.empty
