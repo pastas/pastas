@@ -1,8 +1,8 @@
-"""Tests for loading .pas gallery files.
+"""Tests for loading .pas files.
 
-Add version strings to VERSIONS to generate and test additional galleries.
-Generation is skipped for versions whose gallery directory already exists.
-Newly generated directories are removed after the test session finishes.
+Add a version to VERSIONS to generate and test additional pas files for that Pastas
+version. Generation is skipped for versions for which a directory already exists. Newly
+generated directories are removed after the test session finishes.
 
     pytest tests/test_pas_files.py
 """
@@ -75,7 +75,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 
 
 XFAIL = {
-    "ChangeModel.pas": "Known issue with ChangeModel in in <1.13.1",
+    "ChangeModel.pas": "Known issue with ChangeModel in <=1.13.2",
 }
 
 
