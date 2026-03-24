@@ -50,7 +50,7 @@ PAS_FILES = (
         for version in PASTAS_VERSIONS
         for p in sorted(generate_pas_files(version).glob("*.pas"))
     ]
-    if os.environ.get("CI_PASFILES", "0") == "1"
+    if os.environ.get("CI_PASFILES", "1") == "1"
     else []
 )
 
