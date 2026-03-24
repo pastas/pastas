@@ -157,4 +157,3 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "slow: mark test as slow")
     config.addinivalue_line("markers", "integration: mark as integration test")
     config.addinivalue_line("markers", "plotting: mark as test that produces plots")
-    config.addinivalue_line("markers", "pasfiles: mark test for pas file loading")

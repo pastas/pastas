@@ -24,6 +24,7 @@ jobs:
     name: Test suite for .pas files
     runs-on: ubuntu-latest
     env:
+      CI_PASFILES: "1"
       # Color Output
       # Rich (pip)
       FORCE_COLOR: 1
