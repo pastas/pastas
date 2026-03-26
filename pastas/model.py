@@ -1087,6 +1087,9 @@ class Model:
             certain periods (e.g., droughts) or measurements (i.e. outliers), and make
             more complex calibration schemes (see, for example, :cite:`colllenteur_analysis_2023`). Note that the weights are only used during optimization and not when computing the goodness-of-fit metrics.
 
+        Notes
+        -----
+        This method is used to change the model settings. It is called by the solve method, but can also be triggered manually.
 
         """
         if tmin is not None:
