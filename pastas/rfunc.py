@@ -984,14 +984,16 @@ class Hantush(RfuncBase):
         return p[0]
 
     @staticmethod
-    @njit
-    def _integrand_hantush(y: float, b: float) -> float:
-        return np.exp(-y - (b / y)) / y
-
-    @staticmethod
     def numpy_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
         rho = 2.0 * np.sqrt(b)
         k0rho = k0(rho)
+        if k0rho == 0.0:
+            logger.warning(
+                f"K_0(rho) is underflowing to 0.0 for b: {b:.4e}, rho = {rho:.4e}. "
+                "The parameter `b` is too high or which means that the observation well "
+                "is too far away. Consider lowering the initial value and bounds for b "
+                "to prevent this error."
+            )
         exp1_rho = exp1(rho)
         w = (exp1_rho - k0rho) / (exp1_rho - exp1(rho / 2.0))
         w_minus_1 = w - 1.0
@@ -1011,6 +1013,11 @@ class Hantush(RfuncBase):
         F[inv_mask] = 2.0 * k0rho - w * exp1(tau2) + w_minus_1 * exp1(tau2 + b_tau2)
 
         return A * F / (2.0 * k0rho)
+
+    @staticmethod
+    @njit
+    def _integrand_hantush(y: float, b: float) -> float:
+        return np.exp(-y - (b / y)) / y
 
     @staticmethod
     def quad_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
