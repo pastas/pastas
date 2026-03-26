@@ -222,15 +222,15 @@ def _response_memory(
             # the memory for each well in the Wellmodel separately.
             nwells = sm.distances.index.size
             for iw in range(nwells):
+                p = sm.get_parameters(ml, istress=iw)
+                rfunc = type(sm.rfunc)(
+                    quad=sm.rfunc.quad, log_b=sm.rfunc.log_b, approximate_tmax=False
+                )
+                tmem = rfunc.get_tmax(p, cutoff=cutoff)
                 lbl = (
                     f"t{cutoff * 100:.0f}_{sm_name} ({sm.distances.index[iw]}) <"
                     f" {label}"
                 )
-                p = sm.get_parameters(ml, istress=iw)
-                rfunc = sm.rfunc
-                t = rfunc.get_t(p, dt=1.0, cutoff=1.0 - (1.0 - cutoff) / 10.0)
-                step = rfunc.step(p, cutoff=1.0 - (1.0 - cutoff) / 10.0) / rfunc.gain(p)
-                tmem = np.interp(cutoff, step, t)
                 check = tmem < threshold
                 df.loc[lbl] = [
                     tmem,
