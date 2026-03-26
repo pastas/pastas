@@ -349,16 +349,16 @@ def test_hantush_exact_vs_approximate_tmax() -> None:
     A = p[0]
     cutoff = rfunc_exact.cutoff
 
-    # Compute step response at each tmax
+    # Compute step response at each tmax using the analytical expression
     step_approx = (
-        rfunc_approx.step(p, dt=1.0, cutoff=cutoff, maxtmax=1)[int(tmax_approx)] / A
-        if int(tmax_approx)
-        < len(rfunc_approx.step(p, dt=1.0, cutoff=cutoff, maxtmax=1))
-        else rfunc_approx.numpy_step(A, p[1], p[2], np.array([tmax_approx]))[0] / A
+        rfunc_approx.numpy_step(A, p[1], p[2], np.array([tmax_approx]))[0] / A
     )
-    step_exact = rfunc_exact.numpy_step(A, p[1], p[2], np.array([tmax_exact]))[0] / A
+    step_exact = (
+        rfunc_exact.numpy_step(A, p[1], p[2], np.array([tmax_exact]))[0] / A
+    )
 
     # The exact method should achieve cutoff more closely
+    error_approx = abs(step_approx - cutoff)
     error_approx = abs(step_approx - cutoff)
     error_exact = abs(step_exact - cutoff)
 
