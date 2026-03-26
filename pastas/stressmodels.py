@@ -1694,7 +1694,7 @@ class RechargeModel(StressModelBase):
 
     @property
     @PastasDeprecationWarning(
-        remove_version="2.0.0",
+        version="2.0.0",
         reason=(
             "for the RechargeModel. Use 'stresses' property instead if you want to"
             " obtain all stresses. For individual stresses call the 'prec', 'evap' and "
@@ -2550,6 +2550,7 @@ class ChangeModel(StressModelBase):
         Settings and metadata are exported with the stress.
         """
         data = {
+            "class": self._name,
             "stress": self.stresses[0].to_dict(series=series),
             "rfunc1": self.rfunc1.to_dict(),
             "rfunc2": self.rfunc2.to_dict(),

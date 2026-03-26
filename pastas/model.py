@@ -18,7 +18,7 @@ from itertools import combinations
 from logging import getLogger
 from os import getlogin
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 # External Dependencies
 import numpy as np
@@ -162,18 +162,17 @@ class Model:
                     "noisemodel is desired. See this issue on GitHub for more "
                     "information: https://github.com/pastas/pastas/issues/735"
                 )
-                deprecate_args_or_kwargs(
-                    "noisemodel", "2.0.0", reason=msg, force_raise=True
-                )
             elif noisemodel is False:
                 msg = (
                     "The new default is that no noisemodel is added "
                     "anymore, so passing noisemodel=False is not needed anymore. To "
                     "fix this error, do not pass noisemodel=False to Model."
                 )
-                deprecate_args_or_kwargs(
-                    "noisemodel", "2.0.0", reason=msg, force_raise=True
-                )
+            deprecate_args_or_kwargs(
+                name="noisemodel",
+                version="1.5.0",
+                reason=msg,
+            )
 
         # File Information
         self.file_info = self._get_file_info()
@@ -531,8 +530,9 @@ class Model:
 
         if sim.hasnans:
             msg = (
-                "Simulation contains NaN-values. Check if time series settings "
-                "are provided for each stress model "
+                f"Simulation with parameters {p} contains NaN"
+                "-values. Check the parameters and/or if the time "
+                "series settings are provided for each stress model "
                 "(e.g. `ps.StressModel(stress, settings='prec')`!"
             )
             logger.error(msg)
@@ -805,7 +805,11 @@ class Model:
                 "ml.del_noisemodel() before solving. See this issue on GitHub for "
                 "more information: https://github.com/pastas/pastas/issues/735"
             )
-            deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
+            deprecate_args_or_kwargs(
+                name="noise",
+                version="1.5.0",
+                reason=msg,
+            )
 
         self.set_settings(
             tmin=tmin,
@@ -866,7 +870,7 @@ class Model:
         warmup: float | None = None,
         noise: bool | None = None,
         solver: Solver | None = None,
-        report: bool = True,
+        report: bool | Literal["full"] = True,
         initial: bool = True,
         weights: Series | None = None,
         fit_constant: bool = True,
@@ -902,9 +906,12 @@ class Model:
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
             of Pastas 0.23, not a class!
-        report: bool, optional
-            Print a report to the screen after optimization finished. This can also
-            be manually triggered after optimization by calling print(ml.fit_report(
+        report: bool | Literal["full"], optional
+            Print a report to the screen after optimization finished. Set to
+            True (default) to print a standard report, "full" to print a
+            report including the correlation matrix and standard errors of the
+            parameters, or False to suppress the report. This can also be
+            manually triggered after optimization by calling print(ml.fit_report(
             )) on the Pastas model instance.
         initial: bool, optional
             Reset initial parameters from the individual stress models. Default is
@@ -959,7 +966,6 @@ class Model:
                     "GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
-                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
             elif noise is False:
                 msg = (
                     "To solve without a noisemodel, remove the noisemodel "
@@ -967,7 +973,11 @@ class Model:
                     "solving. See this issue on GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
-                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
+            deprecate_args_or_kwargs(
+                name="noise",
+                version="1.5.0",
+                reason=msg,
+            )
 
         if initialize:
             self.initialize(
@@ -1025,7 +1035,10 @@ class Model:
             self._generate_warnings_report()  # log warnings even if no report
 
     @property
-    @PastasDeprecationWarning(remove_version="2.0.0", reason="Use 'ml.solver' instead.")
+    @PastasDeprecationWarning(
+        version="2.0.0",
+        reason="Use 'ml.solver' instead.",
+    )
     def fit(self):
         """Deprecated attribute, use ml.solver instead."""
         msg = (
@@ -1038,7 +1051,7 @@ class Model:
 
     @property
     @PastasDeprecationWarning(
-        remove_version="2.0.0", reason="Use 'ml.observations()' instead."
+        version="2.0.0", reason="Use 'ml.observations()' instead."
     )
     def oseries_calib(self):
         return self.oseries.series
@@ -2199,12 +2212,16 @@ class Model:
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
-            "weights": "Yes" if str(self.settings["weights"]) else "No",
+            "weights": "Yes" if self.settings["weights"] is not None else "No",
         }
 
         if output is not None:
             msg = "Use 'corr=True' instead."
-            deprecate_args_or_kwargs("output", "2.0.0", reason=msg)
+            deprecate_args_or_kwargs(
+                name="output",
+                version="2.0.0",
+                reason=msg,
+            )
             if isinstance(output, str) and output == "full":
                 corr = True
 
@@ -2381,12 +2398,13 @@ class Model:
             pandas series with boolean values of the parameters that are close to the
             maximum (pmax) values.
         """
-        upperhit = Series(index=self._parameters.index, dtype=bool)
         lowerhit = Series(index=self._parameters.index, dtype=bool)
+        upperhit = Series(index=self._parameters.index, dtype=bool)
 
         for p in self._parameters.index:
-            pmax = self._parameters.at[p, "pmax"]
+            optimal = self._parameters.at[p, "optimal"]
             pmin = self._parameters.at[p, "pmin"]
+            pmax = self._parameters.at[p, "pmax"]
 
             # calculate atol based on minimum, with max 1e-8
             # otherwise set 1 order of magnitude lower than minimum value
@@ -2396,18 +2414,12 @@ class Model:
                 atol = np.min([1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
 
             # deal with NaNs in parameter bounds
-            if np.isnan(pmax):
-                pmax = np.inf
-            if np.isnan(pmin):
-                pmax = -np.inf
+            pmin = -np.inf if np.isnan(pmin) else pmin
+            pmax = np.inf if np.isnan(pmax) else pmax
 
             # determine hits
-            upperhit.at[p] = np.allclose(
-                self._parameters.at[p, "optimal"], pmax, atol=atol, rtol=1e-5
-            )
-            lowerhit.at[p] = np.allclose(
-                self._parameters.at[p, "optimal"], pmin, atol=atol, rtol=1e-5
-            )
+            lowerhit.at[p] = np.allclose(optimal, pmin, atol=atol, rtol=1e-5)
+            upperhit.at[p] = np.allclose(optimal, pmax, atol=atol, rtol=1e-5)
 
         return lowerhit, upperhit
 
