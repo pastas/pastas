@@ -94,10 +94,14 @@ fix = true
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
-markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
+markers = [
+    "notebooks: run notebooks",
+    "bnotebooks: run benchmark notebooks",
+    "pasfiles: test pas file I/O between pastas versions",
+]
 
 [tool.codespell]
-skip = "*.pdf,*.csv,*.txt"
+skip = "*.pdf,*.csv,*.txt,*.lock"
 ignore-regex = "[A-Za-z0-9+/]{100,}"                           # base64-encoded data in *.ipynb files
 ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
@@ -109,7 +113,14 @@ env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
 [tool.tox.env_run_base]
 description = "run unit tests"
 extras = ["ci"]
-commands = [["pytest", "tests", "-m", "not notebooks and not bnotebooks"]]
+commands = [
+    [
+        "pytest",
+        "tests",
+        "-m",
+        "not notebooks and not bnotebooks and not pasfiles",
+    ],
+]
 
 [tool.tox.env.all]
 description = "run all unit tests (including Notebooks) and obtain coverage"
@@ -122,13 +133,18 @@ commands = [
         "pytest",
         "tests",
         "-m",
-        "not bnotebooks",
+        "not bnotebooks and not pasfiles",
     ],
     [
         "coverage",
         "xml",
     ],
 ]
+
+[tool.tox.env.pasfiles]
+description = "test pas file I/O between pastas versions"
+extras = ["ci"]
+commands = [["pytest", "tests", "-m", "pasfiles"]]
 
 [tool.tox.env.notebooks]
 description = "run the benchmark notebooks"

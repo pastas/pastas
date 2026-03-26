@@ -48,6 +48,7 @@ jobs:
             toxenv: all
             experimental: false
     env:
+      CI_PASFILES: "0" # do not generate pas files for these tests
       # Color Output
       # Rich (pip)
       FORCE_COLOR: 1

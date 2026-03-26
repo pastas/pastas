@@ -35,8 +35,6 @@ dist
 
 .DS_Store
 /doc/api/generated/
-Test_Model.pdf
-test.pas
 doc/about/publications.bib
 doc/about/references.bib
 *.nbc
