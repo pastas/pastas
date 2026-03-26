@@ -131,27 +131,31 @@ class Model:
         )
 
         # Define the model components
-        self.stressmodels = OrderedDict()
-        self.constant = None
-        self.transform = None
-        self.noisemodel = None
+        self.stressmodels: dict[str, StressModel] = OrderedDict()
+        self.transform: ThresholdTransform | None = None
+        self.noisemodel: NoiseModelType | None = None
 
         # Default solve/simulation settings
         self._settings = {
-            "tmin": None,
-            "tmax": None,
-            "freq": freq,
-            "warmup": Timedelta(3650, "D"),
             "time_offset": Timedelta(0),
             "noise": False,
             "solver": None,
-            "fit_constant": True,
-            "freq_obs": None,
         }
+        self.set_settings(
+            tmin=self.oseries.settings["tmin"],
+            tmax=self.oseries.settings["tmax"],
+            freq=freq,
+            warmup=3650.0,  # 10 years in days
+            fit_constant=True,
+            freq_obs=None,
+        )
 
         if constant:
-            constant = Constant(initial=self.oseries.series.mean(), name="constant")
-            self.add_constant(constant)
+            self.add_constant(
+                constant=Constant(initial=self.oseries.series.mean(), name="constant")
+            )
+        else:
+            self.constant = None
 
         if noisemodel is not None:
             if noisemodel is True:
@@ -176,13 +180,13 @@ class Model:
             )
 
         # File Information
-        self.file_info = self._get_file_info()
+        self.file_info: dict[str, Any] = self._get_file_info()
 
         # initialize some attributes for solving and simulation
-        self.interpolate_simulation = None
-        self.normalize_residuals = False
-        self.solver = None
-        self._solve_success = None
+        self.interpolate_simulation: bool | None = None
+        self.normalize_residuals: bool = False
+        self.solver: Any = None
+        self._solve_success: bool | None = None
 
         # Load other modules
         self.stats = Statistics(self)
@@ -501,10 +505,10 @@ class Model:
         # Get the simulation index and the time step
         # Check if the requested index matches the model settings
         if (
-            tmin == self._settings["tmin"]
-            and tmax == self._settings["tmax"]
-            and freq == self._settings["freq"]
-            and warmup == self._settings["warmup"]
+            tmin == self.settings["tmin"]
+            and tmax == self.settings["tmax"]
+            and freq == self.settings["freq"]
+            and warmup == self.settings["warmup"]
         ):
             sim_index = self.sim_index
         else:
@@ -512,7 +516,7 @@ class Model:
                 tmin=tmin - warmup,
                 tmax=tmax,
                 freq=freq,
-                time_offset=self._settings["time_offset"],
+                time_offset=self.settings["time_offset"],
             )
         dt = _get_dt(freq)
 
@@ -1129,7 +1133,7 @@ class Model:
             self._settings["freq"] = _frequency_is_supported(freq)
 
         # Set time offset from the frequency and the series in the stressmodels
-        self._settings["time_offset"] = self._get_time_offset(self._settings["freq"])
+        self._settings["time_offset"] = self._get_time_offset(self.settings["freq"])
 
         if warmup is not None:
             self._settings["warmup"] = Timedelta(warmup, "D")
@@ -2065,7 +2069,7 @@ class Model:
 
         return stress
 
-    def _get_file_info(self) -> dict:
+    def _get_file_info(self) -> dict[str, Any]:
         """Internal method to get the file information.
 
         Returns
