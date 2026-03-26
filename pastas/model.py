@@ -14,6 +14,7 @@ Create a new Pastas model::
 
 # Python Dependencies
 from collections import OrderedDict
+from functools import lru_cache
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
@@ -178,7 +179,6 @@ class Model:
         self.file_info = self._get_file_info()
 
         # initialize some attributes for solving and simulation
-        self.sim_index = None
         self.interpolate_simulation = None
         self.normalize_residuals = False
         self.solver = None
@@ -499,7 +499,21 @@ class Model:
             warmup = Timedelta(warmup, "D")
 
         # Get the simulation index and the time step
-        sim_index = self._get_sim_index(tmin, tmax, freq, warmup)
+        # Check if the requested index matches the model settings
+        if (
+            tmin == self._settings["tmin"]
+            and tmax == self._settings["tmax"]
+            and freq == self._settings["freq"]
+            and warmup == self._settings["warmup"]
+        ):
+            sim_index = self.sim_index
+        else:
+            sim_index = _get_sim_index(
+                tmin=tmin - warmup,
+                tmax=tmax,
+                freq=freq,
+                time_offset=self._settings["time_offset"],
+            )
         dt = _get_dt(freq)
 
         # Get parameters if none are provided
@@ -1127,15 +1141,6 @@ class Model:
 
         self._settings["weights"] = weights
 
-        # make sure calibration data is renewed
-        self.sim_index = self._get_sim_index(
-            self._settings["tmin"],
-            self._settings["tmax"],
-            self._settings["freq"],
-            self._settings["warmup"],
-            update_sim_index=True,
-        )
-
     def set_parameter(
         self,
         name: str,
@@ -1326,31 +1331,12 @@ class Model:
         else:
             return Timedelta(0)
 
-    def _get_sim_index(
-        self,
-        tmin: Timestamp,
-        tmax: Timestamp,
-        freq: str,
-        warmup: Timedelta,
-        update_sim_index: bool = False,
-    ) -> DatetimeIndex:
-        """Internal method to get the simulation index, including the warmup.
-
-        Parameters
-        ----------
-        tmin: pandas.Timestamp
-            String with a start date for the simulation period (E.g. '1980-01-01
-            00:00:00'). If none is provided, the tmin from the oseries is used.
-        tmax: pandas.Timestamp
-            String with an end date for the simulation period (E.g. '2020-01-01
-            00:00:00'). If none is provided, the tmax from the oseries is used.
-        freq: str
-            String with the frequency the stressmodels are simulated. Must be one of
-            the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        warmup: pandas.Timedelta
-            Warmup period (in Days).
-        update_sim_index : bool, optional
-            if True, force recalculation of sim_index, default is False
+    @property
+    def sim_index(self) -> DatetimeIndex:
+        """Property that returns the simulation index, including the warmup.
+        Using the tmin, tmax, freq, time_offset, and warmup from the model
+        settings, a DatetimeIndex is created that includes the warmup period.
+        This index is used for simulating the model and calculating the residuals.
 
         Returns
         -------
@@ -1358,24 +1344,30 @@ class Model:
             Pandas DatetimeIndex instance with the datetimes values for which the
             model is simulated.
         """
-        # Check if any of the settings are updated
-        for key, setting in zip(
-            [tmin, tmax, freq, warmup], ["tmin", "tmax", "freq", "warmup"]
-        ):
-            if key != self._settings[setting]:
-                update_sim_index = True
-                break
+        return self._get_sim_index(
+            self._settings["tmin"],
+            self._settings["tmax"],
+            self._settings["freq"],
+            self._settings["time_offset"],
+            self._settings["warmup"],
+        )
 
-        if self.sim_index is None or update_sim_index:
-            sim_index = _get_sim_index(
-                tmin=tmin - warmup,
-                tmax=tmax,
-                freq=freq,
-                time_offset=self._settings["time_offset"],
-            )
-        else:
-            sim_index = self.sim_index
-        return sim_index
+    @lru_cache(maxsize=1)
+    def _get_sim_index(
+        self,
+        tmin: Timestamp,
+        tmax: Timestamp,
+        freq: str,
+        time_offset: Timedelta,
+        warmup: Timedelta,
+    ) -> DatetimeIndex:
+        """Internal method to create the simulation index, cached for performance."""
+        return _get_sim_index(
+            tmin=tmin - warmup,
+            tmax=tmax,
+            freq=freq,
+            time_offset=time_offset,
+        )
 
     def get_tmin(
         self,
