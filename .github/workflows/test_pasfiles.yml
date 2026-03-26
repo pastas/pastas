@@ -1,9 +1,16 @@
-name: CI NB
+name: CI PASFILES
 
 on:
+  # Trigger the workflow on push or pull request on master,
+  # and only on pull-requests on dev branch
+  push:
+    branches:
+      - master
+      - dev
   pull_request:
     branches:
       - master
+      - dev
 
 concurrency:
   # Group by workflow name and ref (branch or pull request ref).
@@ -13,17 +20,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: ${{ matrix.name }}
+  test_pasfiles:
+    name: Test suite for .pas files
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Test suite for benchmark Notebooks
-            toxenv: notebooks
     env:
-      CI_PASFILES: "0" # do not generate pas files for these tests
+      CI_PASFILES: "1" # generate pas files for these tests
       # Color Output
       # Rich (pip)
       FORCE_COLOR: 1
@@ -32,9 +33,10 @@ jobs:
       # Pytest
       PYTEST_ADDOPTS: "--color=yes"
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-      - name: Set up uv with Python
+      - name: Set up uv
         uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.11"
@@ -46,7 +48,7 @@ jobs:
           uv pip install tox-uv
 
       - name: Setup tox environment
-        run: uv run tox -e ${{ matrix.toxenv }} --notest
+        run: uv run tox -e pasfiles --notest
 
       - name: Test
-        run: uv run tox -e ${{ matrix.toxenv }} --skip-pkg-install
+        run: uv run tox -e pasfiles --skip-pkg-install
