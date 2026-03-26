@@ -581,14 +581,14 @@ class HantushWellModel(RfuncBase):
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.distances = None
         self.nparam: int = 3
+        self.distances: float | ArrayLike | None = None
         self.quad: bool = quad
         self.approximate_tmax: bool = approximate_tmax
         self.log_b: bool = log_b
 
-    def set_distances(self, distances) -> None:
-        self.distances = distances
+    def set_distances(self, distances: float | ArrayLike) -> None:
+        self.distances: float | ArrayLike = distances
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.distances is None:
