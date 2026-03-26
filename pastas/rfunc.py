@@ -614,23 +614,16 @@ class HantushWellModel(RfuncBase):
         else:
             initial_A, pmin_A, pmax_A = 1.0 / self.gain_scale_factor, np.nan, np.nan
 
+        initial_b, pmin_b, pmax_b = (
+            1.0 / np.mean(self.distances) ** 2,
+            1e-6 / np.max(self.distances) ** 2,
+            25.0 / np.min(self.distances) ** 2,
+        )
         if self.log_b:
-            init_b = (
-                np.log10(1.0 / np.mean(self.distances) ** 2),
-                np.log10(1e-6 / np.max(self.distances) ** 2),
-                np.log10(25.0 / np.min(self.distances) ** 2),
-                True,
-                name,
-                "uniform",
-            )
-        else:
-            init_b = (
-                1.0 / np.mean(self.distances) ** 2,
-                1e-6 / np.max(self.distances) ** 2,
-                25.0 / np.min(self.distances) ** 2,
-                True,
-                name,
-                "uniform",
+            initial_b, pmin_b, pmax_b = (
+                np.log10(initial_b),
+                np.log10(pmin_b),
+                np.log10(pmax_b),
             )
 
         parameters = DataFrame(
@@ -639,7 +632,7 @@ class HantushWellModel(RfuncBase):
                 (1e2, 1e-3, 1e4, True, name, "uniform"),
                 # set initial and bounds for b taking into account distances
                 # note log transform to avoid tiny values for b
-                init_b,
+                (initial_b, pmin_b, pmax_b, True, name, "uniform"),
             ],
             index=[name + "_A", name + "_a", name + "_b"],
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
@@ -861,9 +854,17 @@ class Hantush(RfuncBase):
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
-            initial_A, pmin_A, pmax_A = 1.0 / self.gain_scale_factor, 0.0, np.nan
+            initial_A, pmin_A, pmax_A = (
+                1.0 / self.gain_scale_factor,
+                0.0,
+                100.0 / self.gain_scale_factor,
+            )
         elif self.up is False:
-            initial_A, pmin_A, pmax_A = -1.0 / self.gain_scale_factor, np.nan, 0.0
+            initial_A, pmin_A, pmax_A = (
+                -1.0 / self.gain_scale_factor,
+                -100.0 / self.gain_scale_factor,
+                0.0,
+            )
         else:
             initial_A, pmin_A, pmax_A = 1.0 / self.gain_scale_factor, np.nan, np.nan
 
@@ -1029,10 +1030,12 @@ class Hantush(RfuncBase):
         A, a, b = p
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
 
-        if self.quad:
-            return self.quad_step(A, a, b, t)
-        else:
-            return self.numpy_step(A, a, b, t)
+        step = (
+            self.quad_step(A=A, a=a, b=b, t=t)
+            if self.quad
+            else self.numpy_step(A=A, a=a, b=b, t=t)
+        )
+        return step
 
     def moment(
         self,
