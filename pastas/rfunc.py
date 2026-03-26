@@ -30,7 +30,6 @@ from scipy.special import (
     k0e,
     k1,
     kv,
-    lambertw,
     wrightomega,
 )
 
@@ -577,12 +576,16 @@ class HantushWellModel(RfuncBase):
         self,
         cutoff: float = 0.999,
         quad: bool = False,
+        approximate_tmax: bool = True,
+        log_b: bool = True,
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.distances = None
-        self.nparam = 3
-        self.quad = quad
+        self.nparam: int = 3
+        self.quad: bool = quad
+        self.approximate_tmax: bool = approximate_tmax
+        self.log_b: bool = log_b
 
     def set_distances(self, distances) -> None:
         self.distances = distances
@@ -611,20 +614,32 @@ class HantushWellModel(RfuncBase):
         else:
             initial_A, pmin_A, pmax_A = 1.0 / self.gain_scale_factor, np.nan, np.nan
 
+        if self.log_b:
+            init_b = (
+                np.log10(1.0 / np.mean(self.distances) ** 2),
+                np.log10(1e-6 / np.max(self.distances) ** 2),
+                np.log10(25.0 / np.min(self.distances) ** 2),
+                True,
+                name,
+                "uniform",
+            )
+        else:
+            init_b = (
+                1.0 / np.mean(self.distances) ** 2,
+                1e-6 / np.max(self.distances) ** 2,
+                25.0 / np.min(self.distances) ** 2,
+                True,
+                name,
+                "uniform",
+            )
+
         parameters = DataFrame(
             [
                 (initial_A, pmin_A, pmax_A, True, name, "uniform"),
                 (1e2, 1e-3, 1e4, True, name, "uniform"),
                 # set initial and bounds for b taking into account distances
                 # note log transform to avoid tiny values for b
-                (
-                    np.log(1.0 / np.mean(self.distances) ** 2),
-                    np.log(1e-6 / np.max(self.distances) ** 2),
-                    np.log(25.0 / np.min(self.distances) ** 2),
-                    True,
-                    name,
-                    "uniform",
-                ),
+                init_b,
             ],
             index=[name + "_A", name + "_a", name + "_b"],
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
@@ -641,59 +656,33 @@ class HantushWellModel(RfuncBase):
             r = p[3]
         return r
 
+    def _get_hantush_params(self, p: ArrayLike, warn: bool = True) -> np.ndarray:
+        r = self._get_distance_from_params(p, warn=warn)
+        A, a, b = p[:3]
+        b_scaled = 10 ** (b / 2.0) if self.log_b else b / 2.0
+        rho = 2.0 * r * b_scaled
+        A_h = A * k0(rho)
+        b_h = (r * b_scaled) ** 2
+        return np.array([A_h, a, b_h])
+
     def get_tmax(
         self, p: ArrayLike, cutoff: float | None = None, warn: bool = True
     ) -> float:
-        r = self._get_distance_from_params(p, warn=warn)
-        # approximate formula for tmax
-        if cutoff is None:
-            cutoff = self.cutoff
-        a, b = p[1:3]
-        rho = 2 * r * np.exp(b / 2)
-        k0rho = k0(rho)
-        if k0rho == 0.0:
-            return 50 * 365.0  # 50 years, need to set some tmax if k0rho==0.0
-        else:
-            return lambertw(1 / ((1 - cutoff) * k0rho)).real * a
+        cutoff = self.cutoff if cutoff is None else cutoff
+        p_h = self._get_hantush_params(p, warn=warn)
+        h = Hantush(
+            cutoff=self.cutoff,
+            quad=self.quad,
+            approximate_tmax=self.approximate_tmax,
+        )
+        return h.get_tmax(p_h, cutoff=cutoff)
 
     def gain(self, p: ArrayLike, r: float | None = None) -> float:
         if r is None:
             r = self._get_distance_from_params(p)
-        rho = 2 * r * np.exp(p[2] / 2)
+        b = 10 ** (p[2] / 2.0) if self.log_b else p[2] / 2.0
+        rho = 2.0 * r * b
         return p[0] * k0(rho)
-
-    @staticmethod
-    @njit
-    def _integrand_hantush(y: float, b: float) -> float:
-        return np.exp(-y - (b / y)) / y
-
-    @staticmethod
-    def numpy_step(A: float, a: float, b: float, r: float, t: ArrayLike) -> ArrayLike:
-        rho = 2 * r * np.exp(b / 2)
-        rhosq = rho**2
-        k0rho = k0(rho)
-        tau = t / a
-        tau1 = tau[tau < rho / 2]
-        tau2 = tau[tau >= rho / 2]
-        w = (exp1(rho) - k0rho) / (exp1(rho) - exp1(rho / 2))
-        F = np.zeros_like(tau)
-        F[tau < rho / 2] = w * exp1(rhosq / (4 * tau1)) - (w - 1) * exp1(
-            tau1 + rhosq / (4 * tau1)
-        )
-        F[tau >= rho / 2] = (
-            2 * k0rho - w * exp1(tau2) + (w - 1) * exp1(tau2 + rhosq / (4 * tau2))
-        )
-        return A * F / 2
-
-    def quad_step(
-        self, A: float, a: float, b: float, r: float, t: ArrayLike
-    ) -> ArrayLike:
-        F = np.zeros_like(t)
-        brsq = np.exp(b) * r**2
-        u = a * brsq / t
-        for i in range(0, len(t)):
-            F[i] = quad(self._integrand_hantush, u[i], np.inf, args=(brsq,))[0]
-        return F * A / 2
 
     def step(
         self,
@@ -703,14 +692,13 @@ class HantushWellModel(RfuncBase):
         maxtmax: int | None = None,
         warn: bool = True,
     ) -> ArrayLike:
-        A, a, b = p[:3]
-        r = self._get_distance_from_params(p, warn=warn)
+        p_h = self._get_hantush_params(p, warn=warn)
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, warn=warn)
 
         if self.quad:
-            return self.quad_step(A, a, b, r, t)
+            return Hantush.quad_step(p_h[0], p_h[1], p_h[2], t)
         else:
-            return self.numpy_step(A, a, b, r, t)
+            return Hantush.numpy_step(p_h[0], p_h[1], p_h[2], t)
 
     def moment(
         self,
@@ -737,6 +725,7 @@ class HantushWellModel(RfuncBase):
         var_b: float,
         cov_Ab: float,
         r: float = 1.0,
+        log_b: bool = True,
     ) -> float | ArrayLike:
         """Calculate variance of the gain from parameters A and b.
 
@@ -758,13 +747,15 @@ class HantushWellModel(RfuncBase):
             variance of parameter A, can be obtained from the diagonal of the
             covariance matrix (e.g. ml.solver.pcov).
         var_b : float
-            variance of parameter A, can be obtained from the diagonal of the
+            variance of parameter b, can be obtained from the diagonal of the
             covariance matrix (e.g. ml.solver.pcov).
         cov_Ab : float
             covariance between A and b, can be obtained from the covariance matrix (
             e.g. ml.solver.pcov).
         r : float or array_like, optional
             distance(s) between observation well and stress(es), default value is 1.0.
+        log_b: bool, optional
+            indicates if parameter b is log10 transformed. Default is True.
 
         Returns
         -------
@@ -776,17 +767,20 @@ class HantushWellModel(RfuncBase):
         --------
         ps.WellModel.variance_gain
         """
-        var_gain = (
-            (k0(2 * r * np.exp(b / 2))) ** 2 * var_A
-            + (A * r * k1(2 * r * np.exp(b / 2))) ** 2 * np.exp(b) * var_b
-            - 2
-            * A
-            * r
-            * k0(2 * r * np.exp(b / 2))
-            * k1(2 * r * np.exp(b / 2))
-            * np.exp(b / 2)
-            * cov_Ab
-        )
+        if log_b:
+            b_scaled = 10 ** (b / 2.0)
+            db_scaled = b_scaled * np.log(10) / 2.0
+        else:
+            b_scaled = b / 2.0
+            db_scaled = 0.5
+
+        rho = 2.0 * r * b_scaled
+        drho_db = 2.0 * r * db_scaled
+
+        dg_dA = k0(rho)
+        dg_db = -A * k1(rho) * drho_db
+
+        var_gain = dg_dA**2 * var_A + dg_db**2 * var_b + 2 * dg_dA * dg_db * cov_Ab
         return var_gain
 
     def to_dict(self):
@@ -808,6 +802,8 @@ class HantushWellModel(RfuncBase):
             "gain_scale_factor": self.gain_scale_factor,
             "cutoff": self.cutoff,
             "quad": self.quad,
+            "approximate_tmax": self.approximate_tmax,
+            "log_b": self.log_b,
         }
         return data
 
@@ -1015,11 +1011,12 @@ class Hantush(RfuncBase):
 
         return A * F / (2.0 * k0rho)
 
-    def quad_step(self, A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
+    @staticmethod
+    def quad_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
         F = np.zeros_like(t)
         u = a * b / t
         for i in range(0, len(t)):
-            F[i] = quad(self._integrand_hantush, u[i], np.inf, args=(b,))[0]
+            F[i] = quad(Hantush._integrand_hantush, u[i], np.inf, args=(b,))[0]
         return F * A / (2 * k0(2 * np.sqrt(b)))
 
     def step(

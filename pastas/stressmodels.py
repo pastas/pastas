@@ -1407,7 +1407,11 @@ class WellModel(StressModelBase):
         elif istress is not None and r is None:
             raise ValueError("Parameter 'istress' must be None, list or int!")
 
-        return self.rfunc.variance_gain(A, b, var_A, var_b, cov_Ab, r=r)
+        log_b = getattr(self.rfunc, "log_b", True)
+        vg = HantushWellModel.variance_gain(
+            A=A, b=b, var_A=var_A, var_b=var_b, cov_Ab=cov_Ab, r=r, log_b=log_b
+        )
+        return vg
 
 
 class RechargeModel(StressModelBase):
