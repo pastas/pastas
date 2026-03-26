@@ -652,7 +652,7 @@ class HantushWellModel(RfuncBase):
     def _get_hantush_params(self, p: ArrayLike, warn: bool = True) -> np.ndarray:
         r = self._get_distance_from_params(p, warn=warn)
         A, a, b = p[:3]
-        b_scaled = 10 ** (b / 2.0) if self.log_b else b / 2.0
+        b_scaled = 10 ** (b / 2.0) if self.log_b else np.sqrt(b)
         rho = 2.0 * r * b_scaled
         A_h = A * k0(rho)
         b_h = (r * b_scaled) ** 2
@@ -673,7 +673,7 @@ class HantushWellModel(RfuncBase):
     def gain(self, p: ArrayLike, r: float | None = None) -> float:
         if r is None:
             r = self._get_distance_from_params(p)
-        b = 10 ** (p[2] / 2.0) if self.log_b else p[2] / 2.0
+        b = 10 ** (p[2] / 2.0) if self.log_b else np.sqrt(p[2])
         rho = 2.0 * r * b
         return p[0] * k0(rho)
 
@@ -764,8 +764,8 @@ class HantushWellModel(RfuncBase):
             b_scaled = 10 ** (b / 2.0)
             db_scaled = b_scaled * np.log(10) / 2.0
         else:
-            b_scaled = b / 2.0
-            db_scaled = 0.5
+            b_scaled = np.sqrt(b)
+            db_scaled = 0.5 / np.sqrt(b)
 
         rho = 2.0 * r * b_scaled
         drho_db = 2.0 * r * db_scaled
