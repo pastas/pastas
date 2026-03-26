@@ -395,3 +395,46 @@ def test_hantush_approximate_tmax_to_dict_roundtrip() -> None:
         tmax2 = rfunc2.get_tmax(p)
 
         assert tmax1 == tmax2, f"tmax values differ after roundtrip: {tmax1} vs {tmax2}"
+
+
+# Tests for HantushWellModel approximate_tmax and log_b options
+@pytest.mark.parametrize("log_b", [True, False])
+@pytest.mark.parametrize("approximate_tmax", [True, False])
+def test_hantush_well_model_parameters(log_b: bool, approximate_tmax: bool) -> None:
+    """Test HantushWellModel parameters log_b and approximate_tmax."""
+    rfunc = ps.HantushWellModel(log_b=log_b, approximate_tmax=approximate_tmax)
+    rfunc.set_distances(100.0)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Step response works
+    step = rfunc.step(p)
+    assert len(step) > 0
+
+    # tmax works
+    tmax = rfunc.get_tmax(p)
+    assert np.isfinite(tmax) and tmax > 0
+
+    # to_dict works
+    data = rfunc.to_dict()
+    assert data["log_b"] == log_b
+    assert data["approximate_tmax"] == approximate_tmax
+
+
+@pytest.mark.parametrize("log_b", [True, False])
+def test_hantush_well_model_variance_gain(log_b: bool) -> None:
+    """Test variance_gain for HantushWellModel with log_b variations."""
+    rfunc = ps.HantushWellModel(log_b=log_b)
+    rfunc.set_distances(100.0)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Dummy covariance and variance values
+    var_A = 0.1
+    var_b = 0.2
+    cov_Ab = 0.05
+
+    # test variance_gain (calculates through internal method)
+    vg = rfunc.variance_gain(
+        A=p[0], b=p[2], var_A=var_A, var_b=var_b, cov_Ab=cov_Ab, r=100.0
+    )
+    assert np.isfinite(vg)
+    assert vg >= 0.0
