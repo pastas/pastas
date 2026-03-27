@@ -11,8 +11,9 @@ Load a single dataset from the "collenteur_2021" subfolder::
 
 """
 
+import logging
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, get_args
 
 from pandas import DataFrame, read_csv
 
@@ -25,6 +26,8 @@ DATASET_NAMES = Literal[
     "spek_2017",
     "vonk_2024",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -71,6 +74,12 @@ def load_dataset(name: DATASET_NAMES) -> DataFrame | dict[str, DataFrame]:
         )
     from requests.exceptions import HTTPError
 
+    if name not in get_args(DATASET_NAMES):
+        logger.error(
+            f"Possibly invalid dataset name: {name}. Use "
+            "ps.list_datasets() to get a list of available datasets."
+        )
+
     # Get the folder from the pastas-data repository
     r = requests.get(f"{GITHUB_URL}/{name}/")
 
@@ -106,7 +115,7 @@ def load_dataset(name: DATASET_NAMES) -> DataFrame | dict[str, DataFrame]:
 
 
 @lru_cache
-def list_datasets(silent: bool = True) -> list[DATASET_NAMES]:
+def list_datasets(silent: bool = True) -> list[str]:
     """Print a list of available datasets in the pastas-data repository on GitHub.
 
     Returns
