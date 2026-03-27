@@ -12,14 +12,23 @@ Load a single dataset from the "collenteur_2021" subfolder::
 """
 
 from functools import lru_cache
+from typing import Literal
 
 from pandas import DataFrame, read_csv
 
 GITHUB_URL = "https://api.github.com/repos/pastas/pastas-data/contents/"
+DATASET_NAMES = Literal[
+    "collenteur_2019",
+    "collenteur_2021",
+    "collenteur_2023",
+    "collenteur_2024",
+    "spek_2017",
+    "vonk_2024",
+]
 
 
 @lru_cache
-def load_dataset(name: str) -> DataFrame | dict[str, DataFrame]:
+def load_dataset(name: DATASET_NAMES) -> DataFrame | dict[str, DataFrame]:
     """Load csv-files from a subfolder in the pastas dataset repository on GitHub.
 
     Parameters
@@ -97,7 +106,7 @@ def load_dataset(name: str) -> DataFrame | dict[str, DataFrame]:
 
 
 @lru_cache
-def list_datasets(silent: bool = True) -> list[str]:
+def list_datasets(silent: bool = True) -> list[DATASET_NAMES]:
     """Print a list of available datasets in the pastas-data repository on GitHub.
 
     Returns
