@@ -32,7 +32,6 @@ from pandas import (
 )
 
 # Internal Pastas
-from pastas.check import response_memory, response_memory_vs_warmup
 from pastas.decorators import (
     PastasDeprecationWarning,
     deprecate_args_or_kwargs,
@@ -2035,8 +2034,13 @@ class Model:
 
         return file_info
 
-    def _generate_warnings_report(self) -> list[str]:
+    def _generate_warnings_report(self, log: bool = True) -> list[str]:
         """Internal method to generate warnings after model optimization.
+
+        Parameters
+        ----------
+        log: bool, optional
+            If True, the warnings are logged using the logging module. Default is True.
 
         Returns
         -------
@@ -2060,14 +2064,14 @@ class Model:
                         f"{self.parameters.at[p, 'pmax']:.2e}"
                     )
                     msg.append(pmsg)
-                    logger.warning(pmsg)
+                    logger.warning(pmsg) if log else None
                 elif lowerhit.at[p]:
                     pmsg = (
                         f"Parameter '{p}' on lower bound: "
                         f"{self.parameters.at[p, 'pmin']:.2e}"
                     )
                     msg.append(pmsg)
-                    logger.warning(pmsg)
+                    logger.warning(pmsg) if log else None
 
         # check response t_cutoff vs length calibration period and warmup period
         response_tmax_check = self._check_response_tmax()
@@ -2076,13 +2080,13 @@ class Model:
             for i in response_tmax_check.loc[mask].index:
                 rmsg = f"Response tmax for '{i}' > than calibration period."
                 msg.append(rmsg)
-                logger.warning(rmsg)
+                logger.warning(rmsg) if log else None
         if (~response_tmax_check["check_warmup"]).any():
             mask = ~response_tmax_check["check_warmup"]
             for i in response_tmax_check.loc[mask].index:
                 rmsg = f"Response tmax for '{i}' > than warmup period."
                 msg.append(rmsg)
-                logger.warning(rmsg)
+                logger.warning(rmsg) if log else None
 
         return msg
 
@@ -2222,37 +2226,7 @@ class Model:
             corr = ""
 
         if warnings:
-            msg = []
-            # model optimization unsuccessful
-            if not self._solve_success:
-                msg.append("Model parameters could not be estimated well.")
-
-            # parameter bound warnings
-            lowerhit, upperhit = self._check_parameters_bounds()
-            nhits = upperhit.sum() + lowerhit.sum()
-
-            if nhits > 0:
-                for p in upperhit.index:
-                    if upperhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on upper bound: "
-                            f"{self._parameters.at[p, 'pmax']:.2e}"
-                        )
-                    elif lowerhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on lower bound: "
-                            f"{self._parameters.at[p, 'pmin']:.2e}"
-                        )
-            # check response t_cutoff vs length calibration period and warmup period
-            response_tmax_check = self._check_response_tmax()
-            if (~response_tmax_check["check_response"]).any():
-                mask = ~response_tmax_check["check_response"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than calibration period.")
-            if (~response_tmax_check["check_warmup"]).any():
-                mask = ~response_tmax_check["check_warmup"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than warmup period.")
+            msg = self._generate_warnings_report(log=False)
 
             # create message
             if len(msg) > 0:
