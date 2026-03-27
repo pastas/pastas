@@ -467,19 +467,20 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
+    ml_parameters = ml.parameters
     if parameters is None:
-        parameters = ml.parameters.index.tolist()
+        parameters = ml_parameters.index.tolist()
     elif isinstance(parameters, str):
-        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
+        parameters = [iparam for iparam in ml_parameters.index if parameters in iparam]
     df = get_empty_check_dataframe()
 
-    lowerhit = Series(index=ml.parameters.index, dtype=bool)
-    upperhit = Series(index=ml.parameters.index, dtype=bool)
+    lowerhit = Series(index=ml_parameters.index, dtype=bool)
+    upperhit = Series(index=ml_parameters.index, dtype=bool)
 
-    for p in ml.parameters.index:
-        optimal = ml.parameters.at[p, "optimal"]
-        pmin = ml.parameters.at[p, "pmin"]
-        pmax = ml.parameters.at[p, "pmax"]
+    for p in ml_parameters.index:
+        optimal = ml_parameters.at[p, "optimal"]
+        pmin = ml_parameters.at[p, "pmin"]
+        pmax = ml_parameters.at[p, "pmax"]
 
         # calculate atol based on minimum, with max 1e-8
         # otherwise set 1 order of magnitude lower than minimum value
@@ -498,13 +499,13 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
 
     for param in parameters:
         bounds = (
-            ml.parameters.loc[param, "pmin"],
-            ml.parameters.loc[param, "pmax"],
+            ml_parameters.loc[param, "pmin"],
+            ml_parameters.loc[param, "pmax"],
         )
         check = ~(upperhit.loc[param] or lowerhit.loc[param])
 
         df.loc[f"Bounds: {param}"] = (
-            ml.parameters.loc[param, "optimal"],
+            ml_parameters.loc[param, "optimal"],
             "within",
             bounds,
             guess_unit_or_dims(param),
