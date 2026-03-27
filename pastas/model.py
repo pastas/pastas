@@ -2225,18 +2225,20 @@ class Model:
 
         if corr:
             cor = DataFrame(columns=["value"])
-            for idx, col in combinations(self.solver.pcor, 2):
-                if np.abs(self.solver.pcor.loc[idx, col]) > 0.5:
-                    cor.loc[f"{idx} {col}"] = self.solver.pcor.loc[idx, col]
+            pcor = self.solver.pcor
+            for idx, col in combinations(pcor, 2):
+                if np.abs(pcor.loc[idx, col]) > 0.5:
+                    cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
 
-            corrr = (
+            corr_rep = (
                 f"\n\nParameter correlations |rho| > 0.5\n"
                 f"{string.format('', fill='=', align='>', width=width)}"
                 f"\n{cor.to_string(float_format='%.2f', header=False)}"
             )
         else:
-            corrr = ""
+            corr_rep = ""
 
+        warnings_rep = ""
         if warnings:
             msg = self._generate_warnings_report(log=False)
 
@@ -2246,13 +2248,9 @@ class Model:
                     f"\n\nWarnings! ({len(msg)})\n"
                     f"{string.format('', fill='=', align='>', width=width)}"
                 ] + msg
-                warningsr = "\n".join(msg)
-            else:
-                warningsr = ""
-        else:
-            warningsr = ""
+                warnings_rep += "\n".join(msg)
 
-        report = f"{header}{basic}{params}{warningsr}{corrr}"
+        report = f"{header}{basic}{params}{warnings_rep}{corr_rep}"
 
         return report
 
