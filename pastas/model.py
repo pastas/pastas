@@ -33,7 +33,6 @@ from pandas import (
 )
 
 # Internal Pastas
-from pastas.check import response_memory, response_memory_vs_warmup
 from pastas.decorators import (
     PastasDeprecationWarning,
     deprecate_args_or_kwargs,
@@ -2067,42 +2066,37 @@ class Model:
             if log:
                 logger.warning(warning)
 
-        # parameter bound warnings via checks module
-        bounds_check = parameter_bounds(self)
-        for idx, row in bounds_check.loc[~bounds_check["pass"]].iterrows():
-            pname = idx.replace("Bounds: ", "")
-            optimal = row["statistic"]
-            pmin, pmax = row["threshold"]
-
-            if np.isfinite(pmax) and np.isclose(optimal, pmax):
-                pmsg = f"Parameter '{pname}' on upper bound: {pmax:.2e}"
-                _append_warning(pmsg)
-            elif np.isfinite(pmin) and np.isclose(optimal, pmin):
-                pmsg = f"Parameter '{pname}' on lower bound: {pmin:.2e}"
-                _append_warning(pmsg)
+        if nhits > 0:
+            for p in upperhit.index:
+                if upperhit.at[p]:
+                    pmsg = (
+                        f"Parameter '{p}' on upper bound: "
+                        f"{self.parameters.at[p, 'pmax']:.2e}"
+                    )
+                    msg.append(pmsg)
+                    logger.warning(pmsg) if log else None
+                elif lowerhit.at[p]:
+                    pmsg = (
+                        f"Parameter '{p}' on lower bound: "
+                        f"{self.parameters.at[p, 'pmin']:.2e}"
+                    )
+                    msg.append(pmsg)
+                    logger.warning(pmsg) if log else None
 
         # check response t_cutoff vs length calibration period and warmup period
-        # using check functions and map failing checks back to stressmodel names.
-        for sm_name, sm in self.stressmodels.items():
-            if sm.rfunc is None:
-                continue
-
-            response_check = response_memory(
-                self,
-                cutoff=sm.rfunc.cutoff,
-                factor_length_oseries=1.0,
-                names=sm_name,
-            )
-            if not response_check["pass"].all():
-                rmsg = f"Response tmax for '{sm_name}' > than calibration period."
-                _append_warning(rmsg)
-
-            warmup_check = response_memory_vs_warmup(
-                self, cutoff=sm.rfunc.cutoff, names=sm_name
-            )
-            if not warmup_check["pass"].all():
-                rmsg = f"Response tmax for '{sm_name}' > than warmup period."
-                _append_warning(rmsg)
+        response_tmax_check = self._check_response_tmax()
+        if (~response_tmax_check["check_response"]).any():
+            mask = ~response_tmax_check["check_response"]
+            for i in response_tmax_check.loc[mask].index:
+                rmsg = f"Response tmax for '{i}' > than calibration period."
+                msg.append(rmsg)
+                logger.warning(rmsg) if log else None
+        if (~response_tmax_check["check_warmup"]).any():
+            mask = ~response_tmax_check["check_warmup"]
+            for i in response_tmax_check.loc[mask].index:
+                rmsg = f"Response tmax for '{i}' > than warmup period."
+                msg.append(rmsg)
+                logger.warning(rmsg) if log else None
 
         return msg
 
