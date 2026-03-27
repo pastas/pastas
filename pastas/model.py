@@ -2376,43 +2376,6 @@ class Model:
 
         return check
 
-    def _check_parameters_bounds(self) -> tuple[Series, Series]:
-        """Internal method to check if the optimal parameters are close to pmin or pmax.
-
-        Returns
-        -------
-        lowerhit: pandas.Series
-            pandas series with boolean values of the parameters that are close to the
-            minimum (pmin) values.
-        upperhit: pandas.Series
-            pandas series with boolean values of the parameters that are close to the
-            maximum (pmax) values.
-        """
-        lowerhit = Series(index=self._parameters.index, dtype=bool)
-        upperhit = Series(index=self._parameters.index, dtype=bool)
-
-        for p in self._parameters.index:
-            optimal = self._parameters.at[p, "optimal"]
-            pmin = self._parameters.at[p, "pmin"]
-            pmax = self._parameters.at[p, "pmax"]
-
-            # calculate atol based on minimum, with max 1e-8
-            # otherwise set 1 order of magnitude lower than minimum value
-            if pmin == 0.0 or np.isnan(pmin):
-                atol = 1e-8
-            else:
-                atol = np.min([1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
-
-            # deal with NaNs in parameter bounds
-            pmin = -np.inf if np.isnan(pmin) else pmin
-            pmax = np.inf if np.isnan(pmax) else pmax
-
-            # determine hits
-            lowerhit.at[p] = np.allclose(optimal, pmin, atol=atol, rtol=1e-5)
-            upperhit.at[p] = np.allclose(optimal, pmax, atol=atol, rtol=1e-5)
-
-        return lowerhit, upperhit
-
     def to_dict(self, series: bool = True, file_info: bool = True) -> dict:
         """Method to export a model to a dictionary.
 
