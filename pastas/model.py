@@ -32,6 +32,7 @@ from pandas import (
 )
 
 # Internal Pastas
+from pastas.check import response_memory, response_memory_vs_warmup
 from pastas.decorators import (
     PastasDeprecationWarning,
     deprecate_args_or_kwargs,
