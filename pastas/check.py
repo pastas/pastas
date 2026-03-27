@@ -473,13 +473,36 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
     elif isinstance(parameters, str):
         parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
     df = get_empty_check_dataframe()
-    upper, lower = ml._check_parameters_bounds()
+
+    lowerhit = Series(index=ml.parameters.index, dtype=bool)
+    upperhit = Series(index=ml.parameters.index, dtype=bool)
+
+    for p in ml.parameters.index:
+        optimal = ml.parameters.at[p, "optimal"]
+        pmin = ml.parameters.at[p, "pmin"]
+        pmax = ml.parameters.at[p, "pmax"]
+
+        # calculate atol based on minimum, with max 1e-8
+        # otherwise set 1 order of magnitude lower than minimum value
+        if pmin == 0.0 or np.isnan(pmin):
+            atol = 1e-8
+        else:
+            atol = np.min([1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
+
+        # deal with NaNs in parameter bounds
+        pmin = -np.inf if np.isnan(pmin) else pmin
+        pmax = np.inf if np.isnan(pmax) else pmax
+
+        # determine hits
+        lowerhit.at[p] = np.allclose(optimal, pmin, atol=atol, rtol=1e-5)
+        upperhit.at[p] = np.allclose(optimal, pmax, atol=atol, rtol=1e-5)
+
     for param in parameters:
         bounds = (
             ml.parameters.loc[param, "pmin"],
             ml.parameters.loc[param, "pmax"],
         )
-        check = ~(upper.loc[param] or lower.loc[param])
+        check = ~(upperhit.loc[param] or lowerhit.loc[param])
 
         df.loc[f"Bounds: {param}"] = (
             ml.parameters.loc[param, "optimal"],
