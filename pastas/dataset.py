@@ -75,7 +75,7 @@ def load_dataset(name: DATASET_NAMES) -> DataFrame | dict[str, DataFrame]:
     from requests.exceptions import HTTPError
 
     if name not in get_args(DATASET_NAMES):
-        logger.error(
+        logger.warning(
             f"Possibly invalid dataset name: {name}. Use "
             "ps.list_datasets() to get a list of available datasets."
         )
