@@ -35,4 +35,4 @@ def test_list_datasets() -> None:
     # For example, you can check if the output contains certain dataset names
     assert isinstance(datasets_list, list)
     assert all(isinstance(name, str) for name in datasets_list)
-    assert set(datasets_list).issubset(set(DATASET_NAMES.__args__))
+    assert set(DATASET_NAMES.__args__).issubset(set(datasets_list))
