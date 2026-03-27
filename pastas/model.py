@@ -2237,13 +2237,13 @@ class Model:
                 if np.abs(pcor.loc[idx, col]) > 0.5:
                     cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
 
-            corrr = (
+            corr_rep = (
                 f"\n\nParameter correlations |rho| > 0.5\n"
                 f"{string.format('', fill='=', align='>', width=width)}"
                 f"\n{cor.to_string(float_format='%.2f', header=False)}"
             )
         else:
-            corrr = ""
+            corr_rep = ""
 
         warnings_rep = ""
         if warnings:
@@ -2255,13 +2255,9 @@ class Model:
                     f"\n\nWarnings! ({len(msg)})\n"
                     f"{string.format('', fill='=', align='>', width=width)}"
                 ] + msg
-                warningsr = "\n".join(msg)
-            else:
-                warningsr = ""
-        else:
-            warningsr = ""
+                warnings_rep += "\n".join(msg)
 
-        report = f"{header}{basic}{params}{warningsr}{corrr}"
+        report = f"{header}{basic}{params}{warnings_rep}{corr_rep}"
 
         return report
 
