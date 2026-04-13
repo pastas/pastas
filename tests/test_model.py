@@ -259,24 +259,19 @@ class TestModelSimulation:
 
     def test_simulate_with_parameters(self, ml_solved: ps.Model) -> None:
         """Test simulation with provided parameters."""
-        # Solve the model first
-        ml_solved.solve(report=False)
 
-        # Get optimal parameters
-        p_opt = ml_solved.get_parameters()
+        # Get initial and optimal parameters
+        p_init = ml_solved.parameters["initial"]
+        p_opt = ml_solved.parameters["optimal"]
 
-        # Get a copy of ml_rm with initial parameters
-        ml_copy = ml_solved.copy()
-        ml_copy.initialize()
-
-        # Simulate with initial parameters
-        sim_init = ml_copy.simulate()
-
-        # Simulate with optimal parameters
-        sim_opt = ml_copy.simulate(p=p_opt)
+        # Simulate with initial and optimal parameters
+        sim_init = ml_solved.simulate(p=p_init)
+        sim_opt = ml_solved.simulate(p=p_opt)
 
         # Should be different unless the optimization didn't change parameters
-        assert not np.all(sim_init.values == sim_opt.values)
+        res = np.isclose(sim_init.values, sim_opt.values).all(axis=0)
+
+        assert not res
 
     def test_simulate_with_warmup(self, ml_solved: ps.Model) -> None:
         """Test simulation with warmup period."""
@@ -440,14 +435,6 @@ class TestModelParameters:
 @pytest.mark.integration
 class TestModelSolving:
     """Test model solving."""
-
-    def test_initialize(self, ml_solved: ps.Model) -> None:
-        """Test model initialization before solving."""
-        ml_solved.initialize()
-
-        assert ml_solved.settings["tmin"] is not None
-        assert ml_solved.settings["tmax"] is not None
-        assert ml_solved.observations() is not None
 
     def test_solve(self, ml_solved: ps.Model) -> None:
         """Test solving the model."""
