@@ -625,6 +625,17 @@ class LeastSquares(BaseSolver):
         https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py
         Please refer to the SciPy optimization module::
         https://docs.scipy.org/doc/scipy/reference/optimize.html
+
+        This method uses SVD (for trf/dogbox) or QR decomposition (for lm) to
+        invert the Hessian approximation (JᵀJ), which is more numerically stable
+        than direct inversion.
+
+        This method is equivalent to:
+        pcov = (Jᵀ W J)⁻¹ * (rᵀ W r) / (nobs - npar)
+        where:
+        - J is the jacobian matrix (nobs, npar)
+        - r is the vector of residuals.
+        - W is the diagonal matrix of weights.
         """
 
         nobs, npar = jacobian.shape
@@ -674,7 +685,9 @@ class LeastSquares(BaseSolver):
             threshold = np.finfo(float).eps * max(jacobian.shape) * s[0]
             s = s[s > threshold]
             VT = VT[: s.size]
-            pcov = np.dot(VT.T / s**2, VT)
+            pcov = np.dot(
+                VT.T / s**2, VT
+            )  # $V^T S^{-2} V$ is perfectly equivalent to $(J^T J)^{-1}$.
 
         if pcov is None or np.isnan(pcov).any():
             # indeterminate covariance

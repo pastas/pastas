@@ -1,8 +1,11 @@
 """Tests for the solver module in Pastas."""
 
+from functools import partial
+
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.optimize._numdiff import approx_derivative
 
 import pastas as ps
 from pastas.solver import EmceeSolve, LmfitSolve
@@ -125,3 +128,77 @@ class TestOptionalSolvers:
                 solver.to_dict()
         except ImportError:
             pytest.skip("emcee not installed")
+
+
+def test_leastsquares_covariance_scenarios(head, prec, evap):
+    # 1. Setup Data & Model
+    # Using small subset for speed
+
+    ml = ps.Model(head)
+    rm = ps.RechargeModel(prec, evap, name="rch")
+    ml.add_stressmodel(rm)
+
+    weights_random = pd.Series(
+        np.random.RandomState(seed=0).rand(len(head)), index=head.index
+    )
+
+    # Solve
+    jac_method = "2-point"
+    ml.solve(weights=weights_random, report=False, jac=jac_method)
+    p_opt = ml.parameters.optimal.values
+    pcov_internal = ml.solver.pcov.values  # This uses the code you pasted
+
+    # 2. Define Manual Inversion Function (The "Traditional" way)
+    def manual_pcov(J, res, w, nobs, npar):
+        sse = np.sum(w * res**2)
+        s_sq = sse / (nobs - npar)
+        # Standard WLS formula: (J.T @ W @ J)^-1 * s_sq
+        return np.linalg.inv(J.T @ np.diag(w) @ J) * s_sq
+
+    # --- SCENARIO A: Verify Internal vs Manual (Weighted) ---
+    # We use the solver's Jacobian (which is weighted) and cost.
+    # To use manual_pcov with a weighted Jacobian, we pass weights=ones.
+    nobs, npar = ml.solver.result.jac.shape
+    res_weighted = ml.solver.misfit(p_opt, weights=weights_random, noise=False)
+    pcov_manual_weighted = manual_pcov(
+        ml.solver.result.jac, res_weighted, np.ones(nobs), nobs, npar
+    )
+
+    assert np.allclose(pcov_internal, pcov_manual_weighted, rtol=1e-6), (
+        "Internal SVD method differs from manual inversion using weighted Jacobian."
+    )
+
+    # --- SCENARIO B: Verify Pure Reconstruction ---
+    # Get unweighted (pure) components
+    res_pure = ml.solver.misfit(p_opt, weights=None, noise=False)
+
+    fun_pure = partial(
+        ml.solver.objfunction,
+        weights=None,
+        noise=ml.settings["noise"],
+        callback=None,
+    )
+    # Using 3-point for higher precision to match the solver
+    jac_pure = approx_derivative(fun_pure, x0=p_opt, method=jac_method)
+
+    pcov_pure_reconstruction = manual_pcov(
+        jac_pure, res_pure, weights_random.values, nobs, npar
+    )
+
+    # Comparing numerical derivative result to analytical solver result
+    # We allow a slightly larger tolerance (1e-4) due to finite difference approx.
+    assert np.allclose(pcov_internal, pcov_pure_reconstruction, rtol=1e-4), (
+        "Internal pcov differs from pure Jacobian reconstruction."
+    )
+
+    # --- SCENARIO C: Verify scaling (absolute_sigma=True) ---
+    # If absolute_sigma=True, pcov should not be multiplied by s_sq.
+    pcov_abs = ml.solver.get_covariances(
+        ml.solver.result.jac, ml.solver.result.cost, absolute_sigma=True
+    )
+    # Recreate manually: (J_w.T @ J_w)^-1
+    pcov_manual_abs = np.linalg.inv(ml.solver.result.jac.T @ ml.solver.result.jac)
+
+    assert np.allclose(pcov_abs, pcov_manual_abs, rtol=1e-6), (
+        "absolute_sigma=True calculation is incorrect."
+    )
