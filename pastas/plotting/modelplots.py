@@ -751,7 +751,7 @@ class Plotting:
         else:
             if len(axes) != nrows:
                 msg = "Makes sure the number of axes equals the number of series"
-                raise Exception(msg)
+                raise ValueError(msg)
             fig = axes[0].figure
             o_label = ""
             set_axes_properties = False
@@ -1091,7 +1091,7 @@ class Plotting:
         return axes
 
     @PastasDeprecationWarning(
-        remove_version="1.6.0",
+        version="1.6.0",
         reason=(
             "Quantifying contributions in one plot is ambiguous. "
             "Users are encouraged develop this themselves."
@@ -1160,7 +1160,7 @@ class Plotting:
             frac = [contrib.std() for contrib in contribs]
         else:
             msg = "Unknown value for partition: {}".format(partition)
-            raise (Exception(msg))
+            raise ValueError(msg)
 
         # make sure the unexplained part is 100 - evp %
         evp = self.ml.stats.evp(tmin=tmin, tmax=tmax) / 100

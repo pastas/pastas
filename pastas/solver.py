@@ -361,7 +361,7 @@ class LeastSquaresSolver(BaseSolver):
         if samples.shape[0] < n:
             suggestion = "You could try increasing 'max_iter'."
             if samples.shape[0] == 0:
-                raise Exception(
+                raise RuntimeError(
                     "No parameter samples were found within %s runs. " % max_iter
                     + suggestion
                 )

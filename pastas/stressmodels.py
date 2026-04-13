@@ -1577,7 +1577,7 @@ class RechargeModel(StressModelBase):
                 "Please make sure the indices of the time series overlap."
             )
             logger.error(msg)
-            raise Exception(msg)
+            raise ValueError(msg)
 
         # Calculate initial recharge estimation for initial rfunc parameters
         p = self.recharge.get_init_parameters().initial.values
@@ -1687,7 +1687,7 @@ class RechargeModel(StressModelBase):
 
     @property
     @PastasDeprecationWarning(
-        remove_version="2.0.0",
+        version="2.0.0",
         reason=(
             "for the RechargeModel. Use 'stresses' property instead if you want to"
             " obtain all stresses. For individual stresses call the 'prec', 'evap' and "
@@ -2102,12 +2102,12 @@ class TarsoModel(RechargeModel):
         if oseries is not None:
             if dmin is not None or dmax is not None:
                 msg = "Please specify either oseries or dmin and dmax"
-                raise (Exception(msg))
+                raise ValueError(msg)
             dmin = oseries.min()
             dmax = oseries.max()
         elif dmin is None or dmax is None:
             msg = "Please specify either oseries or dmin and dmax"
-            raise (Exception(msg))
+            raise ValueError(msg)
         if rfunc is None:
             rfunc = Exponential()
         if not isinstance(rfunc, Exponential):
@@ -2247,7 +2247,7 @@ class TarsoModel(RechargeModel):
                 # calculate time until d1 is reached
                 dtdr = -S * c * np.log((d1 - d - r[i] * c) / (h0 - d - r[i] * c))
                 if dtdr > dt:
-                    raise (Exception())
+                    raise ValueError("TarsoModel: dtdr > dt")
                 # change parameters
                 high = newhigh
                 if high:
@@ -2539,6 +2539,7 @@ class ChangeModel(StressModelBase):
         Settings and metadata are exported with the stress.
         """
         data = {
+            "class": self._name,
             "stress": self.stresses[0].to_dict(series=series),
             "rfunc1": self.rfunc1.to_dict(),
             "rfunc2": self.rfunc2.to_dict(),

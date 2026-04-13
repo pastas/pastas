@@ -6,7 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "pastas"
 dynamic = ["version"]
 description = "Pastas is an open-source Python framework for the analysis of groundwater time series."
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 authors = [{ name = "Collenteur et al. 2019" }]
 maintainers = [
@@ -31,13 +32,12 @@ classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Science/Research',
     'Intended Audience :: Other Audience',
-    'License :: OSI Approved :: MIT License',
+    'Topic :: Scientific/Engineering :: Hydrology',
     'Programming Language :: Python :: 3 :: Only',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
-    'Topic :: Scientific/Engineering :: Hydrology',
 ]
 
 [project.urls]
@@ -78,7 +78,10 @@ rtd = [
     "myst_nb",
     "sphinx-autoapi",
 ]
-dev = ["tox", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
+dev = ["tox-uv", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
+
+[dependency-groups]
+dev = ["pastas[dev]"]
 
 [tool.setuptools.dynamic]
 version = { attr = "pastas.version.__version__" }
@@ -91,21 +94,33 @@ fix = true
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
-markers = ["notebooks: run notebooks", "bnotebooks: run benchmark notebooks"]
+markers = [
+    "notebooks: run notebooks",
+    "bnotebooks: run benchmark notebooks",
+    "pasfiles: test pas file I/O between pastas versions",
+]
 
 [tool.codespell]
-skip = "*.pdf,*.csv,*.txt"
+skip = "*.pdf,*.csv,*.txt,*.lock"
 ignore-regex = "[A-Za-z0-9+/]{100,}"                           # base64-encoded data in *.ipynb files
 ignore-words-list = ["delt", "te", "theses", "Bilt", "Strack"]
 
 [tool.tox]
-requires = ["tox>=4"]
-env_list = ["py311", "py312", "py313", "py314", "ruff", "notebooks"]
+requires = ["tox-uv>=1.0"]
+package = "wheel"
+env_list = ["py310", "py311", "py312", "py313", "py314", "ruff", "notebooks"]
 
 [tool.tox.env_run_base]
 description = "run unit tests"
 extras = ["ci"]
-commands = [["pytest", "tests", "-m", "not notebooks and not bnotebooks"]]
+commands = [
+    [
+        "pytest",
+        "tests",
+        "-m",
+        "not notebooks and not bnotebooks and not pasfiles",
+    ],
+]
 
 [tool.tox.env.all]
 description = "run all unit tests (including Notebooks) and obtain coverage"
@@ -118,13 +133,18 @@ commands = [
         "pytest",
         "tests",
         "-m",
-        "not bnotebooks",
+        "not bnotebooks and not pasfiles",
     ],
     [
         "coverage",
         "xml",
     ],
 ]
+
+[tool.tox.env.pasfiles]
+description = "test pas file I/O between pastas versions"
+extras = ["ci"]
+commands = [["pytest", "tests", "-m", "pasfiles"]]
 
 [tool.tox.env.notebooks]
 description = "run the benchmark notebooks"
@@ -140,12 +160,25 @@ commands = [
         "check",
         "--extend-select",
         "I",
-        "--preview",
     ],
     [
         "ruff",
         "format",
         "--check",
+    ],
+]
+
+[tool.tox.env.ruff_preview]
+description = "run ruff checks preview mode"
+extras = ["ruffing"]
+commands = [
+    [
+        "ruff",
+        "check",
+        "--extend-select",
+        "I",
+        "--preview",
+        "--exit-zero",
     ],
 ]
 

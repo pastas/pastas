@@ -587,7 +587,7 @@ class HantushWellModel(RfuncBase):
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.distances is None:
             raise (
-                Exception(
+                ValueError(
                     "distances is None. Set using method set_distances() or use "
                     "Hantush."
                 )
@@ -1536,7 +1536,7 @@ class DoubleExponential(RfuncBase):
 
 
 @PastasDeprecationWarning(
-    remove_version="2.0.0",
+    version="2.0.0",
     reason=(
         "Please use the pastas-plugins library if you want to keep using this "
         "response function (https://github.com/pastas/pastas/issues/475)."
