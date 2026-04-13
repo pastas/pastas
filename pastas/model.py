@@ -141,10 +141,11 @@ class Model:
             tmax=self.oseries.settings["tmax"],
             freq=freq,
             warmup=Timedelta(3650, "D"),  # 10 years in days
+            solver=None,
             fit_constant=True,
             freq_obs=None,
+            weights=None,
             noise=False,
-            solver=None,
         )
 
         if constant:

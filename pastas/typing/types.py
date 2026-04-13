@@ -150,3 +150,4 @@ class ModelSettingsDict(TypedDict):
     fit_constant: bool
     freq_obs: str | None
     weights: Series | None
+    noise: bool
