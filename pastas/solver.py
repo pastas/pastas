@@ -104,7 +104,10 @@ class BaseSolver:
         noise: Boolean
         weights: pandas.Series, optional
             pandas Series by which the residual or noise series are
-            multiplied. Typically values between 0 and 1.
+            weighted. For weighted least-squares, the square-root of these
+            values is multiplied with the residual or noise series so the
+            minimized objective equals ``sum(weights * residuals**2)``.
+            Typically values are between 0 and 1.
         callback: ufunc, optional
             function that is called after each iteration. the parameters are
             provided to the func. E.g. "callback(parameters)"
@@ -127,7 +130,7 @@ class BaseSolver:
         if weights is not None:
             weights = weights.reindex(rv.index)
             weights.fillna(1.0, inplace=True)
-            rv = rv.multiply(weights)
+            rv = rv.multiply(np.sqrt(weights))
 
         if callback:
             callback(p)

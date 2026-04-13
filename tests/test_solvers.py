@@ -1,5 +1,6 @@
 """Tests for the solver module in Pastas."""
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -24,6 +25,23 @@ def test_fit_constant(ml_recharge: ps.Model) -> None:
 def test_no_noise(ml_recharge: ps.Model) -> None:
     ml_recharge.del_noisemodel()
     ml_recharge.solve()
+
+
+def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
+    """Verify weighted least-squares uses sqrt(weights) on residual terms."""
+    ml_recharge.del_noisemodel()
+    ml_recharge.solve(solver=ps.LeastSquares(), report=False)
+
+    p = ml_recharge.get_parameters()
+    residuals = ml_recharge.residuals(p)
+
+    weights = pd.Series(1.0, index=residuals.index)
+    weights.iloc[::5] = 0.25
+
+    misfit = ml_recharge.solver.misfit(p=p, noise=False, weights=weights)
+    expected = (residuals * np.sqrt(weights)).values
+
+    np.testing.assert_allclose(misfit, expected)
 
 
 # Tests for confidence intervals and prediction intervals
