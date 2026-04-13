@@ -632,7 +632,13 @@ class Plotting:
         )
         p = self.ml.parameters.loc[:, ["name"]].copy()
         p.loc[:, "name"] = p.index
-        p.loc[:, "optimal"] = self.ml.parameters.loc[:, "optimal"].apply(
+
+        if self.ml.parameters.loc[:, "optimal"].isna().all():
+            colnam = "initial"
+        else:
+            colnam = "optimal"
+
+        p.loc[:, colnam] = self.ml.parameters.loc[:, colnam].apply(
             _table_formatter_params
         )
         if stderr:
@@ -642,10 +648,13 @@ class Plotting:
             )
             p.loc[:, "stderr"] = stderrper.abs().apply(_table_formatter_stderr)
         ax.axis("off")
+        raw_widths = [max(p[col].str.len().max(), len(col)) for col in p.columns]
+        total = sum(raw_widths)
+        col_widths = [w / total for w in raw_widths]
         ax.table(
             bbox=(0.0, 0.0, 1.0, 1.0),
             cellText=p.values,
-            colWidths=[p[col].str.len().max() for col in p.columns],
+            colWidths=col_widths,
             colLabels=p.columns,
         )
         return ax
