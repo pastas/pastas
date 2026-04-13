@@ -137,7 +137,6 @@ class Model:
 
         # Default solve/simulation settings
         self._settings = {
-            "time_offset": Timedelta(0),
             "noise": False,
             "solver": None,
         }
@@ -512,11 +511,13 @@ class Model:
         ):
             sim_index = self.sim_index
         else:
+            # simulate with the requested settings, but do not update
+            # the model settings, since this is just for one time
             sim_index = _get_sim_index(
                 tmin=tmin - warmup,
                 tmax=tmax,
                 freq=freq,
-                time_offset=self.settings["time_offset"],
+                time_offset=self.time_offset,
             )
         dt = _get_dt(freq)
 
@@ -790,7 +791,7 @@ class Model:
             tmin=tmin,
             tmax=tmax,
             freq=freq,
-            time_offset=self.settings["time_offset"],
+            time_offset=self.time_offset,
             force_update=update_observations,
         )
 
@@ -1057,7 +1058,7 @@ class Model:
         freq_obs: str | None = None,
         weights: Series | None = None,
     ) -> None:
-        """Method to safely change the model settings.
+        """Method to change the model settings.
 
         Parameters
         ----------
@@ -1104,9 +1105,6 @@ class Model:
 
         if freq is not None:
             self._settings["freq"] = _frequency_is_supported(freq)
-
-        # Set time offset from the frequency and the series in the stressmodels
-        self._settings["time_offset"] = self._get_time_offset(self.settings["freq"])
 
         if warmup is not None:
             self._settings["warmup"] = Timedelta(warmup, "D")
@@ -1276,6 +1274,12 @@ class Model:
         )
         self.oseries = ObservationSeries(s, metadata=metadata)
 
+    @property
+    def time_offset(self) -> Timedelta:
+        """Property to get the time offset from the settings."""
+        return self._get_time_offset(self._settings["freq"])
+
+    @lru_cache(maxsize=1)
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
 
@@ -1311,7 +1315,7 @@ class Model:
     @property
     def sim_index(self) -> DatetimeIndex:
         """Property that returns the simulation index, including the warmup.
-        Using the tmin, tmax, freq, time_offset, and warmup from the model
+        Using the tmin, tmax, freq, and warmup from the model
         settings, a DatetimeIndex is created that includes the warmup period.
         This index is used for simulating the model and calculating the residuals.
 
@@ -1322,11 +1326,10 @@ class Model:
             model is simulated.
         """
         return self._get_sim_index(
-            self._settings["tmin"],
-            self._settings["tmax"],
-            self._settings["freq"],
-            self._settings["time_offset"],
-            self._settings["warmup"],
+            tmin=self._settings["tmin"],
+            tmax=self._settings["tmax"],
+            freq=self._settings["freq"],
+            warmup=self._settings["warmup"],
         )
 
     @lru_cache(maxsize=1)
@@ -1335,7 +1338,6 @@ class Model:
         tmin: Timestamp,
         tmax: Timestamp,
         freq: str,
-        time_offset: Timedelta,
         warmup: Timedelta,
     ) -> DatetimeIndex:
         """Internal method to create the simulation index, cached for performance."""
@@ -1343,7 +1345,7 @@ class Model:
             tmin=tmin - warmup,
             tmax=tmax,
             freq=freq,
-            time_offset=time_offset,
+            time_offset=self.time_offset,
         )
 
     def get_tmin(
@@ -1637,9 +1639,7 @@ class Model:
 
         # use warmup
         if tmin:
-            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + self._settings[
-                "time_offset"
-            ]
+            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + self.time_offset
         else:
             tmin_warm = None
 
