@@ -253,6 +253,7 @@ class Model:
 
     @settings.setter
     def settings(self, value):
+        _ = value
         raise AttributeError(
             "Direct assignment to 'settings' is not allowed. "
             "Model settings are managed internally and updated through methods "
@@ -324,6 +325,9 @@ class Model:
                     "The stress of the stressmodel has no overlap with ml.oseries."
                 )
         self._check_stressmodel_compatibility()
+        tmin = self.get_tmin(use_oseries=True, use_stresses=True)
+        tmax = self.get_tmax(use_oseries=True, use_stresses=True)
+        self.set_settings(tmin=tmin, tmax=tmax)
 
     def add_constant(self, constant: Constant) -> None:
         """Add a Constant to the time series Model.
