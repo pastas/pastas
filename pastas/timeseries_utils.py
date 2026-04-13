@@ -5,6 +5,7 @@ import logging
 import numpy as np
 from pandas import (
     DataFrame,
+    DatetimeIndex,
     Index,
     Series,
     Timedelta,
@@ -203,7 +204,9 @@ def _infer_fixed_freq(tindex: Index) -> str:
     return freq
 
 
-def _get_sim_index(tmin, tmax, freq, time_offset):
+def _get_sim_index(
+    tmin: Timestamp, tmax: Timestamp, freq: str, time_offset: Timedelta
+) -> DatetimeIndex:
     """Internal method to determine the simulation index
 
     Parameters

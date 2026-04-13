@@ -52,7 +52,7 @@ from pastas.timeseries_utils import (
     _get_time_offset,
 )
 from pastas.transform import ThresholdTransform
-from pastas.typing import ArrayLike, Solver, StressModel
+from pastas.typing import ArrayLike, ModelSettingsDict, Solver, StressModel
 from pastas.typing import Model as ModelType
 from pastas.typing import NoiseModel as NoiseModelType
 from pastas.utils import validate_name
@@ -136,17 +136,15 @@ class Model:
         self.noisemodel: NoiseModelType | None = None
 
         # Default solve/simulation settings
-        self._settings = {
-            "noise": False,
-            "solver": None,
-        }
-        self.set_settings(
+        self._settings = ModelSettingsDict(
             tmin=self.oseries.settings["tmin"],
             tmax=self.oseries.settings["tmax"],
             freq=freq,
-            warmup=3650.0,  # 10 years in days
+            warmup=Timedelta(3650, "D"),  # 10 years in days
             fit_constant=True,
             freq_obs=None,
+            noise=False,
+            solver=None,
         )
 
         if constant:
