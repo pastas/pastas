@@ -14,7 +14,7 @@ from platform import python_version
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.13.2"
+__version__ = "2.0.0"
 
 
 def get_versions(
@@ -47,21 +47,21 @@ def get_versions(
             "future version."
         )
 
-    msg = (
-        f"Pastas version: {__version__}\n"
-        f"Python version: {python_version()}\n"
-        f"NumPy version: {metadata.version('numpy')}\n"
-        f"Pandas version: {metadata.version('pandas')}\n"
-        f"SciPy version: {metadata.version('scipy')}\n"
-        f"Matplotlib version: {metadata.version('matplotlib')}\n"
-        f"Numba version: {metadata.version('numba')}"
+    version_dict = {}
+    version_dict["pastas"] = __version__
+    version_dict["python"] = python_version()
+
+    required_dependencies = (
+        "numpy",
+        "pandas",
+        "scipy",
+        "matplotlib",
+        "numba",
     )
+    for module in required_dependencies:
+        version_dict[module] = metadata.version(module)
 
     if optional:
-        msg += "\nOptional Dependencies:"
-
-        msg += "\nRequests version: "
-
         optional_dependencies = (
             "requests",
             "lmfit",
@@ -74,11 +74,11 @@ def get_versions(
             try:
                 import_module(module)
                 module_name = module if module != "latexify" else "latexify-py"
-                msg += f"{metadata.version(module_name)}"
+                version_dict[module] = metadata.version(module_name) + " (optional)"
             except ImportError:
-                msg += "Not Installed"
+                version_dict[module] = "Not Installed"
 
-    return msg
+    return version_dict
 
 
 def show_versions(optional: bool = False) -> None:
@@ -90,6 +90,14 @@ def show_versions(optional: bool = False) -> None:
         Print the version of optional dependencies if installed
 
     """
-    msg = get_versions(optional=optional)
+    version_dict = get_versions(optional=optional)
 
-    return print(msg)
+    max_len_key = max(len(key) for key in version_dict.keys()) + 1
+    msg = ""
+    # msg = f"{'Package':<{max_len_key}}: Version\n"
+    # msg += "-" * (max_len_key + 9) + "\n"
+    for key, value in version_dict.items():
+        leftside = f"{key.capitalize()}"
+        msg += f"{leftside:<{max_len_key}}: {value}\n"
+
+    print(msg)

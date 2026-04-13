@@ -17,7 +17,8 @@ from collections import OrderedDict
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
-from typing import Any
+from pathlib import Path
+from typing import Any, Literal
 
 # External Dependencies
 import numpy as np
@@ -28,7 +29,6 @@ from pandas import (
     Timedelta,
     Timestamp,
     concat,
-    date_range,
 )
 
 # Internal Pastas
@@ -43,12 +43,12 @@ from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
 from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
-from pastas.timeseries import TimeSeries
+from pastas.timeseries import ObservationSeries
 from pastas.timeseries_utils import (
     _frequency_is_supported,
     _get_dt,
+    _get_sim_index,
     _get_time_offset,
-    get_sample,
 )
 from pastas.transform import ThresholdTransform
 from pastas.typing import ArrayLike, Solver, StressModel
@@ -162,25 +162,23 @@ class Model:
                     "noisemodel is desired. See this issue on GitHub for more "
                     "information: https://github.com/pastas/pastas/issues/735"
                 )
-                deprecate_args_or_kwargs(
-                    "noisemodel", "2.0.0", reason=msg, force_raise=True
-                )
             elif noisemodel is False:
                 msg = (
                     "The new default is that no noisemodel is added "
                     "anymore, so passing noisemodel=False is not needed anymore. To "
                     "fix this error, do not pass noisemodel=False to Model."
                 )
-                deprecate_args_or_kwargs(
-                    "noisemodel", "2.0.0", reason=msg, force_raise=True
-                )
+            deprecate_args_or_kwargs(
+                name="noisemodel",
+                version="1.5.0",
+                reason=msg,
+            )
 
         # File Information
         self.file_info = self._get_file_info()
 
         # initialize some attributes for solving and simulation
         self.sim_index = None
-        self.oseries_calib = None
         self.interpolate_simulation = None
         self.normalize_residuals = False
         self.solver = None
@@ -532,8 +530,9 @@ class Model:
 
         if sim.hasnans:
             msg = (
-                "Simulation contains NaN-values. Check if time series settings "
-                "are provided for each stress model "
+                f"Simulation with parameters {p} contains NaN"
+                "-values. Check the parameters and/or if the time "
+                "series settings are provided for each stress model "
                 "(e.g. `ps.StressModel(stress, settings='prec')`!"
             )
             logger.error(msg)
@@ -592,11 +591,11 @@ class Model:
         sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
 
         # Get the oseries calibration series
-        oseries_calib = self.observations(tmin, tmax, freq_obs)
+        obs = self.observations(tmin=tmin, tmax=tmax, freq=freq_obs)
 
         # Get simulation at the correct indices
         if self.interpolate_simulation is None:
-            if oseries_calib.index.difference(sim.index).size != 0:
+            if obs.index.difference(sim.index).size != 0:
                 self.interpolate_simulation = True
                 logger.info(
                     "There are observations between the simulation time steps. Linear "
@@ -604,15 +603,13 @@ class Model:
                 )
         if self.interpolate_simulation:
             # interpolate simulation to times of observations
-            sim_interpolated = np.interp(
-                oseries_calib.index.asi8, sim.index.asi8, sim.values
-            )
+            sim_interpolated = np.interp(obs.index.asi8, sim.index.asi8, sim.values)
         else:
             # All the observation indexes are in the simulation
-            sim_interpolated = sim.reindex(oseries_calib.index)
+            sim_interpolated = sim.reindex(obs.index)
 
         # Calculate the actual residuals here
-        res = oseries_calib.subtract(sim_interpolated)
+        res = obs.subtract(sim_interpolated)
 
         if res.hasnans:
             res = res.dropna()
@@ -738,7 +735,7 @@ class Model:
 
         Returns
         -------
-        oseries_calib: pandas.Series
+        observations: pandas.Series
             pandas series of the oseries used for calibration of the model.
 
         Notes
@@ -761,23 +758,25 @@ class Model:
                 freq = self._settings["freq"]
             else:
                 freq = self._settings["freq_obs"]
-        for key, setting in zip([tmin, tmax, freq], ["tmin", "tmax", "freq"]):
-            if key != self._settings[setting]:
-                update_observations = True
 
-        if self.oseries_calib is None or update_observations:
-            oseries_calib = self.oseries.series.loc[tmin:tmax]
+        oseries = self.oseries
+        if not update_observations and (
+            tmin != self._settings["tmin"]
+            or tmax != self._settings["tmax"]
+            or freq != self._settings["freq"]
+        ):
+            # create a copy, so we do not alter the original self.oseries
+            oseries = oseries.copy()
 
-            # sample measurements, so that frequency is not higher than model keep
-            # the original timestamps, as they will be used during interpolation of
-            # the simulation
-            sim_index = self._get_sim_index(tmin, tmax, freq, self._settings["warmup"])
-            if not oseries_calib.empty:
-                index = get_sample(oseries_calib.index, sim_index)
-                oseries_calib = oseries_calib.loc[index]
-        else:
-            oseries_calib = self.oseries_calib
-        return oseries_calib
+        oseries.update_series(
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            time_offset=self.settings["time_offset"],
+            force_update=update_observations,
+        )
+
+        return oseries.series
 
     def initialize(
         self,
@@ -806,7 +805,11 @@ class Model:
                 "ml.del_noisemodel() before solving. See this issue on GitHub for "
                 "more information: https://github.com/pastas/pastas/issues/735"
             )
-            deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
+            deprecate_args_or_kwargs(
+                name="noise",
+                version="1.5.0",
+                reason=msg,
+            )
 
         # Set the settings
         self._settings["weights"] = weights
@@ -836,8 +839,9 @@ class Model:
             update_sim_index=True,
         )
 
-        # self.observations get tmin, tmax, freq, and freq_obs from self._settings
-        self.oseries_calib = self.observations(update_observations=True)
+        # make sure to update self.oseries.series by running self.observations
+        # get tmin, tmax, freq, and freq_obs from self.settings
+        self.observations(update_observations=True)
         self.interpolate_simulation = None
 
         # Initialize parameters
@@ -848,7 +852,7 @@ class Model:
             if self.transform is not None:
                 msg = "fit_constant needs to be True (for now) when a transform is used"
                 logger.error(msg)
-                raise Exception(msg)
+                raise ValueError(msg)
             self._parameters.at["constant_d", "vary"] = False
             self._parameters.at["constant_d", "initial"] = 0.0
             self.normalize_residuals = True
@@ -882,7 +886,7 @@ class Model:
         warmup: float | None = None,
         noise: bool | None = None,
         solver: Solver | None = None,
-        report: bool = True,
+        report: bool | Literal["full"] = True,
         initial: bool = True,
         weights: Series | None = None,
         fit_constant: bool = True,
@@ -918,9 +922,12 @@ class Model:
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
             of Pastas 0.23, not a class!
-        report: bool, optional
-            Print a report to the screen after optimization finished. This can also
-            be manually triggered after optimization by calling print(ml.fit_report(
+        report: bool | Literal["full"], optional
+            Print a report to the screen after optimization finished. Set to
+            True (default) to print a standard report, "full" to print a
+            report including the correlation matrix and standard errors of the
+            parameters, or False to suppress the report. This can also be
+            manually triggered after optimization by calling print(ml.fit_report(
             )) on the Pastas model instance.
         initial: bool, optional
             Reset initial parameters from the individual stress models. Default is
@@ -975,7 +982,6 @@ class Model:
                     "GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
-                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
             elif noise is False:
                 msg = (
                     "To solve without a noisemodel, remove the noisemodel "
@@ -983,7 +989,11 @@ class Model:
                     "solving. See this issue on GitHub for more information: "
                     "https://github.com/pastas/pastas/issues/735"
                 )
-                deprecate_args_or_kwargs("noise", "2.0.0", reason=msg, force_raise=True)
+            deprecate_args_or_kwargs(
+                name="noise",
+                version="1.5.0",
+                reason=msg,
+            )
 
         if initialize:
             self.initialize(
@@ -997,8 +1007,10 @@ class Model:
                 freq_obs=freq_obs,
             )
 
-        if self.oseries_calib.empty:
-            msg = "Calibration series 'oseries_calib' is empty! Check 'tmin' or 'tmax'."
+        if self.oseries.series.empty:
+            msg = (
+                "Calibration series 'oseries.series' is empty! Check 'tmin' or 'tmax'."
+            )
             logger.error(msg)
             raise ValueError(msg)
 
@@ -1039,7 +1051,10 @@ class Model:
             self._generate_warnings_report()  # log warnings even if no report
 
     @property
-    @PastasDeprecationWarning(remove_version="2.0.0", reason="Use 'ml.solver' instead.")
+    @PastasDeprecationWarning(
+        version="2.0.0",
+        reason="Use 'ml.solver' instead.",
+    )
     def fit(self):
         """Deprecated attribute, use ml.solver instead."""
         msg = (
@@ -1049,6 +1064,13 @@ class Model:
         logger.warning(msg)
 
         return self.solver
+
+    @property
+    @PastasDeprecationWarning(
+        version="2.0.0", reason="Use 'ml.observations()' instead."
+    )
+    def oseries_calib(self):
+        return self.oseries.series
 
     def set_parameter(
         self,
@@ -1206,7 +1228,7 @@ class Model:
         metadata = metadata or (
             self.oseries.metadata if hasattr(self, "oseries") else None
         )
-        self.oseries = TimeSeries(s, settings="oseries", metadata=metadata)
+        self.oseries = ObservationSeries(s, metadata=metadata)
 
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
@@ -1223,7 +1245,7 @@ class Model:
         """
         time_offsets = set()
         for stressmodel in self.stressmodels.values():
-            for st in stressmodel.stress:
+            for st in stressmodel.stresses:
                 if st.freq_original:
                     # calculate the offset from the default frequency
                     t = st.series_original.index
@@ -1234,7 +1256,7 @@ class Model:
         if len(time_offsets) > 1:
             msg = "The time-offset with the frequency is not the same for all stresses."
             logger.error(msg)
-            raise Exception(msg)
+            raise ValueError(msg)
         if len(time_offsets) == 1:
             return next(iter(time_offsets))
         else:
@@ -1281,10 +1303,12 @@ class Model:
                 break
 
         if self.sim_index is None or update_sim_index:
-            # TODO: sort out what to do for freq > "D"
-            tmin = (tmin - warmup).floor(freq) + self._settings["time_offset"]
-            # tmin = (tmin - warmup) + self._settings["time_offset"]
-            sim_index = date_range(tmin, tmax, freq=freq)
+            sim_index = _get_sim_index(
+                tmin=tmin - warmup,
+                tmax=tmax,
+                freq=freq,
+                time_offset=self._settings["time_offset"],
+            )
         else:
             sim_index = self.sim_index
         return sim_index
@@ -1332,7 +1356,7 @@ class Model:
         """
         # Get tmin from the oseries
         if use_oseries:
-            ts_tmin = self.oseries.series.index.min()
+            ts_tmin = self.oseries.series_original.index.min()
         # Get tmin from the stressmodels
         elif use_stresses:
             ts_tmin = Timestamp.max
@@ -1399,7 +1423,7 @@ class Model:
         """
         # Get tmax from the oseries
         if use_oseries:
-            ts_tmax = self.oseries.series.index.max()
+            ts_tmax = self.oseries.series_original.index.max()
         # Get tmax from the stressmodels
         elif use_stresses:
             ts_tmax = Timestamp.min
@@ -2124,12 +2148,16 @@ class Model:
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
-            "weights": "Yes" if str(self.settings["weights"]) else "No",
+            "weights": "Yes" if self.settings["weights"] is not None else "No",
         }
 
         if output is not None:
             msg = "Use 'corr=True' instead."
-            deprecate_args_or_kwargs("output", "2.0.0", reason=msg)
+            deprecate_args_or_kwargs(
+                name="output",
+                version="2.0.0",
+                reason=msg,
+            )
             if isinstance(output, str) and output == "full":
                 corr = True
 
@@ -2225,6 +2253,7 @@ class Model:
                 for i in response_tmax_check.loc[mask].index:
                     msg.append(f"Response tmax for '{i}' > than warmup period.")
 
+            # create message
             if len(msg) > 0:
                 msg = [
                     f"\n\nWarnings! ({len(msg)})\n"
@@ -2256,7 +2285,7 @@ class Model:
             stressmodel, and check result.
         """
 
-        len_oseries_calib = (self._settings["tmax"] - self._settings["tmin"]).days
+        len_oseries = (self._settings["tmax"] - self._settings["tmin"]).days
 
         # only check stressmodels with a response function
         sm_names = [
@@ -2267,13 +2296,13 @@ class Model:
             index=sm_names,
             columns=[
                 "len_warmup",
-                "len_oseries_calib",
+                "len_oseries",
                 "response_tmax",
                 "check_warmup",
                 "check_response",
             ],
         )
-        check["len_oseries_calib"] = len_oseries_calib
+        check["len_oseries"] = len_oseries
         check["len_warmup"] = (
             self._settings["warmup"].days
             if isinstance(self._settings["warmup"], Timedelta)
@@ -2289,7 +2318,7 @@ class Model:
             check.at[sm_name, "response_tmax"] = rtmax if rtmax is not None else 0
 
         check["check_warmup"] = check["response_tmax"] < check["len_warmup"]
-        check["check_response"] = check["response_tmax"] < check["len_oseries_calib"]
+        check["check_response"] = check["response_tmax"] < check["len_oseries"]
 
         return check
 
@@ -2305,12 +2334,13 @@ class Model:
             pandas series with boolean values of the parameters that are close to the
             maximum (pmax) values.
         """
-        upperhit = Series(index=self._parameters.index, dtype=bool)
         lowerhit = Series(index=self._parameters.index, dtype=bool)
+        upperhit = Series(index=self._parameters.index, dtype=bool)
 
         for p in self._parameters.index:
-            pmax = self._parameters.at[p, "pmax"]
+            optimal = self._parameters.at[p, "optimal"]
             pmin = self._parameters.at[p, "pmin"]
+            pmax = self._parameters.at[p, "pmax"]
 
             # calculate atol based on minimum, with max 1e-8
             # otherwise set 1 order of magnitude lower than minimum value
@@ -2320,18 +2350,12 @@ class Model:
                 atol = np.min([1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
 
             # deal with NaNs in parameter bounds
-            if np.isnan(pmax):
-                pmax = np.inf
-            if np.isnan(pmin):
-                pmax = -np.inf
+            pmin = -np.inf if np.isnan(pmin) else pmin
+            pmax = np.inf if np.isnan(pmax) else pmax
 
             # determine hits
-            upperhit.at[p] = np.allclose(
-                self._parameters.at[p, "optimal"], pmax, atol=atol, rtol=1e-5
-            )
-            lowerhit.at[p] = np.allclose(
-                self._parameters.at[p, "optimal"], pmin, atol=atol, rtol=1e-5
-            )
+            lowerhit.at[p] = np.allclose(optimal, pmin, atol=atol, rtol=1e-5)
+            upperhit.at[p] = np.allclose(optimal, pmax, atol=atol, rtol=1e-5)
 
         return lowerhit, upperhit
 
@@ -2387,12 +2411,12 @@ class Model:
 
         return data
 
-    def to_file(self, fname: str, series: bool | str = True, **kwargs) -> None:
+    def to_file(self, fname: str | Path, series: bool | str = True, **kwargs) -> None:
         """Method to save the Pastas model to a file.
 
         Parameters
         ----------
-        fname: str
+        fname: str | Path
             String with the name and the extension of the file. File extension has to
             be supported by Pastas. E.g. "model.pas"
         series: bool | str, optional

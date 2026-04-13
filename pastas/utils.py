@@ -19,7 +19,7 @@ def get_stress_tmin_tmax(ml: ModelType) -> tuple[Timestamp | str, Timestamp | st
     tmax = Timestamp.max
     if isinstance(ml, Model):
         for sm in ml.stressmodels:
-            for st in ml.stressmodels[sm].stress:
+            for st in ml.stressmodels[sm].stresses:
                 tmin = max((tmin, st.series_original.index.min()))
                 tmax = min((tmax, st.series_original.index.max()))
     else:
@@ -161,7 +161,7 @@ def validate_name(name: str, raise_error: bool = False) -> str:
     name: str
         String with the name to check for illegal characters.
     raise_error: bool
-        raise Exception error if illegal character is found, default is False which
+        raise ValueError if illegal character is found, default is False which
         only logs a warning.
 
     Returns
@@ -199,7 +199,7 @@ def validate_name(name: str, raise_error: bool = False) -> str:
             )
             if raise_error:
                 logger.error(msg, name, char)
-                raise Exception(msg % (name, char))
+                raise ValueError(msg % (name, char))
             else:
                 logger.warning(msg, name, char)
 

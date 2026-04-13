@@ -28,15 +28,17 @@ class TestCheckForecastData:
 
     def test_no_valid_forecast_data(self) -> None:
         """Test that no valid forecast data raises a ValueError."""
-        forecasts: dict[str, list[DataFrame]] = {"sm1": []}
-        with pytest.raises(ValueError, match="No valid forecast data found"):
+        forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {}}
+        with pytest.raises(ValueError, match="Forecast data for stressmodel"):
             _check_forecast_data(forecasts)
 
     def test_empty_dataframe(self) -> None:
         """Test that empty DataFrames are handled correctly."""
         empty_df = pd.DataFrame()
-        forecasts: dict[str, list[DataFrame]] = {"sm1": [empty_df]}
-        with pytest.raises(ValueError, match="No valid forecast data found"):
+        forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": empty_df}}
+        with pytest.raises(
+            ValueError, match="No valid forecast data found in any of the stressmodels"
+        ):
             _check_forecast_data(forecasts)
 
     def test_mismatched_column_counts(self) -> None:
@@ -44,7 +46,7 @@ class TestCheckForecastData:
         index: DatetimeIndex = pd.date_range("2023-01-01", periods=10, freq="D")
         df1: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index)
         df2: DataFrame = pd.DataFrame(np.random.rand(10, 4), index=index)
-        forecasts: dict[str, list[DataFrame]] = {"sm1": [df1, df2]}
+        forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": df1, "evap": df2}}
         with pytest.raises(
             ValueError, match="number of ensemble members is not the same"
         ):
@@ -56,7 +58,7 @@ class TestCheckForecastData:
         index2: DatetimeIndex = pd.date_range("2023-01-02", periods=10, freq="D")
         df1: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index1)
         df2: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index2)
-        forecasts: dict[str, list[DataFrame]] = {"sm1": [df1, df2]}
+        forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": df1, "evap": df2}}
         with pytest.raises(
             ValueError, match="time index of the forecasts is not the same"
         ):
@@ -67,9 +69,21 @@ class TestCheckForecastData:
         index: DatetimeIndex = pd.date_range("2023-01-01", periods=10, freq="D")
         df1: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index)
         df2: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index)
-        forecasts: dict[str, list[DataFrame]] = {"sm1": [df1, df2]}
+        forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": df1, "evap": df2}}
         n, tmin, tmax, result_index = _check_forecast_data(forecasts)
         assert n == 3
+        assert tmin == index[0]
+        assert tmax == index[-1]
+        assert (result_index == index).all()
+
+    def test_series_input(self) -> None:
+        """Test that a Series is converted to a 1-column DataFrame."""
+        index: DatetimeIndex = pd.date_range("2023-01-01", periods=10, freq="D")
+        s1: Series = pd.Series(np.random.rand(10), index=index)
+        s2: Series = pd.Series(np.random.rand(10), index=index)
+        forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": s1, "evap": s2}}
+        n, tmin, tmax, result_index = _check_forecast_data(forecasts)
+        assert n == 1
         assert tmin == index[0]
         assert tmax == index[-1]
         assert (result_index == index).all()
@@ -131,12 +145,12 @@ def forecast_data() -> dict[str, list[DataFrame]]:
     df1: DataFrame = pd.DataFrame(np.ones((5, 2)), index=index)
     df2: DataFrame = pd.DataFrame(np.ones((5, 2)) * 2, index=index)
 
-    return {"rch": [df1, df2]}
+    return {"rch": {"prec": df1, "evap": df2}}
 
 
 class TestForecast:
     def test_forecast_no_noisemodel_with_post_processing(
-        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+        self, ml_noisemodel: Model, forecast_data: dict[str, dict[str, DataFrame]]
     ) -> None:
         """Test forecast with post-processing but no noise model."""
         # Remove noise model
@@ -146,14 +160,14 @@ class TestForecast:
             forecast(ml_noisemodel, forecast_data, post_process=True)
 
     def test_forecast_empty_params(
-        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+        self, ml_noisemodel: Model, forecast_data: dict[str, dict[str, DataFrame]]
     ) -> None:
         """Test forecast with empty params list."""
         with pytest.raises(ValueError, match="Empty parameter list provided"):
             forecast(ml_noisemodel, forecast_data, p=[])
 
     def test_forecast_valid_input_post_process(
-        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+        self, ml_noisemodel: Model, forecast_data: dict[str, dict[str, DataFrame]]
     ) -> None:
         """Test forecast with valid input and post-processing enabled."""
         # Ensure noise model is present
@@ -163,7 +177,7 @@ class TestForecast:
         assert not result.empty
 
     def test_forecast_valid_input_no_post_process(
-        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+        self, ml_noisemodel: Model, forecast_data: dict[str, dict[str, DataFrame]]
     ) -> None:
         """Test forecast with valid input and post-processing disabled."""
         result = forecast(ml_noisemodel, forecast_data, post_process=False)
@@ -171,7 +185,7 @@ class TestForecast:
         assert not result.empty
 
     def test_forecast_missing_key(
-        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+        self, ml_noisemodel: Model, forecast_data: dict[str, dict[str, DataFrame]]
     ) -> None:
         """Test forecast with missing required key in forecast_data."""
         # Remove the key expected by the model (simulate missing stressmodel)
@@ -180,7 +194,7 @@ class TestForecast:
             forecast(ml_noisemodel, bad_data)
 
     def test_forecast_output_shape(
-        self, ml_noisemodel: Model, forecast_data: dict[str, list[DataFrame]]
+        self, ml_noisemodel: Model, forecast_data: dict[str, dict[str, DataFrame]]
     ) -> None:
         """Test that forecast output has expected shape."""
         result = forecast(ml_noisemodel, forecast_data)
@@ -188,3 +202,13 @@ class TestForecast:
         assert isinstance(result, pd.DataFrame)
         assert result.shape[0] == 5
         assert result.shape[1] >= 1
+
+    def test_forecast_series_input(self, ml_noisemodel: Model) -> None:
+        """Test that Series inputs are accepted and converted to DataFrames."""
+        index: DatetimeIndex = pd.date_range("2015-11-30", periods=5, freq="D")
+        s1: Series = pd.Series(np.ones(5), index=index)
+        s2: Series = pd.Series(np.ones(5) * 2, index=index)
+        series_data: dict[str, dict[str, DataFrame]] = {"rch": {"prec": s1, "evap": s2}}
+        result = forecast(ml_noisemodel, series_data, post_process=False)
+        assert isinstance(result, pd.DataFrame)
+        assert not result.empty

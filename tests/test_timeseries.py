@@ -58,9 +58,10 @@ def test_timeseries_init_with_settings(daily_series: pd.Series) -> None:
 
 def test_timeseries_init_with_predefined_settings(daily_series: pd.Series) -> None:
     """Test TimeSeries initialization with predefined settings string."""
-    ts = TimeSeries(daily_series, settings="oseries")
+    ts = TimeSeries(daily_series, settings="prec")
     # Assert that predefined settings were applied
-    assert ts.settings != {}
+    for setting in ["sample_up", "sample_down", "fill_before", "fill_after"]:
+        assert ts.settings[setting] is not None
 
 
 def test_timeseries_init_with_name(daily_series: pd.Series) -> None:

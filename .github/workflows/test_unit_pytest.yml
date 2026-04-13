@@ -9,6 +9,7 @@ on:
     branches:
       - master
       - dev
+      - dev2
 
 concurrency:
   # Group by workflow name and ref (branch or pull request ref).
@@ -26,10 +27,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Test suite with py310-ubuntu
-            python: "3.10"
-            toxenv: py310
-            experimental: false
           - name: Test suite with py311-ubuntu
             python: "3.11"
             toxenv: py311
@@ -43,7 +40,7 @@ jobs:
             toxenv: py313
             experimental: false
           - name: Test suite with py314-ubuntu
-            python: "3.14-dev"
+            python: "3.14"
             toxenv: py314
             experimental: true
           - name: Test suite for all unit tests including Notebooks
@@ -51,6 +48,7 @@ jobs:
             toxenv: all
             experimental: false
     env:
+      CI_PASFILES: "0" # do not generate pas files for these tests
       # Color Output
       # Rich (pip)
       FORCE_COLOR: 1
@@ -59,26 +57,24 @@ jobs:
       # Pytest
       PYTEST_ADDOPTS: "--color=yes"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
+      - name: Set up uv with Python ${{ matrix.python }}
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python }}
-          check-latest: true
-          cache: "pip"
-          cache-dependency-path: pyproject.toml
+          enable-cache: true
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install tox
+          uv venv
+          uv pip install tox-uv
 
       - name: Setup tox environment
-        run: tox -e ${{ matrix.toxenv }} --notest
+        run: uv run tox -e ${{ matrix.toxenv }} --notest
 
       - name: Test
-        run: tox -e ${{ matrix.toxenv }} --skip-pkg-install
+        run: uv run tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
       - name: Run codacy-coverage-reporter
         if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
