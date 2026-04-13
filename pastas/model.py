@@ -1123,10 +1123,18 @@ class Model:
         if freq_obs is not None:
             logger.debug("Updating model setting freq_obs to %s." % freq_obs)
             self._settings["freq_obs"] = _frequency_is_supported(freq_obs)
+        elif freq_obs is None and self.settings["freq_obs"] is not None:
+            logger.info(
+                "Cannot update freq_obs to 'None'. Please use `self._settings['freq_obs'] = None`."
+            )
 
         if weights is not None:
             logger.debug("Updating model setting weights to %s." % weights)
             self._settings["weights"] = weights
+        elif weights is None and self.settings["weights"] is not None:
+            logger.info(
+                "Cannot update weights to `None`. Please use `self._settings['weights'] = None`."
+            )
 
     def set_parameter(
         self,
