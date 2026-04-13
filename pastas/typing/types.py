@@ -108,15 +108,15 @@ class ModelSettingsDict(TypedDict):
 
     Parameters
     ----------
-    tmin: pandas.Timestamp, optional
+    tmin: pandas.Timestamp
         A pandas.Timestamp with the start date for the simulation period
         (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from
         the oseries is used.
-    tmax: pandas.Timestamp, optional
+    tmax: pandas.Timestamp
         A pandas.Timestamp with the end date for the simulation period
         (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
         the oseries is used.
-    freq: str, optional
+    freq: str
         String with the frequency the stressmodels are simulated. Must be one of
         the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
     warmup: Timedelta
@@ -142,9 +142,9 @@ class ModelSettingsDict(TypedDict):
 
     """
 
-    tmin: Timestamp | None
-    tmax: Timestamp | None
-    freq: str | None
+    tmin: Timestamp
+    tmax: Timestamp
+    freq: str
     warmup: Timedelta
     solver: Literal["LeastSquares", "LmfitSolve", "EmceeSolver"] | None
     fit_constant: bool
