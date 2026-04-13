@@ -315,7 +315,7 @@ class Model:
                 )
             self.stressmodels[stressmodel.name] = stressmodel
             self._parameters = self.get_init_parameters(initial=False)
-            stressmodel.update_stress(freq=self._settings["freq"])
+            stressmodel.update_stress(freq=self.settings["freq"])
 
             # Check if stress overlaps with oseries, if not give a warning
             if (stressmodel.tmin > self.oseries.series.index.max()) or (
@@ -392,7 +392,7 @@ class Model:
         self.noisemodel.set_init_parameters(oseries=self.oseries.series)
 
         # check whether noise_alpha is not smaller than ml.settings["freq"]
-        freq_in_days = _get_dt(self._settings["freq"])
+        freq_in_days = _get_dt(self.settings["freq"])
         noise_alpha = self.noisemodel.parameters.initial.iat[0]
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
@@ -488,18 +488,18 @@ class Model:
         looks with only the initial parameters and no calibration.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
-        if tmin is None and self._settings["tmin"]:
-            tmin = self._settings["tmin"]
+        if tmin is None and self.settings["tmin"]:
+            tmin = self.settings["tmin"]
         else:
             tmin = self.get_tmin(tmin, use_oseries=False, use_stresses=True)
-        if tmax is None and self._settings["tmax"]:
-            tmax = self._settings["tmax"]
+        if tmax is None and self.settings["tmax"]:
+            tmax = self.settings["tmax"]
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
-            freq = self._settings["freq"]
+            freq = self.settings["freq"]
         if warmup is None:
-            warmup = self._settings["warmup"]
+            warmup = self.settings["warmup"]
         elif not isinstance(warmup, Timedelta):
             warmup = Timedelta(warmup, "D")
 
@@ -598,15 +598,15 @@ class Model:
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
         if tmin is None:
-            tmin = self._settings["tmin"]
+            tmin = self.settings["tmin"]
         if tmax is None:
-            tmax = self._settings["tmax"]
+            tmax = self.settings["tmax"]
         if freq is None:
-            freq = self._settings["freq"]
-        if self._settings["freq_obs"] is None:
+            freq = self.settings["freq"]
+        if self.settings["freq_obs"] is None:
             freq_obs = freq
         else:
-            freq_obs = self._settings["freq_obs"]
+            freq_obs = self.settings["freq_obs"]
 
         # simulate model
         sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
@@ -766,25 +766,25 @@ class Model:
         oseries. In the `residuals` method, the simulation is interpolated to the
         observation-timestamps.
         """
-        if tmin is None and self._settings["tmin"]:
-            tmin = self._settings["tmin"]
+        if tmin is None and self.settings["tmin"]:
+            tmin = self.settings["tmin"]
         else:
             tmin = self.get_tmin(tmin, use_oseries=False, use_stresses=True)
-        if tmax is None and self._settings["tmax"]:
-            tmax = self._settings["tmax"]
+        if tmax is None and self.settings["tmax"]:
+            tmax = self.settings["tmax"]
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
-            if self._settings["freq_obs"] is None:
-                freq = self._settings["freq"]
+            if self.settings["freq_obs"] is None:
+                freq = self.settings["freq"]
             else:
-                freq = self._settings["freq_obs"]
+                freq = self.settings["freq_obs"]
 
         oseries = self.oseries
         if not update_observations and (
-            tmin != self._settings["tmin"]
-            or tmax != self._settings["tmax"]
-            or freq != self._settings["freq"]
+            tmin != self.settings["tmin"]
+            or tmax != self.settings["tmax"]
+            or freq != self.settings["freq"]
         ):
             # create a copy, so we do not alter the original self.oseries
             oseries = oseries.copy()
@@ -969,7 +969,7 @@ class Model:
         self._parameters = self.get_init_parameters(noise=noise, initial=initial)
 
         # Prepare model if not fitting the constant as a parameter
-        if self._settings["fit_constant"] is False:
+        if self.settings["fit_constant"] is False:
             if self.transform is not None:
                 msg = "fit_constant needs to be True (for now) when a transform is used"
                 logger.error(msg)
@@ -1005,12 +1005,12 @@ class Model:
 
         # Solve model
         success, optimal, stderr = self.solver.solve(
-            noise=self._settings["noise"], weights=weights, **kwargs
+            noise=self.settings["noise"], weights=weights, **kwargs
         )
         if not success:
             logger.warning("Model parameters could not be estimated well.")
 
-        if self._settings["fit_constant"] is False:
+        if self.settings["fit_constant"] is False:
             # Determine the residuals and set the constant to their mean
             self.normalize_residuals = False
             res = self.residuals(optimal).mean()
@@ -1288,7 +1288,7 @@ class Model:
     @property
     def time_offset(self) -> Timedelta:
         """Property to get the time offset from the settings."""
-        return self._get_time_offset(self._settings["freq"])
+        return self._get_time_offset(self.settings["freq"])
 
     @lru_cache(maxsize=1)
     def _get_time_offset(self, freq: str) -> Timedelta:
@@ -1337,10 +1337,10 @@ class Model:
             model is simulated.
         """
         return self._get_sim_index(
-            tmin=self._settings["tmin"],
-            tmax=self._settings["tmax"],
-            freq=self._settings["freq"],
-            warmup=self._settings["warmup"],
+            tmin=self.settings["tmin"],
+            tmax=self.settings["tmax"],
+            freq=self.settings["freq"],
+            warmup=self.settings["warmup"],
         )
 
     @lru_cache(maxsize=1)
@@ -1508,7 +1508,7 @@ class Model:
             pandas.Dataframe with the parameters.
         """
         if noise is None:
-            noise = self._settings["noise"]
+            noise = self.settings["noise"]
 
         frames = []
 
@@ -1638,13 +1638,13 @@ class Model:
             p = self.get_parameters(name)
 
         if tmin is None:
-            tmin = self._settings["tmin"]
+            tmin = self.settings["tmin"]
         if tmax is None:
-            tmax = self._settings["tmax"]
+            tmax = self.settings["tmax"]
         if freq is None:
-            freq = self._settings["freq"]
+            freq = self.settings["freq"]
         if warmup is None:
-            warmup = self._settings["warmup"]
+            warmup = self.settings["warmup"]
         else:
             warmup = Timedelta(warmup, "D")
 
@@ -1830,7 +1830,7 @@ class Model:
             p = self.get_parameters(name)
 
         if dt is None:
-            dt = _get_dt(self._settings["freq"])
+            dt = _get_dt(self.settings["freq"])
 
         if istress is not None and self.stressmodels[name].get_nsplit() > 1:
             p = self.stressmodels[name].get_parameters(model=self, istress=istress)
@@ -2021,25 +2021,16 @@ class Model:
             If one stress is present, a pandas Series is returned. If more are
             present, a list of pandas Series is returned.
         """
-        if p is None:
-            p = self.get_parameters(name)
+        p = self.get_parameters(name) if p is None else p
 
-        if tmin is None:
-            tmin = self._settings["tmin"]
-        if tmax is None:
-            tmax = self._settings["tmax"]
-        if freq is None:
-            freq = self._settings["freq"]
-        if warmup is None:
-            warmup = self._settings["warmup"]
-        else:
-            warmup = Timedelta(warmup, "D")
+        tmin = self.settings["tmin"] if tmin is None else tmin
+        tmax = self.settings["tmax"] if tmax is None else tmax
+        freq = self.settings["freq"] if freq is None else freq
+        warmup = self.settings["warmup"] if warmup is None else Timedelta(warmup, "D")
 
         # use warmup
         if tmin:
-            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + self._settings[
-                "time_offset"
-            ]
+            tmin_warm = (Timestamp(tmin) - warmup).floor(freq) + self.time_offset
         else:
             tmin_warm = None
 
@@ -2329,7 +2320,7 @@ class Model:
             stressmodel, and check result.
         """
 
-        len_oseries = (self._settings["tmax"] - self._settings["tmin"]).days
+        len_oseries = (self.settings["tmax"] - self.settings["tmin"]).days
 
         # only check stressmodels with a response function
         sm_names = [
@@ -2348,9 +2339,9 @@ class Model:
         )
         check["len_oseries"] = len_oseries
         check["len_warmup"] = (
-            self._settings["warmup"].days
-            if isinstance(self._settings["warmup"], Timedelta)
-            else Timedelta(self._settings["warmup"]).days
+            self.settings["warmup"].days
+            if isinstance(self.settings["warmup"], Timedelta)
+            else Timedelta(self.settings["warmup"]).days
         )
 
         for sm_name in sm_names:
@@ -2425,7 +2416,7 @@ class Model:
             "name": self.name,
             "oseries": self.oseries.to_dict(series=series),
             "parameters": self._parameters,
-            "settings": self._settings,
+            "settings": self.settings,
             "stressmodels": dict(),
         }
 
