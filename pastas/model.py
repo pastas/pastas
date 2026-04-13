@@ -904,7 +904,7 @@ class Model:
             (setting certain model settings) before solving. If False, the
             model is not initialized before solving. Note that the latter is an
             advanced option since some model settings can be missing. Default
-            is True. Deprecated since version 2.0.0.
+            is False and deprecated since version 2.0.0.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.

@@ -146,7 +146,7 @@ class ModelSettingsDict(TypedDict):
     tmax: Timestamp
     freq: str
     warmup: Timedelta
-    solver: Literal["LeastSquares", "LmfitSolve", "EmceeSolver"] | None
+    solver: Literal["LeastSquares", "LmfitSolve", "EmceeSolve"] | None
     fit_constant: bool
     freq_obs: str | None
     weights: Series | None
