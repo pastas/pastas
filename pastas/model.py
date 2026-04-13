@@ -1052,7 +1052,7 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
-        fit_constant: bool = True,
+        fit_constant: bool | None = None,
         freq_obs: str | None = None,
         weights: Series | None = None,
     ) -> None:
@@ -1096,23 +1096,32 @@ class Model:
 
         """
         if tmin is not None:
+            logger.debug("Updating model setting tmin to %s." % tmin)
             self._settings["tmin"] = self.get_tmin(tmin)
 
         if tmax is not None:
+            logger.debug("Updating model setting tmax to %s." % tmax)
             self._settings["tmax"] = self.get_tmax(tmax)
 
         if freq is not None:
+            logger.debug("Updating model setting freq to %s." % freq)
             self._settings["freq"] = _frequency_is_supported(freq)
 
         if warmup is not None:
+            logger.debug("Updating model setting warmup to %s." % warmup)
             self._settings["warmup"] = Timedelta(warmup, "D")
 
-        self._settings["fit_constant"] = fit_constant
+        if fit_constant is not None:
+            logger.debug("Updating model setting fit_constant to %s." % fit_constant)
+            self._settings["fit_constant"] = fit_constant
 
         if freq_obs is not None:
+            logger.debug("Updating model setting freq_obs to %s." % freq_obs)
             self._settings["freq_obs"] = _frequency_is_supported(freq_obs)
 
-        self._settings["weights"] = weights
+        if weights is not None:
+            logger.debug("Updating model setting weights to %s." % weights)
+            self._settings["weights"] = weights
 
     def set_parameter(
         self,
