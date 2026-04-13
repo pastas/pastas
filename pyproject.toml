@@ -19,7 +19,7 @@ maintainers = [
     { name = "O.N. Ebbens", email = "o.ebbens@artesia-water.nl" },
     { name = "M.A. Vonk", email = "vonk.mart@gmail.com" },
 ]
-requires-python = ">= 3.10"
+requires-python = ">= 3.11"
 dependencies = [
     "numpy >= 2.0.0",
     "matplotlib >= 3.9.0",
@@ -34,7 +34,6 @@ classifiers = [
     'Intended Audience :: Other Audience',
     'Topic :: Scientific/Engineering :: Hydrology',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',

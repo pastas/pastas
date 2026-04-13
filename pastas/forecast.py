@@ -72,14 +72,7 @@ def _check_forecast_data(
     index = None
 
     for sm_name, fc_data in forecasts.items():
-        if not fc_data:
-            msg = f"No forecast data provided for stressmodel '{sm_name}'"
-            logger.warning(msg)
-            continue
-
-        if isinstance(fc_data, dict):
-            fc_data = list(fc_data.values())
-        else:
+        if isinstance(fc_data, list):
             deprecate_args_or_kwargs(
                 name="forecasts",
                 version="2.0.0",
@@ -89,14 +82,19 @@ def _check_forecast_data(
                     " arguments of the stressmodel as keys of the dictionary instead."
                 ),
             )
-        for fc in fc_data:
+        elif not isinstance(fc_data, dict) or not fc_data:
+            msg = f"Forecast data for stressmodel '{sm_name}' must be a non-empty dictionary"
+            logger.error(msg)
+            raise ValueError(msg)
+
+        for stress_name, fc in fc_data.items():
             # Convert Series to a 1-column DataFrame
             if isinstance(fc, Series):
                 fc = fc.to_frame()
             # Check if DataFrame is empty
             if fc.empty:
-                msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}'"
-                logger.warning(msg)
+                msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}' for stress '{stress_name}'"
+                logger.error(msg)
                 continue
 
             # Check if the number of columns is the same for all DataFrames
@@ -241,18 +239,13 @@ def forecast(
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
             sm = ml.stressmodels[sm_name]  # Select stressmodel
-            fc_data = fc_data.values() if isinstance(fc_data, dict) else fc_data
-            for i, fc in enumerate(fc_data):
-                # Convert Series to a 1-column DataFrame
+            for stress_name, fc in fc_data.items():
                 if isinstance(fc, Series):
                     fc = fc.to_frame()
-                ts = concat(
-                    [
-                        sm.stress[i].series_original.loc[: tmin - day],
-                        fc.iloc[:, member],
-                    ]
-                )
-                sm.stress[i].series_original = ts
+                old_stress = getattr(sm, stress_name).series_original.loc[: tmin - day]
+                new_stress = fc.iloc[:, member]
+                ts = concat([old_stress, new_stress], axis=0)
+                setattr(sm, stress_name, ts)
 
         # 2. iterate over the parameter sets
         for i, param in enumerate(p):

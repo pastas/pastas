@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pytest
 from pandas import Series
@@ -83,7 +85,9 @@ def test_tracksolve(ml_solved: Model) -> None:
 
 
 def test_summary_pdf(ml_noisemodel: Model) -> None:
-    _ = ml_noisemodel.plots.summary_pdf()
+    fname = Path("summary_pdf_test.pdf")
+    _ = ml_noisemodel.plots.summary_pdf(fname=fname)
+    fname.unlink()  # Clean up the generated PDF file
     plt.close()
 
 
