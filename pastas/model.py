@@ -796,68 +796,12 @@ class Model:
 
         return oseries.series
 
-    def initialize(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        freq: str | None = None,
-        warmup: float | None = None,
-        noise: bool | None = None,
-        weights: Series | None = None,
-        initial: bool = True,
-        fit_constant: bool = True,
-        freq_obs: str | None = None,
-    ) -> None:
-        """Method to initialize the model.
-
-        This method is called by the solve-method, but can also be triggered
-        manually. See the solve-method for a description of the arguments.
-        """
-
-        if noise is not None:
-            msg = (
-                "The new behavior is that a noise model will always be "
-                "used if it is present. To add a noisemodel to a model called ml, "
-                "use the ml.add_noisemodel method. To solve without a noisemodel, "
-                "make sure sure no noisemodel is added or remove a noisemodel with "
-                "ml.del_noisemodel() before solving. See this issue on GitHub for "
-                "more information: https://github.com/pastas/pastas/issues/735"
-            )
-            deprecate_args_or_kwargs(
-                name="noise",
-                version="1.5.0",
-                reason=msg,
-            )
-
-        self.set_settings(
-            tmin=tmin,
-            tmax=tmax,
-            freq=freq,
-            warmup=warmup,
-            noise=noise,
-            weights=weights,
-            initial=initial,
-            fit_constant=fit_constant,
-            freq_obs=freq_obs,
-        )
-
-        # make sure to update self.oseries.series by running self.observations
-        # get tmin, tmax, freq, and freq_obs from self.settings
-        self.observations(update_observations=True)
-        self.interpolate_simulation = None
-
-        # Initialize parameters
-        self._parameters = self.get_init_parameters(noise, initial)
-
-        # Prepare model if not fitting the constant as a parameter
-        if self._settings["fit_constant"] is False:
-            if self.transform is not None:
-                msg = "fit_constant needs to be True (for now) when a transform is used"
-                logger.error(msg)
-                raise ValueError(msg)
-            self._parameters.at["constant_d", "vary"] = False
-            self._parameters.at["constant_d", "initial"] = 0.0
-            self.normalize_residuals = True
+    @PastasDeprecationWarning(
+        version="2.0.0",
+        reason="The initialize method is not needed anymore in favor of the `set_settings` method.",
+    )
+    def initialize(**kwargs) -> None:
+        pass
 
     def add_solver(self, solver: Solver) -> None:
         """Method to add a solver to the model.
@@ -893,7 +837,7 @@ class Model:
         weights: Series | None = None,
         fit_constant: bool = True,
         freq_obs: str | None = None,
-        initialize: bool = True,
+        initialize: bool = False,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -956,7 +900,7 @@ class Model:
             (setting certain model settings) before solving. If False, the
             model is not initialized before solving. Note that the latter is an
             advanced option since some model settings can be missing. Default
-            is True.
+            is True. Deprecated since version 2.0.0.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
@@ -975,6 +919,7 @@ class Model:
         pastas.solver
             Different solver objects are available to estimate parameters.
         """
+
         if noise is not None:
             if noise is True:
                 msg = (
@@ -997,18 +942,45 @@ class Model:
                 reason=msg,
             )
 
+        # Old initialization code that is not needed anymore
         if initialize:
-            self.initialize(
-                tmin=tmin,
-                tmax=tmax,
-                freq=freq,
-                warmup=warmup,
-                weights=weights,
-                initial=initial,
-                fit_constant=fit_constant,
-                freq_obs=freq_obs,
+            deprecate_args_or_kwargs(
+                "initialize",
+                version="2.0.0",
+                reason="The initialize method is not needed anymore in favor of the `set_settings` method.",
             )
+            self.initialize(noise=noise)
 
+        # Set settings for the model and make sure they are updated in the model
+        self.set_settings(
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            warmup=warmup,
+            weights=weights,
+            fit_constant=fit_constant,
+            freq_obs=freq_obs,
+        )
+
+        # Initialize parameters
+        self._parameters = self.get_init_parameters(noise=noise, initial=initial)
+
+        # Prepare model if not fitting the constant as a parameter
+        if self._settings["fit_constant"] is False:
+            if self.transform is not None:
+                msg = "fit_constant needs to be True (for now) when a transform is used"
+                logger.error(msg)
+                raise ValueError(msg)
+            self._parameters.at["constant_d", "vary"] = False
+            self._parameters.at["constant_d", "initial"] = 0.0
+            self.normalize_residuals = True
+
+        # make sure to update self.oseries.series by running self.observations
+        # get tmin, tmax, freq, and freq_obs from self.settings
+        self.observations(update_observations=True)
+        self.interpolate_simulation = None
+
+        # Check if the oseries has data in the calibration period, if not raise an error
         if self.oseries.series.empty:
             msg = (
                 "Calibration series 'oseries.series' is empty! Check 'tmin' or 'tmax'."
@@ -1016,6 +988,7 @@ class Model:
             logger.error(msg)
             raise ValueError(msg)
 
+        # Check if the solver is already added to the model, if not add the default least squares solver
         if solver is not None:  # add solver if provided
             if self.solver is None or self.solver._name != solver._name:
                 logger.info("Setting solver to `%s`." % solver._name)
