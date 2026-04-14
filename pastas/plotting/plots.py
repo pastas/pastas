@@ -566,7 +566,7 @@ class TrackSolve:
 
     Other stored statistics include `track.evp` (explained variance percentage),
     `track.rmse_res` (root-mean-squared error of the residuals), `track.rmse_noise` (
-    root mean squared error of the noise, only if noise=True).
+    root mean squared error of the noise, only if a noisemodel is present).
 
     To interactively plot model optimization progress while solving pass
     `track.plot_track_solve` as callback function::
