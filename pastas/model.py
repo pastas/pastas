@@ -842,6 +842,7 @@ class Model:
         fit_constant: bool = True,
         freq_obs: str | None = None,
         initialize: bool = False,
+        reset_settings: bool = False,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -905,6 +906,10 @@ class Model:
             model is not initialized before solving. Note that the latter is an
             advanced option since some model settings can be missing. Default
             is False and deprecated since version 2.0.0.
+        reset_settings: bool = False,
+            If True, the model settings are reset to their default values before solving.
+            This calls the Model.set_settings() method with default values.
+            Default is False.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
@@ -955,6 +960,8 @@ class Model:
             )
             self.initialize(noise=noise)
 
+        self.reset_settings() if reset_settings else None
+
         # Set settings for the model and make sure they are updated in the model
         self.set_settings(
             tmin=tmin,
@@ -968,16 +975,6 @@ class Model:
 
         # Initialize parameters
         self._parameters = self.get_init_parameters(noise=noise, initial=initial)
-
-        # Prepare model if not fitting the constant as a parameter
-        if self.settings["fit_constant"] is False:
-            if self.transform is not None:
-                msg = "fit_constant needs to be True (for now) when a transform is used"
-                logger.error(msg)
-                raise ValueError(msg)
-            self._parameters.at["constant_d", "vary"] = False
-            self._parameters.at["constant_d", "initial"] = 0.0
-            self.normalize_residuals = True
 
         # make sure to update self.oseries.series by running self.observations
         # get tmin, tmax, freq, and freq_obs from self.settings
@@ -1051,6 +1048,22 @@ class Model:
     def oseries_calib(self):
         return self.oseries.series
 
+    def reset_settings(self) -> None:
+        """Method to reset the model settings to the default settings."""
+        self._settings = self.set_settings(
+            tmin=self.get_tmin(use_oseries=True, use_stresses=True),
+            tmax=self.get_tmax(use_oseries=True, use_stresses=True),
+            freq="D",
+            warmup=Timedelta(3650.0, "D"),
+            fit_constant=True,
+        )
+        self._settings["solver"] = (None if self.solver is None else self.solver._name,)
+        self._settings["freq_obs"] = None
+        self._settings["noise"] = False
+        logger.debug(
+            "Resetting model settings to default settings: {}.", self._settings
+        )
+
     def set_settings(
         self,
         tmin: Timestamp | str | None = None,
@@ -1119,21 +1132,29 @@ class Model:
         if fit_constant is not None:
             logger.debug("Updating model setting fit_constant to %s." % fit_constant)
             self._settings["fit_constant"] = fit_constant
+            # Prepare model if not fitting the constant as a parameter
+            if self.settings["fit_constant"]:
+                if self.transform is not None:
+                    msg = "fit_constant needs to be True (for now) when a transform is used"
+                    logger.error(msg)
+                    raise ValueError(msg)
+                self._parameters.at["constant_d", "vary"] = False
+                self._parameters.at["constant_d", "initial"] = 0.0
+                self.normalize_residuals = True
+            else:
+                self._parameters.at["constant_d", "vary"] = True
+                self.normalize_residuals = False
 
         if freq_obs is not None:
             logger.debug("Updating model setting freq_obs to %s." % freq_obs)
             self._settings["freq_obs"] = _frequency_is_supported(freq_obs)
         elif freq_obs is None and self.settings["freq_obs"] is not None:
             logger.info(
-                "Cannot update freq_obs to 'None'. Please use `self._settings['freq_obs'] = None`."
-            )
-
-        if weights is not None:
-            logger.debug("Updating model setting weights to %s." % weights)
-            self._settings["weights"] = weights
-        elif weights is None and self.settings["weights"] is not None:
-            logger.info(
-                "Cannot update weights to `None`. Please use `self._settings['weights'] = None`."
+                (
+                    "Cannot update freq_obs to 'None'."
+                    "Please use `self._settings['freq_obs'] = None` or "
+                    "ml.reset_settings()."
+                )
             )
 
     def set_parameter(
