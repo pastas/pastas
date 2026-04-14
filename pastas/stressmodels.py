@@ -2049,7 +2049,7 @@ class RechargeModel(StressModelBase):
     def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
         if isinstance(self.recharge, Linear):
             if istress is None:
-                istress = list(range(len(self.stress)))
+                istress = list(range(len(self.stresses)))
             else:
                 istress = [istress]
             responses = []
