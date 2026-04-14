@@ -1095,7 +1095,7 @@ class Plotting:
         return axes
 
     @PastasDeprecationWarning(
-        remove_version="1.6.0",
+        version="1.6.0",
         reason=(
             "Quantifying contributions in one plot is ambiguous. "
             "Users are encouraged develop this themselves."
