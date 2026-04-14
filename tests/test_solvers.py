@@ -39,6 +39,24 @@ def test_solve_strategies_with_noisemodel(
     assert ml_noisemodel.parameters["optimal"].notna().all()
 
 
+@pytest.mark.parametrize(
+    "strategy",
+    ["deterministic_then_noise_only", "deterministic_then_full"],
+)
+def test_solve_strategies_with_arma_noisemodel(
+    ml_recharge: ps.Model, strategy: str
+) -> None:
+    ml_recharge.add_noisemodel(ps.ArmaNoiseModel())
+    ml_recharge.solve(strategy=strategy, report=False)
+    assert ml_recharge.solver.nfev is not None
+    assert ml_recharge.solver.nfev > 0
+    assert (
+        ml_recharge.parameters.loc[["noise_alpha", "noise_beta"], "optimal"]
+        .notna()
+        .all()
+    )
+
+
 # Tests for confidence intervals and prediction intervals
 def test_pred_interval(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(solver=ps.LeastSquares())

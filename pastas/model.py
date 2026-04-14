@@ -1041,19 +1041,22 @@ class Model:
                     raise ValueError(msg)
                 # copy the existing parameters, so we can set initial and vary back later
                 parameters = self.parameters.copy()
+                noise_parameters = parameters.index[
+                    parameters["name"] == self.noisemodel.name
+                ]
                 # fit model without noisemodel first
-                self.set_parameter("noise_alpha", vary=False)
+                self._parameters.loc[noise_parameters, "vary"] = False
                 success_previous, optimal, stderr = self.solver.solve(
                     noise=False, weights=weights, **kwargs
                 )
                 nfev = self.solver.nfev
                 self._parameters.initial = optimal
             if strategy == "deterministic_then_noise_only":
-                # fit only noise_alpha in a seperate solve-iteration
+                # fit only noisemodel parameters in a separate solve iteration
                 self._parameters.vary = False
-                self.set_parameter(
-                    "noise_alpha", vary=parameters.at["noise_alpha", "vary"]
-                )
+                self._parameters.loc[noise_parameters, "vary"] = parameters.loc[
+                    noise_parameters, "vary"
+                ]
                 success_iteration2, optimal, stderr = self.solver.solve(
                     noise=True, weights=weights, **kwargs
                 )
@@ -1064,9 +1067,9 @@ class Model:
                 self._parameters.vary = parameters["vary"]
                 kwargs["max_nfev"] = 1  # only calculate the jacobian once more
             elif strategy == "deterministic_then_full":
-                self.set_parameter(
-                    "noise_alpha", vary=parameters.at["noise_alpha", "vary"]
-                )
+                self._parameters.loc[noise_parameters, "vary"] = parameters.loc[
+                    noise_parameters, "vary"
+                ]
             else:
                 msg = f"Strategy '{strategy}' is not recognized. Available strategies are 'deterministic_then_noise_only' and 'deterministic_then_full'."
                 logger.error(msg)
