@@ -19,9 +19,7 @@ from pastas.plotting.plotutil import (
     plot_series_with_gaps,
     share_xaxes,
 )
-from pastas.rfunc import HantushWellModel
-from pastas.stressmodels import ChangeModel, TarsoModel
-from pastas.timeseries_utils import _get_dt
+from pastas.stressmodels import StressModelBase
 from pastas.typing import Axes, Figure, Model
 
 logger = logging.getLogger(__name__)
@@ -280,7 +278,7 @@ class Plotting:
 
                 ax_response = gs.figure.add_subplot(gs[i + 2, 1], sharex=ax_response)
                 ax_response = self._plot_response_in_results(
-                    sm_name=sm_name,
+                    sm=sm,
                     block_or_step=block_or_step,
                     ax=ax_response,
                     istress=istress if split else None,
@@ -495,7 +493,7 @@ class Plotting:
             axd[f"con_{sm_name}"].legend(loc=(0, 1), ncol=1, frameon=False)
             axd[f"con_{sm_name}"].set_ylim(ylims[f"con_{sm_name}"])
             _ = self._plot_response_in_results(
-                sm_name=sm_name,
+                sm=sm,
                 block_or_step=block_or_step,
                 ax=axd[f"rf_{sm_name}"],
             )
@@ -533,74 +531,15 @@ class Plotting:
 
     def _plot_response_in_results(
         self,
-        sm_name: str,
+        sm: StressModelBase,
         block_or_step: Literal["step", "block"],
         ax: Axes,
         istress: int | None = None,
     ):
         """Internal method to plot the response of a Stressmodel in the results-plot"""
-        rkwargs = {}
-        sm = self.ml.stressmodels[sm_name]
-        if isinstance(sm, (ChangeModel, TarsoModel)):
-            dt = _get_dt(self.ml.settings["freq"])
-            if isinstance(sm, ChangeModel):
-                parnames0 = [
-                    x.split("_")
-                    for x in list(sm.rfunc1.get_init_parameters(sm_name).index)
-                ]
-                response0 = getattr(sm.rfunc1, block_or_step)(
-                    p=self.ml.parameters.loc[
-                        [f"{x[0]}_1_{x[1]}" for x in parnames0], "optimal"
-                    ].values,
-                    dt=dt,
-                )
-                parnames1 = [
-                    x.split("_")
-                    for x in list(sm.rfunc2.get_init_parameters(sm_name).index)
-                ]
-                response1 = getattr(sm.rfunc2, block_or_step)(
-                    p=self.ml.parameters.loc[
-                        [f"{x[0]}_2_{x[1]}" for x in parnames1], "optimal"
-                    ].values,
-                    dt=dt,
-                )
-            elif isinstance(sm, TarsoModel):
-                parnames = list(sm.rfunc.get_init_parameters(sm_name).index)
-                response0 = getattr(sm.rfunc, block_or_step)(
-                    p=self.ml.parameters.loc[
-                        [f"{x}0" for x in parnames], "optimal"
-                    ].values,
-                    dt=dt,
-                )
-                response1 = getattr(sm.rfunc, block_or_step)(
-                    p=self.ml.parameters.loc[
-                        [f"{x}1" for x in parnames], "optimal"
-                    ].values,
-                    dt=dt,
-                )
-            responses = [
-                Series(
-                    np.insert(response, 0, 0.0),
-                    index=np.linspace(0, response.size * dt, response.size + 1),
-                    name=f"{sm_name}_rf{i}",
-                )
-                for i, response in enumerate([response0, response1])
-            ]
-        else:
-            if isinstance(sm.rfunc, HantushWellModel):
-                rkwargs = {"warn": False}
-                # show the response of the first well, which gives more information than istress = None
-                istress = 0 if istress is None else istress
-            responses = [
-                self.ml._get_response(
-                    block_or_step=block_or_step,
-                    name=sm_name,
-                    add_0=True,
-                    istress=istress,
-                    **rkwargs,
-                )
-            ]
-
+        responses = sm.get_responses(
+            self.ml, block_or_step=block_or_step, istress=istress
+        )
         responses = [x for x in responses if x is not None]
         if responses:
             xlim_left = min(

@@ -43,7 +43,7 @@ from .decorators import (
 )
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
-from .timeseries import TimeSeries
+from .timeseries import TimeSeries, _get_dt
 from .utils import validate_name
 
 try:
@@ -273,6 +273,17 @@ class StressModelBase:
         else:
             p = model.get_parameters(self.name)
         return p
+
+    def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
+        responses = [
+            ml._get_response(
+                block_or_step=block_or_step,
+                name=self.name,
+                add_0=True,
+                istress=istress,
+            )
+        ]
+        return responses
 
 
 class StressModel(StressModelBase):
@@ -1409,6 +1420,18 @@ class WellModel(StressModelBase):
 
         return self.rfunc.variance_gain(A, b, var_A, var_b, cov_Ab, r=r)
 
+    def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
+        if istress is None:
+            istress = list(range(len(self.stress)))
+        else:
+            istress = [istress]
+        responses = []
+        for i in istress:
+            responses.extend(
+                super().get_responses(ml, block_or_step=block_or_step, istress=i)
+            )
+        return responses
+
 
 class RechargeModel(StressModelBase):
     """Stressmodel simulating the effect of groundwater recharge on the head.
@@ -2023,6 +2046,27 @@ class RechargeModel(StressModelBase):
                 p = p[:-1]
         return p
 
+    def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
+        if isinstance(self.recharge, Linear):
+            if istress is None:
+                istress = list(range(len(self.stress)))
+            else:
+                istress = [istress]
+            responses = []
+            for i in istress:
+                response = ml._get_response(
+                    block_or_step=block_or_step,
+                    name=self.name,
+                    add_0=True,
+                    istress=i,
+                )
+                responses.append(response)
+            return responses
+        else:
+            return super().get_responses(
+                ml, block_or_step=block_or_step, istress=istress
+            )
+
     def to_dict(self, series: bool = True) -> dict:
         """Method to export the RechargeModel object.
 
@@ -2267,6 +2311,27 @@ class TarsoModel(RechargeModel):
                 exp_a = np.exp(-(dt - dtdr) / a)
                 h[i] = (d1 - d) * exp_a + r[i] * c * (1 - exp_a) + d
         return h
+
+    def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
+        dt = _get_dt(ml.settings["freq"])
+        parnames = list(self.rfunc.get_init_parameters(self.name).index)
+        response0 = getattr(self.rfunc, block_or_step)(
+            p=ml.parameters.loc[[f"{x}0" for x in parnames], "optimal"].values,
+            dt=dt,
+        )
+        response1 = getattr(self.rfunc, block_or_step)(
+            p=ml.parameters.loc[[f"{x}1" for x in parnames], "optimal"].values,
+            dt=dt,
+        )
+        responses = [
+            Series(
+                np.insert(response, 0, 0.0),
+                index=np.linspace(0, response.size * dt, response.size + 1),
+                name=f"{self.name}_rf{i}",
+            )
+            for i, response in enumerate([response0, response1])
+        ]
+        return responses
 
 
 class ChangeModel(StressModelBase):
@@ -2536,6 +2601,41 @@ class ChangeModel(StressModelBase):
         h = (omega * h1 + (1 - omega) * h2).rename(self.name)
 
         return h
+
+    def get_responses(
+        self,
+        ml,
+        block_or_step="step",
+        istress=None,
+    ) -> list[Series]:
+        dt = _get_dt(ml.settings["freq"])
+        parnames0 = [
+            x.split("_") for x in list(self.rfunc1.get_init_parameters(self.name).index)
+        ]
+        response0 = getattr(self.rfunc1, block_or_step)(
+            p=ml.parameters.loc[
+                [f"{x[0]}_1_{x[1]}" for x in parnames0], "optimal"
+            ].values,
+            dt=dt,
+        )
+        parnames1 = [
+            x.split("_") for x in list(self.rfunc2.get_init_parameters(self.name).index)
+        ]
+        response1 = getattr(self.rfunc2, block_or_step)(
+            p=ml.parameters.loc[
+                [f"{x[0]}_2_{x[1]}" for x in parnames1], "optimal"
+            ].values,
+            dt=dt,
+        )
+        responses = [
+            Series(
+                np.insert(response, 0, 0.0),
+                index=np.linspace(0, response.size * dt, response.size + 1),
+                name=f"{self.name}_rf{i}",
+            )
+            for i, response in enumerate([response0, response1])
+        ]
+        return responses
 
     def to_dict(self, series: bool = True):
         """Method to export the ChangeModel object.
