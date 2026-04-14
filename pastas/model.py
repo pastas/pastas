@@ -826,7 +826,6 @@ class Model:
         self.solver = solver
         if not hasattr(self.solver, "ml") or self.solver.ml is None:
             self.solver.set_model(self)
-        self._settings["solver"] = self.solver._name
 
     def solve(
         self,
@@ -1056,7 +1055,6 @@ class Model:
             warmup=Timedelta(3650.0, "D"),
             fit_constant=True,
         )
-        self._settings["solver"] = (None if self.solver is None else self.solver._name,)
         self._settings["freq_obs"] = None
         self._settings["noise"] = False
         logger.debug(
@@ -2193,7 +2191,7 @@ class Model:
             "freq": self.settings["freq"],
             "freq_obs": str(self.settings["freq_obs"]),
             "warmup": str(self.settings["warmup"]),
-            "solver": self.settings["solver"],
+            "solver": self.solver._name,
         }
 
         fit = {
