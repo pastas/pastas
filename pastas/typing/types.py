@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar
 from matplotlib.axes import Axes as MatplotlibAxes
 from matplotlib.figure import Figure as MatplotlibFigure
 from numpy.typing import ArrayLike as NumpyArrayLike
-from pandas import Series, Timedelta, Timestamp
+from pandas import Timedelta, Timestamp
 
 # External Types
 Axes = TypeVar("Axes", bound=MatplotlibAxes)  # Matplotlib Axes
@@ -131,14 +131,6 @@ class ModelSettingsDict(TypedDict):
         multiple of that e.g. "7D". Should generally be larger than the frequency
         of the original observations and the model frequency (freq). If freq_obs
         is None, the frequency of the model (freq) will be used.
-    weights: pandas.Series, optional
-        Pandas Series with values by which the residuals or noise time series are
-        multiplied, index-based. Must have the same indices as the oseries. If
-        None, equal weights are used. This can be used to put extra/less weight on
-        certain periods (e.g., droughts) or measurements (i.e. outliers), and make
-        more complex calibration schemes (e.g. :cite:`colllenteur_analysis_2023`).
-        Note that the weights are only used during optimization and not when
-        computing the goodness-of-fit metrics.
 
     """
 
@@ -149,5 +141,4 @@ class ModelSettingsDict(TypedDict):
     solver: Literal["LeastSquares", "LmfitSolve", "EmceeSolve"] | None
     fit_constant: bool
     freq_obs: str | None
-    weights: Series | None
     noise: bool
