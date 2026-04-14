@@ -24,7 +24,7 @@ from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 
 from pastas.typing import ArrayLike
 
-from .decorators import njit, set_parameter
+from .decorators import PastasDeprecationWarning, njit, set_parameter
 
 logger = getLogger(__name__)
 
