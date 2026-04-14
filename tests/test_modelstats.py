@@ -131,7 +131,7 @@ class TestStatistics:
 
     def test_kge_2012(self, ml_solved: ps.Model) -> None:
         """Test KGE 2012 calculation."""
-        with pytest.raises(AttributeError):
+        with pytest.warns(DeprecationWarning):
             _ = ml_solved.stats.kge_2012()
 
     def test_information_criteria(self, ml_solved: ps.Model) -> None:
