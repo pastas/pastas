@@ -150,9 +150,9 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
                 warn(message=msg, category=DeprecationWarning)
             else:
                 msg = (
-                    f"module has no attribute '{name}'",
+                    f"module has no attribute '{name}'"
                     f"{name} is deprecated and is not available since"
-                    f" Pastas version {VERSION}. {reason}",
+                    f" Pastas version {VERSION}. {reason}"
                 )
                 raise AttributeError(msg)
 
