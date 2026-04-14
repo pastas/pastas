@@ -114,7 +114,7 @@ class BaseSolver:
         Returns
         -------
         rv: array_like
-            residuals array (if noise=False) or noise array (if noise=True)
+            residuals array or noise array if a noisemodel is present
         """
         # Get the residuals or the noise
         if noise:
