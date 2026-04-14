@@ -36,7 +36,7 @@ class TestStressModelBase:
 
         # Check if frequency was updated
         assert stress_model.freq == "7D"
-        assert stress_model.stress[0].settings["freq"] == "7D"
+        assert stress_model.stress.settings["freq"] == "7D"
 
         # Reset to original frequency
         stress_model.update_stress(freq=original_freq)
@@ -71,7 +71,7 @@ class TestStressModel:
             name="test",
             settings={"fill_nan": "mean"},
         )
-        assert sm.stress[0].settings["fill_nan"] == "mean"
+        assert sm.stress.settings["fill_nan"] == "mean"
 
     def test_simulate(self, stress_model: StressModel) -> None:
         """Test simulate method."""
@@ -83,7 +83,7 @@ class TestStressModel:
 
         # Check results
         assert isinstance(sim, pd.Series)
-        assert len(sim) == len(stress_model.stress[0].series)
+        assert len(sim) == len(stress_model.stress.series)
         assert not np.isnan(sim).any()
 
     def test_to_dict(self, stress_model: StressModel) -> None:
@@ -173,6 +173,61 @@ class TestLinearTrend:
         post_trend = sim.loc["2002-01-01":]
         assert np.allclose(post_trend.diff().dropna().values, 0)
 
+    def test_deprecated_arguments(self, caplog) -> None:
+        """Test that deprecated 'start' and 'end' arguments raise warnings."""
+        # Test deprecated 'start' argument
+        caplog.clear()
+        sm = LinearTrend(start="2001-01-01", tend="2002-01-01", name="trend1")
+        assert len(caplog.records) == 1
+        assert "deprecated" in caplog.text.lower()
+        assert "start" in caplog.text
+        assert "tstart" in caplog.text
+        assert sm.tstart == "2001-01-01"
+
+        # Test deprecated 'end' argument
+        caplog.clear()
+        sm = LinearTrend(tstart="2001-01-01", end="2002-01-01", name="trend1")
+        assert len(caplog.records) == 1
+        assert "deprecated" in caplog.text.lower()
+        assert "end" in caplog.text
+        assert "tend" in caplog.text
+        assert sm.tend == "2002-01-01"
+
+        # Test both deprecated arguments
+        caplog.clear()
+        sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        assert len(caplog.records) == 2
+        assert sm.tstart == "2001-01-01"
+        assert sm.tend == "2002-01-01"
+
+
+    def test_deprecated_start_end_parameters(self, caplog) -> None:
+        """Test that deprecated 'start' and 'end' arguments raise warnings."""
+        # Test deprecated 'start' argument
+        caplog.clear()
+        sm = LinearTrend(start="2001-01-01", tend="2002-01-01", name="trend1")
+        assert len(caplog.records) == 1
+        assert "deprecated" in caplog.text.lower()
+        assert "start" in caplog.text
+        assert "tstart" in caplog.text
+        assert sm.tstart == "2001-01-01"
+
+        # Test deprecated 'end' argument
+        caplog.clear()
+        sm = LinearTrend(tstart="2001-01-01", end="2002-01-01", name="trend1")
+        assert len(caplog.records) == 1
+        assert "deprecated" in caplog.text.lower()
+        assert "end" in caplog.text
+        assert "tend" in caplog.text
+        assert sm.tend == "2002-01-01"
+
+        # Test both deprecated arguments
+        caplog.clear()
+        sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        assert len(caplog.records) == 2
+        assert sm.tstart == "2001-01-01"
+        assert sm.tend == "2002-01-01"
+
 
 class TestConstant:
     """Test Constant."""
@@ -227,7 +282,7 @@ class TestRechargeModel:
         )
         assert rm.name == "rech1"
         assert rm.recharge._name == "Linear"
-        assert len(rm.stress) == 2  # prec and evap
+        assert len(rm.stresses) == 2  # prec and evap
 
     def test_init_flex(self) -> None:
         """Test initialization with FlexModel recharge model."""
@@ -269,7 +324,7 @@ class TestRechargeModel:
         )
 
         assert rm.name == "rech_temp"
-        assert len(rm.stress) == 3  # prec, evap, and temp
+        assert len(rm.stresses) == 3  # prec, evap, and temp
         assert rm.temp is not None
 
     def test_get_stress(self) -> None:
@@ -323,7 +378,7 @@ class TestWellModel:
             distances=self.distances,
         )
         assert wm.name == "wells"
-        assert len(wm.stress) == 3
+        assert len(wm.stresses) == 3
         assert len(wm.distances) == 3
 
         # Test with sorting
@@ -344,7 +399,7 @@ class TestWellModel:
                 distances=[100, 200, 300],
             )
         assert (
-            "number of stresses does not match the number of distances"
+            "the number of distances must match the number of stresses."
             in str(e.value).lower()
         )
 
@@ -395,6 +450,71 @@ class TestWellModel:
         # The individual stress simulation uses the well name instead of the model name
         assert sim1.name == "well1"
         assert len(sim1) == len(self.well1)
+
+    def test_set_stress(self) -> None:
+        """Test set_stress method."""
+        wm = WellModel(
+            stress=[self.well1, self.well2, self.well3],
+            name="wells_set",
+            distances=self.distances,
+        )
+
+        # Create new stress series
+        new_well1 = self.well1 * 2
+        new_well2 = self.well2 * 2
+        new_well3 = self.well3 * 2
+
+        # Set new stresses
+        wm.set_stress([new_well1, new_well2, new_well3])
+
+        # Verify that stresses were updated
+        assert wm.stresses[0].series.equals(new_well1)
+        assert wm.stresses[1].series.equals(new_well2)
+        assert wm.stresses[2].series.equals(new_well3)
+
+        new_well4 = self.well1 * 3
+        wm.stress = new_well4
+        assert wm.stresses[0].series.equals(new_well4)
+
+    def test_set_stress_error(self) -> None:
+        """Test error when setting stress with incorrect number of series."""
+        wm = WellModel(
+            stress=[self.well1, self.well2, self.well3],
+            name="wells_set_error",
+            distances=self.distances,
+        )
+
+        new_well1 = self.well1 * 2
+        new_well2 = self.well2 * 2
+
+        with pytest.raises(ValueError) as e:
+            wm.set_stress([new_well1, new_well2])
+        assert (
+            "the number of stress time series must match the number of distances."
+            in str(e.value).lower()
+        )
+
+        new_well3 = (self.well3 * 2).rename("wrong_name")
+        with pytest.raises(ValueError) as e:
+            wm.set_stress(new_well3)
+        assert "when setting a single stress series," in str(e.value).lower()
+
+        new_well4 = (self.well1 * 2).rename("name1")
+        new_well5 = (self.well2 * 2).rename("name2")
+        new_well6 = (self.well3 * 2).rename("name3")
+        with pytest.raises(ValueError) as e:
+            wm.set_stress([new_well4, new_well5, new_well6])
+        assert (
+            "new names of the stress time series were provided that do not match the original names on initialization."
+            in str(e.value).lower()
+        )
+
+        with pytest.raises(AttributeError) as e:
+            wm.stress[0] = new_well1
+        assert (
+            "cannot set values in stress directly anymore. please use the `set_stress` method."
+            in str(e.value).lower()
+        )
 
 
 class TestChangeModel:
