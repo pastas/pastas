@@ -140,7 +140,7 @@ class Model:
             tmin=self.oseries.settings["tmin"],
             tmax=self.oseries.settings["tmax"],
             freq=freq,
-            warmup=Timedelta(3650, "D"),  # 10 years in days
+            warmup=Timedelta(3650.0, "D"),  # 10 years in days
             solver=None,
             fit_constant=True,
             freq_obs=None,
@@ -968,7 +968,6 @@ class Model:
             tmax=tmax,
             freq=freq,
             warmup=warmup,
-            weights=weights,
             fit_constant=fit_constant,
             freq_obs=freq_obs,
         )
@@ -1072,7 +1071,6 @@ class Model:
         warmup: float | None = None,
         fit_constant: bool | None = None,
         freq_obs: str | None = None,
-        weights: Series | None = None,
     ) -> None:
         """Method to change the model settings.
 
@@ -1101,12 +1099,6 @@ class Model:
             multiple of that e.g. "7D". Should generally be larger than the frequency
             of the original observations and the model frequency (freq). If freq_obs
             is not set, the frequency of the model (freq) will be used.
-        weights: pandas.Series, optional
-            Pandas Series with values by which the residuals or noise time series are
-            multiplied, index-based. Must have the same indices as the oseries. If
-            None, equal weights are used. This can be used to put extra/less weight on
-            certain periods (e.g., droughts) or measurements (i.e. outliers), and make
-            more complex calibration schemes (see, for example, :cite:`colllenteur_analysis_2023`). Note that the weights are only used during optimization and not when computing the goodness-of-fit metrics.
 
         Notes
         -----
@@ -2213,7 +2205,6 @@ class Model:
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
-            "weights": "Yes" if self.settings["weights"] is not None else "No",
         }
 
         if output is not None:

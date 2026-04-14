@@ -138,7 +138,9 @@ class ModelSettingsDict(TypedDict):
     tmax: Timestamp
     freq: str
     warmup: Timedelta
-    solver: Literal["LeastSquares", "LmfitSolve", "EmceeSolve"] | None
+    solver: (
+        Literal["LeastSquares", "LmfitSolve", "EmceeSolve"] | None
+    )  # TODO: check if still needed
     fit_constant: bool
     freq_obs: str | None
-    noise: bool
+    noise: bool  # TODO: remove as deleted in PR #1122
