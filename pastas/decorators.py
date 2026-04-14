@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from functools import wraps
 from logging import getLogger
 from typing import Any
+from warnings import warn
 
 from packaging.version import parse as parse_version
 from pandas import Timestamp
@@ -112,39 +113,48 @@ def model_tmin_tmax(function: Callable) -> Callable:
     return _model_tmin_tmax
 
 
-def PastasDeprecationWarning(remove_version: str, reason: str = "") -> Any:
+def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
     """Provide a warning or error when a Pastas class, method or function is deprecated.
 
-    Logs a warning if the current Pastas version is lower than the version in which the
-    class, function or method is removed. Raises a DeprecationWarning if the current
-    Pastas version is higher than the version in which the class, function or method was
-    removed.
+    This decorator manages deprecation of classes, functions, or methods across Pastas versions.
+    The behavior depends on the current version:
+
+    - If current version < version: logs a warning and allows execution to continue
+    - If current version >= version: raises AttributeError which indicates
+    that it can be removed from the codebase entirely in the (near) future.
 
     Parameters
     ----------
-    remove_version: str
-        The version in which the function or class will be removed.
+    version: str
+        The version in which the function, method or class raises an AttributeError.
     reason: str, optional
-        The reason why the function or class is deprecated. Or provide a message
-        that tells the user which alternative should be used.
+        The reason why the function or class is deprecated, or a message directing users
+        to an alternative. Default is an empty string.
+
+    Returns
+    -------
+    callable
+        A decorator that wraps the target class or function.
     """
 
     def wrapper(obj: Any):
         name = obj.__name__
 
         def _function(*args, **kwargs):
-            if CURRENT_PASTAS_VERSION < parse_version(remove_version):
+            VERSION = parse_version(version)
+            if CURRENT_PASTAS_VERSION < VERSION:
                 msg = (
-                    "%s is deprecated and will be removed in Pastas version %s. "
-                    % (name, remove_version)
-                ) + reason
-                logger.warning(msg)
+                    f"{name} is deprecated and will not be available "
+                    f"from Pastas version >= {VERSION}. {reason}"
+                )
+                warn(message=msg, category=DeprecationWarning)
             else:
                 msg = (
-                    "%s is deprecated and was removed in Pastas version %s. "
-                    % (name, remove_version)
-                ) + reason
-                raise DeprecationWarning(msg)
+                    f"module has no attribute '{name}'"
+                    f"{name} is deprecated and is not available since"
+                    f" Pastas version {VERSION}. {reason}"
+                )
+                raise AttributeError(msg)
 
             return obj(*args, **kwargs)
 
@@ -153,43 +163,47 @@ def PastasDeprecationWarning(remove_version: str, reason: str = "") -> Any:
     return wrapper
 
 
-def deprecate_args_or_kwargs(
-    name: str, remove_version: str, reason: str = "", force_raise: bool = False
-):
+def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
     """Provide a warning or error when a function argument is deprecated.
+
+    This function raises errors or warnings based on the current Pastas version and the
+    deprecation timeline. The behavior is:
+
+    - If current version < version: logs a warning
+    - If current version >= version: raises TypeError which indicates that it can be
+    removed from the codebase entirely in the (near) future.
 
     Parameters
     ----------
     name: str
         The name of the argument that is deprecated.
-    remove_version: str
-        The version in which the argument will be removed.
+    version: str
+        The version in which using the argument will raise a TypeError.
     reason: str, optional
-        The reason why the argument is deprecated. Or provide a message that tells the
-        user which alternative should be used.
-    force_raise: bool, optional
-        If True, raise a DeprecationWarning even if remove_version is still in the
-        future. Default is False.
-    """
-    if (not force_raise) and (CURRENT_PASTAS_VERSION < parse_version(remove_version)):
-        msg = (
-            "The '%s' argument is deprecated and will be removed in Pastas version %s. "
-            % (name, remove_version)
-        ) + reason
-        logger.warning(msg)
-    else:
-        if force_raise:
-            msg = (
-                "The %s argument is deprecated and will be removed in Pastas version %s. "
-                % (name, remove_version)
-            ) + reason
-        else:
-            msg = (
-                "The %s argument is deprecated and was removed in Pastas version %s. "
-                % (name, remove_version)
-            ) + reason
+        The reason why the argument is deprecated, or a message directing users to
+        an alternative. Default is an empty string.
 
-        raise DeprecationWarning(msg)
+    Raises
+    ------
+    DeprecationWarning
+        If current version < version and the argument is used.
+    TypeError
+        If current version >= version and the argument is used.
+    """
+    VERSION = parse_version(version)
+    if CURRENT_PASTAS_VERSION < VERSION:
+        msg = (
+            f"The {name} argument is deprecated and will not be available"
+            f" from Pastas version >= {VERSION}. {reason}"
+        )
+        warn(message=msg, category=DeprecationWarning)
+    else:
+        msg = (
+            f"got an unexpected keyword argument {name}"
+            f"The {name} argument is deprecated and is not available"
+            f" since Pastas version {VERSION}. {reason}"
+        )
+        raise TypeError(msg)
 
 
 def njit(function: Callable | None = None, **kwargs) -> Callable:

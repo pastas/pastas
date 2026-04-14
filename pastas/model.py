@@ -18,7 +18,7 @@ from itertools import combinations
 from logging import getLogger
 from os import getlogin
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 # External Dependencies
 import numpy as np
@@ -144,6 +144,28 @@ class Model:
         if constant:
             constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
+
+        if noisemodel is not None:
+            if noisemodel is True:
+                msg = (
+                    "The new default is that no noisemodel is added "
+                    "anymore and a noisemodel has to be added explicitly to a Pastas "
+                    "model by the user. To fix this error, do not pass a "
+                    "noisemodel keyword to Model and use `ml.add_noisemodel`, if a "
+                    "noisemodel is desired. See this issue on GitHub for more "
+                    "information: https://github.com/pastas/pastas/issues/735"
+                )
+            elif noisemodel is False:
+                msg = (
+                    "The new default is that no noisemodel is added "
+                    "anymore, so passing noisemodel=False is not needed anymore. To "
+                    "fix this error, do not pass noisemodel=False to Model."
+                )
+            deprecate_args_or_kwargs(
+                name="noisemodel",
+                version="1.5.0",
+                reason=msg,
+            )
 
         # File Information
         self.file_info = self._get_file_info()
@@ -497,8 +519,9 @@ class Model:
 
         if sim.hasnans:
             msg = (
-                "Simulation contains NaN-values. Check if time series settings "
-                "are provided for each stress model "
+                f"Simulation with parameters {p} contains NaN"
+                "-values. Check the parameters and/or if the time "
+                "series settings are provided for each stress model "
                 "(e.g. `ps.StressModel(stress, settings='prec')`!"
             )
             logger.error(msg)
@@ -760,6 +783,22 @@ class Model:
         This method is called by the solve-method, but can also be triggered
         manually. See the solve-method for a description of the arguments.
         """
+
+        if noise is not None:
+            msg = (
+                "The new behavior is that a noise model will always be "
+                "used if it is present. To add a noisemodel to a model called ml, "
+                "use the ml.add_noisemodel method. To solve without a noisemodel, "
+                "make sure sure no noisemodel is added or remove a noisemodel with "
+                "ml.del_noisemodel() before solving. See this issue on GitHub for "
+                "more information: https://github.com/pastas/pastas/issues/735"
+            )
+            deprecate_args_or_kwargs(
+                name="noise",
+                version="1.5.0",
+                reason=msg,
+            )
+
         # Set the settings
         self._settings["weights"] = weights
         self._settings["fit_constant"] = fit_constant
@@ -832,7 +871,7 @@ class Model:
         freq: str | None = None,
         warmup: float | None = None,
         solver: Solver | None = None,
-        report: bool = True,
+        report: bool | Literal["full"] = True,
         initial: bool = True,
         weights: Series | None = None,
         fit_constant: bool = True,
@@ -862,9 +901,12 @@ class Model:
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
             of Pastas 0.23, not a class!
-        report: bool, optional
-            Print a report to the screen after optimization finished. This can also
-            be manually triggered after optimization by calling print(ml.fit_report(
+        report: bool | Literal["full"], optional
+            Print a report to the screen after optimization finished. Set to
+            True (default) to print a standard report, "full" to print a
+            report including the correlation matrix and standard errors of the
+            parameters, or False to suppress the report. This can also be
+            manually triggered after optimization by calling print(ml.fit_report(
             )) on the Pastas model instance.
         initial: bool, optional
             Reset initial parameters from the individual stress models. Default is
@@ -910,6 +952,29 @@ class Model:
         pastas.solver
             Different solver objects are available to estimate parameters.
         """
+
+        if noise is not None:
+            if noise is True:
+                msg = (
+                    "To solve using a noisemodel, add a noisemodel to a "
+                    "model called ml using ml.add_noisemodel(n), where n is an instance"
+                    " of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
+                    "GitHub for more information: "
+                    "https://github.com/pastas/pastas/issues/735"
+                )
+            elif noise is False:
+                msg = (
+                    "To solve without a noisemodel, remove the noisemodel "
+                    "(if present) from a model using ml.del_noisemodel() before "
+                    "solving. See this issue on GitHub for more information: "
+                    "https://github.com/pastas/pastas/issues/735"
+                )
+            deprecate_args_or_kwargs(
+                name="noise",
+                version="1.5.0",
+                reason=msg,
+            )
+
         if initialize:
             self.initialize(
                 tmin=tmin,
@@ -968,7 +1033,22 @@ class Model:
 
     @property
     @PastasDeprecationWarning(
-        remove_version="2.0.0", reason="Use 'ml.observations()' instead."
+        version="2.0.0",
+        reason="Use 'ml.solver' instead.",
+    )
+    def fit(self):
+        """Deprecated attribute, use ml.solver instead."""
+        msg = (
+            "Attribute 'fit' is deprecated and will be removed in a future version. "
+            "Use 'solver' instead."
+        )
+        logger.warning(msg)
+
+        return self.solver
+
+    @property
+    @PastasDeprecationWarning(
+        version="2.0.0", reason="Use 'ml.observations()' instead."
     )
     def oseries_calib(self):
         return self.oseries.series
@@ -2042,12 +2122,16 @@ class Model:
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
             "Interp.": "Yes" if self.interpolate_simulation else "No",
-            "weights": "Yes" if str(self.settings["weights"]) else "No",
+            "weights": "Yes" if self.settings["weights"] is not None else "No",
         }
 
         if output is not None:
             msg = "Use 'corr=True' instead."
-            deprecate_args_or_kwargs("output", "2.0.0", reason=msg)
+            deprecate_args_or_kwargs(
+                name="output",
+                version="2.0.0",
+                reason=msg,
+            )
             if isinstance(output, str) and output == "full":
                 corr = True
 
