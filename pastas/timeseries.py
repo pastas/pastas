@@ -713,6 +713,8 @@ def _validate_series(series: Series, equidistant: bool = True, verbose=False):
     If any of these checks are not passed the method will throw an error that needs
     to be fixed by the user.
     """
+    check = True
+
     # Because we are friendly and allow 1D DataFrames
     if isinstance(series, pd.DataFrame):
         if len(series.columns) == 1:
@@ -728,11 +730,12 @@ def _validate_series(series: Series, equidistant: bool = True, verbose=False):
         msg = "Expected a Pandas Series, got %s"
         logger.error(msg, type(series))
         if verbose:
-            print('❌ ' + msg % type(series))
+            print("❌ " + msg % type(series))
+            check = False
         else:
             raise ValueError(msg % type(series))
     elif verbose:
-        print('✅ timeseries is a pandas series')
+        print("✅ timeseries is a pandas series")
 
     name = series.name  # Only Series have a name, DateFrame do not
 
@@ -741,22 +744,24 @@ def _validate_series(series: Series, equidistant: bool = True, verbose=False):
         msg = "Values of time series %s are not dtype=float."
         logger.error(msg, name)
         if verbose:
-            print('❌ ' + msg % name)
+            print("❌ " + msg % name)
+            check = False
         else:
             raise ValueError(msg % name)
     elif verbose:
-        print('✅ timeseries values are floats')
+        print("✅ timeseries values are floats")
 
     # 2. Make sure the index is a DatetimeIndex
     if not isinstance(series.index, pd.DatetimeIndex):
         msg = "Index of series %s is not a pandas.DatetimeIndex."
         logger.error(msg, name)
         if verbose:
-            print('❌ ' + msg % name)
+            print("❌ " + msg % name)
+            check = False
         else:
             raise ValueError(msg % name)
     elif verbose:
-        print('✅ timeseries index is a DatetimeIndex')
+        print("✅ timeseries index is a DatetimeIndex")
 
     # 3. Make sure the indices are datetime64
     if not pd.api.types.is_datetime64_dtype(series.index):
@@ -770,11 +775,12 @@ def _validate_series(series: Series, equidistant: bool = True, verbose=False):
             msg = "Indices of series %s are not datetime64."
         logger.error(msg, name)
         if verbose:
-            print('❌ ' + msg % name)
+            print("❌ " + msg % name)
+            check = False
         else:
             raise ValueError(msg % name)
     elif verbose:
-        print('✅ timeseries index is datetime64')
+        print("✅ timeseries index is datetime64")
 
     # 4. Make sure there are no NaT in index
     if series.index.hasnans:
@@ -784,11 +790,12 @@ def _validate_series(series: Series, equidistant: bool = True, verbose=False):
         )
         logger.error(msg, name)
         if verbose:
-            print('❌ ' + msg % name)
+            print("❌ " + msg % name)
+            check = False
         else:
             raise ValueError(msg % name)
     elif verbose:
-        print('✅ timeseries index has no NaNs')
+        print("✅ timeseries index has no NaNs")
 
     # 5. Make sure the index is monotonically increasing
     if not series.index.is_monotonic_increasing:
@@ -798,11 +805,12 @@ def _validate_series(series: Series, equidistant: bool = True, verbose=False):
         )
         logger.error(msg, name)
         if verbose:
-            print('❌ ' + msg % name)
+            print("❌ " + msg % name)
+            check = False
         else:
             raise ValueError(msg % name)
     elif verbose:
-        print('✅ timeseries index is monotonically increasing')
+        print("✅ timeseries index is monotonically increasing")
 
     # 6. Make sure there are no duplicate indices
     if not series.index.is_unique:
@@ -814,11 +822,12 @@ def _validate_series(series: Series, equidistant: bool = True, verbose=False):
         )
         logger.error(msg, name)
         if verbose:
-            print('❌ ' + msg % name)
+            print("❌ " + msg % name)
+            check = False
         else:
             raise ValueError(msg % name)
     elif verbose:
-        print('✅ timeseries index has no duplicate indices')
+        print("✅ timeseries index has no duplicate indices")
 
     # 7. Make sure the time series has no nan-values
     if series.hasnans:
@@ -828,9 +837,10 @@ def _validate_series(series: Series, equidistant: bool = True, verbose=False):
         )
         logger.warning(msg, name)
         if verbose:
-            print('❌ ' + msg % name)
+            print("❌ " + msg % name)
+            check = False
     elif verbose:
-        print('✅ timeseries values have no nan-values')
+        print("✅ timeseries values have no nan-values")
 
     # 8. Make sure the time series has equidistant time steps
     if equidistant:
@@ -841,11 +851,12 @@ def _validate_series(series: Series, equidistant: bool = True, verbose=False):
             )
             logger.error(msg, name)
             if verbose:
-                print('❌ ' + msg % name)
+                print("❌ " + msg % name)
+                check = False
             else:
                 raise ValueError(msg % name)
         elif verbose:
-            print('✅ timeseries has equidistant time steps')
+            print("✅ timeseries has equidistant time steps")
 
     # If all checks are passed, return True
-    return True
+    return check
