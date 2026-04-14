@@ -702,7 +702,7 @@ def kge(
 
 @PastasDeprecationWarning(
     version="2.2.0",
-    reason="""This function `kge_2012` will be deprecated in Pastas version 2.0. Please
+    reason="""This function `kge_2012` is deprecated since Pastas version 2.0. Please
     use `pastas.stats.kge(modified=True)` to get the same outcome.""",
 )
 def kge_2012(
