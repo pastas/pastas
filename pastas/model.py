@@ -145,28 +145,6 @@ class Model:
             constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
 
-        if noisemodel is not None:
-            if noisemodel is True:
-                msg = (
-                    "The new default is that no noisemodel is added "
-                    "anymore and a noisemodel has to be added explicitly to a Pastas "
-                    "model by the user. To fix this error, do not pass a "
-                    "noisemodel keyword to Model and use `ml.add_noisemodel`, if a "
-                    "noisemodel is desired. See this issue on GitHub for more "
-                    "information: https://github.com/pastas/pastas/issues/735"
-                )
-            elif noisemodel is False:
-                msg = (
-                    "The new default is that no noisemodel is added "
-                    "anymore, so passing noisemodel=False is not needed anymore. To "
-                    "fix this error, do not pass noisemodel=False to Model."
-                )
-            deprecate_args_or_kwargs(
-                name="noisemodel",
-                version="1.5.0",
-                reason=msg,
-            )
-
         # File Information
         self.file_info = self._get_file_info()
 
@@ -784,21 +762,6 @@ class Model:
         manually. See the solve-method for a description of the arguments.
         """
 
-        if noise is not None:
-            msg = (
-                "The new behavior is that a noise model will always be "
-                "used if it is present. To add a noisemodel to a model called ml, "
-                "use the ml.add_noisemodel method. To solve without a noisemodel, "
-                "make sure sure no noisemodel is added or remove a noisemodel with "
-                "ml.del_noisemodel() before solving. See this issue on GitHub for "
-                "more information: https://github.com/pastas/pastas/issues/735"
-            )
-            deprecate_args_or_kwargs(
-                name="noise",
-                version="1.5.0",
-                reason=msg,
-            )
-
         # Set the settings
         self._settings["weights"] = weights
         self._settings["fit_constant"] = fit_constant
@@ -877,6 +840,7 @@ class Model:
         fit_constant: bool = True,
         freq_obs: str | None = None,
         initialize: bool = True,
+        noise: bool | None = None,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.

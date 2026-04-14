@@ -24,7 +24,7 @@ from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 
 from pastas.typing import ArrayLike
 
-from .decorators import njit, set_parameter
+from .decorators import PastasDeprecationWarning, njit, set_parameter
 
 logger = getLogger(__name__)
 
@@ -354,6 +354,7 @@ class ArmaNoiseModel(NoiseModelBase):
                 - a[i - 1] * pm * np.exp(-odelt[i - 1] / np.abs(beta))
             )
         return a
+
 
 @PastasDeprecationWarning(
     version="2.0.0",
