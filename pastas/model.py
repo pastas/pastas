@@ -892,6 +892,7 @@ class Model:
         fit_constant: bool = True,
         freq_obs: str | None = None,
         initialize: bool = True,
+        strategy: str | None = None,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -955,6 +956,13 @@ class Model:
             model is not initialized before solving. Note that the latter is an
             advanced option since some model settings can be missing. Default
             is True.
+        strategy: str, optional
+            Optional strategy for solving the model. Available strategies are
+            "deterministic_then_noise_only" (fit all deterministic parameters first,
+            then fit only the noise parameter) and "deterministic_then_full"
+            (fit deterministic parameters first and then continue with the
+            regular solve including noise). Strategies require a noisemodel to
+            be present in the model.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
@@ -1025,10 +1033,55 @@ class Model:
             solver = LeastSquares()
             self.add_solver(solver=solver)
 
+        if strategy is not None:
+            if strategy in ["deterministic_then_noise_only", "deterministic_then_full"]:
+                if self.noisemodel is None:
+                    msg = f"Strategy '{strategy}' cannot be used if no noisemodel is present in the model."
+                    logger.error(msg)
+                    raise ValueError(msg)
+                # copy the existing parameters, so we can set initial and vary back later
+                parameters = self.parameters.copy()
+                # fit model without noisemodel first
+                self.set_parameter("noise_alpha", vary=False)
+                success_previous, optimal, stderr = self.solver.solve(
+                    noise=False, weights=weights, **kwargs
+                )
+                nfev = self.solver.nfev
+                self._parameters.initial = optimal
+            if strategy == "deterministic_then_noise_only":
+                # fit only noise_alpha in a seperate solve-iteration
+                self._parameters.vary = False
+                self.set_parameter(
+                    "noise_alpha", vary=parameters.at["noise_alpha", "vary"]
+                )
+                success_iteration2, optimal, stderr = self.solver.solve(
+                    noise=True, weights=weights, **kwargs
+                )
+                success_previous = success_previous and success_iteration2
+                nfev = nfev + self.solver.nfev
+                self._parameters.initial = optimal
+                # then calculate the jacobian once more with all parameters active that were active to begin with
+                self._parameters.vary = parameters["vary"]
+                kwargs["max_nfev"] = 1  # only calculate the jacobian once more
+            elif strategy == "deterministic_then_full":
+                self.set_parameter(
+                    "noise_alpha", vary=parameters.at["noise_alpha", "vary"]
+                )
+            else:
+                msg = f"Strategy '{strategy}' is not recognized. Available strategies are 'deterministic_then_noise_only' and 'deterministic_then_full'."
+                logger.error(msg)
+                raise ValueError(msg)
+
         # Solve model
         success, optimal, stderr = self.solver.solve(
             noise=self._settings["noise"], weights=weights, **kwargs
         )
+        if strategy in ["deterministic_then_noise_only", "deterministic_then_full"]:
+            # set the initial values back to their original values
+            self._parameters.initial = parameters["initial"]
+            # and finally we set the nfev to the total of the three iterations
+            self.solver.nfev = nfev + self.solver.nfev
+            success = success and success_previous
         if not success:
             logger.warning("Model parameters could not be estimated well.")
 
