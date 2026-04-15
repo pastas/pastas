@@ -1264,21 +1264,7 @@ class Model:
     @property
     def time_offset(self) -> Timedelta:
         """Property to get the time offset from the settings."""
-        return self._get_time_offset(self.settings["freq"])
-
-    def _get_time_offset(self, freq: str) -> Timedelta:
-        """Internal method to get the time offsets from the stressmodels.
-
-        Parameters
-        ----------
-        freq: str
-            string with the frequency used for simulation.
-
-        Notes
-        -----
-
-        Method to check if the StressModel timestamps match (e.g. similar hours).
-        """
+        freq = self.settings["freq"]
         time_offsets = set()
         for stressmodel in self.stressmodels.values():
             for st in stressmodel.stresses:
@@ -1311,26 +1297,11 @@ class Model:
             Pandas DatetimeIndex instance with the datetimes values for which the
             model is simulated.
         """
-        return self._get_sim_index(
+        return _get_sim_index(
             tmin=self.settings["tmin"],
             tmax=self.settings["tmax"],
             freq=self.settings["freq"],
             warmup=self.settings["warmup"],
-        )
-
-    def _get_sim_index(
-        self,
-        tmin: Timestamp,
-        tmax: Timestamp,
-        freq: str,
-        warmup: Timedelta,
-    ) -> DatetimeIndex:
-        """Internal method to create the simulation index, cached for performance."""
-        return _get_sim_index(
-            tmin=tmin - warmup,
-            tmax=tmax,
-            freq=freq,
-            time_offset=self.time_offset,
         )
 
     def get_tmin(
