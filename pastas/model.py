@@ -133,6 +133,13 @@ class Model:
         self.stressmodels: dict[str, StressModel] = OrderedDict()
         self.transform: ThresholdTransform | None = None
         self.noisemodel: NoiseModelType | None = None
+        self.solver: Any = None
+        if constant:
+            self.add_constant(
+                constant=Constant(initial=self.oseries.series.mean(), name="constant")
+            )
+        else:
+            self.constant = None
 
         # Default solve/simulation settings
         self._settings = ModelSettingsDict(
@@ -144,23 +151,14 @@ class Model:
             freq_obs=None,
         )
 
-        if constant:
-            self.add_constant(
-                constant=Constant(initial=self.oseries.series.mean(), name="constant")
-            )
-        else:
-            self.constant = None
-
         # File Information
         self.file_info: dict[str, Any] = self._get_file_info()
 
-        # initialize some attributes for solving and simulation
-        self.interpolate_simulation: bool | None = None
-        self.normalize_residuals: bool = False
-        self.solver: Any = None
+        # some _attributes simulation and solving
+        self._interpolate_simulation: bool | None = None
         self._solve_success: bool | None = None
 
-        # Load other modules
+        # Load modules for statistics and plotting
         self.stats = Statistics(self)
         self.plots = Plotting(self)
         self.plot = self.plots.plot  # because we are lazy
@@ -568,32 +566,32 @@ class Model:
             pandas.Series with the residuals.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
-        if tmin is None:
-            tmin = self.settings["tmin"]
-        if tmax is None:
-            tmax = self.settings["tmax"]
-        if freq is None:
-            freq = self.settings["freq"]
-        if self.settings["freq_obs"] is None:
-            freq_obs = freq
-        else:
-            freq_obs = self.settings["freq_obs"]
+        tmin = self.settings["tmin"] if tmin is None else tmin
+        tmax = self.settings["tmax"] if tmax is None else tmax
+        freq = self.settings["freq"] if freq is None else freq
+        warmup = self.settings["warmup"] if warmup is None else warmup
+        freq = self.settings["freq"] if freq is None else freq
+        freq_obs = (
+            freq if self.settings["freq_obs"] is None else self.settings["freq_obs"]
+        )
 
         # simulate model
-        sim = self.simulate(p, tmin, tmax, freq, warmup, return_warmup=False)
+        sim = self.simulate(
+            p=p, tmin=tmin, tmax=tmax, freq=freq, warmup=warmup, return_warmup=False
+        )
 
         # Get the oseries calibration series
         obs = self.observations(tmin=tmin, tmax=tmax, freq=freq_obs)
 
         # Get simulation at the correct indices
-        if self.interpolate_simulation is None:
+        if self._interpolate_simulation is None:
             if obs.index.difference(sim.index).size != 0:
-                self.interpolate_simulation = True
+                self._interpolate_simulation = True
                 logger.info(
                     "There are observations between the simulation time steps. Linear "
                     "interpolation between simulated values is used."
                 )
-        if self.interpolate_simulation:
+        if self._interpolate_simulation:
             # interpolate simulation to times of observations
             sim_interpolated = np.interp(obs.index.asi8, sim.index.asi8, sim.values)
         else:
@@ -607,8 +605,7 @@ class Model:
             res = res.dropna()
             logger.warning("Nan-values were removed from the residuals.")
 
-        if self.normalize_residuals:
-            res = res.subtract(res.values.mean())
+        res = res.subtract(res.values.mean()) if self.settings["fit_constant"] else res
 
         res.name = "Residuals"
         return res
@@ -937,7 +934,7 @@ class Model:
         # make sure to update self.oseries.series by running self.observations
         # get tmin, tmax, freq, and freq_obs from self.settings
         self.observations(update_observations=True)
-        self.interpolate_simulation = None
+        self._interpolate_simulation = None
 
         # Check if the oseries has data in the calibration period, if not raise an error
         if self.oseries.series.empty:
@@ -956,8 +953,7 @@ class Model:
                 logger.info("Keeping original solver `%s`." % self.solver._name)
         elif self.solver is None:  # add scipy least_squares if no solver provided
             logger.debug("Adding LeastSquares as default solver.")
-            solver = LeastSquares()
-            self.add_solver(solver=solver)
+            self.add_solver(solver=LeastSquares())
 
         # Solve model
         noise = True if self.noisemodel else False
@@ -969,12 +965,11 @@ class Model:
 
         if self.settings["fit_constant"] is False:
             # Determine the residuals and set the constant to their mean
-            self.normalize_residuals = False
             res = self.residuals(optimal).mean()
             optimal[self._parameters.name == self.constant.name] = res
 
-        self._parameters.optimal = optimal
-        self._parameters.stderr = stderr
+        self._parameters.loc[:, "optimal"] = optimal
+        self._parameters.loc[:, "stderr"] = stderr
         self._solve_success = success  # store for fit_report
 
         if report:
@@ -1079,10 +1074,8 @@ class Model:
                     raise ValueError(msg)
                 self._parameters.at["constant_d", "vary"] = False
                 self._parameters.at["constant_d", "initial"] = 0.0
-                self.normalize_residuals = True
             else:
                 self._parameters.at["constant_d", "vary"] = True
-                self.normalize_residuals = False
 
         if freq_obs is not None:
             logger.debug("Updating model setting freq_obs to %s." % freq_obs)
@@ -2158,7 +2151,7 @@ class Model:
             "BIC": f"{self.stats.bic():.2f}",
             "Obj": f"{self.solver.obj_func:.2f}",
             "___": "",
-            "Interp.": "Yes" if self.interpolate_simulation else "No",
+            "Interp.": "Yes" if self._interpolate_simulation else "No",
         }
 
         if output is not None:
