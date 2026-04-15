@@ -445,15 +445,18 @@ class TestModelSolving:
     def test_solve_with_weights(self, ml_solved: ps.Model) -> None:
         """Test solving with weights."""
         # Create weights series with same index as observations
+        p_opt = ml_solved.parameters.loc[:, "optimal"].copy()
+
         weights = ml_solved.observations().copy()
         weights[:] = 1.0
 
         # Lower weights for some periods
-        weights.loc["2002":"2003"] = 0.5
-
+        weights.loc["2002":"2003"] = 0.0
         ml_solved.solve(weights=weights, report=False)
+        p_optw = ml_solved.parameters.loc[:, "optimal"]
 
-        assert ml_solved.settings["weights"] is weights
+        assert not np.isclose(p_opt, p_optw).all(axis=0)
+
 
     def test_fit_report(self, ml_noisemodel: ps.Model) -> None:
         """Test fit report generation."""
