@@ -38,6 +38,7 @@ from pastas.typing import (
 from .decorators import (
     PastasDeprecationWarning,
     conditional_cachedmethod,
+    deprecate_args_or_kwargs,
     njit,
     set_parameter,
 )
@@ -709,8 +710,6 @@ class LinearTrend(StressModelBase):
         start: Timestamp | str = None,
         end: Timestamp | str = None,
     ) -> None:
-        from pastas.decorators import deprecate_args_or_kwargs
-
         # Handle deprecated arguments
         if start is not None:
             deprecate_args_or_kwargs(
