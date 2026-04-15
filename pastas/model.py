@@ -1300,7 +1300,7 @@ class Model:
             tmin=self.settings["tmin"],
             tmax=self.settings["tmax"],
             freq=self.settings["freq"],
-            warmup=self.settings["warmup"],
+            time_offset=self.time_offset,
         )
 
     def get_tmin(
