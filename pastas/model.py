@@ -140,12 +140,9 @@ class Model:
             tmin=self.oseries.settings["tmin"],
             tmax=self.oseries.settings["tmax"],
             freq=freq,
-            warmup=Timedelta(3650.0, "D"),  # 10 years in days
-            solver=None,
+            warmup=Timedelta(3650.0, unit="D"),  # 10 years in days
             fit_constant=True,
             freq_obs=None,
-            weights=None,
-            noise=False,
         )
 
         if constant:
@@ -398,7 +395,6 @@ class Model:
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
 
-        self._settings["noise"] = True
         self._parameters = self.get_init_parameters(initial=False)
 
     @get_stressmodel
@@ -442,7 +438,6 @@ class Model:
         else:
             self.noisemodel = None
             self._parameters = self.get_init_parameters(initial=False)
-            self._settings["noise"] = False
 
     def simulate(
         self,
@@ -1052,11 +1047,10 @@ class Model:
             tmin=self.get_tmin(use_oseries=True, use_stresses=True),
             tmax=self.get_tmax(use_oseries=True, use_stresses=True),
             freq="D",
-            warmup=Timedelta(3650.0, "D"),
+            warmup=Timedelta(3650.0, unit="D"),
             fit_constant=True,
         )
         self._settings["freq_obs"] = None
-        self._settings["noise"] = False
         logger.debug(
             "Resetting model settings to default settings: {}.", self._settings
         )
@@ -1066,7 +1060,7 @@ class Model:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
-        warmup: float | None = None,
+        warmup: Timedelta | float | None = None,
         fit_constant: bool | None = None,
         freq_obs: str | None = None,
     ) -> None:
@@ -1117,7 +1111,11 @@ class Model:
 
         if warmup is not None:
             logger.debug("Updating model setting warmup to %s." % warmup)
-            self._settings["warmup"] = Timedelta(warmup, "D")
+            self._settings["warmup"] = (
+                Timedelta(warmup, unit="D")
+                if isinstance(warmup, (float, int))
+                else Timedelta(warmup.days, unit="D")
+            )
 
         if fit_constant is not None:
             logger.debug("Updating model setting fit_constant to %s." % fit_constant)
@@ -1666,7 +1664,7 @@ class Model:
         if warmup is None:
             warmup = self.settings["warmup"]
         else:
-            warmup = Timedelta(warmup, "D")
+            warmup = Timedelta(warmup, unit="D")
 
         # use warmup
         if tmin:
@@ -2046,7 +2044,9 @@ class Model:
         tmin = self.settings["tmin"] if tmin is None else tmin
         tmax = self.settings["tmax"] if tmax is None else tmax
         freq = self.settings["freq"] if freq is None else freq
-        warmup = self.settings["warmup"] if warmup is None else Timedelta(warmup, "D")
+        warmup = (
+            self.settings["warmup"] if warmup is None else Timedelta(warmup, unit="D")
+        )
 
         # use warmup
         if tmin:

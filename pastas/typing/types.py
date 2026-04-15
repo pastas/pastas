@@ -140,4 +140,3 @@ class ModelSettingsDict(TypedDict):
     warmup: Timedelta
     fit_constant: bool
     freq_obs: str | None
-    noise: bool  # TODO: remove as deleted in PR #1122
