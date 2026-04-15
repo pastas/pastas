@@ -105,19 +105,20 @@ class TestModelComponents:
                 ]
             )
         ).all()
-        assert (
-            sm.parameters.dtypes.values
-            == np.array(
-                [
-                    float,
-                    float,
-                    float,
-                    bool,
-                    pd.StringDtype("python", na_value=np.nan),
-                    pd.StringDtype("python", na_value=np.nan),
-                ]
-            )
-        ).all()
+        # TODO: add this test again when minimum pandas version is 3.0
+        # assert (
+        #     sm.parameters.dtypes.values
+        #     == np.array(
+        #         [
+        #             float,
+        #             float,
+        #             float,
+        #             bool,
+        #             pd.StringDtype("python", na_value=np.nan),
+        #             pd.StringDtype("python", na_value=np.nan),
+        #         ]
+        #     )
+        # ).all()
 
     def test_set_oseries(self, ml_solved: ps.Model) -> None:
         s0 = ml_solved.oseries.series_original
