@@ -807,6 +807,7 @@ class Model:
         freq_obs: str | None = None,
         initialize: bool = False,
         reset_settings: bool = False,
+        noise: bool | None = None,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
