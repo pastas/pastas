@@ -151,7 +151,7 @@ def _load_model(data: dict) -> Model:
         ml.add_solver(solver(**data["solver"]))
 
     # Add parameters, use update to maintain correct order
-    ml._parameters = ml.get_init_parameters(noise=ml._settings["noise"])
+    ml._parameters = ml.get_init_parameters()
     ml._parameters.update(data["parameters"])
 
     # Convert parameters to numeric
