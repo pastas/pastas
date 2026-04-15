@@ -465,12 +465,8 @@ class Model:
             tmax = self.settings["tmax"]
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
-        if freq is None:
-            freq = self.settings["freq"]
-        if warmup is None:
-            warmup = self.settings["warmup"]
-        elif not isinstance(warmup, Timedelta):
-            warmup = Timedelta(warmup, "D")
+        freq = self.settings["freq"] if freq is None else freq
+        warmup = self.settings["warmup"] if warmup is None else Timedelta(warmup, "D")
 
         # Get the simulation index and the time step
         # Check if the requested index matches the model settings
@@ -605,7 +601,11 @@ class Model:
             res = res.dropna()
             logger.warning("Nan-values were removed from the residuals.")
 
-        res = res.subtract(res.values.mean()) if not self.settings["fit_constant"] else res
+        res = (
+            res.subtract(res.values.mean())
+            if not self.settings["fit_constant"]
+            else res
+        )
 
         res.name = "Residuals"
         return res
@@ -1607,16 +1607,12 @@ class Model:
         if p is None:
             p = self.get_parameters(name)
 
-        if tmin is None:
-            tmin = self.settings["tmin"]
-        if tmax is None:
-            tmax = self.settings["tmax"]
-        if freq is None:
-            freq = self.settings["freq"]
-        if warmup is None:
-            warmup = self.settings["warmup"]
-        else:
-            warmup = Timedelta(warmup, unit="D")
+        tmin = self.settings["tmin"] if tmin is None else tmin
+        tmax = self.settings["tmax"] if tmax is None else tmax
+        freq = self.settings["freq"] if freq is None else freq
+        warmup = (
+            self.settings["warmup"] if warmup is None else Timedelta(warmup, unit="D")
+        )
 
         # use warmup
         if tmin:
