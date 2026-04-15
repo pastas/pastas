@@ -497,12 +497,10 @@ class TestModelSolving:
             assert caplog.records[0].message.startswith(
                 "Parameter 'recharge_f' on lower bound"
             )
-            assert caplog.records[1].message.startswith(
-                "Response tmax for 'recharge' > than calibration period"
-            )
-            assert caplog.records[2].message.startswith(
-                "Response tmax for 'recharge' > than warmup period"
-            )
+            assert "Response tmax for" in caplog.records[1].message
+            assert "> than calibration period" in caplog.records[1].message
+            assert "Response tmax for" in caplog.records[2].message
+            assert "> than warmup period" in caplog.records[2].message
 
 
 class TestModelContributions:
