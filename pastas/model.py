@@ -662,8 +662,7 @@ class Model:
         """
         if self.noisemodel is None:
             logger.warning(
-                "Noise cannot be calculated if there is no noisemodel present or is "
-                "not used during parameter estimation."
+"Noise cannot be calculated if there is no noisemodel present."
             )
             return None
 
