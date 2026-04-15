@@ -176,12 +176,12 @@ class TestLinearTrend:
     def test_deprecated_arguments(self) -> None:
         """Test that deprecated 'start' and 'end' arguments emit DeprecationWarnings."""
         # Test deprecated 'start' argument
-        with pytest.warns(DeprecationWarning, match=r"(?i)start.*deprecated|deprecated.*start"):
+        with pytest.warns(DeprecationWarning, match=r"tstart.*instead of.*start|start.*deprecated"):
             sm = LinearTrend(start="2001-01-01", tend="2002-01-01", name="trend1")
         assert sm.tstart == "2001-01-01"
 
         # Test deprecated 'end' argument
-        with pytest.warns(DeprecationWarning, match=r"(?i)end.*deprecated|deprecated.*end"):
+        with pytest.warns(DeprecationWarning, match=r"tend.*instead of.*end|end.*deprecated"):
             sm = LinearTrend(tstart="2001-01-01", end="2002-01-01", name="trend1")
         assert sm.tend == "2002-01-01"
 
