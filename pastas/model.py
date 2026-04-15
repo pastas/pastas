@@ -14,7 +14,6 @@ Create a new Pastas model::
 
 # Python Dependencies
 from collections import OrderedDict
-from functools import lru_cache
 from itertools import combinations
 from logging import getLogger
 from os import getlogin
@@ -1267,7 +1266,6 @@ class Model:
         """Property to get the time offset from the settings."""
         return self._get_time_offset(self.settings["freq"])
 
-    @lru_cache(maxsize=1)
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Internal method to get the time offsets from the stressmodels.
 
@@ -1320,7 +1318,6 @@ class Model:
             warmup=self.settings["warmup"],
         )
 
-    @lru_cache(maxsize=1)
     def _get_sim_index(
         self,
         tmin: Timestamp,
