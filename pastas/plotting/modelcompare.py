@@ -798,12 +798,8 @@ class CompareModels:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
-            if ml.noise() is not None:
-                r = acf(ml.noise(), full_output=True)
-                label = "Autocorrelation Noise"
-            else:
-                r = acf(ml.residuals(), full_output=True)
-                label = "Autocorrelation Residuals"
+            noise = ml.residuals() if ml.noisemodel is None else ml.noise()
+            r = acf(x=noise, full_output=True)
             conf = r.conf.rolling(10, min_periods=1).mean().values
 
             axs[axn].fill_between(
@@ -814,7 +810,7 @@ class CompareModels:
                 [0],
                 r.loc[:, "acf"].values,
                 color=self.cmap(i),
-                label=label,
+                label="Autocorrelation",
             )
         return axs[axn]
 
