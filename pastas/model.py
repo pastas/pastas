@@ -149,6 +149,7 @@ class Model:
             fit_constant=True,
             freq_obs=None,
         )
+        self._freq_original = freq  # To enable reset_settings to original settings
 
         # File Information
         self.file_info: dict[str, Any] = self._get_file_info()
@@ -1005,7 +1006,7 @@ class Model:
         self._settings = self.set_settings(
             tmin=self.get_tmin(use_oseries=True, use_stresses=True),
             tmax=self.get_tmax(use_oseries=True, use_stresses=True),
-            freq="D",
+            freq=self._freq_original,
             warmup=Timedelta(3650.0, unit="D"),
             fit_constant=True,
         )
