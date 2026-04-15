@@ -41,3 +41,6 @@ doc/about/references.bib
 *.nbi
 *.pdf
 *.lock
+
+# Auto-generated test data directories
+tests/data/pas_files_*/
