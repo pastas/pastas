@@ -12,7 +12,6 @@ ml.solve()
 ax = ml.plots.decomposition()
 
 # then solve and plot with a ThresholdTransform
-ml.set_setting(fit_constant=False)
 ml.add_transform(ps.ThresholdTransform())
 ml.solve()
 ax = ml.plots.decomposition()
