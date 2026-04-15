@@ -913,7 +913,6 @@ class Model:
                 version="2.0.0",
                 reason="The initialize method is not needed anymore in favor of the `set_settings` method.",
             )
-            self.initialize()
 
         self.reset_settings() if reset_settings else None
 
