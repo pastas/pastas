@@ -32,6 +32,11 @@ from pandas import (
 )
 
 # Internal Pastas
+from pastas.check import (
+    parameter_bounds,
+    response_memory,
+    response_memory_vs_warmup,
+)
 from pastas.decorators import (
     PastasDeprecationWarning,
     deprecate_args_or_kwargs,
@@ -70,11 +75,6 @@ class Model:
         can be non-equidistant.
     constant: bool, optional
         Add a constant to the model (Default=True).
-    noisemodel: bool, optional
-        The noisemodel argument is deprecated and will be removed in Pastas version
-        2.0.0. To add a noisemodel, use ml.add_noisemodel(n), where is an instance
-        of a noisemodel (e.g., n = ps.ArNoiseModel()). The use of the noisemodel
-        argument will raise a ValueError.
     name: str, optional
         String with the name of the model, used in plotting and saving.
     metadata: dict, optional
@@ -105,7 +105,6 @@ class Model:
         self,
         oseries: Series,
         constant: bool = True,
-        noisemodel=None,  # will be removed in version 2.0.0
         name: str | None = None,
         metadata: dict[str, Any] | None = None,
         freq: str = "D",
@@ -142,7 +141,6 @@ class Model:
             "freq": freq,
             "warmup": Timedelta(3650, "D"),
             "time_offset": Timedelta(0),
-            "noise": False,
             "solver": None,
             "fit_constant": True,
             "freq_obs": None,
@@ -151,28 +149,6 @@ class Model:
         if constant:
             constant = Constant(initial=self.oseries.series.mean(), name="constant")
             self.add_constant(constant)
-
-        if noisemodel is not None:
-            if noisemodel is True:
-                msg = (
-                    "The new default is that no noisemodel is added "
-                    "anymore and a noisemodel has to be added explicitly to a Pastas "
-                    "model by the user. To fix this error, do not pass a "
-                    "noisemodel keyword to Model and use `ml.add_noisemodel`, if a "
-                    "noisemodel is desired. See this issue on GitHub for more "
-                    "information: https://github.com/pastas/pastas/issues/735"
-                )
-            elif noisemodel is False:
-                msg = (
-                    "The new default is that no noisemodel is added "
-                    "anymore, so passing noisemodel=False is not needed anymore. To "
-                    "fix this error, do not pass noisemodel=False to Model."
-                )
-            deprecate_args_or_kwargs(
-                name="noisemodel",
-                version="1.5.0",
-                reason=msg,
-            )
 
         # File Information
         self.file_info = self._get_file_info()
@@ -378,8 +354,6 @@ class Model:
 
         Notes
         -----
-        As of Pastas version 1.5.0, a noisemodel should be added to the model using this
-        method, and is not added by default anymore when constructing as Pastas Model.
         If a noisemodel is present, it will always be used during optimization.
 
         """
@@ -392,7 +366,6 @@ class Model:
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
 
-        self._settings["noise"] = True
         self._parameters = self.get_init_parameters(initial=False)
 
     @get_stressmodel
@@ -436,7 +409,6 @@ class Model:
         else:
             self.noisemodel = None
             self._parameters = self.get_init_parameters(initial=False)
-            self._settings["noise"] = False
 
     def simulate(
         self,
@@ -630,7 +602,7 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
-    ) -> Series | None:
+    ) -> Series:
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
@@ -654,8 +626,8 @@ class Model:
 
         Returns
         -------
-        noise : pandas.Series or None
-            Pandas series of the noise. None if no noise model is present.
+        noise : pandas.Series
+            Pandas series of the noise.
 
         Notes
         -----
@@ -670,12 +642,10 @@ class Model:
         --------
         This method returns None if no noise model is present in the model.
         """
-        if self.noisemodel is None or self._settings["noise"] is False:
-            logger.warning(
-                "Noise cannot be calculated if there is no noisemodel present or is "
-                "not used during parameter estimation."
+        if self.noisemodel is None:
+            raise ValueError(
+                "No noisemodel found in model. Cannot calculate noise without a noisemodel."
             )
-            return None
 
         # Get parameters if none are provided
         if p is None:
@@ -689,7 +659,7 @@ class Model:
         noise = self.noisemodel.simulate(res, p)
         return noise
 
-    def noise_weights(
+    def _noise_weights(
         self,
         p: list | None = None,
         tmin: Timestamp | str | None = None,
@@ -786,7 +756,6 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
-        noise: bool | None = None,
         weights: Series | None = None,
         initial: bool = True,
         fit_constant: bool = True,
@@ -797,21 +766,6 @@ class Model:
         This method is called by the solve-method, but can also be triggered
         manually. See the solve-method for a description of the arguments.
         """
-
-        if noise is not None:
-            msg = (
-                "The new behavior is that a noise model will always be "
-                "used if it is present. To add a noisemodel to a model called ml, "
-                "use the ml.add_noisemodel method. To solve without a noisemodel, "
-                "make sure sure no noisemodel is added or remove a noisemodel with "
-                "ml.del_noisemodel() before solving. See this issue on GitHub for "
-                "more information: https://github.com/pastas/pastas/issues/735"
-            )
-            deprecate_args_or_kwargs(
-                name="noise",
-                version="1.5.0",
-                reason=msg,
-            )
 
         # Set the settings
         self._settings["weights"] = weights
@@ -847,7 +801,7 @@ class Model:
         self.interpolate_simulation = None
 
         # Initialize parameters
-        self._parameters = self.get_init_parameters(noise, initial)
+        self._parameters = self.get_init_parameters(initial=initial)
 
         # Prepare model if not fitting the constant as a parameter
         if self._settings["fit_constant"] is False:
@@ -866,9 +820,7 @@ class Model:
         ----------
         solver: pastas.solver.Solver
             Instance of a pastas Solver class used to solve the model. Options are:
-            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve(). An instance
-            (e.g. ps.LeastSquares()) is needed as of Pastas 0.23, not a class (e.g.
-            ps.LeastSquares)!
+            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve().
 
         See Also
         --------
@@ -886,7 +838,6 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
-        noise: bool | None = None,
         solver: Solver | None = None,
         report: bool | Literal["full"] = True,
         initial: bool = True,
@@ -894,6 +845,7 @@ class Model:
         fit_constant: bool = True,
         freq_obs: str | None = None,
         initialize: bool = True,
+        noise: bool | None = None,
         **kwargs,
     ) -> None:
         """Method to solve the time series model.
@@ -914,12 +866,6 @@ class Model:
         warmup: float, optional
             Warmup period (in Days) for which the simulation is calculated, but not
             used for the calibration period.
-        noise: bool, optional
-            This argument is deprecated and will be removed in Pastas version 2.0.0.
-            To solve using a noisemodel (i.e. noise=True), add a noisemodel to the
-            model using ml.add_noisemodel(n), where n is an instance of a noisemodel
-            (e.g., n = ps.ArNoiseModel()). To solve without a noisemodel (noise=False),
-            remove the noisemodel first (if present) using ml.del_noisemodel().
         solver: Class pastas.solver.Solver, optional
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
@@ -975,6 +921,7 @@ class Model:
         pastas.solver
             Different solver objects are available to estimate parameters.
         """
+
         if noise is not None:
             if noise is True:
                 msg = (
@@ -1028,8 +975,9 @@ class Model:
             self.add_solver(solver=solver)
 
         # Solve model
+        noise = True if self.noisemodel else False
         success, optimal, stderr = self.solver.solve(
-            noise=self._settings["noise"], weights=weights, **kwargs
+            noise=noise, weights=weights, **kwargs
         )
         if not success:
             logger.warning("Model parameters could not be estimated well.")
@@ -1448,15 +1396,11 @@ class Model:
 
         return tmax
 
-    def get_init_parameters(
-        self, noise: bool | None = None, initial: bool = True
-    ) -> DataFrame:
+    def get_init_parameters(self, initial: bool = True) -> DataFrame:
         """Method to get all initial parameters from the individual objects.
 
         Parameters
         ----------
-        noise: bool, optional
-            Add the parameters for the noisemodel to the parameters Dataframe or not.
         initial: bool, optional
             True to get initial parameters, False to get optimized parameters.
 
@@ -1465,9 +1409,6 @@ class Model:
         parameters: pandas.DataFrame
             pandas.Dataframe with the parameters.
         """
-        if noise is None:
-            noise = self._settings["noise"]
-
         frames = []
 
         for sm in self.stressmodels.values():
@@ -1476,7 +1417,7 @@ class Model:
             frames.append(self.constant.parameters)
         if self.transform:
             frames.append(self.transform.parameters)
-        if self.noisemodel and noise:
+        if self.noisemodel is not None:
             frames.append(self.noisemodel.parameters)
 
         if not frames:
@@ -1719,8 +1660,8 @@ class Model:
 
         Notes
         -----
-        Export the observed, simulated time series, the noise and residuals series,
-        and the contributions from the different stressmodels.
+        Export the observed, simulated time series, residuals series, noise series
+        (if present) and the contributions from the different stressmodels.
 
         Examples
         --------
@@ -1732,9 +1673,9 @@ class Model:
 
         sim = self.simulate(tmin=tmin, tmax=tmax)
         res = self.residuals(tmin=tmin, tmax=tmax)
-        noise = self.noise(tmin=tmin, tmax=tmax)
-
-        df = [obs, sim, res, noise]
+        df = [obs, sim, res]
+        if self.noisemodel is not None:
+            df.append(self.noise(tmin=tmin, tmax=tmax))
 
         if add_contributions:
             contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
@@ -2037,54 +1978,66 @@ class Model:
 
         return file_info
 
-    def _generate_warnings_report(self) -> list[str]:
+    def _generate_warnings_report(self, log: bool = True) -> list[str]:
         """Internal method to generate warnings after model optimization.
+
+        Parameters
+        ----------
+        log: bool, optional
+            If True, the warnings are logged using the logging module. Default is True.
 
         Returns
         -------
         msg: list of str
             List of warning messages.
         """
+
         msg = []
         # model optimization unsuccessful
         if not self._solve_success:
             msg.append("Model parameters could not be estimated well.")
 
-        # parameter bound warnings
-        lowerhit, upperhit = self._check_parameters_bounds()
-        nhits = upperhit.sum() + lowerhit.sum()
+        def _append_warning(warning: str) -> None:
+            msg.append(warning)
+            if log:
+                logger.warning(warning)
 
-        if nhits > 0:
-            for p in upperhit.index:
-                if upperhit.at[p]:
-                    pmsg = (
-                        f"Parameter '{p}' on upper bound: "
-                        f"{self.parameters.at[p, 'pmax']:.2e}"
-                    )
-                    msg.append(pmsg)
-                    logger.warning(pmsg)
-                elif lowerhit.at[p]:
-                    pmsg = (
-                        f"Parameter '{p}' on lower bound: "
-                        f"{self.parameters.at[p, 'pmin']:.2e}"
-                    )
-                    msg.append(pmsg)
-                    logger.warning(pmsg)
+        # parameter bound warnings via checks module
+        bounds_check = parameter_bounds(self)
+        for idx, row in bounds_check.loc[~bounds_check["pass"]].iterrows():
+            pname = idx.replace("Bounds: ", "")
+            optimal = row["statistic"]
+            pmin, pmax = row["threshold"]
+
+            if np.isfinite(pmax) and np.isclose(optimal, pmax):
+                pmsg = f"Parameter '{pname}' on upper bound: {pmax:.2e}"
+                _append_warning(pmsg)
+            elif np.isfinite(pmin) and np.isclose(optimal, pmin):
+                pmsg = f"Parameter '{pname}' on lower bound: {pmin:.2e}"
+                _append_warning(pmsg)
 
         # check response t_cutoff vs length calibration period and warmup period
-        response_tmax_check = self._check_response_tmax()
-        if (~response_tmax_check["check_response"]).any():
-            mask = ~response_tmax_check["check_response"]
-            for i in response_tmax_check.loc[mask].index:
-                rmsg = f"Response tmax for '{i}' > than calibration period."
-                msg.append(rmsg)
-                logger.warning(rmsg)
-        if (~response_tmax_check["check_warmup"]).any():
-            mask = ~response_tmax_check["check_warmup"]
-            for i in response_tmax_check.loc[mask].index:
-                rmsg = f"Response tmax for '{i}' > than warmup period."
-                msg.append(rmsg)
-                logger.warning(rmsg)
+        # using check functions and map failing checks back to stressmodel names.
+        for sm_name, sm in self.stressmodels.items():
+            if sm.rfunc is None:
+                continue
+
+            response_check = response_memory(
+                self,
+                cutoff=sm.rfunc.cutoff,
+                factor_length_oseries=1.0,
+                names=sm_name,
+            )
+            if not response_check["pass"].all():
+                rmsg = f"Response tmax for '{sm_name}' > than calibration period."
+                _append_warning(rmsg)
+
+            warmup_check = response_memory_vs_warmup(
+                self, cutoff=sm.rfunc.cutoff, names=sm_name
+            )
+            if not warmup_check["pass"].all():
+                rmsg = f"Response tmax for '{sm_name}' > than warmup period."
+                _append_warning(rmsg)
 
         return msg
 
@@ -2133,7 +2086,7 @@ class Model:
         model = {
             "nfev": self.solver.nfev,
             "nobs": self.observations().index.size,
-            "noise": str(self.settings["noise"]),
+            "noise": str(True if self.noisemodel else False),
             "tmin": str(self.settings["tmin"]),
             "tmax": str(self.settings["tmax"]),
             "freq": self.settings["freq"],
@@ -2211,50 +2164,22 @@ class Model:
 
         if corr:
             cor = DataFrame(columns=["value"])
-            for idx, col in combinations(self.solver.pcor, 2):
-                if np.abs(self.solver.pcor.loc[idx, col]) > 0.5:
-                    cor.loc[f"{idx} {col}"] = self.solver.pcor.loc[idx, col]
+            pcor = self.solver.pcor
+            for idx, col in combinations(pcor, 2):
+                if np.abs(pcor.loc[idx, col]) > 0.5:
+                    cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
 
-            corr = (
+            corr_rep = (
                 f"\n\nParameter correlations |rho| > 0.5\n"
                 f"{string.format('', fill='=', align='>', width=width)}"
                 f"\n{cor.to_string(float_format='%.2f', header=False)}"
             )
         else:
-            corr = ""
+            corr_rep = ""
 
+        warnings_rep = ""
         if warnings:
-            msg = []
-            # model optimization unsuccessful
-            if not self._solve_success:
-                msg.append("Model parameters could not be estimated well.")
-
-            # parameter bound warnings
-            lowerhit, upperhit = self._check_parameters_bounds()
-            nhits = upperhit.sum() + lowerhit.sum()
-
-            if nhits > 0:
-                for p in upperhit.index:
-                    if upperhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on upper bound: "
-                            f"{self._parameters.at[p, 'pmax']:.2e}"
-                        )
-                    elif lowerhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on lower bound: "
-                            f"{self._parameters.at[p, 'pmin']:.2e}"
-                        )
-            # check response t_cutoff vs length calibration period and warmup period
-            response_tmax_check = self._check_response_tmax()
-            if (~response_tmax_check["check_response"]).any():
-                mask = ~response_tmax_check["check_response"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than calibration period.")
-            if (~response_tmax_check["check_warmup"]).any():
-                mask = ~response_tmax_check["check_warmup"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than warmup period.")
+            msg = self._generate_warnings_report(log=False)
 
             # create message
             if len(msg) > 0:
@@ -2262,13 +2187,9 @@ class Model:
                     f"\n\nWarnings! ({len(msg)})\n"
                     f"{string.format('', fill='=', align='>', width=width)}"
                 ] + msg
-                warnings = "\n".join(msg)
-            else:
-                warnings = ""
-        else:
-            warnings = ""
+                warnings_rep += "\n".join(msg)
 
-        report = f"{header}{basic}{params}{warnings}{corr}"
+        report = f"{header}{basic}{params}{warnings_rep}{corr_rep}"
 
         return report
 
@@ -2324,43 +2245,6 @@ class Model:
         check["check_response"] = check["response_tmax"] < check["len_oseries"]
 
         return check
-
-    def _check_parameters_bounds(self) -> tuple[Series, Series]:
-        """Internal method to check if the optimal parameters are close to pmin or pmax.
-
-        Returns
-        -------
-        lowerhit: pandas.Series
-            pandas series with boolean values of the parameters that are close to the
-            minimum (pmin) values.
-        upperhit: pandas.Series
-            pandas series with boolean values of the parameters that are close to the
-            maximum (pmax) values.
-        """
-        lowerhit = Series(index=self._parameters.index, dtype=bool)
-        upperhit = Series(index=self._parameters.index, dtype=bool)
-
-        for p in self._parameters.index:
-            optimal = self._parameters.at[p, "optimal"]
-            pmin = self._parameters.at[p, "pmin"]
-            pmax = self._parameters.at[p, "pmax"]
-
-            # calculate atol based on minimum, with max 1e-8
-            # otherwise set 1 order of magnitude lower than minimum value
-            if pmin == 0.0 or np.isnan(pmin):
-                atol = 1e-8
-            else:
-                atol = np.min([1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
-
-            # deal with NaNs in parameter bounds
-            pmin = -np.inf if np.isnan(pmin) else pmin
-            pmax = np.inf if np.isnan(pmax) else pmax
-
-            # determine hits
-            lowerhit.at[p] = np.allclose(optimal, pmin, atol=atol, rtol=1e-5)
-            upperhit.at[p] = np.allclose(optimal, pmax, atol=atol, rtol=1e-5)
-
-        return lowerhit, upperhit
 
     def to_dict(self, series: bool = True, file_info: bool = True) -> dict:
         """Method to export a model to a dictionary.

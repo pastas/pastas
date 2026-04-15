@@ -131,7 +131,7 @@ class Statistics:
         --------
         pastas.stats.rmse
         """
-        if not self.ml.settings["noise"]:
+        if self.ml.noisemodel is None:
             return nan
         else:
             res = self.ml.noise(tmin=tmin, tmax=tmax)
@@ -464,8 +464,8 @@ class Statistics:
         pastas.stats.bic
         """
         nparam = self.ml.parameters["vary"].sum()
-        if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml.noise_weights(
+        if self.ml.noisemodel is not None:
+            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
                 tmin=tmin, tmax=tmax
             )
         else:
@@ -494,8 +494,8 @@ class Statistics:
         pastas.stats.aic
         """
         nparam = self.ml.parameters["vary"].sum()
-        if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml.noise_weights(
+        if self.ml.noisemodel is not None:
+            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
                 tmin=tmin, tmax=tmax
             )
         else:
@@ -524,8 +524,8 @@ class Statistics:
         pastas.stats.aicc
         """
         nparam = self.ml.parameters["vary"].sum()
-        if self.ml.settings["noise"]:
-            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml.noise_weights(
+        if self.ml.noisemodel is not None:
+            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
                 tmin=tmin, tmax=tmax
             )
         else:
@@ -576,9 +576,7 @@ class Statistics:
             stats_to_compute = stats
 
         # Remove rmsn if no noise model
-        if "rmsn" in stats_to_compute and not (
-            self.ml.noisemodel and self.ml.settings["noise"]
-        ):
+        if "rmsn" in stats_to_compute and self.ml.noisemodel is None:
             stats_to_compute.remove("rmsn")
 
         stats = DataFrame(columns=["Value"])
@@ -631,7 +629,7 @@ class Statistics:
         pastas.stats.diagnostics
 
         """
-        if self.ml.noisemodel and self.ml.settings["noise"]:
+        if self.ml.noisemodel is not None:
             series = self.ml.noise(tmin=tmin, tmax=tmax)
             nparam = self.ml.noisemodel.nparam
         else:
