@@ -1736,8 +1736,8 @@ class Model:
 
         Notes
         -----
-        Export the observed, simulated time series, the noise and residuals series,
-        and the contributions from the different stressmodels.
+        Export the observed, simulated time series, residuals series, noise series
+        (if present) and the contributions from the different stressmodels.
 
         Examples
         --------
@@ -1749,9 +1749,9 @@ class Model:
 
         sim = self.simulate(tmin=tmin, tmax=tmax)
         res = self.residuals(tmin=tmin, tmax=tmax)
-        noise = self.noise(tmin=tmin, tmax=tmax)
-
-        df = [obs, sim, res, noise]
+        df = [obs, sim, res]
+        if self.noisemodel is not None:
+            df.append(self.noise(tmin=tmin, tmax=tmax))
 
         if add_contributions:
             contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
