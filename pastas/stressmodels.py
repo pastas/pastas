@@ -1694,7 +1694,7 @@ class RechargeModel(StressModelBase):
 
     @property
     @PastasDeprecationWarning(
-        version="2.2.0",
+        version="2.0.0",
         reason=(
             "for the RechargeModel. Use 'stresses' property instead if you want to"
             " obtain all stresses. For individual stresses call the 'prec', 'evap' and "

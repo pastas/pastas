@@ -997,7 +997,7 @@ class Model:
 
     @property
     @PastasDeprecationWarning(
-        version="2.2.0",
+        version="2.0.0",
         reason="Use 'ml.solver' instead.",
     )
     def fit(self):
@@ -1012,7 +1012,7 @@ class Model:
 
     @property
     @PastasDeprecationWarning(
-        version="2.2.0", reason="Use 'ml.observations()' instead."
+        version="2.0.0", reason="Use 'ml.observations()' instead."
     )
     def oseries_calib(self):
         return self.oseries.series
@@ -2093,7 +2093,7 @@ class Model:
             msg = "Use 'corr=True' instead."
             deprecate_args_or_kwargs(
                 name="output",
-                version="2.2.0",
+                version="2.0.0",
                 reason=msg,
             )
             if isinstance(output, str) and output == "full":
