@@ -295,12 +295,12 @@ class TestModelSimulation:
         # Residuals should have mean close to zero for a fitted model
         assert abs(res.mean()) < 1.0
 
-    def test_residuals_with_normalize(self, ml_solved: ps.Model) -> None:
-        """Test residuals calculation with normalization."""
-        ml_solved.normalize_residuals = True
+    def test_residuals_with_fit_constant(self, ml_solved: ps.Model) -> None:
+        """Test residuals are mean-zero when fit_constant=False."""
+        ml_solved.solve(fit_constant=False, report=False)
         res = ml_solved.residuals()
 
-        # Normalized residuals should have mean very close to zero
+        # Residuals should have mean very close to zero when fit_constant=False
         assert abs(res.mean()) < 1e-10
 
     def test_observations(self, ml_solved: ps.Model) -> None:
@@ -493,7 +493,7 @@ class TestModelSolving:
         with caplog.at_level(logging.INFO, logger="pastas.model"):
             ml_bad.solve(report=False)
 
-            assert len(caplog.get_records("call")) == 4
+            assert len(caplog.get_records("call")) == 3
             assert caplog.records[0].message.startswith(
                 "Parameter 'recharge_f' on lower bound"
             )
@@ -501,10 +501,7 @@ class TestModelSolving:
                 "Response tmax for 'recharge' > than calibration period"
             )
             assert caplog.records[2].message.startswith(
-                "Response tmax for 'well' > than calibration period"
-            )
-            assert caplog.records[3].message.startswith(
-                "Response tmax for 'well' > than warmup period"
+                "Response tmax for 'recharge' > than warmup period"
             )
 
 

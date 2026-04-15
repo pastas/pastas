@@ -605,7 +605,7 @@ class Model:
             res = res.dropna()
             logger.warning("Nan-values were removed from the residuals.")
 
-        res = res.subtract(res.values.mean()) if self.settings["fit_constant"] else res
+        res = res.subtract(res.values.mean()) if not self.settings["fit_constant"] else res
 
         res.name = "Residuals"
         return res
@@ -931,6 +931,16 @@ class Model:
         # Initialize parameters
         self._parameters = self.get_init_parameters(initial=initial)
 
+        # Prepare model if not fitting the constant as a parameter (must be done
+        # after get_init_parameters, which resets the parameters from components)
+        if self.settings["fit_constant"] is False:
+            if self.transform is not None:
+                msg = "fit_constant needs to be True (for now) when a transform is used"
+                logger.error(msg)
+                raise ValueError(msg)
+            self._parameters.at["constant_d", "vary"] = False
+            self._parameters.at["constant_d", "initial"] = 0.0
+
         # make sure to update self.oseries.series by running self.observations
         # get tmin, tmax, freq, and freq_obs from self.settings
         self.observations(update_observations=True)
@@ -964,8 +974,13 @@ class Model:
             logger.warning("Model parameters could not be estimated well.")
 
         if self.settings["fit_constant"] is False:
-            # Determine the residuals and set the constant to their mean
+            # Determine the residuals and set the constant to their mean.
+            # Temporarily set fit_constant=True to compute non-centered residuals:
+            # constant_d was fixed at 0 during optimization, so (obs - sim) gives
+            # (obs - other_contributions), whose mean is the optimal constant.
+            self._settings["fit_constant"] = True
             res = self.residuals(optimal).mean()
+            self._settings["fit_constant"] = False
             optimal[self._parameters.name == self.constant.name] = res
 
         self._parameters.loc[:, "optimal"] = optimal
@@ -1067,7 +1082,7 @@ class Model:
             logger.debug("Updating model setting fit_constant to %s." % fit_constant)
             self._settings["fit_constant"] = fit_constant
             # Prepare model if not fitting the constant as a parameter
-            if self.settings["fit_constant"]:
+            if not self.settings["fit_constant"]:
                 if self.transform is not None:
                     msg = "fit_constant needs to be True (for now) when a transform is used"
                     logger.error(msg)
