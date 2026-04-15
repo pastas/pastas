@@ -715,10 +715,13 @@ def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
         DataFrame with the results of the check.
     """
     dtest = getattr(diagnostic_tests, test)
-    noise = ml.noise()
-    if noise is None:
-        logger.warning("No noise model found in model. Using residuals instead.")
+    if ml.noisemodel is None:
+        logger.warning(
+            "No noisemodel found in model. Using residuals instead for diagnostic test."
+        )
         noise = ml.residuals()
+    else:
+        noise = ml.noise()
     _, p = dtest(noise.iloc[1:], **kwargs)
     check = p > alpha
     label = f"{test} (p > α)"

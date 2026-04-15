@@ -620,7 +620,7 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
-    ) -> Series | None:
+    ) -> Series:
         """Method to simulate the noise when a noisemodel is present.
 
         Parameters
@@ -644,8 +644,8 @@ class Model:
 
         Returns
         -------
-        noise : pandas.Series or None
-            Pandas series of the noise. None if no noise model is present.
+        noise : pandas.Series
+            Pandas series of the noise.
 
         Notes
         -----
@@ -661,10 +661,9 @@ class Model:
         This method returns None if no noise model is present in the model.
         """
         if self.noisemodel is None:
-            logger.warning(
-"Noise cannot be calculated if there is no noisemodel present."
+            raise ValueError(
+                "No noisemodel found in model. Cannot calculate noise without a noisemodel."
             )
-            return None
 
         # Get parameters if none are provided
         if p is None:
