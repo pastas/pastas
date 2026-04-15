@@ -447,16 +447,15 @@ class TestModelSolving:
         # Create weights series with same index as observations
         p_opt = ml_solved.parameters.loc[:, "optimal"].copy()
 
-        weights = ml_solved.observations().copy()
-        weights[:] = 1.0
+        weights = pd.Series(1.0, index=ml_solved.observations().index)
 
         # Lower weights for some periods
-        weights.loc["2002":"2003"] = 0.0
+        weights.loc["2010":"2012"] = 0.0
         ml_solved.solve(weights=weights, report=False)
         p_optw = ml_solved.parameters.loc[:, "optimal"]
 
+        # check if at least one parameter changed due to weights
         assert not np.isclose(p_opt, p_optw).all(axis=0)
-
 
     def test_fit_report(self, ml_noisemodel: ps.Model) -> None:
         """Test fit report generation."""
@@ -494,15 +493,18 @@ class TestModelSolving:
         with caplog.at_level(logging.INFO, logger="pastas.model"):
             ml_bad.solve(report=False)
 
-            assert len(caplog.get_records("call")) == 3
+            assert len(caplog.get_records("call")) == 4
             assert caplog.records[0].message.startswith(
-                "Parameter 'recharge_f' on lower bound:"
+                "Parameter 'recharge_f' on lower bound"
             )
             assert caplog.records[1].message.startswith(
-                "Response tmax for 'recharge' > than calibration period."
+                "Response tmax for 'recharge' > than calibration period"
             )
             assert caplog.records[2].message.startswith(
-                "Response tmax for 'recharge' > than warmup period."
+                "Response tmax for 'well' > than calibration period"
+            )
+            assert caplog.records[3].message.startswith(
+                "Response tmax for 'well' > than warmup period"
             )
 
 
