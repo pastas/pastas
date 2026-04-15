@@ -32,6 +32,11 @@ from pandas import (
 )
 
 # Internal Pastas
+from pastas.check import (
+    parameter_bounds,
+    response_memory,
+    response_memory_vs_warmup,
+)
 from pastas.decorators import (
     PastasDeprecationWarning,
     deprecate_args_or_kwargs,
@@ -2034,54 +2039,66 @@ class Model:
 
         return file_info
 
-    def _generate_warnings_report(self) -> list[str]:
+    def _generate_warnings_report(self, log: bool = True) -> list[str]:
         """Internal method to generate warnings after model optimization.
+
+        Parameters
+        ----------
+        log: bool, optional
+            If True, the warnings are logged using the logging module. Default is True.
 
         Returns
         -------
         msg: list of str
             List of warning messages.
         """
+
         msg = []
         # model optimization unsuccessful
         if not self._solve_success:
             msg.append("Model parameters could not be estimated well.")
 
-        # parameter bound warnings
-        lowerhit, upperhit = self._check_parameters_bounds()
-        nhits = upperhit.sum() + lowerhit.sum()
+        def _append_warning(warning: str) -> None:
+            msg.append(warning)
+            if log:
+                logger.warning(warning)
 
-        if nhits > 0:
-            for p in upperhit.index:
-                if upperhit.at[p]:
-                    pmsg = (
-                        f"Parameter '{p}' on upper bound: "
-                        f"{self.parameters.at[p, 'pmax']:.2e}"
-                    )
-                    msg.append(pmsg)
-                    logger.warning(pmsg)
-                elif lowerhit.at[p]:
-                    pmsg = (
-                        f"Parameter '{p}' on lower bound: "
-                        f"{self.parameters.at[p, 'pmin']:.2e}"
-                    )
-                    msg.append(pmsg)
-                    logger.warning(pmsg)
+        # parameter bound warnings via checks module
+        bounds_check = parameter_bounds(self)
+        for idx, row in bounds_check.loc[~bounds_check["pass"]].iterrows():
+            pname = idx.replace("Bounds: ", "")
+            optimal = row["statistic"]
+            pmin, pmax = row["threshold"]
+
+            if np.isfinite(pmax) and np.isclose(optimal, pmax):
+                pmsg = f"Parameter '{pname}' on upper bound: {pmax:.2e}"
+                _append_warning(pmsg)
+            elif np.isfinite(pmin) and np.isclose(optimal, pmin):
+                pmsg = f"Parameter '{pname}' on lower bound: {pmin:.2e}"
+                _append_warning(pmsg)
 
         # check response t_cutoff vs length calibration period and warmup period
-        response_tmax_check = self._check_response_tmax()
-        if (~response_tmax_check["check_response"]).any():
-            mask = ~response_tmax_check["check_response"]
-            for i in response_tmax_check.loc[mask].index:
-                rmsg = f"Response tmax for '{i}' > than calibration period."
-                msg.append(rmsg)
-                logger.warning(rmsg)
-        if (~response_tmax_check["check_warmup"]).any():
-            mask = ~response_tmax_check["check_warmup"]
-            for i in response_tmax_check.loc[mask].index:
-                rmsg = f"Response tmax for '{i}' > than warmup period."
-                msg.append(rmsg)
-                logger.warning(rmsg)
+        # using check functions and map failing checks back to stressmodel names.
+        for sm_name, sm in self.stressmodels.items():
+            if sm.rfunc is None:
+                continue
+
+            response_check = response_memory(
+                self,
+                cutoff=sm.rfunc.cutoff,
+                factor_length_oseries=1.0,
+                names=sm_name,
+            )
+            if not response_check["pass"].all():
+                rmsg = f"Response tmax for '{sm_name}' > than calibration period."
+                _append_warning(rmsg)
+
+            warmup_check = response_memory_vs_warmup(
+                self, cutoff=sm.rfunc.cutoff, names=sm_name
+            )
+            if not warmup_check["pass"].all():
+                rmsg = f"Response tmax for '{sm_name}' > than warmup period."
+                _append_warning(rmsg)
 
         return msg
 
@@ -2208,50 +2225,22 @@ class Model:
 
         if corr:
             cor = DataFrame(columns=["value"])
-            for idx, col in combinations(self.solver.pcor, 2):
-                if np.abs(self.solver.pcor.loc[idx, col]) > 0.5:
-                    cor.loc[f"{idx} {col}"] = self.solver.pcor.loc[idx, col]
+            pcor = self.solver.pcor
+            for idx, col in combinations(pcor, 2):
+                if np.abs(pcor.loc[idx, col]) > 0.5:
+                    cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
 
-            corr = (
+            corr_rep = (
                 f"\n\nParameter correlations |rho| > 0.5\n"
                 f"{string.format('', fill='=', align='>', width=width)}"
                 f"\n{cor.to_string(float_format='%.2f', header=False)}"
             )
         else:
-            corr = ""
+            corr_rep = ""
 
+        warnings_rep = ""
         if warnings:
-            msg = []
-            # model optimization unsuccessful
-            if not self._solve_success:
-                msg.append("Model parameters could not be estimated well.")
-
-            # parameter bound warnings
-            lowerhit, upperhit = self._check_parameters_bounds()
-            nhits = upperhit.sum() + lowerhit.sum()
-
-            if nhits > 0:
-                for p in upperhit.index:
-                    if upperhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on upper bound: "
-                            f"{self._parameters.at[p, 'pmax']:.2e}"
-                        )
-                    elif lowerhit.at[p]:
-                        msg.append(
-                            f"Parameter '{p}' on lower bound: "
-                            f"{self._parameters.at[p, 'pmin']:.2e}"
-                        )
-            # check response t_cutoff vs length calibration period and warmup period
-            response_tmax_check = self._check_response_tmax()
-            if (~response_tmax_check["check_response"]).any():
-                mask = ~response_tmax_check["check_response"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than calibration period.")
-            if (~response_tmax_check["check_warmup"]).any():
-                mask = ~response_tmax_check["check_warmup"]
-                for i in response_tmax_check.loc[mask].index:
-                    msg.append(f"Response tmax for '{i}' > than warmup period.")
+            msg = self._generate_warnings_report(log=False)
 
             # create message
             if len(msg) > 0:
@@ -2259,13 +2248,9 @@ class Model:
                     f"\n\nWarnings! ({len(msg)})\n"
                     f"{string.format('', fill='=', align='>', width=width)}"
                 ] + msg
-                warnings = "\n".join(msg)
-            else:
-                warnings = ""
-        else:
-            warnings = ""
+                warnings_rep += "\n".join(msg)
 
-        report = f"{header}{basic}{params}{warnings}{corr}"
+        report = f"{header}{basic}{params}{warnings_rep}{corr_rep}"
 
         return report
 
@@ -2321,43 +2306,6 @@ class Model:
         check["check_response"] = check["response_tmax"] < check["len_oseries"]
 
         return check
-
-    def _check_parameters_bounds(self) -> tuple[Series, Series]:
-        """Internal method to check if the optimal parameters are close to pmin or pmax.
-
-        Returns
-        -------
-        lowerhit: pandas.Series
-            pandas series with boolean values of the parameters that are close to the
-            minimum (pmin) values.
-        upperhit: pandas.Series
-            pandas series with boolean values of the parameters that are close to the
-            maximum (pmax) values.
-        """
-        lowerhit = Series(index=self._parameters.index, dtype=bool)
-        upperhit = Series(index=self._parameters.index, dtype=bool)
-
-        for p in self._parameters.index:
-            optimal = self._parameters.at[p, "optimal"]
-            pmin = self._parameters.at[p, "pmin"]
-            pmax = self._parameters.at[p, "pmax"]
-
-            # calculate atol based on minimum, with max 1e-8
-            # otherwise set 1 order of magnitude lower than minimum value
-            if pmin == 0.0 or np.isnan(pmin):
-                atol = 1e-8
-            else:
-                atol = np.min([1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
-
-            # deal with NaNs in parameter bounds
-            pmin = -np.inf if np.isnan(pmin) else pmin
-            pmax = np.inf if np.isnan(pmax) else pmax
-
-            # determine hits
-            lowerhit.at[p] = np.allclose(optimal, pmin, atol=atol, rtol=1e-5)
-            upperhit.at[p] = np.allclose(optimal, pmax, atol=atol, rtol=1e-5)
-
-        return lowerhit, upperhit
 
     def to_dict(self, series: bool = True, file_info: bool = True) -> dict:
         """Method to export a model to a dictionary.
