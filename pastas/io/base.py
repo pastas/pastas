@@ -151,7 +151,7 @@ def _load_model(data: dict) -> Model:
         ml.add_solver(solver(**data["solver"]))
 
     # Add parameters, use update to maintain correct order
-    ml._parameters = ml.get_init_parameters(noise=ml._settings["noise"])
+    ml._parameters = ml.get_init_parameters()
     ml._parameters.update(data["parameters"])
 
     # Convert parameters to numeric
@@ -174,13 +174,13 @@ def _load_stressmodel(ts, data):
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts.pop("class"))
 
-    if "rfunc" in ts.keys():
-        rfunc_class = ts["rfunc"].pop("class")  # Determine response class
-        rfunc_up = ts["rfunc"].pop("up", None)  # get up value
-        rfunc_gsf = ts["rfunc"].pop("gain_scale_factor", None)  # get gain_scale_factor
-        rfunc = getattr(ps.rfunc, rfunc_class)(**ts["rfunc"])
+    for key in [k for k in ts if k in ("rfunc", "rfunc1", "rfunc2")]:
+        rfunc_class = ts[key].pop("class")  # Determine response class
+        rfunc_up = ts[key].pop("up", None)  # get up value
+        rfunc_gsf = ts[key].pop("gain_scale_factor", None)  # get gain_scale_factor
+        rfunc = getattr(ps.rfunc, rfunc_class)(**ts[key])
         rfunc.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
-        ts["rfunc"] = rfunc
+        ts[key] = rfunc
 
     if "recharge" in ts.keys():
         recharge_class = ts["recharge"].pop("class")

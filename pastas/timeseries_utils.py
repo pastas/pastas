@@ -10,16 +10,16 @@ from pandas import (
     Timedelta,
     Timestamp,
     api,
+    concat,
+    cut,
     date_range,
     infer_freq,
-    cut,
-    concat,
 )
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
 from scipy import interpolate
 
-from .decorators import njit, PastasDeprecationWarning
+from .decorators import PastasDeprecationWarning, njit
 
 logger = logging.getLogger(__name__)
 
@@ -303,8 +303,8 @@ def get_sample_for_freq(
 
 
 @PastasDeprecationWarning(
-    remove_version="2.1",
-    reason=("`timestep_weighted_resample` is replaced by `time_weighted_average`."),
+    version="2.1",
+    reason="`timestep_weighted_resample` is replaced by `time_weighted_resample`.",
 )
 def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> Series:
     """Resample a time series to a new time index, using an overlapping period

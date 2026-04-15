@@ -12,7 +12,15 @@ Generate forecasts using ensembles of stress forecasts::
 from logging import getLogger
 
 from numpy import array, empty, exp, linspace, ones
-from pandas import DataFrame, DatetimeIndex, MultiIndex, Timedelta, Timestamp, concat
+from pandas import (
+    DataFrame,
+    DatetimeIndex,
+    MultiIndex,
+    Series,
+    Timedelta,
+    Timestamp,
+    concat,
+)
 
 from pastas.decorators import deprecate_args_or_kwargs
 from pastas.noisemodels import ArNoiseModel
@@ -22,7 +30,8 @@ logger = getLogger(__name__)
 
 
 def _check_forecast_data(
-    forecasts: dict[str, dict[str, DataFrame]],
+    forecasts: dict[str, list[DataFrame | Series]]
+    | dict[str, dict[str, DataFrame | Series]],
 ) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
     """Internal method to check the integrity of the forecasts data.
 
@@ -66,7 +75,7 @@ def _check_forecast_data(
         if isinstance(fc_data, list):
             deprecate_args_or_kwargs(
                 name="forecasts",
-                remove_version="2.0.0",
+                version="2.0.0",
                 reason=(
                     "A list of DataFrames is deprecated. The forecast argument will"
                     " require a dictionary of DataFrames, with the appropriate keyword"
@@ -79,6 +88,9 @@ def _check_forecast_data(
             raise ValueError(msg)
 
         for stress_name, fc in fc_data.items():
+            # Convert Series to a 1-column DataFrame
+            if isinstance(fc, Series):
+                fc = fc.to_frame()
             # Check if DataFrame is empty
             if fc.empty:
                 msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}' for stress '{stress_name}'"
@@ -118,7 +130,8 @@ def _check_forecast_data(
 
 def forecast(
     ml: Model,
-    forecasts: dict[str, dict[str, DataFrame]],
+    forecasts: dict[str, list[DataFrame | Series]]
+    | dict[str, dict[str, DataFrame | Series]],
     p: ArrayLike | None = None,
     post_process: bool = False,
 ) -> DataFrame:
@@ -227,6 +240,8 @@ def forecast(
         for sm_name, fc_data in forecasts.items():
             sm = ml.stressmodels[sm_name]  # Select stressmodel
             for stress_name, fc in fc_data.items():
+                if isinstance(fc, Series):
+                    fc = fc.to_frame()
                 old_stress = getattr(sm, stress_name).series_original.loc[: tmin - day]
                 new_stress = fc.iloc[:, member]
                 ts = concat([old_stress, new_stress], axis=0)

@@ -1,5 +1,6 @@
 """Tests for the Model class in pastas.model."""
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -200,7 +201,6 @@ class TestModelComponents:
         ml_basic.add_noisemodel(noise)
 
         assert ml_basic.noisemodel is noise
-        assert ml_basic.settings["noise"] is True
 
     def test_del_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test deleting a noise model."""
@@ -211,7 +211,6 @@ class TestModelComponents:
         # Then delete it
         ml_basic.del_noisemodel()
         assert ml_basic.noisemodel is None
-        assert ml_basic.settings["noise"] is False
 
 
 @pytest.mark.integration
@@ -502,16 +501,19 @@ class TestModelSolving:
 
     def test_solve_with_warnings(self, ml_bad: ps.Model, caplog):
         """Test that solving a problematic model generates warnings."""
+        with caplog.at_level(logging.INFO, logger="pastas.model"):
+            ml_bad.solve(report=False)
 
-        ml_bad.solve(report=False)
-        msg = ml_bad._generate_warnings_report()
-
-        assert len(msg) == 3
-        assert msg[0].startswith("Parameter 'recharge_f' on lower bound:")
-        assert msg[1].startswith(
-            "Response tmax for 'recharge' > than calibration period."
-        )
-        assert msg[2].startswith("Response tmax for 'recharge' > than warmup period.")
+            assert len(caplog.get_records("call")) == 3
+            assert caplog.records[0].message.startswith(
+                "Parameter 'recharge_f' on lower bound:"
+            )
+            assert caplog.records[1].message.startswith(
+                "Response tmax for 'recharge' > than calibration period."
+            )
+            assert caplog.records[2].message.startswith(
+                "Response tmax for 'recharge' > than warmup period."
+            )
 
 
 class TestModelContributions:
