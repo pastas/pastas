@@ -917,7 +917,7 @@ class Model:
                 version="2.0.0",
                 reason="The initialize method is not needed anymore in favor of the `set_settings` method.",
             )
-            self.initialize(noise=noise)
+            self.initialize()
 
         self.reset_settings() if reset_settings else None
 
@@ -932,7 +932,7 @@ class Model:
         )
 
         # Initialize parameters
-        self._parameters = self.get_init_parameters(noise=noise, initial=initial)
+        self._parameters = self.get_init_parameters(initial=initial)
 
         # make sure to update self.oseries.series by running self.observations
         # get tmin, tmax, freq, and freq_obs from self.settings
