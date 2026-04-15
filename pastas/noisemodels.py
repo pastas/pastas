@@ -262,6 +262,16 @@ class ArNoiseModel(NoiseModelBase):
         return data
 
 
+@PastasDeprecationWarning(
+    version="2.0.0",
+    reason="Please use `ps.ArNoiseModel` instead.",
+)
+def NoiseModel(*args, **kwargs) -> ArNoiseModel:
+    n = ArNoiseModel(*args, **kwargs)
+    n._name = "NoiseModel"
+    return n
+
+
 class ArmaNoiseModel(NoiseModelBase):
     """ARMA(1,1) Noise model to simulate the noise as defined in
     :cite:t:`collenteur_estimation_2021`.
@@ -347,7 +357,7 @@ class ArmaNoiseModel(NoiseModelBase):
 
 
 @PastasDeprecationWarning(
-    version="2.2.0",
+    version="2.0.0",
     reason="Please use `ps.ArmaNoiseModel` instead.",
 )
 def ArmaModel(*args, **kwargs) -> ArmaNoiseModel:
