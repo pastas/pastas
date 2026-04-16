@@ -771,9 +771,6 @@ class Model:
     def initialize(**kwargs) -> None:
         pass
 
-        if hasattr(self, "solver") and hasattr(self.solver, "initialize"):
-            self.solver.initialize()
-
     def add_solver(self, solver: Solver) -> None:
         """Method to add a solver to the model.
 
