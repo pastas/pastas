@@ -19,6 +19,7 @@ from pastas.decorators import (
     temporarily_disable_cache,
     temporarily_enable_cache,
 )
+from pastas.gapfill import gap_fill
 from pastas.model import Model
 from pastas.noisemodels import ArmaNoiseModel, ArNoiseModel
 from pastas.plotting import plots
