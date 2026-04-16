@@ -728,7 +728,7 @@ class ObservationSeries(TimeSeries):
         return validate_oseries(self.series_original)
 
 
-def validate_stress(series: Series, verbose: bool = False):
+def validate_stress(series: Series, verbose: bool = False) -> bool:
     """Method to validate user-provided stress input time series.
 
     Parameters
@@ -750,11 +750,12 @@ def validate_stress(series: Series, verbose: bool = False):
     0. Make sure the series is a Pandas.Series
     1. Make sure the values are floats
     2. Make sure the index is a DatetimeIndex
-    3. Make sure the indices are datetime64
-    4. Make sure the index is monotonically increasing
-    5. Make sure there are no duplicate indices
-    6. Make sure the time series has no nan-values
-    7. Make sure the time series has equidistant time steps
+    3. Make sure the indices are datetime64 (and tz naive)
+    4. Make sure the index has no NaT-values
+    5. Make sure the index is monotonically increasing
+    6. Make sure there are no duplicate indices
+    7. Detect if the time series has nan-values (filled with `fill_nan` TimeSeries' settings)
+    8. Make sure the time series has equidistant time steps
 
     If any of these checks are not passed the method will throw an error that needs
     to be fixed by the user.
@@ -764,10 +765,10 @@ def validate_stress(series: Series, verbose: bool = False):
 
     >>> ps.validate_stress(series)
     """
-    return _validate_series(series, equidistant=True, verbose=verbose)
+    return _validate_series(series, verbose=verbose, equidistant=True)
 
 
-def validate_oseries(series: Series, verbose: bool = False):
+def validate_oseries(series: Series, verbose: bool = False) -> bool:
     """Method to validate user-provided oseries input time series.
 
     Parameters
@@ -793,7 +794,7 @@ def validate_oseries(series: Series, verbose: bool = False):
     4. Make sure the index has no NaT-values
     5. Make sure the index is monotonically increasing
     6. Make sure there are no duplicate indices
-    7. Make sure the time series has no nan-values
+    7. Detect if the time series has nan-values (filled with `fill_nan` TimeSeries' settings)
 
     If any of these checks are not passed the method will throw an error that needs
     to be fixed by the user.
@@ -803,20 +804,22 @@ def validate_oseries(series: Series, verbose: bool = False):
 
     >>> ps.validate_oseries(series)
     """
-    return _validate_series(series, equidistant=False)
+    return _validate_series(series, verbose=verbose, equidistant=False)
 
 
-def _validate_series(series: Series, equidistant: bool = True, verbose: bool = False):
+def _validate_series(
+    series: Series, verbose: bool = False, equidistant: bool = True
+) -> bool:
     """Internal method to validate user-provided input time series.
 
     Parameters
     ----------
     series: pandas.Series
         Pandas.Series object containing the series time series.
-    equidistant: bool, optional
-        Whether the time series should have equidistant time step or not.
     verbose : bool, optional
         Whether to print the results of the checks in the validation process.
+    equidistant: bool, optional
+        Whether the time series should have equidistant time step or not.
 
     Returns
     -------
@@ -845,135 +848,146 @@ def _validate_series(series: Series, equidistant: bool = True, verbose: bool = F
 
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
-        msg = "Expected a Pandas Series, got %s"
-        logger.error(msg, type(series))
+        msg = f"Expected a Pandas.Series, got {type(series)}."
+        logger.error(msg)
         if verbose:
-            print("❌ " + msg % type(series))
+            print("❌ " + msg)
             check = False
         else:
-            raise ValueError(msg % type(series))
+            raise ValueError(msg)
     elif verbose:
-        print("✅ timeseries is a pandas series")
+        print("✅ series is a pandas.Series.")
 
     name = series.name  # Only Series have a name, DateFrame do not
 
     # 1. Make sure the values are float
     if not pd.api.types.is_float_dtype(series):
-        msg = "Values of time series %s are not dtype=float."
-        logger.error(msg, name)
+        msg = (
+            f"The dtype of the values of the series "
+            f"'{name}' is not float, but {series.dtype}."
+        )
+        logger.error(msg)
         if verbose:
-            print("❌ " + msg % name)
+            print("❌ " + msg)
             check = False
         else:
-            raise ValueError(msg % name)
+            raise ValueError(msg)
     elif verbose:
-        print("✅ timeseries values are floats")
+        print("✅ series values are floats.")
 
     # 2. Make sure the index is a DatetimeIndex
     if not isinstance(series.index, pd.DatetimeIndex):
-        msg = "Index of series %s is not a pandas.DatetimeIndex."
-        logger.error(msg, name)
+        msg = (
+            f"Index of series '{name}' is not a "
+            f"pandas.DatetimeIndex, but {type(series.index)}."
+        )
+        logger.error(msg)
         if verbose:
-            print("❌ " + msg % name)
+            print("❌ " + msg)
             check = False
         else:
-            raise ValueError(msg % name)
+            raise ValueError(msg)
     elif verbose:
-        print("✅ timeseries index is a DatetimeIndex")
+        print("✅ series index is a pandas.DatetimeIndex.")
 
     # 3. Make sure the indices are datetime64
     if not pd.api.types.is_datetime64_dtype(series.index):
         if isinstance(series.index.dtype, pd.DatetimeTZDtype):
             msg = (
-                "The index of series %s is timezone aware. Please convert "
-                "the series to timezone naive. Try using "
-                "`series.index = series.index.tz_localize(None)`."
+                f"The index of series '{name}' is timezone aware. Please "
+                f"convert the series to timezone naive. Try using "
+                f"`series.index = series.index.tz_localize(None)`."
             )
         else:
-            msg = "Indices of series %s are not datetime64."
-        logger.error(msg, name)
+            msg = (
+                f"Indices of series '{name}' are not numpy.datetime64,"
+                f"but {series.index.dtype}."
+            )
+        logger.error(msg)
         if verbose:
-            print("❌ " + msg % name)
+            print("❌ " + msg)
             check = False
         else:
-            raise ValueError(msg % name)
+            raise ValueError(msg)
     elif verbose:
-        print("✅ timeseries index is datetime64")
+        print("✅ series index dtype is numpy.datetime64.")
 
     # 4. Make sure there are no NaT in index
     if series.index.hasnans:
         msg = (
-            "The index of series %s contains NaNs. "
-            "Try to remove these with `series.loc[series.index.dropna()]`."
+            f"The index of series '{name}' contains NaNs/NaTs. "
+            f"Try to remove these with `series.loc[series.index.dropna()]`."
         )
-        logger.error(msg, name)
+        logger.error(msg)
         if verbose:
-            print("❌ " + msg % name)
+            print("❌ " + msg)
             check = False
         else:
-            raise ValueError(msg % name)
+            raise ValueError(msg)
     elif verbose:
-        print("✅ timeseries index has no NaNs")
+        print("✅ series index has no NaNs/NaTs.")
 
     # 5. Make sure the index is monotonically increasing
     if not series.index.is_monotonic_increasing:
         msg = (
-            "The time-indices of series %s are not monotonically increasing. Try "
-            "to use `series.sort_index()` to fix it."
+            f"The datetimes in the index of series '{name}' are not monotonically "
+            f"increasing. Try to use `series.sort_index()` to fix it."
         )
-        logger.error(msg, name)
+        logger.error(msg)
         if verbose:
-            print("❌ " + msg % name)
+            print("❌ " + msg)
             check = False
         else:
-            raise ValueError(msg % name)
+            raise ValueError(msg)
     elif verbose:
-        print("✅ timeseries index is monotonically increasing")
+        print("✅ series index is monotonically increasing.")
 
     # 6. Make sure there are no duplicate indices
     if not series.index.is_unique:
         msg = (
-            "duplicate time-indexes were found in the time series %s. Make sure "
-            "there are no duplicate indices. For example by "
-            "`grouped = series.groupby(level=0); series = grouped.mean()`"
-            "or `series = series.loc[~series.index.duplicated(keep='first/last')]`"
+            f"Duplicate indices were found in the series '{name}'. Try and fix by"
+            f" `grouped = series.groupby(level=0); series = grouped.mean()` "
+            f"or `series = series.loc[~series.index.duplicated(keep='first/last')].`"
         )
-        logger.error(msg, name)
+        logger.error(msg)
         if verbose:
-            print("❌ " + msg % name)
+            print("❌ " + msg)
             check = False
         else:
-            raise ValueError(msg % name)
+            raise ValueError(msg)
     elif verbose:
-        print("✅ timeseries index has no duplicate indices")
+        print("✅ series index has no duplicate indices.")
 
-    # 7. Make sure the time series has no nan-values
+    # 7. Check if the time series nan-values
     if series.hasnans:
         msg = (
-            "The Time Series '%s' has nan-values. Pastas will use the fill_nan "
-            "settings to fill up the nan-values."
+            f"The series '{name}' has nan-values. Pastas will use the `fill_nan` "
+            f"from the StressModel's settings (rcParams) parsed to the TimeSeries"
+            f" settings to fill up the nan-values."
         )
+        logger.warning(msg)
         if verbose:
-            print("❌ " + msg % name)
+            print("❌ " + msg)
             check = False
     elif verbose:
-        print("✅ timeseries values have no nan-values")
+        print("✅ series values have no NaNs.")
 
     # 8. Make sure the time series has equidistant time steps
     if equidistant:
         if not pd.infer_freq(series.index):
             msg = (
-                "The frequency of the index of time series %s could not be "
-                "inferred. Please provide a time series with a regular time step."
+                f"The frequency of the index of time series '{name}' could not be "
+                f"inferred. This indicates that there are gaps in your time series."
+                f" Please resample your time series to an equidistant time step."
             )
-            logger.error(msg, name)
+            logger.error(msg)
             if verbose:
-                print("❌ " + msg % name)
+                print("❌ " + msg)
                 check = False
             else:
-                raise ValueError(msg % name)
+                raise ValueError(msg)
         elif verbose:
-            print("✅ timeseries has equidistant time steps")
+            print("✅ series has equidistant time steps.")
 
     # If all checks are passed, return True
     return check
