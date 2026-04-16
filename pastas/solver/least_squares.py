@@ -1,18 +1,3 @@
-"""This module contains the different solvers that are available for Pastas.
-
-All solvers inherit from the BaseSolver class, which contains general method for
-selecting the correct time series to misfit and options to weight the residuals or
-noise series.
-
-Examples
---------
-Solve a model with a specific solver::
-
-    ml.solve(solver=ps.LeastSquares())
-"""
-
-import importlib
-from abc import ABC, abstractmethod
 from collections.abc import Callable
 from functools import partial
 from logging import getLogger
@@ -23,84 +8,43 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, OptimizeResult, least_squares
 
-from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cache
-from pastas.objective_functions import GaussianLikelihood
-from pastas.typing import ArrayLike, CallBack, Model
+from pastas.decorators import temporarily_disable_cache
+from pastas.typing import ArrayLike, CallBack
+
+from .base import BaseSolver
 
 logger = getLogger(__name__)
 
 
-class BaseSolver(ABC):
-    """All solver instances inherit from the BaseSolver class.
+class BaseLeastSquares(BaseSolver):
+    """Base class for least squares solvers."""
 
-    Attributes
-    ----------
-    ml: pastas.Model
-        The Pastas Model instance that is being solved.
-    _name: str
-        Name of the solver class.
-    """
-
-    _name = "BaseSolver"
-
-    def __init__(self) -> None:
-        self.ml: Model | None = None
-
-    def set_model(self, ml: Model):
-        """Method to set the Pastas Model instance.
-
-        Parameters
-        ----------
-        ml: pastas.Model instance
-
-        """
-        if self.ml is not None:
-            raise UserWarning(
-                "This solver instance is already used by another model. Please create "
-                "a separate solver instance for each Pastas Model."
-            )
-        self.ml = ml
-
-    def to_dict(self) -> dict:
-        return {"class": self._name}
-
-    @abstractmethod
-    def solve(self) -> tuple[bool, ArrayLike, ArrayLike]:
-        """Abstract method that has to be implemented by all solvers.
-
-        Returns
-        -------
-        success: bool
-            Boolean indicating whether the optimization was successful.
-        optimal: array_like
-            array_like object with the optimal parameter values as floats.
-        stderr: array_like
-            array_like object with the standard error of the parameters as
-            floats.
-
-        """
-        pass
-
-
-class LeastSquaresSolver(BaseSolver):
     def __init__(
         self,
         pcov: DataFrame | None = None,
         nfev: int | None = None,
-        **kwargs,
     ) -> None:
-        super().__init__()
+        """Base class for least squares solvers.
+
+        Parameters
+        ----------
+        pcov: DataFrame, optional
+            DataFrame with the covariance matrix of the parameters. Default is None.
+        nfev: int, optional
+            Number of function evaluations. Default is None.
+        """
+        super().__init__(name=self._name)
         self.pcov = pcov
         self.nfev = nfev
-        self.result: OptimizeResult | "lmfit.minimizer.MinimizerResult" | None = None
-        if kwargs:
-            logger.warning(
-                f"The following keyword arguments are ignored to the Solver {self._name}: "
-                f"{', '.join(kwargs.keys())}"
-            )
 
     @property
     def pcor(self) -> DataFrame | None:
+        """Property to obtain the parameter correlations from the covariance matrix.
+        Returns
+        -------
+        pcor: pandas.DataFrame or None
+            Pandas DataFrame with the correlations for the parameters. If `pcov` is None, returns None.
+        """
         if self.pcov is None:
             return None
         else:
@@ -122,11 +66,11 @@ class LeastSquaresSolver(BaseSolver):
             n x n Pandas DataFrame with the correlations.
         """
         index = pcov.index
-        pcov = pcov.to_numpy()
-        v = np.sqrt(np.diag(pcov))
+        pcov_values = pcov.to_numpy(dtype=float, copy=True)
+        v = np.sqrt(np.diag(pcov_values))
         with np.errstate(divide="ignore", invalid="ignore"):
-            corr = pcov / np.outer(v, v)
-        corr[pcov == 0] = 0
+            corr = pcov_values / np.outer(v, v)
+        corr[pcov_values == 0] = 0
         pcor = DataFrame(data=corr, index=index, columns=index)
         return pcor
 
@@ -135,16 +79,26 @@ class LeastSquaresSolver(BaseSolver):
     ) -> DataFrame:
         """Method to calculate the prediction interval for the simulation.
 
+        Parameters
+        ----------
+        n: int, optional
+            Number of random samples drawn from the bivariate normal distribution to compute the prediction interval. Default is 1000.
+        alpha: float, optional
+            Significance level for the prediction interval. Default is 0.05, which corresponds to a 95% prediction interval.
+        max_iter: int, optional
+            maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+
+        **kwargs
+            Additional keyword arguments are passed to the `ml.simulate()` method.
+            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
+            the prediction interval for a specific period.
+
         Returns
         -------
         data : Pandas.DataFrame
             DataFrame of length number of observations and two columns labeled
             0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
             prediction interval (for alpha=0.05)
-        **kwargs
-            Additional keyword arguments are passed to the `ml.simulate()` method.
-            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
-            the prediction interval for a specific period.
 
         Notes
         -----
@@ -168,16 +122,25 @@ class LeastSquaresSolver(BaseSolver):
     ) -> DataFrame:
         """Method to calculate the confidence interval for the simulation.
 
+        Parameters
+        ----------
+        n: int, optional
+            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+        alpha: float, optional
+            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+        max_iter: int, optional
+            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+        **kwargs
+            Additional keyword arguments are passed to the `ml.simulate()` method.
+            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
+            the confidence interval for a specific period.
+
         Returns
         -------
         data : Pandas.DataFrame
             DataFrame of length number of observations and two columns labeled
             0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
             interval (for alpha=0.05)
-        **kwargs
-            Additional keyword arguments are passed to the `ml.simulate()` method.
-            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
-            the confidence interval for a specific period.
 
         Notes
         -----
@@ -199,6 +162,19 @@ class LeastSquaresSolver(BaseSolver):
         **kwargs,
     ) -> DataFrame:
         """Method to calculate the confidence interval for the block response.
+
+        Parameters
+        ----------
+        name: str
+            Name of the block response for which to calculate the confidence interval.
+        n: int, optional
+            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+        alpha: float, optional
+            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+        max_iter: int, optional
+            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+        **kwargs
+            Additional keyword arguments are passed to the `ml.get_block_response()` method.
 
         Returns
         -------
@@ -238,12 +214,16 @@ class LeastSquaresSolver(BaseSolver):
     ) -> DataFrame:
         """Method to calculate the confidence interval for the step response.
 
-        Returns
-        -------
-        data : Pandas.DataFrame
-            DataFrame of length number of observations and two columns labeled
-            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
-            interval (for alpha=0.05)
+        Parameters
+        ----------
+        name: str
+            Name of the step response for which to calculate the confidence interval.
+        n: int, optional
+            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+        alpha: float, optional
+            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+        max_iter: int, optional
+            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
         **kwargs
             Additional keyword arguments are passed to the `ml.get_step_response()`
             method.
@@ -276,16 +256,25 @@ class LeastSquaresSolver(BaseSolver):
     ) -> DataFrame:
         """Method to calculate the confidence interval for the contribution.
 
+        Parameters
+        ----------
+        name: str
+            Name of the contribution for which to calculate the confidence interval.
+        n: int, optional
+            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+        alpha: float, optional
+            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+        max_iter: int, optional
+            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+        **kwargs
+            Additional keyword arguments are passed to the `ml.get_contribution()` method.
+
         Returns
         -------
         data : Pandas.DataFrame
             DataFrame of length number of observations and two columns labeled
             0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
             interval (for alpha=0.05).
-        **kwargs
-            Additional keyword arguments are passed to the `ml.get_contribution()`
-            method. For example, `tmin` and `tmax` can be passed as keyword arguments to
-            compute the confidence interval of a contribution for a specific period.
 
         Notes
         -----
@@ -304,7 +293,7 @@ class LeastSquaresSolver(BaseSolver):
         )
 
     def get_parameter_sample(
-        self, name: str | None = None, n: int = None, max_iter: int = 10
+        self, name: str | None = None, n: int | None = None, max_iter: int = 10
     ) -> ArrayLike:
         """Method to obtain a parameter sets for monte carlo analyses.
 
@@ -380,7 +369,25 @@ class LeastSquaresSolver(BaseSolver):
         max_iter: int = 10,
         **kwargs,
     ) -> DataFrame:
-        """Internal method to obtain n number of parameter realizations."""
+        """Internal method to obtain n number of parameter realizations.
+
+        Parameters
+        ----------
+        func: Callable
+            Function for which to obtain the realizations. For example, `ml.simulate` or `ml.get_step_response`.
+        n: int, optional
+            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+        name: str, optional
+            Name of the stressmodel or model component to obtain the
+            parameters for.
+        max_iter : int, optional
+            maximum number of iterations for truncated multivariate
+            sampling, default is 10. Increase this value if number of
+            accepted parameter samples is lower than n.
+        **kwargs
+            Additional keyword arguments are passed to the function specified in `func`.
+
+        """
         if name:
             kwargs["name"] = name
 
@@ -516,19 +523,67 @@ class LeastSquaresSolver(BaseSolver):
         pcor = DataFrame(data=corr, index=index, columns=index)
         return pcor
 
+    def solve(self) -> tuple[bool, ArrayLike, ArrayLike]:
+        """Abstract method that has to be implemented by all solvers.
+
+        Returns
+        -------
+        success: bool
+            Boolean indicating whether the optimization was successful.
+        optimal: array_like
+            array_like object with the optimal parameter values as floats.
+        stderr: array_like
+            array_like object with the standard error of the parameters as
+            floats.
+
+        """
+        pass
+
+    def objfunction(
+        self,
+        p: ArrayLike,
+        noise: bool,
+        weights: Series,
+        initial: ArrayLike,
+        vary: ArrayLike,
+        callback: CallBack,
+    ) -> ArrayLike:
+        """Objective function that is minimized by the least_squares solver.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        noise: Boolean
+            If True, minimizes the sum of squared noise computed by the NoiseModel.
+        weights: pandas.Series
+            pandas Series by which the residual or noise series are
+            multiplied. Typically values between 0 and 1.
+        initial: array_like
+            array_like object with the initial parameter values.
+        vary: array_like
+            array_like object with booleans indicating which parameters (p) are varied.
+        callback: ufunc
+            function that is called after each iteration. the parameters are
+            provided to the func.
+        """
+        par = initial
+        par[vary] = p
+        return self.misfit(p=par, noise=noise, weights=weights, callback=callback)
+
     def to_dict(self) -> dict:
-        data = super().to_dict()
-        data.update(
+        settings = super().to_dict()
+        settings.update(
             {
                 "pcov": self.pcov,
                 "nfev": self.nfev,
-                "obj_func": self.obj_func,
             }
         )
-        return data
+        return settings
 
 
-class LeastSquares(LeastSquaresSolver):
+class LeastSquares(BaseLeastSquares):
     """Solver based on Scipy's least_squares method :cite:p:`virtanen_scipy_2020`.
 
     Notes
@@ -547,8 +602,6 @@ class LeastSquares(LeastSquaresSolver):
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
     """
 
-    _name = "LeastSquares"
-
     def __init__(
         self,
         pcov: DataFrame | None = None,
@@ -556,6 +609,7 @@ class LeastSquares(LeastSquaresSolver):
         **kwargs,
     ) -> None:
         super().__init__(pcov=pcov, nfev=nfev, **kwargs)
+        self.result: OptimizeResult | None = None
 
     def solve(
         self,
@@ -624,39 +678,6 @@ class LeastSquares(LeastSquaresSolver):
         stderr[vary] = np.sqrt(np.diag(self.pcov))
 
         return success, optimal, stderr
-
-    def objfunction(
-        self,
-        p: ArrayLike,
-        noise: bool,
-        weights: Series,
-        initial: ArrayLike,
-        vary: ArrayLike,
-        callback: CallBack,
-    ) -> ArrayLike:
-        """Objective function that is minimized by the least_squares solver.
-
-        Parameters
-        ----------
-        p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
-        noise: Boolean
-            If True, minimizes the sum of squared noise computed by the NoiseModel.
-        weights: pandas.Series
-            pandas Series by which the residual or noise series are
-            multiplied. Typically values between 0 and 1.
-        initial: array_like
-            array_like object with the initial parameter values.
-        vary: array_like
-            array_like object with booleans indicating which parameters (p) are varied.
-        callback: ufunc
-            function that is called after each iteration. the parameters are
-            provided to the func.
-        """
-        par = initial
-        par[vary] = p
-        return self.misfit(p=par, noise=noise, weights=weights, callback=callback)
 
     @staticmethod
     def get_covariances(
@@ -773,7 +794,7 @@ class LeastSquares(LeastSquaresSolver):
         return pcov
 
 
-class LmfitSolve(LeastSquaresSolver):
+class LmfitSolve(BaseLeastSquares):
     """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
         This is basically a wrapper around the scipy solvers, adding some cool
@@ -783,8 +804,6 @@ class LmfitSolve(LeastSquaresSolver):
     -----
     https://github.com/lmfit/lmfit-py/
     """
-
-    _name = "LmfitSolve"
 
     def __init__(
         self,
@@ -866,443 +885,3 @@ class LmfitSolve(LeastSquaresSolver):
     ) -> ArrayLike:
         p = np.array([p.value for p in parameters.values()])
         return self.misfit(p=p, noise=noise, weights=weights, callback=callback)
-
-
-class EmceeSolve(BaseSolver):
-    """Solver based on MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`.
-
-    Parameters
-    ----------
-    objective_function: func, optional
-        An objective function to be minimized. If not provided, the
-        GaussianLikelihood is used. See the pastas.objective_functions module for
-        more information.
-    nwalkers: int, optional
-        Number of walkers to use. Default is 20.
-    backend: emcee.backend, optional
-        One of the Backends from Emcee used to store MCMC results. See Emcee
-        for more information.
-    moves: emcee.moves, optional
-        The moves argument determines how the next step for a walker is chosen in
-        the MCMC approach. One of the Moves classes from Emcee has to be provided.
-        See Emcee documentation for more information.
-    parallel: bool, optional
-        Run the sampler in parallel or not.
-    progress_bar: bool, optional
-        Show the progress bar or not. Requires the `tqdm` package to be installed.
-    **kwargs, optional
-        All other keyword arguments are passed on to the BaseSolver class.
-
-    Notes
-    -----
-    The EmceeSolve solver uses the emcee package to perform a Markov Chain Monte Carlo
-    (MCMC) approach to find the optimal parameter values. The solver can be used as
-    follows::
-
-        solver = ps.EmceeSolve(
-            nwalkers=20,
-            progress_bar=True,
-        )
-        ml.solve(solver=solver)
-
-    The arguments provided are mostly passed on to the `emcee.EnsembleSampler`
-    and determine how that instance is created. Arguments you want to pass on to
-    `run_mcmc` (and indirectly the `sample` method), can be passed on to
-    `Model.solve`, like::
-
-        ml.solve(solver=ps.EmceeSolve(), thin_by=2)
-
-    Examples
-    --------
-    Example usage::
-
-        ml.solve(solver=ps.EmceeSolve(), steps=5000)
-
-    To obtain the MCMC chains, use::
-
-        ml.solver.sampler.get_chain(flat=True, discard=3000)
-
-    References
-    ----------
-    https://emcee.readthedocs.io/en/stable/
-
-    See Also
-    --------
-    emcee.EnsembleSampler
-    emcee.moves
-    emcee.backend
-    pastas.objective_functions
-
-    """
-
-    _name = "EmceeSolve"
-
-    def __init__(
-        self,
-        objfunction: Callable[[ArrayLike], float] | None = None,
-        nwalkers: int = 20,
-        backend=None,
-        moves=None,
-        parallel: bool = False,
-        progress_bar: bool = True,
-        **kwargs,
-    ) -> None:
-        # Check if emcee is installed, if not, return error
-        try:
-            global emcee
-            import emcee as emcee  # Import emcee here, so it is no dependency
-        except ImportError:
-            msg = "emcee not installed. Please install emcee first."
-            raise ImportError(msg) from None
-
-        if "objective_function" in kwargs:
-            deprecate_args_or_kwargs(
-                "objective_function",
-                "2.0.0",
-                reason="Use the argument objfunction instead",
-            )
-            objfunction = kwargs.pop("objective_function")
-
-        super().__init__(**kwargs)
-
-        # Set sampler properties
-        self.sampler = None
-        self.backend = backend
-        self.moves = moves
-        self.parallel = parallel
-        self.progress_bar = progress_bar
-        self.nwalkers = nwalkers
-        self.priors: list[DataFrame] = []
-
-        # Set objective function
-        self.objfunction = GaussianLikelihood() if objfunction is None else objfunction
-        self.parameters = self.objfunction.get_init_parameters("ln")
-
-    def solve(
-        self,
-        noise: bool = False,
-        weights: Series | None = None,
-        steps: int = 5000,
-        callback: CallBack | None = None,
-        **kwargs,
-    ) -> tuple[bool, ArrayLike, ArrayLike]:
-        # Store initial parameters
-        self.initial = np.append(
-            self.ml.parameters.initial.values, self.parameters.initial.values
-        )
-        self.vary = np.append(
-            self.ml.parameters.vary.values, self.parameters.vary.values
-        )
-
-        # Set lower and upper bounds
-        lb = np.append(
-            self.ml.parameters[self.ml.parameters.vary].pmin.values,
-            self.parameters[self.parameters.vary].pmin.values,
-        )
-        ub = np.append(
-            self.ml.parameters[self.ml.parameters.vary].pmax.values,
-            self.parameters[self.parameters.vary].pmax.values,
-        )
-        self.bounds = np.vstack([lb, ub]).T
-
-        # Set priors
-        self._set_priors()
-
-        # Set initial positions of the walkers
-        pinit = np.append(
-            self.ml.parameters[self.ml.parameters.vary].initial.values,
-            self.parameters[self.parameters.vary].initial.values,
-        )
-        ndim = pinit.size
-
-        pinit = pinit + np.abs(pinit) * 1e-2 * np.random.randn(self.nwalkers, ndim)
-
-        # Create sampler and run mcmc
-        if self.parallel:
-            logger.info("Going into the parallel universe")
-
-            from multiprocessing import Pool
-
-            with Pool() as pool:
-                self.sampler = emcee.EnsembleSampler(
-                    nwalkers=self.nwalkers,
-                    ndim=ndim,
-                    log_prob_fn=self.log_probability,
-                    moves=self.moves,
-                    backend=self.backend,
-                    pool=pool,
-                    args=(noise, weights, callback),
-                )
-
-                self.sampler.run_mcmc(
-                    pinit, steps, progress=self.progress_bar, **kwargs
-                )
-        else:
-            self.sampler = emcee.EnsembleSampler(
-                nwalkers=self.nwalkers,
-                ndim=ndim,
-                log_prob_fn=self.log_probability,
-                moves=self.moves,
-                backend=self.backend,
-                pool=None,
-                args=(noise, weights, callback),
-            )
-
-            self.sampler.run_mcmc(pinit, steps, progress=self.progress_bar, **kwargs)
-
-        # Get optimal values
-        optimal = self.initial.copy()
-        chains = self.sampler.get_chain(discard=0, flat=True, thin=1)
-        optimal[self.vary] = chains[self.sampler.get_log_prob().argmax()]
-
-        # Set the optimal values for the objective function parameters
-        self.parameters.loc[:, "optimal"] = optimal[-self.objfunction.nparam :]
-
-        # Don't estimate stderr for now
-        optimal = optimal[: -self.objfunction.nparam]
-        stderr = np.zeros(len(optimal)) * np.nan
-
-        success = True
-        return success, optimal, stderr
-
-    def log_probability(
-        self,
-        p: ArrayLike,
-        noise: bool | None = False,
-        weights: Series | None = None,
-        callback: CallBack | None = None,
-    ) -> float:
-        """Full log-probability called by Emcee.
-
-        Parameters
-        ----------
-        p: numpy.Array
-            Numpy array with the parameters.
-        noise: bool, optional
-            If True, the noise model is applied to the residuals.
-        weights: pandas.Series, optional
-            Series with weights for the residuals.
-        callback: callable, optional
-            Callback function that will be called after each iteration of the solver.
-
-        Returns
-        -------
-        log_probability: float
-
-        """
-        lp = self.log_prior(p)
-
-        # This will occur if the parameters are outside the boundaries
-        if not np.isfinite(lp):
-            return -np.inf
-        else:
-            return lp + self.log_likelihood(
-                p, noise=noise, weights=weights, callback=callback
-            )
-
-    def log_likelihood(
-        self,
-        p: ArrayLike,
-        noise: bool,
-        weights: Series | None = None,
-        callback: CallBack | None = None,
-    ) -> float:
-        """Log-likelihood function.
-
-        Parameters
-        ----------
-        p: numpy.Array
-            Numpy array with the parameters.
-        noise: bool
-
-        weights
-        callback
-
-        Returns
-        -------
-        lnlike: float
-            The log-likelihood for the parameters.
-
-        Notes
-        -----
-        This method is always called by emcee.
-
-        """
-        par = self.initial
-
-        # Set the parameters that are varied from the model and objective function
-        par[self.vary] = p
-
-        rv = self.misfit(
-            p=par[: -self.objective_function.nparam],
-            noise=noise,
-            weights=weights,
-            callback=callback,
-        )
-
-        lnlike = self.objective_function.compute(
-            rv, par[-self.objective_function.nparam :]
-        )
-
-        return lnlike
-
-    def log_prior(self, p: ArrayLike) -> float:
-        """Probability of parameter set given the priors.
-
-        Parameters
-        ----------
-        p: numpy.Array
-            Numpy array with the parameters
-
-        Returns
-        -------
-        lp: float
-            Probability of parameter set given the priors
-
-        Notes
-        -----
-        Two cases exist:
-
-        - If any of the parameters touch the boundary, -np.inf is returned. This
-          basically tells the algorithm that the parameter set is very unlikely.
-        - Otherwise, the probability of each parameter given its prior is computed.
-
-        """
-        # Check if parameters are within the boundaries
-        if np.any(p < self.bounds[:, 0]) or np.any(p > self.bounds[:, 1]):
-            lp = -np.inf
-        # If not, compute the probability of each parameter given its prior
-        else:
-            lp = 0.0
-            for param, prior in zip(p, self.priors):
-                lp += prior.logpdf(param)
-        return lp
-
-    def _set_priors(self) -> None:
-        """Set the priors for the parameters."""
-        self.priors = []
-
-        # Set the priors for the parameters that are varied from the model
-        for _, (loc, pmin, pmax, scale, dist) in self.ml.parameters.loc[
-            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
-        ].iterrows():
-            self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
-
-        # Set the priors for the parameters that are varied from the objective function
-        for _, (loc, pmin, pmax, scale, dist) in self.parameters.loc[
-            self.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
-        ].iterrows():
-            self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
-
-    def _get_prior(self, dist: str, loc: float, scale: float, pmin: float, pmax: float):
-        """Set the prior for a parameter.
-
-        Parameters
-        ----------
-        dist: str
-            Name of the distribution. Must be a scipy.stats distribution.
-        loc: float
-            Location parameter. For example, the mean for a normal distribution.
-        scale: float
-            Scale parameter. For example, the standard deviation for a normal distribution.
-
-        Returns
-        -------
-        dist: scipy.stats distribution
-
-        """
-        # Import the distribution
-        mod = importlib.import_module("scipy.stats")
-        # Return the distribution
-        if dist == "uniform":
-            loc = pmin
-            scale = pmax - pmin
-
-        if np.isnan(loc) or np.isnan(scale):
-            msg = "Location and/or scale parameter is NaN."
-            logger.error(msg)
-            raise ValueError(msg)
-
-        return getattr(mod, dist)(loc=loc, scale=scale)
-
-    def set_parameter(
-        self,
-        name: str,
-        initial: float | None = None,
-        vary: bool | None = None,
-        pmin: float | None = None,
-        pmax: float | None = None,
-        optimal: float | None = None,
-        dist: str | None = None,
-    ) -> None:
-        """Method to change the parameter properties.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update. This has to be a single variable.
-        initial: float, optional
-            parameters value to use as initial estimate.
-        vary: bool, optional
-            boolean to vary a parameter (True) or not (False).
-        pmin: float, optional
-            minimum value for the parameter.
-        pmax: float, optional
-            maximum value for the parameter.
-        optimal: float, optional
-            optimal value for the parameter.
-        dist: str, optional
-            Distribution of the parameters. Must be a scipy.stats distribution.
-
-        Examples
-        --------
-        >>> s = ps.EmceeSolve()
-        >>> s.set_parameter(name="ln_sigma", initial=0.1, vary=True, pmin=0.01, pmax=1)
-
-        Notes
-        -----
-        It is highly recommended to use this method to set parameter properties.
-        Changing the parameter properties directly in the parameter `DataFrame` may
-        not work as expected.
-
-        """
-        # Check if the parameter is present in the solver
-        if name not in self.parameters.index:
-            msg = "parameter %s is not present in the solver."
-            logger.error(msg, name)
-            raise KeyError(msg % name)
-
-        # Set the initial value
-        if initial is not None:
-            self.parameters.at[name, "initial"] = float(initial)
-
-        # Set the vary property
-        if vary is not None:
-            self.parameters.at[name, "vary"] = bool(vary)
-
-        # Set the minimum value
-        if pmin is not None:
-            self.parameters.at[name, "pmin"] = float(pmin)
-
-        # Set the maximum value
-        if pmax is not None:
-            self.parameters.at[name, "pmax"] = float(pmax)
-
-        # Set the optimal value
-        if optimal is not None:
-            self.parameters.at[name, "optimal"] = float(optimal)
-
-        # Set the distribution
-        if dist is not None:
-            self.parameters.at[name, "dist"] = str(dist)
-
-    def to_dict(self) -> dict:
-        """This method is not supported for this solver.
-
-        Raises
-        ------
-        NotImplementedError
-
-        """
-        msg = "The EmceeSolve class does not support to_dict() and cannot be saved."
-        raise NotImplementedError(msg)
