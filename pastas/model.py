@@ -986,9 +986,7 @@ class Model:
             # Determine the residuals and set the constant to their mean
             self.normalize_residuals = False
             res = self.residuals(optimal).mean()
-            self._parameters.loc[
-                self._parameters.name == self.constant.name, "optimal"
-            ] = res
+            optimal[self._parameters.name == self.constant.name] = res
 
         self._parameters.loc[:, "optimal"] = optimal
         self._parameters.loc[:, "stderr"] = stderr
