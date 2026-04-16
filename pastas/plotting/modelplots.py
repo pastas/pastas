@@ -248,7 +248,7 @@ class Plotting:
         # Residuals and noise
         ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
         ax2 = plot_series_with_gaps(res, ax=ax2, color="k")
-        if self.ml.settings["noise"] and self.ml.noisemodel:
+        if self.ml.noisemodel is not None:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
             ax2 = plot_series_with_gaps(noise, ax=ax2, color="C0")
         ax2.axhline(0.0, color="k", linestyle="--", zorder=0)
@@ -470,7 +470,7 @@ class Plotting:
 
         # plot residuals (and noise if present)
         _ = plot_series_with_gaps(res, ax=axd["res"], color="k")
-        if self.ml.settings["noise"] and self.ml.noisemodel:
+        if self.ml.noisemodel is not None:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
             _ = plot_series_with_gaps(noise, ax=axd["res"], color="C0")
         axd["res"].axhline(0.0, color="k", linestyle="--", zorder=0)
@@ -632,7 +632,13 @@ class Plotting:
         )
         p = self.ml.parameters.loc[:, ["name"]].copy()
         p.loc[:, "name"] = p.index
-        p.loc[:, "optimal"] = self.ml.parameters.loc[:, "optimal"].apply(
+
+        if self.ml.parameters.loc[:, "optimal"].isna().all():
+            colnam = "initial"
+        else:
+            colnam = "optimal"
+
+        p.loc[:, colnam] = self.ml.parameters.loc[:, colnam].apply(
             _table_formatter_params
         )
         if stderr:
@@ -642,10 +648,13 @@ class Plotting:
             )
             p.loc[:, "stderr"] = stderrper.abs().apply(_table_formatter_stderr)
         ax.axis("off")
+        raw_widths = [max(p[col].str.len().max(), len(col)) for col in p.columns]
+        total = sum(raw_widths)
+        col_widths = [w / total for w in raw_widths]
         ax.table(
             bbox=(0.0, 0.0, 1.0, 1.0),
             cellText=p.values,
-            colWidths=[p[col].str.len().max() for col in p.columns],
+            colWidths=col_widths,
             colLabels=p.columns,
         )
         return ax
@@ -874,7 +883,7 @@ class Plotting:
         scipy.stats.probplot
             Method use to plot the probability plot.
         """
-        if self.ml.settings["noise"]:
+        if self.ml.noisemodel is not None:
             res = self.ml.noise(tmin=tmin, tmax=tmax).iloc[1:]
         else:
             res = self.ml.residuals(tmin=tmin, tmax=tmax)
