@@ -536,7 +536,7 @@ class Plotly:
         x = df_acf.index.total_seconds() / (24 * 60 * 60)
         conf = df_acf["conf"].rolling(10, min_periods=1).mean().values
 
-        if self._model.interpolate_simulation:
+        if self._model._interpolate_simulation:
             sim_interpolated = np.interp(
                 series.index.view("int64"),
                 sim.index.view("int64"),
