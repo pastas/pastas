@@ -27,7 +27,7 @@ class BaseSolver(ABC):
         The Pastas Model instance that is being solved.
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str = "solver") -> None:
         self.name = name
         self.ml: Model | None = None
 
@@ -61,9 +61,6 @@ class BaseSolver(ABC):
             )
         self.ml = ml
 
-    def to_dict(self) -> dict:
-        return {"class": self._name, "name": self.name}
-
     @abstractmethod
     def fit_report(self) -> None:
         """Abstract method that has to be implemented by all solvers."""
@@ -78,3 +75,6 @@ class BaseSolver(ABC):
     def _name(self) -> str:
         """Name of the solver class."""
         return self.__class__.__name__
+
+    def to_dict(self) -> dict:
+        return {"class": self._name, "name": self.name}
