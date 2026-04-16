@@ -20,6 +20,7 @@ from pandas import (
 from pandas import __version__ as pd_version
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
+from scipy import interpolate
 from pandas.tseries.offsets import BaseOffset
 
 from .decorators import PastasDeprecationWarning, njit
@@ -589,26 +590,6 @@ def time_weighted_resample(
     return s_new
 
 
-def _get_nearest_offset_to_freq(tindex: DatetimeIndex, freq: str) -> Timedelta:
-    """Internal method to get the nearest offset to a frequency string.
-
-    Parameters
-    ----------
-    tindex : pandas.DatetimeIndex
-        The index to calculate the offset from.
-    freq : str
-        The frequency string to calculate the offset for.
-
-    Returns
-    -------
-    pandas.Timedelta
-        The nearest offset to the frequency string.
-    """
-    offsets = _get_time_offset(t=tindex, freq=freq).value_counts()
-    t_offset = offsets.idxmax() if len(offsets) > 0 else Timedelta(0)
-    return t_offset
-
-
 def get_equidistant_series_nearest(
     series: Series, freq: str, minimize_data_loss: bool = False
 ) -> Series:
@@ -617,89 +598,107 @@ def get_equidistant_series_nearest(
     This method will shift observations to the nearest equidistant timestep to create
     an equidistant time series, if necessary. Each observation is guaranteed to only
     be used once in the equidistant time series.
+
+    Parameters
+    ----------
+    series : pandas.Series
+        original (non-equidistant) time series
+    freq : str
+        frequency of the new equidistant time series (i.e. "h", "D", "7D", etc.)
+    minimize_data_loss : bool, optional
+        if set to True, method will attempt use any unsampled points from original
+        time series to fill some remaining NaNs in the new equidistant time series.
+        Default is False. This only happens in rare cases.
+
+    Returns
+    -------
+    s : pandas.Series
+        equidistant time series
+
+    Notes
+    -----
+    This method creates an equidistant time series with specified freq using the nearest
+    sampling (meaning observations can be shifted in time), with additional filling
+    logic that ensures each original measurement is only included once in the new
+    time series. Values are filled as close as possible to their original timestamp
+    in the new equidistant time series.
     """
 
-    if len(series) == 0:
-        return series
-
-    # Must be sorted for nearest matching
-    series = series.sort_index()
-
-    # Build equidistant index
-    t_offset = _get_nearest_offset_to_freq(series.index, freq)
-
+    # build new equidistant index
+    t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
+    # use t_offset to pick time that will keep the most data without shifting in time
+    # from the original series.
     idx = date_range(
         series.index[0].floor(freq) + t_offset,
         series.index[-1].ceil(freq) + t_offset,
         freq=freq,
     )
-    idx_ns = idx.to_numpy(dtype=int)
-    series_ns = series.index.to_numpy(dtype=int)
 
-    # Nearest matching
-    ind = series.index.get_indexer(idx, method="nearest")
+    # get linear interpolated index from original series
+    fl = interpolate.interp1d(
+        series.index.view("int64"),
+        np.arange(0, series.index.size),
+        kind="linear",
+        bounds_error=False,
+        fill_value="extrapolate",
+    )
+    ind_linear = fl(idx.view("int64"))
 
-    # Remove out-of-range matches
-    valid = ind >= 0
-    ind = ind[valid]
+    # get the nearest index from original series
+    f = interpolate.interp1d(
+        series.index.view("int64"),
+        np.arange(0, series.index.size),
+        kind="nearest",
+        bounds_error=False,
+        fill_value="extrapolate",
+    )
+    ind = f(idx.view("int64")).astype(int)
 
-    s = Series(index=idx, dtype=float)
+    # create a new equidistant series
+    s = Series(index=idx, data=np.nan)
 
-    # Initial fill
-    s.iloc[valid] = series.to_numpy(copy=True)[ind]
+    # fill in the nearest value for each timestamp in equidistant series
+    s.loc[idx] = series.values[ind]
 
-    matched_isna = np.zeros(len(idx), dtype=bool)
-    matched_isna[np.where(valid)[0]] = series.isna().to_numpy(copy=True)[ind]
+    # remove duplicates, each observation can only be used once
+    mask = Series(ind).duplicated(keep=False).values
+    # mask all duplicates and set to NaN
+    s.loc[mask] = np.nan
 
-    # ---- Duplicate resolution (each original value used once) ----
+    # look through duplicates which equidistant timestamp is the closest
+    # then fill value from original series for closest timestamp
+    for i in np.unique(ind[mask]):
+        # mask duplicates
+        dupe_mask = ind == i
+        # get location of first duplicate
+        first_dupe = np.nonzero(dupe_mask)[0][0]
+        # get index for closest equidistant timestamp
+        i_nearest = np.argmin(np.abs(ind_linear - ind)[dupe_mask])
+        # fill value
+        s.iloc[first_dupe + i_nearest] = series.values[i]
 
-    dup_mask = Series(ind).duplicated(keep=False).values
-    valid_positions = np.where(valid)[0]
-    s.iloc[valid_positions[dup_mask]] = np.nan
-
-    used_mask = np.zeros(len(series), dtype=bool)
-    source_isna = series.isna().to_numpy(copy=True)
-
-    # Mark non-duplicate matches as used (skip NaN source values)
-    non_dup = ind[~dup_mask]
-    used_mask[non_dup] = ~source_isna[non_dup]
-
-    for i in np.unique(ind[dup_mask]):
-        dupe_positions = np.where(ind == i)[0]
-
-        # choose closest in actual time distance
-        distances = np.abs(idx_ns[dupe_positions] - series_ns[i])
-
-        best = dupe_positions[np.argmin(distances)]
-        if not source_isna[i]:
-            s.iloc[best] = series.iloc[i]
-            used_mask[i] = True
-
-    # ---- Minimize data loss ----
+    # This next part is an ugly bit of code to fill up any
+    # nans if there are unused values in the original time series
+    # that lie close enough to our missing datapoint in the new equidisant
+    # series.
     if minimize_data_loss:
+        # find remaining nans
         nanmask = s.isna()
-        fillable = nanmask & ~matched_isna
-
-        if fillable.any():
-            unused = np.where(~used_mask & ~source_isna)[0]
-
-            if unused.size > 0:
-                unused_idx = series_ns[unused]
-                unused_vals = series.iloc[unused].to_numpy(copy=True)
-
-                nan_positions = np.where(fillable)[0]
-
-                for pos in nan_positions:
-                    distances = np.abs(unused_idx - idx_ns[pos])
-                    closest = np.argmin(distances)
-
-                    if distances[closest] <= Timedelta(freq).value:
-                        s.iloc[pos] = unused_vals[closest]
-                        unused_idx = np.delete(unused_idx, closest)
-                        unused_vals = np.delete(unused_vals, closest)
-                        if unused_idx.size == 0:
-                            break
-
+        if nanmask.sum() > 0:
+            # get unused (not sampled) timestamps from original series
+            unused = set(range(series.index.size)) - set(ind)
+            if len(unused) > 0:
+                # dropna: do not consider unused nans
+                missing_ts = series.iloc[list(unused)].dropna().index
+                # loop through nan timestamps in new series
+                for t in s.loc[nanmask].index:
+                    # find closest unused value
+                    closest = np.argmin(np.abs(missing_ts - t))
+                    # check if value is not farther away that freq to avoid
+                    # weird behavior
+                    if np.abs(missing_ts[closest] - t) <= Timedelta(freq):
+                        # fill value
+                        s.loc[t] = series.loc[missing_ts[closest]]
     return s
 
 
