@@ -1946,7 +1946,7 @@ class RechargeModel(StressModelBase):
             if self.temp is not None:
                 temp = self.temp.series.to_numpy(copy=True)
             if p is None:
-                p = self.parameters.initial.to_numpy(copy=True)
+                p = self.parameters.loc[:, "initial"].to_numpy(copy=True)
             stress = self.recharge.simulate(
                 prec=prec, evap=evap, p=p[-self.recharge.nparam :], **{"temp": temp}
             )
