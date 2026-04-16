@@ -267,6 +267,28 @@ def _get_sim_index(
     return sim_index
 
 
+def _parse_warmup(warmup):
+    """Parse the warmup period to a pandas Timedelta.
+
+    Parameters
+    ----------
+    warmup : pandas.Timedelta, float, int, or str
+        The warmup period. If a float or int, it is interpreted as the number of days.
+        If a string, it is passed directly to pandas.Timedelta (e.g. "365D").
+
+    Returns
+    -------
+    pandas.Timedelta
+        The warmup period as a pandas Timedelta.
+    """
+    if isinstance(warmup, Timedelta):
+        return warmup
+    elif isinstance(warmup, (float, int)):
+        return Timedelta(warmup, "D")
+    else:
+        return Timedelta(warmup)
+
+
 def get_sample(tindex: DatetimeIndex, ref_tindex: DatetimeIndex) -> DatetimeIndex:
     """Sample the index of a pandas Series or DataFrame so that the frequency is not
     higher than the frequency of ref_tindex.

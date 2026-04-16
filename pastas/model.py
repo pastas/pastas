@@ -54,6 +54,7 @@ from pastas.timeseries_utils import (
     _get_dt,
     _get_sim_index,
     _get_time_offset,
+    _parse_warmup,
 )
 from pastas.transform import ThresholdTransform
 from pastas.typing import ArrayLike, ModelSettingsDict, Solver, StressModel
@@ -466,7 +467,7 @@ class Model:
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         freq = self.settings["freq"] if freq is None else freq
-        warmup = self.settings["warmup"] if warmup is None else Timedelta(warmup, "D")
+        warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
 
         # Get the simulation index and the time step
         # Check if the requested index matches the model settings
@@ -1073,11 +1074,7 @@ class Model:
 
         if warmup is not None:
             logger.debug("Updating model setting warmup to %s." % warmup)
-            self._settings["warmup"] = (
-                Timedelta(warmup, unit="D")
-                if isinstance(warmup, (float, int))
-                else Timedelta(warmup.days, unit="D")
-            )
+            self._settings["warmup"] = _parse_warmup(warmup)
 
         if fit_constant is not None:
             logger.debug("Updating model setting fit_constant to %s." % fit_constant)
@@ -1579,9 +1576,7 @@ class Model:
         tmin = self.settings["tmin"] if tmin is None else tmin
         tmax = self.settings["tmax"] if tmax is None else tmax
         freq = self.settings["freq"] if freq is None else freq
-        warmup = (
-            self.settings["warmup"] if warmup is None else Timedelta(warmup, unit="D")
-        )
+        warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
 
         # use warmup
         if tmin:
@@ -1961,9 +1956,7 @@ class Model:
         tmin = self.settings["tmin"] if tmin is None else tmin
         tmax = self.settings["tmax"] if tmax is None else tmax
         freq = self.settings["freq"] if freq is None else freq
-        warmup = (
-            self.settings["warmup"] if warmup is None else Timedelta(warmup, unit="D")
-        )
+        warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
 
         # use warmup
         if tmin:
