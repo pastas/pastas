@@ -20,7 +20,7 @@ from pastas.decorators import (
     temporarily_enable_cache,
 )
 from pastas.model import Model
-from pastas.noisemodels import ArmaModel, ArmaNoiseModel, ArNoiseModel, NoiseModel
+from pastas.noisemodels import ArmaNoiseModel, ArNoiseModel
 from pastas.plotting import plots
 from pastas.plotting.modelcompare import CompareModels
 from pastas.plotting.plots import TrackSolve

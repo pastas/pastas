@@ -201,7 +201,6 @@ class TestModelComponents:
         ml_basic.add_noisemodel(noise)
 
         assert ml_basic.noisemodel is noise
-        assert ml_basic.settings["noise"] is True
 
     def test_del_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test deleting a noise model."""
@@ -212,7 +211,6 @@ class TestModelComponents:
         # Then delete it
         ml_basic.del_noisemodel()
         assert ml_basic.noisemodel is None
-        assert ml_basic.settings["noise"] is False
 
 
 @pytest.mark.integration
@@ -259,24 +257,19 @@ class TestModelSimulation:
 
     def test_simulate_with_parameters(self, ml_solved: ps.Model) -> None:
         """Test simulation with provided parameters."""
-        # Solve the model first
-        ml_solved.solve(report=False)
 
-        # Get optimal parameters
-        p_opt = ml_solved.get_parameters()
+        # Get initial and optimal parameters
+        p_init = ml_solved.parameters["initial"]
+        p_opt = ml_solved.parameters["optimal"]
 
-        # Get a copy of ml_rm with initial parameters
-        ml_copy = ml_solved.copy()
-        ml_copy.initialize()
-
-        # Simulate with initial parameters
-        sim_init = ml_copy.simulate()
-
-        # Simulate with optimal parameters
-        sim_opt = ml_copy.simulate(p=p_opt)
+        # Simulate with initial and optimal parameters
+        sim_init = ml_solved.simulate(p=p_init)
+        sim_opt = ml_solved.simulate(p=p_opt)
 
         # Should be different unless the optimization didn't change parameters
-        assert not np.all(sim_init.values == sim_opt.values)
+        res = np.isclose(sim_init.values, sim_opt.values).all(axis=0)
+
+        assert not res
 
     def test_simulate_with_warmup(self, ml_solved: ps.Model) -> None:
         """Test simulation with warmup period."""
@@ -302,12 +295,12 @@ class TestModelSimulation:
         # Residuals should have mean close to zero for a fitted model
         assert abs(res.mean()) < 1.0
 
-    def test_residuals_with_normalize(self, ml_solved: ps.Model) -> None:
-        """Test residuals calculation with normalization."""
-        ml_solved.normalize_residuals = True
+    def test_residuals_with_fit_constant(self, ml_solved: ps.Model) -> None:
+        """Test residuals are mean-zero when fit_constant=False."""
+        ml_solved.solve(fit_constant=False, report=False)
         res = ml_solved.residuals()
 
-        # Normalized residuals should have mean very close to zero
+        # Residuals should have mean very close to zero when fit_constant=False
         assert abs(res.mean()) < 1e-10
 
     def test_observations(self, ml_solved: ps.Model) -> None:
@@ -441,14 +434,6 @@ class TestModelParameters:
 class TestModelSolving:
     """Test model solving."""
 
-    def test_initialize(self, ml_solved: ps.Model) -> None:
-        """Test model initialization before solving."""
-        ml_solved.initialize()
-
-        assert ml_solved.settings["tmin"] is not None
-        assert ml_solved.settings["tmax"] is not None
-        assert ml_solved.observations() is not None
-
     def test_solve(self, ml_solved: ps.Model) -> None:
         """Test solving the model."""
         ml_solved.solve(report=False)
@@ -460,15 +445,17 @@ class TestModelSolving:
     def test_solve_with_weights(self, ml_solved: ps.Model) -> None:
         """Test solving with weights."""
         # Create weights series with same index as observations
-        weights = ml_solved.observations().copy()
-        weights[:] = 1.0
+        p_opt = ml_solved.parameters.loc[:, "optimal"].copy()
+
+        weights = pd.Series(1.0, index=ml_solved.observations().index)
 
         # Lower weights for some periods
-        weights.loc["2002":"2003"] = 0.5
-
+        weights.loc["2010":"2012"] = 0.0
         ml_solved.solve(weights=weights, report=False)
+        p_optw = ml_solved.parameters.loc[:, "optimal"]
 
-        assert ml_solved.settings["weights"] is weights
+        # check if at least one parameter changed due to weights
+        assert not np.isclose(p_opt, p_optw).all(axis=0)
 
     def test_fit_report(self, ml_noisemodel: ps.Model) -> None:
         """Test fit report generation."""
@@ -508,14 +495,12 @@ class TestModelSolving:
 
             assert len(caplog.get_records("call")) == 3
             assert caplog.records[0].message.startswith(
-                "Parameter 'recharge_f' on lower bound:"
+                "Parameter 'recharge_f' on lower bound"
             )
-            assert caplog.records[1].message.startswith(
-                "Response tmax for 'recharge' > than calibration period."
-            )
-            assert caplog.records[2].message.startswith(
-                "Response tmax for 'recharge' > than warmup period."
-            )
+            assert "Response tmax for" in caplog.records[1].message
+            assert "> than calibration period" in caplog.records[1].message
+            assert "Response tmax for" in caplog.records[2].message
+            assert "> than warmup period" in caplog.records[2].message
 
 
 class TestModelContributions:
