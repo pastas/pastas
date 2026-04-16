@@ -50,6 +50,111 @@ class BaseLeastSquares(BaseSolver):
         else:
             return self._get_correlations(self.pcov)
 
+    def _get_realizations(
+        self,
+        func: Callable,
+        n: int | None = None,
+        name: str | None = None,
+        max_iter: int = 10,
+        **kwargs,
+    ) -> DataFrame:
+        """Internal method to obtain n number of parameter realizations.
+
+        Parameters
+        ----------
+        func: Callable
+            Function for which to obtain the realizations. For example, `ml.simulate` or `ml.get_step_response`.
+        n: int, optional
+            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+        name: str, optional
+            Name of the stressmodel or model component to obtain the
+            parameters for.
+        max_iter : int, optional
+            maximum number of iterations for truncated multivariate
+            sampling, default is 10. Increase this value if number of
+            accepted parameter samples is lower than n.
+        **kwargs
+            Additional keyword arguments are passed to the function specified in `func`.
+
+        """
+        if name:
+            kwargs["name"] = name
+
+        parameter_sample = self.get_parameter_sample(n=n, name=name, max_iter=max_iter)
+        data = {}
+
+        # Disable caching during parameter sampling as each sample is unique
+        with temporarily_disable_cache():
+            for i, p in enumerate(parameter_sample):
+                data[i] = func(p=p, **kwargs)
+
+        return DataFrame.from_dict(data, orient="columns", dtype=float)
+
+    def _get_confidence_interval(
+        self,
+        func: Callable,
+        n: int | None = None,
+        name: str | None = None,
+        max_iter: int = 10,
+        alpha: float = 0.05,
+        **kwargs,
+    ) -> DataFrame:
+        """Internal method to obtain a confidence interval."""
+        q = [alpha / 2, 1 - alpha / 2]
+        data = self._get_realizations(
+            func=func, n=n, name=name, max_iter=max_iter, **kwargs
+        )
+        return data.quantile(q=q, axis=1).transpose()
+
+    def _get_covariance_matrix(self, name: str | None = None) -> DataFrame:
+        """Internal method to obtain the covariance matrix from the model.
+
+        Parameters
+        ----------
+        name: str, optional
+            Name of the stressmodel or model component to obtain the
+            parameters for.
+
+        Returns
+        -------
+        pcov: pandas.DataFrame
+            Pandas DataFrame with the covariances for the parameters.
+        """
+        if name:
+            index = self.ml.parameters.loc[
+                self.ml.parameters.loc[:, "name"] == name
+            ].index
+        else:
+            index = self.ml.parameters.index
+
+        pcov = self.pcov.reindex(index=index, columns=index).fillna(0)
+
+        return pcov
+
+    @staticmethod
+    def _get_correlations(pcov: DataFrame) -> DataFrame:
+        """Internal method to obtain the parameter correlations from the
+        covariance matrix.
+
+        Parameters
+        ----------
+        pcov: pandas.DataFrame
+            n x n Pandas DataFrame with the covariances.
+
+        Returns
+        -------
+        pcor: pandas.DataFrame
+            n x n Pandas DataFrame with the correlations.
+        """
+        index = pcov.index
+        pcov = pcov.to_numpy()
+        v = np.sqrt(np.diag(pcov))
+        with np.errstate(divide="ignore", invalid="ignore"):
+            corr = pcov / np.outer(v, v)
+        corr[pcov == 0] = 0
+        pcor = DataFrame(data=corr, index=index, columns=index)
+        return pcor
+
     @staticmethod
     def _get_correlations(pcov: DataFrame) -> DataFrame:
         """Internal method to obtain the parameter correlations from the
@@ -361,86 +466,21 @@ class BaseLeastSquares(BaseSolver):
                 )
         return samples[:n, :]
 
-    def _get_realizations(
-        self,
-        func: Callable,
-        n: int | None = None,
-        name: str | None = None,
-        max_iter: int = 10,
-        **kwargs,
-    ) -> DataFrame:
-        """Internal method to obtain n number of parameter realizations.
-
-        Parameters
-        ----------
-        func: Callable
-            Function for which to obtain the realizations. For example, `ml.simulate` or `ml.get_step_response`.
-        n: int, optional
-            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
-        name: str, optional
-            Name of the stressmodel or model component to obtain the
-            parameters for.
-        max_iter : int, optional
-            maximum number of iterations for truncated multivariate
-            sampling, default is 10. Increase this value if number of
-            accepted parameter samples is lower than n.
-        **kwargs
-            Additional keyword arguments are passed to the function specified in `func`.
-
-        """
-        if name:
-            kwargs["name"] = name
-
-        parameter_sample = self.get_parameter_sample(n=n, name=name, max_iter=max_iter)
-        data = {}
-
-        # Disable caching during parameter sampling as each sample is unique
-        with temporarily_disable_cache():
-            for i, p in enumerate(parameter_sample):
-                data[i] = func(p=p, **kwargs)
-
-        return DataFrame.from_dict(data, orient="columns", dtype=float)
-
-    def _get_confidence_interval(
-        self,
-        func: Callable,
-        n: int | None = None,
-        name: str | None = None,
-        max_iter: int = 10,
-        alpha: float = 0.05,
-        **kwargs,
-    ) -> DataFrame:
-        """Internal method to obtain a confidence interval."""
-        q = [alpha / 2, 1 - alpha / 2]
-        data = self._get_realizations(
-            func=func, n=n, name=name, max_iter=max_iter, **kwargs
-        )
-        return data.quantile(q=q, axis=1).transpose()
-
-    def _get_covariance_matrix(self, name: str | None = None) -> DataFrame:
-        """Internal method to obtain the covariance matrix from the model.
-
-        Parameters
-        ----------
-        name: str, optional
-            Name of the stressmodel or model component to obtain the
-            parameters for.
+    def solve(self) -> tuple[bool, ArrayLike, ArrayLike]:
+        """Abstract method that has to be implemented by all solvers.
 
         Returns
         -------
-        pcov: pandas.DataFrame
-            Pandas DataFrame with the covariances for the parameters.
+        success: bool
+            Boolean indicating whether the optimization was successful.
+        optimal: array_like
+            array_like object with the optimal parameter values as floats.
+        stderr: array_like
+            array_like object with the standard error of the parameters as
+            floats.
+
         """
-        if name:
-            index = self.ml.parameters.loc[
-                self.ml.parameters.loc[:, "name"] == name
-            ].index
-        else:
-            index = self.ml.parameters.index
-
-        pcov = self.pcov.reindex(index=index, columns=index).fillna(0)
-
-        return pcov
+        pass
 
     def misfit(
         self,
@@ -498,46 +538,6 @@ class BaseLeastSquares(BaseSolver):
             )
 
         return rv.values
-
-    @staticmethod
-    def _get_correlations(pcov: DataFrame) -> DataFrame:
-        """Internal method to obtain the parameter correlations from the
-        covariance matrix.
-
-        Parameters
-        ----------
-        pcov: pandas.DataFrame
-            n x n Pandas DataFrame with the covariances.
-
-        Returns
-        -------
-        pcor: pandas.DataFrame
-            n x n Pandas DataFrame with the correlations.
-        """
-        index = pcov.index
-        pcov = pcov.to_numpy()
-        v = np.sqrt(np.diag(pcov))
-        with np.errstate(divide="ignore", invalid="ignore"):
-            corr = pcov / np.outer(v, v)
-        corr[pcov == 0] = 0
-        pcor = DataFrame(data=corr, index=index, columns=index)
-        return pcor
-
-    def solve(self) -> tuple[bool, ArrayLike, ArrayLike]:
-        """Abstract method that has to be implemented by all solvers.
-
-        Returns
-        -------
-        success: bool
-            Boolean indicating whether the optimization was successful.
-        optimal: array_like
-            array_like object with the optimal parameter values as floats.
-        stderr: array_like
-            array_like object with the standard error of the parameters as
-            floats.
-
-        """
-        pass
 
     def objfunction(
         self,
@@ -604,18 +604,62 @@ class LeastSquares(BaseLeastSquares):
 
     def __init__(
         self,
+        jac: Literal["2-point", "3-point"] = "2-point",
+        method: Literal["trf", "dogbox", "lm"] = "trf",
+        ftol: float = 1e-8,
+        xtol: float = 1e-8,
+        gtol: float = 1e-8,
+        x_scale: float | Literal["jac"] | None = None,
+        loss: Literal["linear", "soft_l1", "huber", "cauchy", "arctan"] = "linear",
+        f_scale: float = 1.0,
+        max_nfev: int | None = None,
+        diff_step: float | ArrayLike | None = None,
+        tr_solver: Literal["exact", "lsmr"] | None = None,
+        tr_options: dict | None = None,
+        callback: Callable | None = None,
         pcov: DataFrame | None = None,
         nfev: int | None = None,
         **kwargs,
     ) -> None:
         super().__init__(pcov=pcov, nfev=nfev, **kwargs)
         self.result: OptimizeResult | None = None
+        self.jac = jac
+        self.method = method
+        self.ftol = ftol
+        self.xtol = xtol
+        self.gtol = gtol
+        self.x_scale = x_scale
+        self.loss = loss
+        self.f_scale = f_scale
+        self.max_nfev = max_nfev
+        self.diff_step = diff_step
+        self.tr_solver = tr_solver
+        self.tr_options = tr_options
+        self.callback = callback
+
+    def to_dict(self) -> dict:
+        settings = super().to_dict()
+        settings.update(
+            {
+                "jac": self.jac,
+                "method": self.method,
+                "ftol": self.ftol,
+                "xtol": self.xtol,
+                "gtol": self.gtol,
+                "x_scale": self.x_scale,
+                "loss": self.loss,
+                "f_scale": self.f_scale,
+                "max_nfev": self.max_nfev,
+                "diff_step": self.diff_step,
+                "tr_solver": self.tr_solver,
+                "tr_options": self.tr_options,
+            }
+        )
+        return settings
 
     def solve(
         self,
-        noise: bool = True,
         weights: Series | None = None,
-        callback: CallBack | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
         vary = self.ml.parameters.vary.values.astype(bool)
@@ -623,7 +667,7 @@ class LeastSquares(BaseLeastSquares):
         parameters = self.ml.parameters.loc[vary]
 
         # Set the boundaries
-        method = kwargs.pop("method") if "method" in kwargs else "trf"
+        method = self.method
         if method == "lm":
             logger.info(
                 "Method 'lm' does not support boundaries. Ignoring Pastas'"
@@ -644,27 +688,45 @@ class LeastSquares(BaseLeastSquares):
                 keep_feasible=True,
             )
 
+        for k in kwargs:
+            if hasattr(self, k):
+                logger.info(f"Setting {k} to {kwargs[k]} for LeastSquares solver.")
+                setattr(self, k, kwargs[k])
+
         objfunction = partial(
             self.objfunction,
-            noise=noise,
+            # noise=noise,
             weights=weights,
             initial=initial,
             vary=vary,
-            callback=callback,
+            callback=self.callback,
         )
+
         self.result = least_squares(
-            objfunction,
-            bounds=bounds,
+            func=objfunction,
             x0=initial[vary],
+            jac=self.jac,
+            bounds=bounds,
             method=method,
+            ftol=self.ftol,
+            xtol=self.xtol,
+            gtol=self.gtol,
+            x_scale=self.x_scale,
+            loss=self.loss,
+            f_scale=self.f_scale,
+            max_nfev=self.max_nfev,
+            diff_step=self.diff_step,
+            tr_solver=self.tr_solver,
+            tr_options=self.tr_options,
             **kwargs,
         )
-        self.nfev = self.result.nfev
-        self.obj_func = self.result.cost
 
         self.pcov = DataFrame(
             LeastSquares.get_covariances(
-                self.result.jac, self.obj_func, method=method, absolute_sigma=False
+                self.result.jac,
+                self.result.cost,
+                method=method,
+                absolute_sigma=False,
             ),
             index=parameters.index,
             columns=parameters.index,
@@ -673,7 +735,7 @@ class LeastSquares(BaseLeastSquares):
         # Prepare return values
         success = self.result.success
         optimal = initial
-        optimal[vary] = self.result.x
+        optimal[vary] = np.array(self.result.x, dtype=float)
         stderr = np.zeros(len(optimal)) * np.nan
         stderr[vary] = np.sqrt(np.diag(self.pcov))
 
@@ -823,7 +885,6 @@ class LmfitSolve(BaseLeastSquares):
         self,
         noise: bool = True,
         weights: Series | None = None,
-        callback: CallBack | None = None,
         method: str | None = "leastsq",
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
@@ -840,7 +901,6 @@ class LmfitSolve(BaseLeastSquares):
             self.objfunction,
             noise=noise,
             weights=weights,
-            callback=callback,
         )
         self.mini = lmfit.Minimizer(
             userfcn=objfunction,
