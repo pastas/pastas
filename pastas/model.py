@@ -491,6 +491,8 @@ class Model:
         # Get parameters if none are provided
         if p is None:
             p = self.get_parameters()
+        elif isinstance(p, Series):
+            p = p.values
 
         sim = Series(data=np.zeros(sim_index.size, dtype=float), index=sim_index)
 
