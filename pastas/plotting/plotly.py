@@ -538,8 +538,8 @@ class Plotly:
 
         if self._model.interpolate_simulation:
             sim_interpolated = np.interp(
-                series.index.to_numpy(dtype=int, copy=True),
-                sim.index.to_numpy(dtype=int, copy=True),
+                series.index.view("int64"),
+                sim.index.view("int64"),
                 sim.to_numpy(copy=True),
             )
             sim = pd.Series(index=series.index, data=sim_interpolated)

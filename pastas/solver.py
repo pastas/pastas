@@ -521,8 +521,8 @@ class LeastSquares(BaseSolver):
             dtype=float, copy=True
         )
         parameters = self.ml.parameters.loc[self.vary, :].copy()
-        pmin = parameters.loc[:, "pmin"].to_numpy(dtype=float, copy=True)
-        pmax = parameters.loc[:, "pmax"].to_numpy(dtype=float, copy=True)
+        pmin = parameters.loc[:, "pmin"].values
+        pmax = parameters.loc[:, "pmax"].values
 
         # Set the boundaries
         method = kwargs.pop("method") if "method" in kwargs else "trf"

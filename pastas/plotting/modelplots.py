@@ -892,9 +892,9 @@ class Plotting:
 
         if self.ml.interpolate_simulation:
             sim_interpolated = np.interp(
-                res.index.to_numpy(dtype=int, copy=True),
-                sim.index.to_numpy(dtype=int, copy=True),
-                sim.to_numpy(dtype=float, copy=True),
+                res.index.view("int64"),
+                sim.index.view("int64"),
+                sim.values,
             )
             sim = Series(index=res.index, data=sim_interpolated)
 

@@ -574,8 +574,8 @@ class Model:
         if self.interpolate_simulation:
             # interpolate simulation to times of observations
             sim_interpolated = np.interp(
-                obs.index.to_numpy(dtype=int, copy=True),
-                sim.index.to_numpy(dtype=int, copy=True),
+                obs.index.view("int64"),
+                sim.index.view("int64"),
                 sim.to_numpy(copy=True),
             )
         else:
@@ -1460,7 +1460,7 @@ class Model:
         else:
             p = parameters.loc[:, "optimal"]
 
-        return p.to_numpy(dtype=float, copy=True)
+        return p.values
 
     def get_stressmodel_names(self) -> list[str]:
         """Returns list of stressmodel names."""

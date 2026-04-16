@@ -392,8 +392,8 @@ class Statistics:
             # interpolate simulation to times of observations
             sim_interpolated = Series(
                 interp(
-                    obs.index.to_numpy(dtype=int, copy=True),
-                    sim.index.to_numpy(dtype=int, copy=True),
+                    obs.index.view("int64"),
+                    sim.index.view("int64"),
                     sim.to_numpy(copy=True),
                 ),
                 index=obs.index,

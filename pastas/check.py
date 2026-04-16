@@ -756,8 +756,8 @@ def correlation_sim_vs_res(ml: Model, threshold: float = 0.2):
     sim = Series(
         index=res.index,
         data=np.interp(
-            res.index.to_numpy(dtype=int, copy=True),
-            sim.index.to_numpy(dtype=int, copy=True),
+            res.index.view("int64"),
+            sim.index.view("int64"),
             sim.to_numpy(copy=True),
         ),
     )
