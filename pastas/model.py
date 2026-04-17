@@ -14,7 +14,6 @@ Create a new Pastas model::
 
 # Python Dependencies
 from collections import OrderedDict
-from itertools import combinations
 from logging import getLogger
 from os import getlogin
 from pathlib import Path
@@ -44,7 +43,7 @@ from pastas.decorators import (
 )
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
-from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
+from pastas.plotting.modelplots import Plotting
 from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
@@ -2064,154 +2063,9 @@ class Model:
 
     def fit_report(
         self,
-        corr: bool = False,
-        stderr: bool = False,
-        warnings: bool = True,
-        output: str = None,
+        **kwargs,
     ) -> str:
-        """Method that reports on the fit after a model is optimized.
-
-        Parameters
-        ----------
-        corr : bool, optional
-            If True the parameter correlations are shown.
-        stderr : bool, optional
-            If True the standard error of the parameter values are shown. Please be
-            aware of the conditions for reliable uncertainty estimates, more information
-            here:
-            https://pastas.readthedocs.io/stable/examples/diagnostic_checking.html
-        warnings : bool, optional
-            print warnings in case of optimization failure, parameters hitting
-            bounds, or length of responses exceeding calibration period.
-        output : str, optional (deprecated)
-            deprecated argument, use corr and stderr arguments instead.
-
-        Returns
-        -------
-        report: str
-            String with the report.
-
-        Examples
-        --------
-        This method is called by the solve method if report=True, but can also be
-        called on its own::
-
-        >>> print(ml.fit_report)
-
-        Notes
-        -----
-        The reported values for the fit use the residuals time series where possible.
-        If interpolation is used this means that the result may slightly differ
-        compared to using ml.simulate() and ml.observations().
-        """
-        model = {
-            "nfev": self.solver.nfev,
-            "nobs": self.observations().index.size,
-            "noise": str(True if self.noisemodel else False),
-            "tmin": str(self.settings["tmin"]),
-            "tmax": str(self.settings["tmax"]),
-            "freq": self.settings["freq"],
-            "freq_obs": str(self.settings["freq_obs"]),
-            "warmup": str(self.settings["warmup"]),
-            "solver": self.solver._name,
-        }
-
-        fit = {
-            "EVP": f"{self.stats.evp():.2f}",
-            "R2": f"{self.stats.rsq():.2f}",
-            "RMSE": f"{self.stats.rmse():.2f}",
-            "AICc": f"{self.stats.aicc():.2f}",
-            "BIC": f"{self.stats.bic():.2f}",
-            "Obj": f"{self.solver.obj_func:.2f}",
-            "___": "",
-            "Interp.": "Yes" if self._interpolate_simulation else "No",
-        }
-
-        if output is not None:
-            msg = "Use 'corr=True' instead."
-            deprecate_args_or_kwargs(
-                name="output",
-                version="2.0.0",
-                reason=msg,
-            )
-            if isinstance(output, str) and output == "full":
-                corr = True
-
-        parameters = self._parameters.loc[:, ["optimal", "initial", "vary"]].copy()
-
-        if stderr:
-            stderr = (
-                self._parameters.loc[:, "stderr"] / self._parameters.loc[:, "optimal"]
-            )
-            parameters.loc[:, "stderr"] = stderr.abs().apply(
-                _table_formatter_stderr, na_rep="nan"
-            )
-
-        # determine width of the fit_report
-        len_fit = max([len(v) for v in fit.values()]) + max(
-            [len(v) for v in fit.keys()]
-        )
-        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
-            [len(v) for v in model.keys()]
-        )
-        len_param = len(parameters.to_string().split("\n")[1])
-        width = max((len_fit + len_model + 8), len_param)
-        string = "{:{fill}{align}{width}}"
-        string = "{:{fill}{align}{width}}"
-
-        # Create the first header with model information and stats
-        wspace = max(width - (11 + 14 + len(self.name)), 1)
-        mspace = width - wspace - (11 + 14)
-        header = (
-            f"Fit report {self.name:<{mspace}.{mspace}}"
-            f"{string.format('', fill=' ', align='>', width=wspace)}"
-            f"Fit Statistics\n"
-            f"{string.format('', fill='=', align='>', width=width)}\n"
-        )
-
-        basic = ""
-        len_val4 = max([len(v) for v in fit.values()])
-        wspace = width - (9 + 23 + 9 + len_val4)
-        for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
-
-        # Create the parameters block
-        params = (
-            f"\nParameters ({parameters.vary.sum()} optimized)\n"
-            f"{string.format('', fill='=', align='>', width=width)}\n"
-            f"{parameters.to_string()}"
-        )
-
-        if corr:
-            cor = DataFrame(columns=["value"])
-            pcor = self.solver.pcor
-            for idx, col in combinations(pcor, 2):
-                if np.abs(pcor.loc[idx, col]) > 0.5:
-                    cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
-
-            corr_rep = (
-                f"\n\nParameter correlations |rho| > 0.5\n"
-                f"{string.format('', fill='=', align='>', width=width)}"
-                f"\n{cor.to_string(float_format='%.2f', header=False)}"
-            )
-        else:
-            corr_rep = ""
-
-        warnings_rep = ""
-        if warnings:
-            msg = self._generate_warnings_report(log=False)
-
-            # create message
-            if len(msg) > 0:
-                msg = [
-                    f"\n\nWarnings! ({len(msg)})\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
-                ] + msg
-                warnings_rep += "\n".join(msg)
-
-        report = f"{header}{basic}{params}{warnings_rep}{corr_rep}"
-
-        return report
+        return self.solver.fit_report(**kwargs)
 
     def _check_response_tmax(self, cutoff: float | None = None) -> DataFrame:
         """Internal method to check if response tmax is smaller than calibration period.
