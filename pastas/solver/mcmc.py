@@ -121,6 +121,9 @@ class EmceeSolve(BaseSolver):
         self.objfunction = GaussianLikelihood() if objfunction is None else objfunction
         self.parameters = self.objfunction.get_init_parameters("ln")
 
+    def fit_report(self) -> str:
+        return ""
+
     def solve(
         self,
         noise: bool = False,
@@ -368,84 +371,13 @@ class EmceeSolve(BaseSolver):
 
         return getattr(mod, dist)(loc=loc, scale=scale)
 
-    def set_parameter(
-        self,
-        name: str,
-        initial: float | None = None,
-        vary: bool | None = None,
-        pmin: float | None = None,
-        pmax: float | None = None,
-        optimal: float | None = None,
-        dist: str | None = None,
-    ) -> None:
-        """Method to change the parameter properties.
-
-        Parameters
-        ----------
-        name: str
-            name of the parameter to update. This has to be a single variable.
-        initial: float, optional
-            parameters value to use as initial estimate.
-        vary: bool, optional
-            boolean to vary a parameter (True) or not (False).
-        pmin: float, optional
-            minimum value for the parameter.
-        pmax: float, optional
-            maximum value for the parameter.
-        optimal: float, optional
-            optimal value for the parameter.
-        dist: str, optional
-            Distribution of the parameters. Must be a scipy.stats distribution.
-
-        Examples
-        --------
-        >>> s = ps.EmceeSolve()
-        >>> s.set_parameter(name="ln_sigma", initial=0.1, vary=True, pmin=0.01, pmax=1)
-
-        Notes
-        -----
-        It is highly recommended to use this method to set parameter properties.
-        Changing the parameter properties directly in the parameter `DataFrame` may
-        not work as expected.
-
-        """
-        # Check if the parameter is present in the solver
-        if name not in self.parameters.index:
-            msg = "parameter %s is not present in the solver."
-            logger.error(msg, name)
-            raise KeyError(msg % name)
-
-        # Set the initial value
-        if initial is not None:
-            self.parameters.at[name, "initial"] = float(initial)
-
-        # Set the vary property
-        if vary is not None:
-            self.parameters.at[name, "vary"] = bool(vary)
-
-        # Set the minimum value
-        if pmin is not None:
-            self.parameters.at[name, "pmin"] = float(pmin)
-
-        # Set the maximum value
-        if pmax is not None:
-            self.parameters.at[name, "pmax"] = float(pmax)
-
-        # Set the optimal value
-        if optimal is not None:
-            self.parameters.at[name, "optimal"] = float(optimal)
-
-        # Set the distribution
-        if dist is not None:
-            self.parameters.at[name, "dist"] = str(dist)
-
     def to_dict(self) -> dict:
         """This method is not supported for this solver.
 
-        Raises
-        ------
-        NotImplementedError
-
+        Returns
+        -------
+        dict
         """
-        msg = "The EmceeSolve class does not support to_dict() and cannot be saved."
-        raise NotImplementedError(msg)
+        # msg = "The EmceeSolve class does not support to_dict() and cannot be saved."
+        # raise NotImplementedError(msg)
+        return super().to_dict()
