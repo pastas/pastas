@@ -1026,7 +1026,7 @@ class LmfitSolve(BaseLeastSquares):
             raise ImportError(msg) from None
 
         self.pcov = pcov
-        BaseSolver.__init__(self, **kwargs)
+        super().__init__(self, **kwargs)
 
     def solve(
         self,
