@@ -6,10 +6,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from numpy.typing import ArrayLike, Model
 from pandas import DataFrame, Series, Timestamp
 
 from pastas.stats import evp, rmse
+from pastas.typing import ArrayLike, Model
 
 logger = logging.getLogger(__name__)
 
