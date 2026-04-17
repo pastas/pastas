@@ -324,19 +324,27 @@ class EmceeSolve(BaseSolver):
                 lp += prior.logpdf(param)
         return lp
 
+    def add_parameters_dist(self) -> None:
+        """Add the distribution of the parameters to the parameters DataFrame."""
+        # TODO: This method needs to be implemented such that the distribution
+        # of the parameters is added to the model parameters DataFrame.
+
+        # for i, prior in enumerate(self.priors):
+        # self.ml.parameters.loc[self.ml.parameters.vary, "dist"] = prior.dist.name
+
     def _set_priors(self) -> None:
         """Set the priors for the parameters."""
         self.priors = []
 
         # Set the priors for the parameters that are varied from the model
         for _, (loc, pmin, pmax, scale, dist) in self.ml.parameters.loc[
-            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
+            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr"]
         ].iterrows():
             self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
 
         # Set the priors for the parameters that are varied from the objective function
         for _, (loc, pmin, pmax, scale, dist) in self.parameters.loc[
-            self.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
+            self.parameters.vary, ["initial", "pmin", "pmax", "stderr"]
         ].iterrows():
             self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
 

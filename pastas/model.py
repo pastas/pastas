@@ -1125,8 +1125,12 @@ class Model:
         optimal: float, optional
             optimal value for the parameter.
         move_bounds: bool, optional
-            Reset pmin/pmax based on new initial value. Of move_bounds=True, pmin and
-            pmax must be None.
+            Reset pmin/pmax based on new initial value. Of move_bounds=True,
+            pmin and pmax must be None.
+        kwargs: dict, optional
+            These keyword arguments can be used to change any other parameter
+            properties that are present in the parameters DataFrame, such as "dist".
+
 
         Examples
         --------
