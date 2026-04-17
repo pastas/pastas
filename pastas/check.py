@@ -754,7 +754,12 @@ def correlation_sim_vs_res(ml: Model, threshold: float = 0.2):
             "Interpolating simulation to residuals time index."
         )
     sim = Series(
-        index=res.index, data=np.interp(res.index.asi8, sim.index.asi8, sim.values)
+        index=res.index,
+        data=np.interp(
+            res.index.view("int64"),
+            sim.index.view("int64"),
+            sim.to_numpy(copy=True),
+        ),
     )
     label = f"|corr(sim, res)| < {threshold}"
     val = np.abs(res.corr(sim))

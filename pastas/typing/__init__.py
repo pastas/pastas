@@ -7,6 +7,7 @@ from .types import (
     CallBack,
     Figure,
     Model,
+    ModelSettingsDict,
     NoiseModel,
     OseriesSettingsDict,
     Recharge,
