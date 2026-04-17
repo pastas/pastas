@@ -292,13 +292,13 @@ class TestGXG(object):
         assert v == 10.0
 
     def test_ghg_len_yearly(self) -> None:
-        idx = pd.date_range("20000101", "20550101", freq="d")
+        idx = pd.date_range("20000101", "20550101", freq="D")
         s = pd.Series(np.ones(len(idx)), index=idx)
         v = ps.stats.ghg(s, output="yearly")
         assert v.notna().sum() == 55
 
     def test_glg(self) -> None:
-        idx = pd.date_range("20000101", "20550101", freq="d")
+        idx = pd.date_range("20000101", "20550101", freq="D")
         s = pd.Series(
             [x.month + x.day for x in idx],
             index=idx,
@@ -339,20 +339,20 @@ class TestGXG(object):
 class TestQGXG(object):
     def test_q_ghg(self) -> None:
         n = 101
-        idx = pd.date_range("20160101", freq="d", periods=n)
+        idx = pd.date_range("20160101", freq="D", periods=n)
         s = pd.Series(np.arange(n), index=idx)
         v = ps.stats.q_ghg(s, q=0.94)
         assert v == 94.0
 
     def test_q_glg(self) -> None:
         n = 101
-        idx = pd.date_range("20160101", freq="d", periods=n)
+        idx = pd.date_range("20160101", freq="D", periods=n)
         s = pd.Series(np.arange(n), index=idx)
         v = ps.stats.q_glg(s, q=0.06)
         assert v == 6.0
 
     def test_q_ghg_nan(self) -> None:
-        idx = pd.date_range("20160101", freq="d", periods=4)
+        idx = pd.date_range("20160101", freq="D", periods=4)
         s = pd.Series([1, np.nan, 3, np.nan], index=idx)
         v = ps.stats.q_ghg(s, q=0.5)
         assert v == 2.0
@@ -371,7 +371,7 @@ class TestQGXG(object):
 
     def test_q_glg_tmin(self) -> None:
         tmin = "20160301"
-        idx = pd.date_range("20160101", "20160331", freq="d")
+        idx = pd.date_range("20160101", "20160331", freq="D")
         s = pd.Series(np.arange(len(idx)), index=idx)
         v = ps.stats.q_glg(s, q=0.06, tmin=tmin)
         assert v == 61.8
@@ -379,7 +379,7 @@ class TestQGXG(object):
     def test_q_ghg_tmax(self) -> None:
         n = 101
         tmax = "20160301"
-        idx = pd.date_range("20160101", freq="d", periods=n)
+        idx = pd.date_range("20160101", freq="D", periods=n)
         s = pd.Series(np.arange(n), index=idx)
         v = ps.stats.q_ghg(s, q=0.94, tmax=tmax)
         assert v == 56.4

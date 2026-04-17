@@ -107,7 +107,7 @@ def q_gvg(
         series = series.loc[tmin:]
     if tmax is not None:
         series = series.loc[:tmax]
-    series = series.resample("d").median()
+    series = series.resample("D").median()
     inspring = _in_spring(series)
     if any(inspring):
         if by_year:
@@ -570,7 +570,7 @@ def _gxg(
 
     # resample the series to values at the 14th and 28th of every month
     # first generate a daily series by averaging multiple measurements during the day
-    series = series.resample("d").mean()
+    series = series.resample("D").mean()
     select14or28 = True
 
     if fill_method and limit is None:
@@ -588,7 +588,7 @@ def _gxg(
             # only keep days with measurements
             series = series.dropna()
             # generate an index at the 14th and 28th of every month
-            buf = Timedelta(8, "d")
+            buf = Timedelta(8, "D")
             ref_index = date_range(series.index.min() - buf, series.index.max() + buf)
             mask = [(x.day == 14) or (x.day == 28) for x in ref_index]
             ref_index = ref_index[mask]
@@ -680,7 +680,7 @@ def _q_gxg(
         series = series.loc[tmin:]
     if tmax is not None:
         series = series.loc[:tmax]
-    series = series.resample("d").median()
+    series = series.resample("D").median()
     if by_year:
         return series.resample(year_offset).apply(lambda s: s.quantile(q)).mean()
     else:

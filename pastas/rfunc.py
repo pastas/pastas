@@ -1138,8 +1138,8 @@ class One(RfuncBase):
                     name,
                 )
             ],
-            index=[name + "_d"],
-            columns=["initial", "pmin", "pmax", "vary", "name"],
+            index=[name + "_A"],
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
         )
         return parameters
 

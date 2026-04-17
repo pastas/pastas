@@ -50,6 +50,248 @@ class BaseLeastSquares(BaseSolver):
         else:
             return self._get_correlations(self.pcov)
 
+    def prediction_interval(
+        self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
+    ) -> DataFrame:
+        """Method to calculate the prediction interval for the simulation.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            prediction interval (for alpha=0.05)
+        **kwargs
+            Additional keyword arguments are passed to the `ml.simulate()` method.
+            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
+            the prediction interval for a specific period.
+
+        Notes
+        -----
+        Add residuals assuming a Normal distribution with standard deviation
+        equal to the standard deviation of the residuals.
+        """
+
+        sigr = self.ml.residuals().std()
+
+        data = self._get_realizations(
+            func=self.ml.simulate, n=n, name=None, max_iter=max_iter, **kwargs
+        )
+        data = data + sigr * np.random.randn(data.shape[0], data.shape[1])
+
+        q = [alpha / 2, 1 - alpha / 2]
+        rv = data.quantile(q, axis=1).transpose()
+        return rv
+
+    def ci_simulation(
+        self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
+    ) -> DataFrame:
+        """Method to calculate the confidence interval for the simulation.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
+        **kwargs
+            Additional keyword arguments are passed to the `ml.simulate()` method.
+            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
+            the confidence interval for a specific period.
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+        """
+        return self._get_confidence_interval(
+            func=self.ml.simulate, n=n, alpha=alpha, max_iter=max_iter, **kwargs
+        )
+
+    def ci_block_response(
+        self,
+        name: str,
+        n: int = 1000,
+        alpha: float = 0.05,
+        max_iter: int = 10,
+        **kwargs,
+    ) -> DataFrame:
+        """Method to calculate the confidence interval for the block response.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
+        **kwargs
+            Additional keyword arguments are passed to the `ml.get_block_response()`
+            method.
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+        """
+        dt = self.ml.get_block_response(name=name).index.values
+        return self._get_confidence_interval(
+            func=self.ml.get_block_response,
+            n=n,
+            alpha=alpha,
+            name=name,
+            max_iter=max_iter,
+            dt=dt,
+            **kwargs,
+        )
+
+    def ci_step_response(
+        self,
+        name: str,
+        n: int = 1000,
+        alpha: float = 0.05,
+        max_iter: int = 10,
+        **kwargs,
+    ) -> DataFrame:
+        """Method to calculate the confidence interval for the step response.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05)
+        **kwargs
+            Additional keyword arguments are passed to the `ml.get_step_response()`
+            method.
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+        """
+        dt = self.ml.get_block_response(name=name).index.values
+        return self._get_confidence_interval(
+            func=self.ml.get_step_response,
+            n=n,
+            alpha=alpha,
+            name=name,
+            max_iter=max_iter,
+            dt=dt,
+            **kwargs,
+        )
+
+    def ci_contribution(
+        self,
+        name: str,
+        n: int = 1000,
+        alpha: float = 0.05,
+        max_iter: int = 10,
+        **kwargs,
+    ) -> DataFrame:
+        """Method to calculate the confidence interval for the contribution.
+
+        Returns
+        -------
+        data : Pandas.DataFrame
+            DataFrame of length number of observations and two columns labeled
+            0.025 and 0.975 (numerical values) containing the 2.5% and 97.5%
+            interval (for alpha=0.05).
+        **kwargs
+            Additional keyword arguments are passed to the `ml.get_contribution()`
+            method. For example, `tmin` and `tmax` can be passed as keyword arguments to
+            compute the confidence interval of a contribution for a specific period.
+
+        Notes
+        -----
+        The confidence interval shows the uncertainty in the simulation due
+        to parameter uncertainty. In other words, there is a 95% probability
+        that the true best-fit line for the observed data lies within the
+        95% confidence interval.
+        """
+        return self._get_confidence_interval(
+            func=self.ml.get_contribution,
+            n=n,
+            alpha=alpha,
+            name=name,
+            max_iter=max_iter,
+            **kwargs,
+        )
+
+    def get_parameter_sample(
+        self, name: str | None = None, n: int = None, max_iter: int = 10
+    ) -> ArrayLike:
+        """Method to obtain a parameter sets for monte carlo analyses.
+
+        Parameters
+        ----------
+        name: str, optional
+            Name of the stressmodel or model component to obtain the
+            parameters for.
+        n: int, optional
+            Number of random samples drawn from the bivariate normal
+            distribution.
+        max_iter : int, optional
+            maximum number of iterations for truncated multivariate
+            sampling, default is 10. Increase this value if number of
+            accepted parameter samples is lower than n.
+
+        Returns
+        -------
+        array_like
+            array with N parameter samples.
+        """
+        p = self.ml.get_parameters(name=name).copy()
+        pcov = self._get_covariance_matrix(name=name)
+
+        if name is None:
+            parameters = self.ml.parameters
+        else:
+            parameters = self.ml.parameters.loc[self.ml.parameters.name == name]
+
+        pmin = parameters.pmin.fillna(-np.inf).values
+        pmax = parameters.pmax.fillna(np.inf).values
+
+        if n is None:
+            # only use parameters that are varied.
+            n = int(10 ** parameters.vary.sum())
+
+        samples = np.zeros((0, p.size))
+
+        # Start truncated multivariate sampling
+        it = 0
+        while samples.shape[0] < n:
+            s = np.random.multivariate_normal(p, pcov, size=(n,), check_valid="ignore")
+            accept = s[
+                (np.min(s - pmin, axis=1) >= 0) & (np.max(s - pmax, axis=1) <= 0)
+            ]
+            samples = np.concatenate((samples, accept), axis=0)
+
+            # Make sure there's no endless while loop
+            if it > max_iter:
+                break
+            else:
+                it += 1
+
+        if samples.shape[0] < n:
+            suggestion = "You could try increasing 'max_iter'."
+            if samples.shape[0] == 0:
+                raise RuntimeError(
+                    "No parameter samples were found within %s runs. " % max_iter
+                    + suggestion
+                )
+            else:
+                logger.warning(
+                    "Parameter sample size is smaller than n: %s/%s. " % (max_iter, n)
+                    + suggestion
+                )
+        return samples[:n, :]
+
     def _get_realizations(
         self,
         func: Callable,
@@ -532,12 +774,12 @@ class BaseLeastSquares(BaseSolver):
 
         if returnseparate:
             return (
-                self.ml.residuals(p).values,
-                self.ml.noise(p).values,
-                self.ml.noise_weights(p).values,
+                self.ml.residuals(p).to_numpy(copy=True),
+                self.ml.noise(p).to_numpy(copy=True),
+                self.ml.noise_weights(p).to_numpy(copy=True),
             )
 
-        return rv.values
+        return rv.to_numpy(copy=True)
 
     def objfunction(
         self,
@@ -662,8 +904,8 @@ class LeastSquares(BaseLeastSquares):
         weights: Series | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
-        vary = self.ml.parameters.vary.values.astype(bool)
-        initial = self.ml.parameters.initial.values.copy()
+        vary = self.ml.parameters.vary.to_numpy(dtype=bool, copy=True)
+        initial = self.ml.parameters.initial.to_numpy(dtype=float, copy=True)
         parameters = self.ml.parameters.loc[vary]
 
         # Set the boundaries
@@ -683,8 +925,8 @@ class LeastSquares(BaseLeastSquares):
             self.ml._parameters.loc[self.vary, "pmax"] = np.nan
         else:
             bounds = Bounds(
-                lb=np.where(parameters.pmin.isnull(), -np.inf, parameters.pmin),
-                ub=np.where(parameters.pmax.isnull(), np.inf, parameters.pmax),
+                lb=np.where(np.isnan(pmin), -np.inf, pmin),
+                ub=np.where(np.isnan(pmax), np.inf, pmax),
                 keep_feasible=True,
             )
 
@@ -718,6 +960,7 @@ class LeastSquares(BaseLeastSquares):
             diff_step=self.diff_step,
             tr_solver=self.tr_solver,
             tr_options=self.tr_options,
+            args=(noise, weights, callback),
             **kwargs,
         )
 
