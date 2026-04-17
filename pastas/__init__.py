@@ -22,7 +22,6 @@ from pastas.model import Model
 from pastas.noisemodels import ArmaNoiseModel, ArNoiseModel
 from pastas.plotting import plots
 from pastas.plotting.modelcompare import CompareModels
-from pastas.plotting.plots import TrackSolve
 from pastas.rcparams import rcParams
 from pastas.rfunc import (
     DoubleExponential,
@@ -37,6 +36,7 @@ from pastas.rfunc import (
     Spline,
 )
 from pastas.solver import EmceeSolve, LeastSquares, LmfitSolve
+from pastas.solver.trackers import TrackSolve
 from pastas.stressmodels import (
     ChangeModel,
     Constant,

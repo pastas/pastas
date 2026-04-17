@@ -5,7 +5,8 @@ import pytest
 from pandas import Series
 
 from pastas import Model
-from pastas.plotting.plots import TrackSolve, compare, pairplot
+from pastas.plotting.plots import compare, pairplot
+from pastas.solver.trackers import TrackSolve
 
 # mpl.use("Agg")  # prevent _tkinter.TclError: Can't find a usable tk.tcl error
 
