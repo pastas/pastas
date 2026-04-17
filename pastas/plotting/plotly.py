@@ -537,7 +537,11 @@ class Plotly:
         conf = df_acf["conf"].rolling(10, min_periods=1).mean().values
 
         if self._model._interpolate_simulation:
-            sim_interpolated = np.interp(series.index.asi8, sim.index.asi8, sim.values)
+            sim_interpolated = np.interp(
+                series.index.view("int64"),
+                sim.index.view("int64"),
+                sim.to_numpy(copy=True),
+            )
             sim = pd.Series(index=series.index, data=sim_interpolated)
 
         sim = sim.loc[series.index]
