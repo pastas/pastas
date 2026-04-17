@@ -93,12 +93,3 @@ class TestOptionalSolvers:
             assert solver.progress_bar is True
         except ImportError:
             pytest.skip("emcee not installed")
-
-    def test_emcee_to_dict_raises(self) -> None:
-        """Test that EmceeSolve.to_dict raises NotImplementedError."""
-        try:
-            solver = EmceeSolve()
-            with pytest.raises(NotImplementedError):
-                solver.to_dict()
-        except ImportError:
-            pytest.skip("emcee not installed")

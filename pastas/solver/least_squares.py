@@ -663,7 +663,7 @@ class LeastSquares(BaseLeastSquares):
         for k in kwargs:
             if hasattr(self, k):
                 logger.info(f"Setting {k} to {kwargs[k]} for LeastSquares solver.")
-                setattr(self, k, kwargs[k])
+                setattr(self, k, kwargs.pop(k))
 
         objfunction = partial(
             self.objfunction,
@@ -834,6 +834,7 @@ class LeastSquares(BaseLeastSquares):
         stderr: bool = False,
         warnings: bool = True,
         output: str = None,
+        **kwargs,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -1023,7 +1024,9 @@ class LmfitSolve(BaseLeastSquares):
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg) from None
-        BaseSolver.__init__(self, pcov=pcov, **kwargs)
+
+        self.pcov = pcov
+        BaseSolver.__init__(self, **kwargs)
 
     def solve(
         self,
