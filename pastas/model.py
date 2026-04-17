@@ -966,10 +966,7 @@ class Model:
             self.add_solver(solver=LeastSquares())
 
         # Solve model
-        noise = True if self.noisemodel else False
-        success, optimal, stderr = self.solver.solve(
-            noise=noise, weights=weights, **kwargs
-        )
+        success, optimal, stderr = self.solver.solve(weights=weights, **kwargs)
         if not success:
             logger.warning("Model parameters could not be estimated well.")
 
