@@ -23,7 +23,7 @@ class BaseLeastSquares(BaseSolver):
     def __init__(
         self,
         pcov: DataFrame | None = None,
-        nfev: int | None = None,
+        **kwargs,
     ) -> None:
         """Base class for least squares solvers.
 
@@ -31,12 +31,9 @@ class BaseLeastSquares(BaseSolver):
         ----------
         pcov: DataFrame, optional
             DataFrame with the covariance matrix of the parameters. Default is None.
-        nfev: int, optional
-            Number of function evaluations. Default is None.
         """
-        super().__init__(name=self._name)
+        super().__init__(**kwargs)
         self.pcov = pcov
-        self.nfev = nfev
 
     @property
     def pcor(self) -> DataFrame | None:
@@ -494,7 +491,7 @@ class BaseLeastSquares(BaseSolver):
         """
         # Get the residuals or the noise
         if noise:
-            rv = self.ml.noise(p) * self.ml.noise_weights(p)
+            rv = self.ml.noise(p) * self.ml._noise_weights(p)
         else:
             rv = self.ml.residuals(p)
 
@@ -511,7 +508,7 @@ class BaseLeastSquares(BaseSolver):
             return (
                 self.ml.residuals(p).to_numpy(copy=True),
                 self.ml.noise(p).to_numpy(copy=True),
-                self.ml.noise_weights(p).to_numpy(copy=True),
+                self.ml._noise_weights(p).to_numpy(copy=True),
             )
 
         return rv.to_numpy(copy=True)
@@ -557,7 +554,6 @@ class BaseLeastSquares(BaseSolver):
         settings.update(
             {
                 "pcov": self.pcov,
-                "nfev": self.nfev,
             }
         )
         return settings
@@ -598,10 +594,9 @@ class LeastSquares(BaseLeastSquares):
         tr_options: dict | None = None,
         callback: Callable | None = None,
         pcov: DataFrame | None = None,
-        nfev: int | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(pcov=pcov, nfev=nfev, **kwargs)
+        super().__init__(pcov=pcov, **kwargs)
         self.result: OptimizeResult | None = None
         self.jac = jac
         self.method = method
@@ -1010,7 +1005,6 @@ class LmfitSolve(BaseLeastSquares):
     def __init__(
         self,
         pcov: DataFrame | None = None,
-        nfev: int | None = None,
         **kwargs,
     ) -> None:
         try:
@@ -1019,7 +1013,7 @@ class LmfitSolve(BaseLeastSquares):
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg) from None
-        BaseSolver.__init__(self, pcov=pcov, nfev=nfev, **kwargs)
+        BaseSolver.__init__(self, pcov=pcov, **kwargs)
 
     def solve(
         self,
@@ -1069,9 +1063,6 @@ class LmfitSolve(BaseLeastSquares):
         )
 
         # Set all optimization attributes
-        self.nfev = self.result.nfev
-        self.obj_func = self.result.chisqr
-
         success = self.result.success if hasattr(self.result, "success") else True
         optimal = np.array([p.value for p in self.result.params.values()])
         stderr = np.array([p.stderr for p in self.result.params.values()])
@@ -1087,4 +1078,6 @@ class LmfitSolve(BaseLeastSquares):
         return self.misfit(p=p, noise=noise, weights=weights, callback=callback)
 
     def fit_report(self, **kwargs) -> str:
+        # nfev = self.result.nfev
+        # obj_func = self.result.chisqr
         return ""
