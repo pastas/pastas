@@ -30,8 +30,10 @@ class BaseSolver(ABC):
     def __init__(self, name: str = "solver") -> None:
         self.name = name
         self.ml: Model | None = None
+        self.parameters: pd.DataFrame | None = None
+        self.set_init_parameters()
 
-    def get_init_parameters(self) -> pd.DataFrame:
+    def get_init_parameters(self, name: str) -> pd.DataFrame:
         """Get the initial parameters of the solver.
 
         Returns
@@ -39,12 +41,17 @@ class BaseSolver(ABC):
         init_parameters: pd.DataFrame
             DataFrame with the initial parameters of the solver.
         """
+        _ = name
         parameters = pd.DataFrame(
             [],
             index=[],
             columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
+
+    def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
+        self.parameters = self.get_init_parameters(name=self.name)
 
     def set_model(self, ml: Model):
         """Method to set the Pastas Model instance.
@@ -62,7 +69,7 @@ class BaseSolver(ABC):
         self.ml = ml
 
     @abstractmethod
-    def fit_report(self) -> None:
+    def fit_report(self, **kwargs) -> str:
         """Abstract method that has to be implemented by all solvers."""
         pass
 

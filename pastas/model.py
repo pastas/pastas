@@ -1456,6 +1456,8 @@ class Model:
             frames.append(self.transform.parameters)
         if self.noisemodel is not None:
             frames.append(self.noisemodel.parameters)
+        if self.solver is not None:
+            frames.append(self.solver.parameters)
 
         if not frames:
             parameters = DataFrame(columns=self._parameters.columns)

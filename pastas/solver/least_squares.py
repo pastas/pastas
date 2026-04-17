@@ -549,6 +549,9 @@ class BaseLeastSquares(BaseSolver):
         par[vary] = p
         return self.misfit(p=par, noise=noise, weights=weights, callback=callback)
 
+    def fit_report(self, **kwargs) -> str:
+        return ""
+
     def to_dict(self) -> dict:
         settings = super().to_dict()
         settings.update(
@@ -1082,3 +1085,6 @@ class LmfitSolve(BaseLeastSquares):
     ) -> ArrayLike:
         p = np.array([p.value for p in parameters.values()])
         return self.misfit(p=p, noise=noise, weights=weights, callback=callback)
+
+    def fit_report(self, **kwargs) -> str:
+        return ""
