@@ -1,15 +1,11 @@
 
 *.xml
-
 *.iml
-
 *.pyc
-
 *.so
-
 *.coverage*
-
 *.amlignore*
+*.DS_Store
 
 pastas.egg-info
 pastas/gui/settings
@@ -33,7 +29,6 @@ dist
 .spyproject
 .pylint.d/
 
-.DS_Store
 /doc/api/generated/
 doc/about/publications.bib
 doc/about/references.bib
@@ -41,3 +36,5 @@ doc/about/references.bib
 *.nbi
 *.pdf
 *.lock
+
+tests/data/pas_files_*/

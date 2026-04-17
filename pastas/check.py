@@ -66,9 +66,8 @@ import numpy as np
 from matplotlib.colors import rgb2hex
 from pandas import DataFrame, Series, Timedelta, concat
 
-from pastas.model import Model
-from pastas.rfunc import RfuncBase
 from pastas.stats import tests as diagnostic_tests
+from pastas.typing import Model, RFunc
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +214,7 @@ def _response_memory(
     # unit = "days"
     dim = "[T]"
 
-    def interp_step(cutoff: float, p: np.ndarray, rfunc: RfuncBase):
+    def interp_step(cutoff: float, p: np.ndarray, rfunc: RFunc):
         """Helper function to interpolate the step response to compute the memory.
 
         Parameters
@@ -468,21 +467,45 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
+    ml_parameters = ml.parameters
     if parameters is None:
-        parameters = ml.parameters.index.tolist()
+        parameters = ml_parameters.index.tolist()
     elif isinstance(parameters, str):
-        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
+        parameters = [iparam for iparam in ml_parameters.index if parameters in iparam]
     df = get_empty_check_dataframe()
-    upper, lower = ml._check_parameters_bounds()
+
+    lowerhit = Series(index=ml_parameters.index, dtype=bool)
+    upperhit = Series(index=ml_parameters.index, dtype=bool)
+
+    for p in ml_parameters.index:
+        optimal = ml_parameters.at[p, "optimal"]
+        pmin = ml_parameters.at[p, "pmin"]
+        pmax = ml_parameters.at[p, "pmax"]
+
+        # calculate atol based on minimum, with max 1e-8
+        # otherwise set 1 order of magnitude lower than minimum value
+        if pmin == 0.0 or np.isnan(pmin):
+            atol = 1e-8
+        else:
+            atol = np.min([1e-8, 10 ** (np.floor(np.log10(np.abs(pmin))) - 1)])
+
+        # deal with NaNs in parameter bounds
+        pmin = -np.inf if np.isnan(pmin) else pmin
+        pmax = np.inf if np.isnan(pmax) else pmax
+
+        # determine hits
+        lowerhit.at[p] = np.allclose(optimal, pmin, atol=atol, rtol=1e-5)
+        upperhit.at[p] = np.allclose(optimal, pmax, atol=atol, rtol=1e-5)
+
     for param in parameters:
         bounds = (
-            ml.parameters.loc[param, "pmin"],
-            ml.parameters.loc[param, "pmax"],
+            ml_parameters.loc[param, "pmin"],
+            ml_parameters.loc[param, "pmax"],
         )
-        check = ~(upper.loc[param] or lower.loc[param])
+        check = ~(upperhit.loc[param] or lowerhit.loc[param])
 
         df.loc[f"Bounds: {param}"] = (
-            ml.parameters.loc[param, "optimal"],
+            ml_parameters.loc[param, "optimal"],
             "within",
             bounds,
             guess_unit_or_dims(param),
@@ -692,10 +715,13 @@ def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
         DataFrame with the results of the check.
     """
     dtest = getattr(diagnostic_tests, test)
-    noise = ml.noise()
-    if noise is None:
-        logger.warning("No noise model found in model. Using residuals instead.")
+    if ml.noisemodel is None:
+        logger.warning(
+            "No noisemodel found in model. Using residuals instead for diagnostic test."
+        )
         noise = ml.residuals()
+    else:
+        noise = ml.noise()
     _, p = dtest(noise.iloc[1:], **kwargs)
     check = p > alpha
     label = f"{test} (p > α)"
