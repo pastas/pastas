@@ -20,8 +20,8 @@ from pandas import (
 from pandas import __version__ as pd_version
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
-from scipy import interpolate
 from pandas.tseries.offsets import BaseOffset
+from scipy import interpolate
 
 from .decorators import PastasDeprecationWarning, njit
 

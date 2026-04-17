@@ -6,7 +6,6 @@ import warnings
 
 from pandas.plotting import register_matplotlib_converters
 
-import pastas.objective_functions as objfunc
 import pastas.recharge as rch
 import pastas.timeseries_utils as ts
 from pastas import check, extensions, forecast, stats
