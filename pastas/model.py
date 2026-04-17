@@ -1297,7 +1297,7 @@ class Model:
             model is simulated.
         """
         return _get_sim_index(
-            tmin=self.settings["tmin"],
+            tmin=self.settings["tmin"] - self.settings["warmup"],
             tmax=self.settings["tmax"],
             freq=self.settings["freq"],
             time_offset=self.time_offset,
