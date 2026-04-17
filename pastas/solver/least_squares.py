@@ -32,8 +32,18 @@ class BaseLeastSquares(BaseSolver):
         pcov: DataFrame, optional
             DataFrame with the covariance matrix of the parameters. Default is None.
         """
-        super().__init__(**kwargs)
         self.pcov = pcov
+        if "nfev" in kwargs:
+            logger.debug(
+                "The 'nfev' argument is not used in the BaseLeastSquares class and will be ignored."
+            )
+            kwargs.pop("nfev")
+        if "obj_func" in kwargs:
+            logger.debug(
+                "The 'obj_func' argument is not used in the BaseLeastSquares class and will be ignored."
+            )
+            kwargs.pop("obj_func")
+        super().__init__(**kwargs)
 
     @property
     def pcor(self) -> DataFrame | None:
@@ -625,8 +635,8 @@ class LeastSquares(BaseLeastSquares):
         vary = self.ml.parameters.vary.to_numpy(dtype=bool, copy=True)
         initial = self.ml.parameters.initial.to_numpy(dtype=float, copy=True)
         parameters = self.ml.parameters.loc[vary]
-        pmin = self.ml.parameters.pmin.to_numpy(dtype=float, copy=True)
-        pmax = self.ml.parameters.pmax.to_numpy(dtype=float, copy=True)
+        pmin = parameters.loc[:, "pmin"].to_numpy(dtype=float, copy=True)
+        pmax = parameters.loc[:, "pmax"].to_numpy(dtype=float, copy=True)
 
         # Set the boundaries
         method = self.method
@@ -861,7 +871,7 @@ class LeastSquares(BaseLeastSquares):
         compared to using ml.simulate() and ml.observations().
         """
         model = {
-            "nfev": self.nfev,
+            "nfev": self.result.nfev if self.result is not None else 0,
             "nobs": self.ml.observations().index.size,
             "noise": str(True if self.ml.noisemodel else False),
             "tmin": str(self.ml.settings["tmin"]),
