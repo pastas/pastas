@@ -536,28 +536,150 @@ class BaseLeastSquares(BaseSolver):
 
         Parameters
         ----------
-        p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
-        noise: Boolean
-            If True, minimizes the sum of squared noise computed by the NoiseModel.
-        weights: pandas.Series | None
-            pandas Series by which the residual or noise series are
-            multiplied. Typically values between 0 and 1.
-        initial: array_like
-            array_like object with the initial parameter values.
-        vary: array_like
-            array_like object with booleans indicating which parameters (p) are varied.
-        callback: ufunc
-            function that is called after each iteration. the parameters are
-            provided to the func.
-        """
-        par = initial
-        par[vary] = p
-        return self.misfit(p=par, noise=noise, weights=weights, callback=callback)
+        corr : bool, optional
+            If True the parameter correlations are shown.
+        stderr : bool, optional
+            If True the standard error of the parameter values are shown. Please be
+            aware of the conditions for reliable uncertainty estimates, more information
+            here:
+            https://pastas.readthedocs.io/stable/examples/diagnostic_checking.html
+        warnings : bool, optional
+            print warnings in case of optimization failure, parameters hitting
+            bounds, or length of responses exceeding calibration period.
+        output : str, optional (deprecated)
+            deprecated argument, use corr and stderr arguments instead.
+        obj_func : float, optional
+            Value of the found minimal loss function value from the
+            optimization algorithm. Generally obtained from the result attribute
+            which is not present when loading the solver, thus by default nan.
 
-    def fit_report(self, **kwargs) -> str:
-        return ""
+
+        Returns
+        -------
+        report: str
+            String with the report.
+
+        Examples
+        --------
+        This method is called by the solve method if report=True, but can also be
+        called on its own::
+
+        >>> print(ml.fit_report)
+
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where possible.
+        If interpolation is used this means that the result may slightly differ
+        compared to using ml.simulate() and ml.observations().
+        """
+        model = {
+            "nfev": self.result.nfev if self.result is not None else 0,
+            "nobs": self.ml.observations().index.size,
+            "noise": str(True if self.ml.noisemodel else False),
+            "tmin": str(self.ml.settings["tmin"]),
+            "tmax": str(self.ml.settings["tmax"]),
+            "freq": self.ml.settings["freq"],
+            "freq_obs": str(self.ml.settings["freq_obs"]),
+            "warmup": str(self.ml.settings["warmup"]),
+            "solver": self._name,
+        }
+        fit = {
+            "EVP": f"{self.ml.stats.evp():.2f}",
+            "R2": f"{self.ml.stats.rsq():.2f}",
+            "RMSE": f"{self.ml.stats.rmse():.2f}",
+            "AICc": f"{self.ml.stats.aicc():.2f}",
+            "BIC": f"{self.ml.stats.bic():.2f}",
+            "Obj": f"{obj_func:.2f}",
+            "___": "",
+            "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
+        }
+
+        if output is not None:
+            msg = "Use 'corr=True' instead."
+            deprecate_args_or_kwargs(
+                name="output",
+                version="2.0.0",
+                reason=msg,
+            )
+            if isinstance(output, str) and output == "full":
+                corr = True
+
+        parameters = self.ml._parameters.loc[:, ["optimal", "initial", "vary"]].copy()
+
+        if stderr:
+            stderr = (
+                self.ml._parameters.loc[:, "stderr"]
+                / self.ml._parameters.loc[:, "optimal"]
+            )
+            parameters.loc[:, "stderr"] = stderr.abs().apply(
+                _table_formatter_stderr, na_rep="nan"
+            )
+
+        # determine width of the fit_report
+        len_fit = max([len(v) for v in fit.values()]) + max(
+            [len(v) for v in fit.keys()]
+        )
+        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
+            [len(v) for v in model.keys()]
+        )
+        len_param = len(parameters.to_string().split("\n")[1])
+        width = max((len_fit + len_model + 8), len_param)
+        string = "{:{fill}{align}{width}}"
+        string = "{:{fill}{align}{width}}"
+
+        # Create the first header with model information and stats
+        wspace = max(width - (11 + 14 + len(self.name)), 1)
+        mspace = width - wspace - (11 + 14)
+        header = (
+            f"Fit report {self.name:<{mspace}.{mspace}}"
+            f"{string.format('', fill=' ', align='>', width=wspace)}"
+            f"Fit Statistics\n"
+            f"{string.format('', fill='=', align='>', width=width)}\n"
+        )
+
+        basic = ""
+        len_val4 = max([len(v) for v in fit.values()])
+        wspace = width - (9 + 23 + 9 + len_val4)
+        for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
+            basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
+
+        # Create the parameters block
+        params = (
+            f"\nParameters ({parameters.vary.sum()} optimized)\n"
+            f"{string.format('', fill='=', align='>', width=width)}\n"
+            f"{parameters.to_string()}"
+        )
+
+        if corr:
+            cor = DataFrame(columns=["value"])
+            pcor = self.pcor
+            for idx, col in (pcor, 2):
+                if np.abs(pcor.loc[idx, col]) > 0.5:
+                    cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
+
+            corr_rep = (
+                f"\n\nParameter correlations |rho| > 0.5\n"
+                f"{string.format('', fill='=', align='>', width=width)}"
+                f"\n{cor.to_string(float_format='%.2f', header=False)}"
+            )
+        else:
+            corr_rep = ""
+
+        warnings_rep = ""
+        if warnings:
+            msg = self.ml._generate_warnings_report(log=False)
+
+            # create message
+            if len(msg) > 0:
+                msg = [
+                    f"\n\nWarnings! ({len(msg)})\n"
+                    f"{string.format('', fill='=', align='>', width=width)}"
+                ] + msg
+                warnings_rep += "\n".join(msg)
+
+        report = f"{header}{basic}{params}{warnings_rep}{corr_rep}"
+
+        return report
 
     def to_dict(self) -> dict:
         settings = super().to_dict()
@@ -871,115 +993,14 @@ class LeastSquares(BaseLeastSquares):
         If interpolation is used this means that the result may slightly differ
         compared to using ml.simulate() and ml.observations().
         """
-        model = {
-            "nfev": self.result.nfev if self.result is not None else 0,
-            "nobs": self.ml.observations().index.size,
-            "noise": str(True if self.ml.noisemodel else False),
-            "tmin": str(self.ml.settings["tmin"]),
-            "tmax": str(self.ml.settings["tmax"]),
-            "freq": self.ml.settings["freq"],
-            "freq_obs": str(self.ml.settings["freq_obs"]),
-            "warmup": str(self.ml.settings["warmup"]),
-            "solver": self._name,
-        }
-        obj_func = self.result.cost if self.result is not None else np.nan
-        fit = {
-            "EVP": f"{self.ml.stats.evp():.2f}",
-            "R2": f"{self.ml.stats.rsq():.2f}",
-            "RMSE": f"{self.ml.stats.rmse():.2f}",
-            "AICc": f"{self.ml.stats.aicc():.2f}",
-            "BIC": f"{self.ml.stats.bic():.2f}",
-            "Obj": f"{obj_func:.2f}",
-            "___": "",
-            "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
-        }
 
-        if output is not None:
-            msg = "Use 'corr=True' instead."
-            deprecate_args_or_kwargs(
-                name="output",
-                version="2.0.0",
-                reason=msg,
-            )
-            if isinstance(output, str) and output == "full":
-                corr = True
-
-        parameters = self.ml._parameters.loc[:, ["optimal", "initial", "vary"]].copy()
-
-        if stderr:
-            stderr = (
-                self.ml._parameters.loc[:, "stderr"]
-                / self.ml._parameters.loc[:, "optimal"]
-            )
-            parameters.loc[:, "stderr"] = stderr.abs().apply(
-                _table_formatter_stderr, na_rep="nan"
-            )
-
-        # determine width of the fit_report
-        len_fit = max([len(v) for v in fit.values()]) + max(
-            [len(v) for v in fit.keys()]
+        return super().fit_report(
+            corr=corr,
+            stderr=stderr,
+            warnings=warnings,
+            obj_func=obj_func,
+            output=output,
         )
-        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
-            [len(v) for v in model.keys()]
-        )
-        len_param = len(parameters.to_string().split("\n")[1])
-        width = max((len_fit + len_model + 8), len_param)
-        string = "{:{fill}{align}{width}}"
-        string = "{:{fill}{align}{width}}"
-
-        # Create the first header with model information and stats
-        wspace = max(width - (11 + 14 + len(self.name)), 1)
-        mspace = width - wspace - (11 + 14)
-        header = (
-            f"Fit report {self.name:<{mspace}.{mspace}}"
-            f"{string.format('', fill=' ', align='>', width=wspace)}"
-            f"Fit Statistics\n"
-            f"{string.format('', fill='=', align='>', width=width)}\n"
-        )
-
-        basic = ""
-        len_val4 = max([len(v) for v in fit.values()])
-        wspace = width - (9 + 23 + 9 + len_val4)
-        for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
-
-        # Create the parameters block
-        params = (
-            f"\nParameters ({parameters.vary.sum()} optimized)\n"
-            f"{string.format('', fill='=', align='>', width=width)}\n"
-            f"{parameters.to_string()}"
-        )
-
-        if corr:
-            cor = DataFrame(columns=["value"])
-            pcor = self.pcor
-            for idx, col in (pcor, 2):
-                if np.abs(pcor.loc[idx, col]) > 0.5:
-                    cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
-
-            corr_rep = (
-                f"\n\nParameter correlations |rho| > 0.5\n"
-                f"{string.format('', fill='=', align='>', width=width)}"
-                f"\n{cor.to_string(float_format='%.2f', header=False)}"
-            )
-        else:
-            corr_rep = ""
-
-        warnings_rep = ""
-        if warnings:
-            msg = self.ml._generate_warnings_report(log=False)
-
-            # create message
-            if len(msg) > 0:
-                msg = [
-                    f"\n\nWarnings! ({len(msg)})\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
-                ] + msg
-                warnings_rep += "\n".join(msg)
-
-        report = f"{header}{basic}{params}{warnings_rep}{corr_rep}"
-
-        return report
 
     def to_dict(self) -> dict:
         settings = super().to_dict()
