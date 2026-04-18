@@ -10,7 +10,7 @@ from scipy.optimize import Bounds, OptimizeResult, least_squares
 
 from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
-from pastas.typing import ArrayLike, CallBack
+from pastas.typing import ArrayLike
 
 from .base import BaseSolver
 
@@ -22,6 +22,7 @@ class BaseLeastSquares(BaseSolver):
 
     def __init__(
         self,
+        name: str = "solver",
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
@@ -32,7 +33,6 @@ class BaseLeastSquares(BaseSolver):
         pcov: DataFrame, optional
             DataFrame with the covariance matrix of the parameters. Default is None.
         """
-        self.pcov = pcov
         if "nfev" in kwargs:
             logger.debug(
                 "The 'nfev' argument is not used in the BaseLeastSquares class and will be ignored."
@@ -43,7 +43,9 @@ class BaseLeastSquares(BaseSolver):
                 "The 'obj_func' argument is not used in the BaseLeastSquares class and will be ignored."
             )
             kwargs.pop("obj_func")
-        super().__init__(**kwargs)
+        super().__init__(name=name, **kwargs)
+        self.pcov = pcov
+        self.result: OptimizeResult | "lmfit.minimize.MinimizerResult" | None = None
 
     @property
     def pcor(self) -> DataFrame | None:
@@ -511,7 +513,7 @@ class BaseLeastSquares(BaseSolver):
             weights.fillna(1.0, inplace=True)
             rv = rv.multiply(weights)
 
-        if callback:
+        if callback is not None:
             callback(p)
 
         if returnseparate:
@@ -523,16 +525,15 @@ class BaseLeastSquares(BaseSolver):
 
         return rv.to_numpy(copy=True)
 
-    def objfunction(
+    def fit_report(
         self,
-        p: ArrayLike,
-        noise: bool,
-        weights: Series | None,
-        initial: ArrayLike,
-        vary: ArrayLike,
-        callback: CallBack | None,
-    ) -> ArrayLike:
-        """Objective function that is minimized by the least_squares solver.
+        corr: bool = False,
+        stderr: bool = False,
+        warnings: bool = True,
+        obj_func: float = np.nan,
+        output: str | None = None,
+    ) -> str:
+        """Method that reports on the fit after a model is optimized.
 
         Parameters
         ----------
@@ -712,6 +713,7 @@ class LeastSquares(BaseLeastSquares):
 
     def __init__(
         self,
+        name: str = "solver",
         jac: Literal["2-point", "3-point"] = "2-point",
         method: Literal["trf", "dogbox", "lm"] = "trf",
         ftol: float = 1e-8,
@@ -728,7 +730,7 @@ class LeastSquares(BaseLeastSquares):
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(pcov=pcov, **kwargs)
+        super().__init__(name=name, pcov=pcov, **kwargs)
         self.result: OptimizeResult | None = None
         self.jac = jac
         self.method = method
@@ -744,14 +746,53 @@ class LeastSquares(BaseLeastSquares):
         self.tr_options = tr_options
         self.callback = callback
 
+    def objfunction(
+        self,
+        p: ArrayLike,
+        noise: bool,
+        weights: Series | None,
+        initial: ArrayLike,
+        vary: ArrayLike,
+    ) -> ArrayLike:
+        """Objective function that is minimized by the least_squares solver.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the
+            model parameters.
+        noise: Boolean
+            If True, minimizes the sum of squared noise computed by the NoiseModel.
+        weights: pandas.Series | None
+            pandas Series by which the residual or noise series are
+            multiplied. Typically values between 0 and 1.
+        initial: array_like
+            array_like object with the initial parameter values.
+        vary: array_like
+            array_like object with booleans indicating which parameters (p) are varied.
+        callback: ufunc
+            function that is called after each iteration. the parameters are
+            provided to the func.
+        """
+        par = initial
+        par[vary] = p
+        return self.misfit(p=par, noise=noise, weights=weights, callback=self.callback)
+
     def solve(
         self,
         weights: Series | None = None,
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
+        """Solve method calling scipy.optimize.least_squares"""
 
         if self.ml is None:
             raise RuntimeError("Solver is not attached to a Pastas model.")
+
+        # Overwrite kwargs of init if parsed to solve
+        init_kwargs = [k for k in kwargs if hasattr(self, k)]
+        for k in init_kwargs:
+            logger.info(f"Setting {k} to {kwargs[k]} for LeastSquares solver.")
+            setattr(self, k, kwargs.pop(k))
 
         noise = self.ml.noisemodel is not None
         vary = self.ml.parameters.vary.to_numpy(dtype=bool, copy=True)
@@ -761,8 +802,7 @@ class LeastSquares(BaseLeastSquares):
         pmax = parameters.loc[:, "pmax"].to_numpy(dtype=float, copy=True)
 
         # Set the boundaries
-        method = self.method
-        if method == "lm":
+        if self.method == "lm":
             logger.info(
                 "Method 'lm' does not support boundaries. Ignoring Pastas'"
                 "`pmin` and `pmax` parameter bounds and setting them to `nan`."
@@ -782,18 +822,12 @@ class LeastSquares(BaseLeastSquares):
                 keep_feasible=True,
             )
 
-        for k in kwargs:
-            if hasattr(self, k):
-                logger.info(f"Setting {k} to {kwargs[k]} for LeastSquares solver.")
-                setattr(self, k, kwargs.pop(k))
-
         objfunction = partial(
             self.objfunction,
             noise=noise,
             weights=weights,
             initial=initial,
             vary=vary,
-            callback=self.callback,
         )
 
         self.result = least_squares(
@@ -801,7 +835,7 @@ class LeastSquares(BaseLeastSquares):
             x0=initial[vary],
             jac=self.jac,
             bounds=bounds,
-            method=method,
+            method=self.method,
             ftol=self.ftol,
             xtol=self.xtol,
             gtol=self.gtol,
@@ -820,7 +854,7 @@ class LeastSquares(BaseLeastSquares):
             LeastSquares.get_covariances(
                 self.result.jac,
                 self.result.cost,
-                method=method,
+                method=self.method,
                 absolute_sigma=False,
             ),
             index=parameters.index,
@@ -955,8 +989,8 @@ class LeastSquares(BaseLeastSquares):
         corr: bool = False,
         stderr: bool = False,
         warnings: bool = True,
-        output: str = None,
-        **kwargs,
+        obj_func: float = np.nan,
+        output: str | None = None,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -1036,9 +1070,17 @@ class LmfitSolve(BaseLeastSquares):
 
     def __init__(
         self,
+        name: str = "solver",
+        method: Literal["leastsq"] = "leastsq",
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
+        self._assert_lmfit_installation()
+        super().__init__(name=name, pcov=pcov, **kwargs)
+        self.method = method
+        self.result: "lmfit.minimize.MinimizerResult" | None = None
+
+    def _assert_lmfit_installation(self) -> None:
         try:
             global lmfit
             import lmfit as lmfit  # Import Lmfit here, so it is no dependency
@@ -1046,16 +1088,20 @@ class LmfitSolve(BaseLeastSquares):
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg) from None
 
-        self.pcov = pcov
-        super().__init__(self, **kwargs)
-
     def solve(
         self,
         noise: bool = True,
         weights: Series | None = None,
-        method: str | None = "leastsq",
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
+        """Solve method calling lmfit.Minimizer.minimize"""
+
+        # Overwrite kwargs of init if parsed to solve
+        init_kwargs = [k for k in kwargs if hasattr(self, k)]
+        for k in init_kwargs:
+            logger.info(f"Setting {k} to {kwargs[k]} for LmfitSolve solver.")
+            setattr(self, k, kwargs.pop[k])
+
         # Deal with the parameters
         parameters = lmfit.Parameters()
         for pname, params in self.ml.parameters.loc[
@@ -1070,13 +1116,13 @@ class LmfitSolve(BaseLeastSquares):
             noise=noise,
             weights=weights,
         )
-        self.mini = lmfit.Minimizer(
+        mini = lmfit.Minimizer(
             userfcn=objfunction,
             calc_covar=True,
             params=parameters,
             **kwargs,
         )
-        self.result = self.mini.minimize(method=method)
+        self.result = mini.minimize(method=self.method)
         names = self.result.var_names
 
         # Set all parameter attributes
@@ -1106,12 +1152,36 @@ class LmfitSolve(BaseLeastSquares):
         return success, optimal[:idx], stderr[:idx]
 
     def objfunction(
-        self, parameters: DataFrame, noise: bool, weights: Series, callback: CallBack
+        self, parameters: DataFrame, noise: bool, weights: Series
     ) -> ArrayLike:
         p = np.array([p.value for p in parameters.values()])
-        return self.misfit(p=p, noise=noise, weights=weights, callback=callback)
+        return self.misfit(p=p, noise=noise, weights=weights, callback=None)
 
-    def fit_report(self, **kwargs) -> str:
-        # nfev = self.result.nfev
-        # obj_func = self.result.chisqr
-        return ""
+    def fit_report(
+        self,
+        corr: bool = False,
+        stderr: bool = False,
+        warnings: bool = True,
+        obj_func: float = np.nan,
+        output: str | None = None,
+    ) -> str:
+        # nobs = self.result.ndata
+        # aic = self.result.aic
+        # bic = self.result.bic
+        obj_func = self.result.chisqr if self.result is not None else obj_func
+        return super().fit_report(
+            corr=corr,
+            stderr=stderr,
+            warnings=warnings,
+            output=output,
+            obj_func=obj_func,
+        )
+
+    def to_dict(self) -> dict:
+        settings = super().to_dict()
+        settings.update(
+            {
+                "method": self.method,
+            }
+        )
+        return settings
