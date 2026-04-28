@@ -54,6 +54,7 @@ from pastas.timeseries_utils import (
     _get_dt,
     _get_sim_index,
     _get_time_offset,
+    _parse_warmup,
 )
 from pastas.transform import ThresholdTransform
 from pastas.typing import ArrayLike, ModelSettingsDict, Solver, StressModel
@@ -466,7 +467,7 @@ class Model:
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         freq = self.settings["freq"] if freq is None else freq
-        warmup = self.settings["warmup"] if warmup is None else Timedelta(warmup, "D")
+        warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
 
         # Get the simulation index and the time step
         # Check if the requested index matches the model settings
@@ -491,6 +492,8 @@ class Model:
         # Get parameters if none are provided
         if p is None:
             p = self.get_parameters()
+        elif isinstance(p, Series):
+            p = p.values
 
         sim = Series(data=np.zeros(sim_index.size, dtype=float), index=sim_index)
 
@@ -578,7 +581,6 @@ class Model:
 
         # Get the oseries calibration series
         obs = self.observations(tmin=tmin, tmax=tmax, freq=freq_obs)
-
         # Get simulation at the correct indices
         if self._interpolate_simulation is None:
             if obs.index.difference(sim.index).size != 0:
@@ -589,7 +591,11 @@ class Model:
                 )
         if self._interpolate_simulation:
             # interpolate simulation to times of observations
-            sim_interpolated = np.interp(obs.index.asi8, sim.index.asi8, sim.values)
+            sim_interpolated = np.interp(
+                obs.index.view("int64"),
+                sim.index.view("int64"),
+                sim.to_numpy(copy=True),
+            )
         else:
             # All the observation indexes are in the simulation
             sim_interpolated = sim.reindex(obs.index)
@@ -601,11 +607,8 @@ class Model:
             res = res.dropna()
             logger.warning("Nan-values were removed from the residuals.")
 
-        res = (
-            res.subtract(res.values.mean())
-            if not self.settings["fit_constant"]
-            else res
-        )
+        if not self.settings["fit_constant"]:
+            res = res.subtract(np.mean(res))
 
         res.name = "Residuals"
         return res
@@ -1071,11 +1074,7 @@ class Model:
 
         if warmup is not None:
             logger.debug("Updating model setting warmup to %s." % warmup)
-            self._settings["warmup"] = (
-                Timedelta(warmup, unit="D")
-                if isinstance(warmup, (float, int))
-                else Timedelta(warmup.days, unit="D")
-            )
+            self._settings["warmup"] = _parse_warmup(warmup)
 
         if fit_constant is not None:
             logger.debug("Updating model setting fit_constant to %s." % fit_constant)
@@ -1298,7 +1297,7 @@ class Model:
             model is simulated.
         """
         return _get_sim_index(
-            tmin=self.settings["tmin"],
+            tmin=self.settings["tmin"] - self.settings["warmup"],
             tmax=self.settings["tmax"],
             freq=self.settings["freq"],
             time_offset=self.time_offset,
@@ -1491,18 +1490,17 @@ class Model:
         p : array_like
             NumPy array with the parameters used in the time series model.
         """
-        if name:
-            p = self._parameters.loc[self._parameters.name == name]
-        else:
-            p = self._parameters
-
-        if p.optimal.hasnans:
+        # select parameters from appropriate stressmodel or noisemodel
+        parameters = (
+            self._parameters.query("name == @name") if name else self._parameters
+        )
+        if parameters.loc[:, "optimal"].hasnans:
             logger.warning("Model is not optimized yet, initial parameters are used.")
-            parameters = p.initial
+            p = parameters.loc[:, "initial"]
         else:
-            parameters = p.optimal
+            p = parameters.loc[:, "optimal"]
 
-        return parameters.to_numpy(dtype=float)
+        return p.values
 
     def get_stressmodel_names(self) -> list[str]:
         """Returns list of stressmodel names."""
@@ -1578,9 +1576,7 @@ class Model:
         tmin = self.settings["tmin"] if tmin is None else tmin
         tmax = self.settings["tmax"] if tmax is None else tmax
         freq = self.settings["freq"] if freq is None else freq
-        warmup = (
-            self.settings["warmup"] if warmup is None else Timedelta(warmup, unit="D")
-        )
+        warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
 
         # use warmup
         if tmin:
@@ -1960,9 +1956,7 @@ class Model:
         tmin = self.settings["tmin"] if tmin is None else tmin
         tmax = self.settings["tmax"] if tmax is None else tmax
         freq = self.settings["freq"] if freq is None else freq
-        warmup = (
-            self.settings["warmup"] if warmup is None else Timedelta(warmup, unit="D")
-        )
+        warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
 
         # use warmup
         if tmin:
