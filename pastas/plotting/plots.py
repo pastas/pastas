@@ -322,7 +322,14 @@ def acf(
         else:
             conf = r.conf.values
 
-        ax.fill_between(r.index.days, conf, -conf, alpha=0.3)
+        ax.fill_between(
+            r.index.days,
+            conf,
+            -conf,
+            alpha=0.3,
+            label=f"{1 - alpha:.0%} confidence interval",
+        )
+        ax.legend(loc="lower right")
         ax.vlines(r.index.days, [0], r.loc[:, "acf"].values, color=color)
         ax.set_xlim(0, r.index.days.max())
 
