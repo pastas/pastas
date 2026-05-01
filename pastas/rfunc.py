@@ -457,7 +457,7 @@ class Gamma(RfuncBase):
         step_or_impulse: Literal["step", "impulse"] = "step",
         **kwargs,
     ) -> None:
-        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -568,7 +568,7 @@ class Exponential(RfuncBase):
         step_or_impulse: Literal["step", "impulse"] = "step",
         **kwargs,
     ) -> None:
-        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         # Determine initial, pmin, pmax for parameter A based on self.up
@@ -689,7 +689,7 @@ class HantushWellModel(RfuncBase):
         quad: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
         self.distances = None
         self.quad = quad
 
@@ -960,7 +960,7 @@ class Hantush(RfuncBase):
         quad: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
         self.quad = quad
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1126,7 +1126,7 @@ class Polder(RfuncBase):
         step_or_impulse: Literal["step", "impulse"] = "step",
         **kwargs,
     ) -> None:
-        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
 
     def get_init_parameters(self, name) -> DataFrame:
         parameters = DataFrame(
@@ -1246,7 +1246,7 @@ class One(RfuncBase):
         step_or_impulse: Literal["step", "impulse"] = "step",
         **kwargs,
     ) -> None:
-        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1360,7 +1360,7 @@ class FourParam(RfuncBase):
         quad: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
         self.quad = quad
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1589,7 +1589,7 @@ class DoubleExponential(RfuncBase):
         step_or_impulse: Literal["step", "impulse"] = "step",
         **kwargs,
     ) -> None:
-        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1721,7 +1721,7 @@ class Edelman(RfuncBase):
         step_or_impulse: Literal["step", "impulse"] = "step",
         **kwargs,
     ) -> None:
-        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1834,7 +1834,7 @@ class Kraijenhoff(RfuncBase):
         n_terms: int = 10,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
         self.n_terms = n_terms
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1997,9 +1997,7 @@ class Spline(RfuncBase):
         t: list[int] | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(
-            self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs
-        )
+        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
         self.kind = kind
         if t is None:
             t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
