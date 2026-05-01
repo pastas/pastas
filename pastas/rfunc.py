@@ -179,6 +179,7 @@ class RfuncBase:
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
         """Method to return the step function.
 
@@ -191,8 +192,10 @@ class RfuncBase:
             timestep as a multiple of one day.
         cutoff: float, optional
             proportion after which the step function is cut off. default is 0.999.
-        maxtmax: int, optional
+        maxtmax: float, optional
             Maximum timestep to compute the block response for.
+        kwargs: dict
+            kwargs are passed onto self.step().
 
         Returns
         -------
@@ -207,6 +210,7 @@ class RfuncBase:
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
         """Method to return the block function.
 
@@ -219,8 +223,11 @@ class RfuncBase:
             timestep as a multiple of one day.
         cutoff: float, optional
             proportion after which the step function is cut off. default is 0.999.
-        maxtmax: int, optional
+        maxtmax: float, optional
             Maximum timestep to compute the block response for.
+        kwargs: dict
+            kwargs are passed onto or self.step() for self.block_from_step()
+            or self.get_t() for self.block_from_impulse().
 
         Returns
         -------
@@ -228,13 +235,17 @@ class RfuncBase:
             Array with the block response.
         """
         if self.step_or_impulse == "step":
-            return self.block_from_step(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+            return self.block_from_step(
+                p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
+            )
         elif self.step_or_impulse == "impulse":
-            return self.block_from_impulse(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+            return self.block_from_impulse(
+                p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
+            )
         else:
             raise ValueError(
                 f"Invalid value for attribute step_or_impulse: {self.step_or_impulse}. "
-                f"Choose 'step' or 'impulse'."
+                f"Must be 'step' or 'impulse'."
             )
 
     def block_from_impulse(
@@ -243,6 +254,7 @@ class RfuncBase:
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
         """Method to return the block function from the impulse response.
 
@@ -263,8 +275,7 @@ class RfuncBase:
         b: array_like
             Array with the block response.
         """
-        cutoff = self.cutoff if cutoff is None else cutoff
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         t_mid = t - (0.5 * dt)  # compute times at the middle of the interval
         return self.impulse(t_mid, p) * dt
 
@@ -274,6 +285,7 @@ class RfuncBase:
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
         """Method to return the block function.
 
@@ -294,7 +306,7 @@ class RfuncBase:
         s: array_like
             Array with the block response.
         """
-        s = self.step(p=p, dt=dt, cutoff=self.cutoff, maxtmax=maxtmax)
+        s = self.step(p=p, dt=dt, cutoff=self.cutoff, maxtmax=maxtmax, **kwargs)
         b = np.append(s[0], np.subtract(s[1:], s[:-1]))
         return b
 
@@ -918,7 +930,7 @@ class HantushWellModel(RfuncBase):
 
         """
         data = super().to_dict()
-        data.update({"quad": self.quad, "distances": self.distances})
+        data.update({"quad": self.quad})
         return data
 
 
@@ -1230,7 +1242,7 @@ class One(RfuncBase):
     step_or_impulse: {"step", "impulse"}, optional
         Indicates whether to use a step or impulse response function for computing
         the block response. Default is "step". Has no influence for this response
-        function because it has it's own implementation of the block response function.
+        function because it has its own implementation of the block response function.
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True) or
         down (False), if None (default) the head can go both ways.
@@ -2009,7 +2021,13 @@ class Spline(RfuncBase):
         t: list[int] | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        if step_or_impulse == "impulse":
+            raise ValueError(
+                "The Spline response function does not have an impulse response function, "
+                "so step_or_impulse cannot be 'impulse'. Please set step_or_impulse to 'step'."
+            )
+
+        super().__init__(cutoff=cutoff, step_or_impulse="step", **kwargs)
         self.kind = kind
         if t is None:
             t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
