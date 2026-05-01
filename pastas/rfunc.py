@@ -67,8 +67,10 @@ class RfuncBase:
     def __init__(
         self,
         cutoff: float = 0.999,
+        step_or_impulse: Literal["step", "impulse"] = "step",
         **kwargs,
     ) -> None:
+        self.step_or_impulse = step_or_impulse
         self.cutoff = cutoff
         if "up" in kwargs:
             raise TypeError(
@@ -186,7 +188,13 @@ class RfuncBase:
             Array with the step response.
         """
 
-    def block(self, p: ArrayLike, dt: float = 1.0, **kwargs) -> ArrayLike:
+    def block(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+    ) -> ArrayLike:
         """Method to return the block function.
 
         Parameters
@@ -196,6 +204,75 @@ class RfuncBase:
             parameters.
         dt: float
             timestep as a multiple of one day.
+        cutoff: float, optional
+            proportion after which the step function is cut off. default is 0.999.
+        maxtmax: int, optional
+            Maximum timestep to compute the block response for.
+
+        Returns
+        -------
+        b: array_like
+            Array with the block response.
+        """
+        if self.step_or_impulse == "step":
+            return self.block_from_step(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        elif self.step_or_impulse == "impulse":
+            return self.block_from_impulse(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        else:
+            raise ValueError(
+                f"Invalid value for attribute step_or_impulse: {self.step_or_impulse}. "
+                f"Choose 'step' or 'impulse'."
+            )
+
+    def block_from_impulse(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+    ) -> ArrayLike:
+        """Method to return the block function from the impulse response.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+        dt: float
+            timestep as a multiple of one day.
+        cutoff: float, optional
+            proportion after which the step function is cut off. default is 0.999.
+        maxtmax: float, optional
+            Maximum timestep to compute the block response for.
+
+        Returns
+        -------
+        b: array_like
+            Array with the block response.
+        """
+        cutoff = self.cutoff if cutoff is None else cutoff
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t_mid = t - (0.5 * dt)  # compute times at the middle of the interval
+        return self.impulse(t_mid, p) * dt
+
+    def block_from_step(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+    ) -> ArrayLike:
+        """Method to return the block function.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+        dt: float
+            timestep as a multiple of one day.
+        cutoff: float, optional
+            proportion after which the step function is cut off. default is 0.999.
         kwargs: dict
             kwargs are passed onto self.step()
 
