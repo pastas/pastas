@@ -381,6 +381,11 @@ class RfuncBase:
             tmax = max(tmax, 3 * dt)
             return np.arange(dt, tmax, dt)
 
+    @property
+    def nparam(self) -> int:
+        """Number of parameters of the response function."""
+        return 0
+
     def to_dict(self):
         """Method to export the response function to a dictionary.
 
@@ -435,8 +440,7 @@ class Gamma(RfuncBase):
         cutoff: float = 0.999,
         **kwargs,
     ) -> None:
-        RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.nparam = 3
+        super().__init__(self, cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -507,6 +511,9 @@ class Gamma(RfuncBase):
         A, n, a = p
         return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
 
+    @property
+    def nparam(self) -> int:
+        return 3
 
 class Exponential(RfuncBase):
     """Exponential response function with 2 parameters: A and a.
@@ -540,7 +547,6 @@ class Exponential(RfuncBase):
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.nparam = 2
 
     def get_init_parameters(self, name: str) -> DataFrame:
         # Determine initial, pmin, pmax for parameter A based on self.up
@@ -611,6 +617,9 @@ class Exponential(RfuncBase):
         A, a = p
         return A / a * np.exp(-t / a)
 
+    @property
+    def nparam(self) -> int:
+        return 2
 
 class HantushWellModel(RfuncBase):
     """An implementation of the Hantush well function for multiple pumping wells.
@@ -655,7 +664,6 @@ class HantushWellModel(RfuncBase):
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
         self.distances = None
-        self.nparam = 3
         self.quad = quad
 
     def set_distances(self, distances) -> None:
@@ -863,6 +871,10 @@ class HantushWellModel(RfuncBase):
         )
         return var_gain
 
+    @property
+    def nparam(self) -> int:
+        return 3
+
     def to_dict(self):
         """Method to export the response function to a dictionary.
 
@@ -925,7 +937,6 @@ class Hantush(RfuncBase):
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.nparam = 3
         self.quad = quad
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1032,6 +1043,10 @@ class Hantush(RfuncBase):
         A, a, b = p
         return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
 
+    @property
+    def nparam(self) -> int:
+        return 3
+
     def to_dict(self):
         """Method to export the response function to a dictionary.
 
@@ -1089,7 +1104,6 @@ class Polder(RfuncBase):
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.nparam = 3
 
     def get_init_parameters(self, name) -> DataFrame:
         parameters = DataFrame(
@@ -1175,9 +1189,12 @@ class Polder(RfuncBase):
             x / y - y
         )
 
+    @property
+    def nparam(self) -> int:
+        return 3
 
 class One(RfuncBase):
-    """Instant response with no lag and one parameter d.
+    """Instant response with no lag and one parameter A.
 
     Parameters
     ----------
@@ -1200,7 +1217,6 @@ class One(RfuncBase):
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1268,6 +1284,10 @@ class One(RfuncBase):
                 f"{self._name}."
             )
 
+    @property
+    def nparam(self) -> int:
+        return 1
+
 
 class FourParam(RfuncBase):
     """Four Parameter response function with 4 parameters A, a, b, and n.
@@ -1307,7 +1327,6 @@ class FourParam(RfuncBase):
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.nparam = 4
         self.quad = quad
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1479,6 +1498,10 @@ class FourParam(RfuncBase):
         else:
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
+    @property
+    def nparam(self) -> int:
+        return 4
+
     def to_dict(self):
         """Method to export the response function to a dictionary.
 
@@ -1534,7 +1557,6 @@ class DoubleExponential(RfuncBase):
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.nparam = 4
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1615,6 +1637,9 @@ class DoubleExponential(RfuncBase):
         else:
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
+    @property
+    def nparam(self) -> int:
+        return 4
 
 @PastasDeprecationWarning(
     version="2.0.0",
@@ -1658,7 +1683,6 @@ class Edelman(RfuncBase):
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.nparam = 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1712,6 +1736,9 @@ class Edelman(RfuncBase):
                 f"Invalid method {method}. Choose 'discrete' is supported for {self._name}."
             )
 
+    @property
+    def nparam(self) -> int:
+        return 1
 
 class Kraijenhoff(RfuncBase):
     """The response function of :cite:t:`van_de_leur_study_1958`.
@@ -1764,7 +1791,6 @@ class Kraijenhoff(RfuncBase):
         **kwargs,
     ) -> None:
         RfuncBase.__init__(self, cutoff=cutoff, **kwargs)
-        self.nparam = 3
         self.n_terms = n_terms
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1927,7 +1953,6 @@ class Spline(RfuncBase):
         if t is None:
             t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
         self.t = t
-        self.nparam = len(t) + 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -1994,6 +2019,10 @@ class Spline(RfuncBase):
                 f"Invalid method {method}. Only 'discrete' is supported for "
                 f"{self._name}."
             )
+
+    @property
+    def nparam(self) -> int:
+        return len(self.t) + 1
 
     def to_dict(self):
         """Method to export the response function to a dictionary.
