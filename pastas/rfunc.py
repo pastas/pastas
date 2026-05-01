@@ -1510,6 +1510,16 @@ class FourParam(RfuncBase):
                 s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
                 return s
 
+    def block_from_impulse(
+        self,
+        p: ArrayLike,
+        dt: float = 1,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+    ) -> ArrayLike:
+        # TODO: Fix this method because it needs to be scaled by the gain and the total integral of the impulse response function, which is not implemented yet.
+        return super().block_from_impulse(p, dt, cutoff, maxtmax)
+
     def moment(
         self,
         p: ArrayLike,
