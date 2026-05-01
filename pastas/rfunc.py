@@ -199,6 +199,7 @@ class RfuncBase:
         s: array_like
             Array with the step response.
         """
+        pass
 
     def block(
         self,
@@ -349,6 +350,7 @@ class RfuncBase:
 
         Only used for internal consistency checks
         """
+        pass
 
     def get_t(
         self,
