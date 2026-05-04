@@ -31,7 +31,7 @@ def test_no_noise(ml_recharge: ps.Model) -> None:
 
 
 def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
-    """Verify weighted least-squares uses sqrt(weights) on residual terms."""
+    """Verify weighted least-squares uses weights on residual terms."""
     ml_recharge.del_noisemodel()
     ml_recharge.solve(solver=ps.LeastSquares(), report=False)
 
@@ -42,7 +42,7 @@ def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
     weights.iloc[::5] = 0.25
 
     misfit = ml_recharge.solver.misfit(p=p, noise=False, weights=weights)
-    expected = (residuals * np.sqrt(weights)).values
+    expected = (residuals * weights).values
 
     np.testing.assert_allclose(misfit, expected)
 
@@ -141,10 +141,11 @@ def test_leastsquares_covariance_scenarios(head, prec, evap):
     weights_random = pd.Series(
         np.random.RandomState(seed=0).rand(len(head)), index=head.index
     )
+    weights_random_root = weights_random.pow(0.5)  # For sqrt(weights) scenario
 
     # Solve
     jac_method = "2-point"
-    ml.solve(weights=weights_random, report=False, jac=jac_method)
+    ml.solve(weights=weights_random_root, report=False, jac=jac_method)
     p_opt = ml.parameters.optimal.values
     pcov_internal = ml.solver.pcov.values  # This uses the code you pasted
 
@@ -159,7 +160,7 @@ def test_leastsquares_covariance_scenarios(head, prec, evap):
     # We use the solver's Jacobian (which is weighted) and cost.
     # To use manual_pcov with a weighted Jacobian, we pass weights=ones.
     nobs, npar = ml.solver.result.jac.shape
-    res_weighted = ml.solver.misfit(p_opt, weights=weights_random, noise=False)
+    res_weighted = ml.solver.misfit(p_opt, weights=weights_random_root, noise=False)
     pcov_manual_weighted = manual_pcov(
         ml.solver.result.jac, res_weighted, np.ones(nobs), nobs, npar
     )
@@ -175,12 +176,14 @@ def test_leastsquares_covariance_scenarios(head, prec, evap):
     fun_pure = partial(
         ml.solver.objfunction,
         weights=None,
-        noise=ml.settings["noise"],
+        noise=False,
         callback=None,
     )
-    # Using 3-point for higher precision to match the solver
+    # Using same 2-point precision to match scipy.least_squares default
     jac_pure = approx_derivative(fun_pure, x0=p_opt, method=jac_method)
 
+    # Now we can use the pure Jacobian and pure residuals with the original
+    # random weights to reconstruct pcov.
     pcov_pure_reconstruction = manual_pcov(
         jac_pure, res_pure, weights_random.values, nobs, npar
     )
