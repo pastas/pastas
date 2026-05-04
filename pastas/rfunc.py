@@ -67,7 +67,7 @@ class RfuncBase:
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         **kwargs,
     ) -> None:
         """Base class for response functions.
@@ -463,7 +463,7 @@ class Gamma(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
@@ -574,7 +574,7 @@ class Exponential(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
@@ -694,7 +694,7 @@ class HantushWellModel(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         quad: bool = False,
         **kwargs,
     ) -> None:
@@ -965,7 +965,7 @@ class Hantush(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         quad: bool = False,
         **kwargs,
     ) -> None:
@@ -1132,7 +1132,7 @@ class Polder(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
@@ -1252,7 +1252,7 @@ class One(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
@@ -1365,7 +1365,7 @@ class FourParam(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         quad: bool = False,
         **kwargs,
     ) -> None:
@@ -1609,7 +1609,7 @@ class DoubleExponential(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
@@ -1741,7 +1741,7 @@ class Edelman(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
@@ -1853,7 +1853,7 @@ class Kraijenhoff(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         n_terms: int = 10,
         **kwargs,
     ) -> None:
@@ -2015,13 +2015,13 @@ class Spline(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = True,
+        use_impulse: bool = False,
         kind: Literal["linear", "quadratic", "cubic"] = "quadratic",
         t: list[int] | None = None,
         **kwargs,
     ) -> None:
         if use_impulse:
-            raise ValueError(
+            logger.error(
                 "The Spline response function does not have an impulse response function, "
                 "so use_impulse cannot be True. Please set use_impulse to False."
             )
