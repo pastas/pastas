@@ -246,13 +246,15 @@ def ccf(
 
 def _preprocess(x: Series, max_gap: float) -> tuple[ArrayLike, ArrayLike, float]:
     """Internal method to preprocess the time series."""
-    dt = x.index.to_series().diff().dropna().values / Timedelta(1, "D")
+    x_idx = x.index.to_series().diff().dropna().to_numpy(copy=True)
+    dt = x_idx / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
     dt_mu = max(dt_mu, 1)  # Prevent division by zero error
     t = dt.cumsum()
 
     # Normalize the values and create numpy arrays
-    x = (x.values - x.values.mean()) / x.values.std()
+    x_vals = x.to_numpy(copy=True)  # pandas 3.0: ensure writeable array
+    x = (x_vals - x_vals.mean()) / x_vals.std()
 
     return x, t, dt_mu
 
@@ -409,8 +411,9 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     x}`) is used in this formula.
     """
     w = _get_weights(x, weighted=weighted, max_gap=max_gap)
-    mu = np.average(x.to_numpy(), weights=w)
-    sigma = (x.size / (x.size - 1) * w * (x.to_numpy() - mu) ** 2).sum()
+    x = x.to_numpy(copy=True)
+    mu = np.average(x, weights=w)
+    sigma = np.sum(x.size / (x.size - 1) * w * (x - mu) ** 2)
     return sigma
 
 
@@ -458,7 +461,7 @@ def moment(x: Series, order: int) -> float:
             "The index of the series must be numeric (float or int) representing "
             "time steps, not a DatetimeIndex. Use a numeric index instead."
         )
-    return float(np.sum((index**order) * x.values))
+    return float(np.sum((index**order) * x.to_numpy(copy=True)))
 
 
 # Helper functions
@@ -479,10 +482,11 @@ def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLi
         All time steps larger than max_gap are replace with the mean weight. Default
         value is 30 days.
     """
+    x_index = x.index.to_numpy(copy=True)
     if weighted:
-        w = np.append(0.0, np.diff(x.index.to_numpy()) / Timedelta("1D"))
+        w = np.append(0.0, np.diff(x_index) / Timedelta("1D"))
         w[w > max_gap] = max_gap
     else:
-        w = np.ones(x.index.size)
+        w = np.ones(x_index.size)
     w /= w.sum()
     return w

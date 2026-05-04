@@ -52,7 +52,7 @@ def pastas_hook(obj: dict):
                 obj[key].index = obj[key].index.tz_localize(None)
         elif key in ["time_offset", "warmup"]:
             if isinstance(value, int) or isinstance(value, float):
-                obj[key] = Timedelta(value, "d")
+                obj[key] = Timedelta(value, "D")
             else:
                 obj[key] = Timedelta(value)
         elif key in ["parameters", "pcov"]:
