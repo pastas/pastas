@@ -67,7 +67,7 @@ class RfuncBase:
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         **kwargs,
     ) -> None:
         """Base class for response functions.
@@ -76,14 +76,14 @@ class RfuncBase:
         ----------
         cutoff: float, optional
              Proportion after which the step function is cut off. Default is 0.999.
-        step_or_impulse: {"step", "impulse"}, optional
+        use_impulse: bool, optional
              Indicates whether to use a step or impulse response function for computing
-             the block response. Default is "step".
+             the block response. Default is False.
         kwargs: dict
             Additional keyword arguments.
         """
         self.cutoff = cutoff
-        self.step_or_impulse = step_or_impulse
+        self.use_impulse = use_impulse
         if "up" in kwargs:
             raise TypeError(
                 "keyword argument 'up' is not supported in init. "
@@ -234,18 +234,13 @@ class RfuncBase:
         b: array_like
             Array with the block response.
         """
-        if self.step_or_impulse == "step":
-            return self.block_from_step(
-                p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
-            )
-        elif self.step_or_impulse == "impulse":
+        if self.use_impulse:
             return self.block_from_impulse(
                 p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
             )
         else:
-            raise ValueError(
-                f"Invalid value for attribute step_or_impulse: {self.step_or_impulse}. "
-                f"Must be 'step' or 'impulse'."
+            return self.block_from_step(
+                p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
             )
 
     def block_from_impulse(
@@ -428,7 +423,7 @@ class RfuncBase:
         data = {
             "class": self._name,
             "cutoff": self.cutoff,
-            "step_or_impulse": self.step_or_impulse,
+            "use_impulse": self.use_impulse,
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
         }
@@ -442,9 +437,9 @@ class Gamma(RfuncBase):
     ----------
     cutoff: float, optional
         proportion after which the step function is cut off.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step".
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False.
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -468,10 +463,10 @@ class Gamma(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -554,9 +549,9 @@ class Exponential(RfuncBase):
     ----------
     cutoff: float, optional
         Proportion after which the step function is cut off. Default is 0.999.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step".
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False.
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -579,10 +574,10 @@ class Exponential(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         # Determine initial, pmin, pmax for parameter A based on self.up
@@ -665,9 +660,9 @@ class HantushWellModel(RfuncBase):
     ----------
     cutoff: float, optional
         Proportion after which the step function is cut off. Default is 0.999.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step".
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False.
     quad: bool, optional
         Use the method 'numba_quad' to compute the step_response.
     up: bool, optional
@@ -699,11 +694,11 @@ class HantushWellModel(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
         self.distances = None
         self.quad = quad
 
@@ -941,9 +936,9 @@ class Hantush(RfuncBase):
     ----------
     cutoff: float, optional
         Proportion after which the step function is cut off. Default is 0.999.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step".
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False.
     quad: bool, optional
         Use the method 'numba_quad' to compute the step_response.
     up: bool or None, optional
@@ -970,11 +965,11 @@ class Hantush(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
         self.quad = quad
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1110,9 +1105,9 @@ class Polder(RfuncBase):
     ----------
     cutoff: float, optional
         Proportion after which the step function is cut off. Default is 0.999.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step".
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False.
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -1137,10 +1132,10 @@ class Polder(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
 
     def get_init_parameters(self, name) -> DataFrame:
         parameters = DataFrame(
@@ -1239,9 +1234,9 @@ class One(RfuncBase):
     cutoff: float, optional
         Proportion after which the step function is cut off. Has no influence for
         this response function.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step". Has no influence for this response
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False. Has no influence for this response
         function because it has its own implementation of the block response function.
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True) or
@@ -1257,10 +1252,10 @@ class One(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1340,9 +1335,9 @@ class FourParam(RfuncBase):
     ----------
     cutoff: float, optional
         proportion after which the step function is cut off.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step".
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False.
     quad: bool, optional
         If true, use the 'quad' method from scipy.integrate to integrate the impulse
         response function. This may be more accurate but increases computation times.
@@ -1370,11 +1365,11 @@ class FourParam(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
         self.quad = quad
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1521,7 +1516,7 @@ class FourParam(RfuncBase):
                 s[1:] = s[0] + np.cumsum(
                     dt / 6 * (func[:-1] + 4 * func_half + func[1:])
                 )
-                s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
+                s = s * (self.gain(p) / quad(self.impulse, 0, np.inf, args=p)[0])
                 return s
 
     def block_from_impulse(
@@ -1530,9 +1525,13 @@ class FourParam(RfuncBase):
         dt: float = 1,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
-        # TODO: Fix this method because it needs to be scaled by the gain and the total integral of the impulse response function, which is not implemented yet.
-        return super().block_from_impulse(p, dt, cutoff, maxtmax)
+        block = super().block_from_impulse(
+            p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
+        )
+        block = block / np.sum(block) * self.gain(p)
+        return block
 
     def moment(
         self,
@@ -1585,9 +1584,9 @@ class DoubleExponential(RfuncBase):
     ----------
     cutoff: float, optional
         proportion after which the step function is cut off.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step".
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False.
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -1610,10 +1609,10 @@ class DoubleExponential(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1714,9 +1713,9 @@ class Edelman(RfuncBase):
     ----------
     cutoff: float, optional
         proportion after which the step function is cut off.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step".
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False.
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -1742,10 +1741,10 @@ class Edelman(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1811,9 +1810,9 @@ class Kraijenhoff(RfuncBase):
     ----------
     cutoff: float, optional
         proportion after which the step function is cut off.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step".
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False.
     n_terms: int, optional
         Number of terms.
     up: bool or None, optional
@@ -1854,11 +1853,11 @@ class Kraijenhoff(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         n_terms: int = 10,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, step_or_impulse=step_or_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
         self.n_terms = n_terms
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1985,9 +1984,9 @@ class Spline(RfuncBase):
     cutoff: float, optional
         proportion after which the step function is cut off. default is 0.999. this
         parameter has no influence for this response function.
-    step_or_impulse: {"step", "impulse"}, optional
-        Indicates whether to use a step or impulse response function for computing
-        the block response. Default is "step". This parameter has no influence for this
+    use_impulse: bool, optional
+        Indicates whether to use the impulse response function for computing
+        the block response. Default is False. This parameter has no influence for this
         response function because it has no impulse response function.
     kind: string, optional
         see scipy.interpolate.interp1d. Most useful for a smooth response function
@@ -2016,18 +2015,18 @@ class Spline(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        step_or_impulse: Literal["step", "impulse"] = "step",
+        use_impulse: bool = True,
         kind: Literal["linear", "quadratic", "cubic"] = "quadratic",
         t: list[int] | None = None,
         **kwargs,
     ) -> None:
-        if step_or_impulse == "impulse":
+        if use_impulse:
             raise ValueError(
                 "The Spline response function does not have an impulse response function, "
-                "so step_or_impulse cannot be 'impulse'. Please set step_or_impulse to 'step'."
+                "so use_impulse cannot be True. Please set use_impulse to False."
             )
 
-        super().__init__(cutoff=cutoff, step_or_impulse="step", **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=False, **kwargs)
         self.kind = kind
         if t is None:
             t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
