@@ -5,14 +5,10 @@
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar
 
 # External libraries
-# Matplotlib
 from matplotlib.axes import Axes as MatplotlibAxes
 from matplotlib.figure import Figure as MatplotlibFigure
-
-# Numpy
 from numpy.typing import ArrayLike as NumpyArrayLike
-
-# Pandas
+from pandas import Timedelta, Timestamp
 
 # External Types
 Axes = TypeVar("Axes", bound=MatplotlibAxes)  # Matplotlib Axes
@@ -105,3 +101,42 @@ class StressSettingsDict(TypedDict):
     fill_nan: Literal["drop", "mean", "interpolate"] | float
     fill_before: Literal["mean", "bfill"] | float
     fill_after: Literal["mean", "ffill"] | float
+
+
+class ModelSettingsDict(TypedDict):
+    """Model settings dictionary defining logic for handling time series and model fitting.
+
+    Parameters
+    ----------
+    tmin: pandas.Timestamp
+        A pandas.Timestamp with the start date for the simulation period
+        (E.g. '1980-01-01 00:00:00'). If none is provided, the tmin from
+        the oseries is used.
+    tmax: pandas.Timestamp
+        A pandas.Timestamp with the end date for the simulation period
+        (E.g. '2020-01-01 00:00:00'). If none is provided, the tmax from
+        the oseries is used.
+    freq: str
+        String with the frequency the stressmodels are simulated. Must be one of
+        the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+    warmup: Timedelta
+        Warmup period (in days) for which the simulation is calculated, but not
+        used for the calibration period.
+    fit_constant: bool, optional
+        Argument that determines if the constant is fitted as a parameter. If it
+        is set to False, the constant is set equal to the mean of the residuals.
+    freq_obs: str, optional
+        String with the frequency of the observations that the model will be
+        calibrated on. Must be one of the following (D, h, m, s, ms, us, ns) or a
+        multiple of that e.g. "7D". Should generally be larger than the frequency
+        of the original observations and the model frequency (freq). If freq_obs
+        is None, the frequency of the model (freq) will be used.
+
+    """
+
+    tmin: Timestamp
+    tmax: Timestamp
+    freq: str
+    warmup: Timedelta
+    fit_constant: bool
+    freq_obs: str | None

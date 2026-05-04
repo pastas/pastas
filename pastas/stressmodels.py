@@ -38,6 +38,7 @@ from pastas.typing import (
 from .decorators import (
     PastasDeprecationWarning,
     conditional_cachedmethod,
+    deprecate_args_or_kwargs,
     njit,
     set_parameter,
 )
@@ -683,10 +684,10 @@ class LinearTrend(StressModelBase):
 
     Parameters
     ----------
-    start: str
+    tstart: str or Timestamp
         String with a date to start the trend (e.g., "2018-01-01"), will be
         transformed to an ordinal number internally.
-    end: str
+    tend: str or Timestamp
         String with a date to end the trend (e.g., "2018-01-01"), will be transformed
         to an ordinal number internally.
     name: str, optional
@@ -702,13 +703,44 @@ class LinearTrend(StressModelBase):
     _name = "LinearTrend"
 
     def __init__(
-        self, start: Timestamp | str, end: Timestamp | str, name: str = "trend"
+        self,
+        tstart: Timestamp | str = None,
+        tend: Timestamp | str = None,
+        name: str = "trend",
+        start: Timestamp | str = None,
+        end: Timestamp | str = None,
     ) -> None:
+        # Handle deprecated arguments
+        if start is not None:
+            deprecate_args_or_kwargs(
+                "start",
+                "3.0.0",
+                "Please use 'tstart' instead of 'start'.",
+            )
+            if tstart is None:
+                tstart = start
+        if end is not None:
+            deprecate_args_or_kwargs(
+                "end",
+                "3.0.0",
+                "Please use 'tend' instead of 'end'.",
+            )
+            if tend is None:
+                tend = end
+
+        # Validate that required parameters are provided
+        if tstart is None:
+            raise TypeError(
+                "LinearTrend.__init__() missing required argument: 'tstart'"
+            )
+        if tend is None:
+            raise TypeError("LinearTrend.__init__() missing required argument: 'tend'")
+
         StressModelBase.__init__(
             self, name=name, tmin=Timestamp.min, tmax=Timestamp.max
         )
-        self.start = start
-        self.end = end
+        self.tstart = tstart
+        self.tend = tend
         self.set_init_parameters()
 
     @property
@@ -721,8 +753,8 @@ class LinearTrend(StressModelBase):
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters for the stress model."""
-        start = Timestamp(self.start).toordinal()
-        end = Timestamp(self.end).toordinal()
+        start = Timestamp(self.tstart).toordinal()
+        end = Timestamp(self.tend).toordinal()
         tmin = Timestamp.min.toordinal()
         tmax = Timestamp.max.toordinal()
 
@@ -791,8 +823,8 @@ class LinearTrend(StressModelBase):
         """
         data = {
             "class": self._name,
-            "start": self.start,
-            "end": self.end,
+            "tstart": self.tstart,
+            "tend": self.tend,
             "name": self.name,
         }
         return data
@@ -1908,13 +1940,13 @@ class RechargeModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
         if istress is None:
-            prec = self.prec.series.values
-            evap = self.evap.series.values
+            prec = self.prec.series.to_numpy(copy=True)
+            evap = self.evap.series.to_numpy(copy=True)
             temp = None
             if self.temp is not None:
-                temp = self.temp.series.values
+                temp = self.temp.series.to_numpy(copy=True)
             if p is None:
-                p = self.parameters.initial.values
+                p = self.parameters.loc[:, "initial"].to_numpy(copy=True)
             stress = self.recharge.simulate(
                 prec=prec, evap=evap, p=p[-self.recharge.nparam :], **{"temp": temp}
             )
@@ -1979,13 +2011,19 @@ class RechargeModel(StressModelBase):
         >>> wb.plot(subplots=True)
         """
         if p is None:
-            p = self.parameters.initial.values
+            p = self.parameters.initial.to_numpy(copy=True)
 
-        prec = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=0).values
-        evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=1).values
+        prec = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=0).to_numpy(
+            copy=True
+        )
+        evap = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=1).to_numpy(
+            copy=True
+        )
 
         if self.temp is not None:
-            temp = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=2).values
+            temp = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=2).to_numpy(
+                copy=True
+            )
         else:
             temp = None
         df = self.recharge.get_water_balance(
@@ -2010,10 +2048,11 @@ class RechargeModel(StressModelBase):
         p : array_like
             An array of the parameters of the stressmodel.
         """
-        if model is None:
-            p = self.parameters.initial.values
-        else:
-            p = model.get_parameters(self.name)
+        p = (
+            self.parameters.initial.to_numpy(copy=True)
+            if model is None
+            else model.get_parameters(self.name).copy()
+        )
 
         if istress is not None and isinstance(self.recharge, Linear):
             if istress == 0:
@@ -2183,7 +2222,7 @@ class TarsoModel(RechargeModel):
         dt: float = 1.0,
     ) -> Series:
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
-        h = self.tarso(p[: -self.recharge.nparam], stress.values, dt)
+        h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(copy=True), dt)
         sim = Series(h, name=self.name, index=stress.index)
         return sim
 

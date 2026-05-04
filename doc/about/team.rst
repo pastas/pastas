@@ -18,7 +18,7 @@ The following people are part of the core team of Pastas and can merge pull requ
             :target: https://github.com/raoulcollenteur
 
             Raoul Collenteur
-            (Eawag)
+            (Hydroconsult)
 
     .. grid-item::
         .. figure:: https://avatars3.githubusercontent.com/u/1363400?s=460&u=8d34d0824bd0f43a63f29c0b71fbfae435a15565&v=4
@@ -67,6 +67,14 @@ The following people are part of the development team of Pastas and help develop
             Martin Vonk
             (Artesia & TU Delft)
 
+       .. grid-item::
+        .. figure:: https://avatars.githubusercontent.com/u/8067157?v=4
+            :figwidth: 120px
+            :target: https://github.com/fransschaars
+
+            Frans Schaars
+            (Artesia)
+
 All the people who have contributed code to the Pastas project can be found on `GitHub Contributor list <https://github
 .com/pastas/pastas/graphs/contributors>`_.
 
@@ -81,9 +89,10 @@ Current institutional partners include:
     .. grid-item-card::
 
 
-        .. figure:: ./../_static/Eawag_logo.png
+        .. figure:: ./../_static/hydroconsult_logo.png
             :figwidth: 150px
-            :target: https://www.eawag.ch/en/
+            :target: https://www.hydroconsult.ch/
+
 
     .. grid-item-card::
 
@@ -108,3 +117,7 @@ The following institutions have employed maintainers in the past or past maintai
         .. figure:: ./../_static/logo_graz.png
             :figwidth: 150px
             :target: https://erdwissenschaften.uni-graz.at/en/
+
+        .. figure:: ./../_static/Eawag_logo.png
+            :figwidth: 150px
+            :target: https://www.eawag.ch/en/
