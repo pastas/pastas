@@ -666,8 +666,8 @@ class TimeSeries:
         if name is None:
             name = self.name
 
-        series, metadata, setings = _unpack_series(self.to_dict())
-        ts = type(self)(series=series, name=name, settings=setings, metadata=metadata)
+        series, metadata, settings = _unpack_series(self.to_dict())
+        ts = type(self)(series=series, name=name, settings=settings, metadata=metadata)
         return ts
 
 
