@@ -1006,7 +1006,7 @@ class Model:
 
     def reset_settings(self) -> None:
         """Method to reset the model settings to the default settings."""
-        self._settings = self.set_settings(
+        self.set_settings(
             tmin=self.get_tmin(use_oseries=True, use_stresses=True),
             tmax=self.get_tmax(use_oseries=True, use_stresses=True),
             freq=self._freq_original,
@@ -1297,7 +1297,7 @@ class Model:
             model is simulated.
         """
         return _get_sim_index(
-            tmin=self.settings["tmin"],
+            tmin=self.settings["tmin"] - self.settings["warmup"],
             tmax=self.settings["tmax"],
             freq=self.settings["freq"],
             time_offset=self.time_offset,
