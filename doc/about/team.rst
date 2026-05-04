@@ -12,7 +12,6 @@ The following people are part of the core team of Pastas and can merge pull requ
 .. grid:: 1 2 3 4
 
     .. grid-item::
-
         .. figure:: https://avatars2.githubusercontent.com/u/12051167?s=460&u=ad0baaa3520ab942c93af44ea8e296b44ea459ac&v=4
             :figwidth: 150px
             :target: https://github.com/raoulcollenteur
@@ -67,7 +66,7 @@ The following people are part of the development team of Pastas and help develop
             Martin Vonk
             (Artesia & TU Delft)
 
-       .. grid-item::
+    .. grid-item::
         .. figure:: https://avatars.githubusercontent.com/u/8067157?v=4
             :figwidth: 120px
             :target: https://github.com/fransschaars
@@ -87,21 +86,16 @@ Current institutional partners include:
 .. grid:: 1 2 3 3
 
     .. grid-item-card::
-
-
         .. figure:: ./../_static/hydroconsult_logo.png
             :figwidth: 150px
             :target: https://www.hydroconsult.ch/
 
-
     .. grid-item-card::
-
         .. figure:: ./../_static/TUD_logo.png
             :figwidth: 150px
             :target: https://www.tudelft.nl
 
     .. grid-item-card::
-
         .. figure:: ./../_static/Art_logo.jpg
             :figwidth: 150px
             :target: http://www.artesia-water.nl
@@ -113,11 +107,11 @@ The following institutions have employed maintainers in the past or past maintai
 .. grid:: 1 2 3 3
 
     .. grid-item-card::
-
         .. figure:: ./../_static/logo_graz.png
             :figwidth: 150px
             :target: https://erdwissenschaften.uni-graz.at/en/
 
+    .. grid-item-card::
         .. figure:: ./../_static/Eawag_logo.png
             :figwidth: 150px
             :target: https://www.eawag.ch/en/
