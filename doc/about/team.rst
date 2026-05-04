@@ -86,16 +86,19 @@ Current institutional partners include:
 .. grid:: 1 2 3 3
 
     .. grid-item-card::
+
         .. figure:: ./../_static/hydroconsult_logo.png
             :figwidth: 150px
             :target: https://www.hydroconsult.ch/
 
     .. grid-item-card::
+
         .. figure:: ./../_static/TUD_logo.png
             :figwidth: 150px
             :target: https://www.tudelft.nl
 
     .. grid-item-card::
+
         .. figure:: ./../_static/Art_logo.jpg
             :figwidth: 150px
             :target: http://www.artesia-water.nl
@@ -107,11 +110,13 @@ The following institutions have employed maintainers in the past or past maintai
 .. grid:: 1 2 3 3
 
     .. grid-item-card::
+
         .. figure:: ./../_static/logo_graz.png
             :figwidth: 150px
             :target: https://erdwissenschaften.uni-graz.at/en/
 
     .. grid-item-card::
+
         .. figure:: ./../_static/Eawag_logo.png
             :figwidth: 150px
             :target: https://www.eawag.ch/en/
