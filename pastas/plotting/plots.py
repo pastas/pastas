@@ -582,7 +582,7 @@ class TrackSolve:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         update_iter: int | None = None,
-        pause=1e-10,
+        pause: float = 1e-10,
     ) -> None:
         logger.warning(
             "TrackSolve feature under development. If you find any bugs please post "
