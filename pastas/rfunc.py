@@ -2066,6 +2066,18 @@ class Kraijenhoff(RfuncBase):
         s = p[0] * (1 - (8 / (pi**3 * (1 / 4 - p[2] ** 2)) * h))
         return s
 
+    def block_from_impulse(
+        self,
+        p: ArrayLike,
+        dt: float = 1,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+        **kwargs,
+    ) -> ArrayLike:
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
+        t_mid = t - (0.5 * dt)  # compute times at the middle of the interval
+        return self.impulse(t_mid, p, n_terms=self.n_terms) * dt
+
     def moment(
         self,
         p: ArrayLike,
@@ -2089,9 +2101,8 @@ class Kraijenhoff(RfuncBase):
 
     @staticmethod
     @latexfun(identifiers={"impulse": "theta"})
-    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+    def impulse(t: ArrayLike, p: ArrayLike, n_terms: int = 10) -> ArrayLike:
         A, a, b = p
-        nterms = 10
         return (
             A
             * 8
@@ -2101,7 +2112,7 @@ class Kraijenhoff(RfuncBase):
                 / (a * (2 * n + 1))
                 * np.cos((2 * n + 1) * pi * b)
                 * np.exp(-((2 * n + 1) ** 2 * t) / a)
-                for n in range(nterms)
+                for n in range(n_terms)
             )
         )
 
