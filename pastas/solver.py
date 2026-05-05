@@ -102,16 +102,20 @@ class BaseSolver:
             array_like object with the values as floats representing the model
             parameters.
         noise: Boolean
+            If True, the noise series is used (including noise weights).
+            If False, the residual series is used.
         weights: pandas.Series, optional
             A pandas Series used to scale the residual or noise (in the case
-            of a `NoiseModel`) prior to optimization. The Series must share
+            of a `NoiseModel`) during optimization. The weights must share
             the same `DateTimeIndex` as the observations (`ml.observations()`)
             to ensure proper alignment. These weights are applied such that
             the minimized objective function in least-squares solvers is
             ``sum((weights * residuals)**2)``. This means that a residual with
-            double the weight has four times as much influence. Typically,
-            values are set between 0 and 1 to distinguish between
-            training/calibration and test/validation periods.
+            double the weight has four times as much influence. If None, equal
+            weights are used. This can be used to put extra/less weight on certain
+            periods (e.g., droughts) or measurements (i.e. outliers), and make more
+            complex calibration schemes (see, for example,
+            :cite:`colllenteur_analysis_2023`).
         callback: ufunc, optional
             function that is called after each iteration. the parameters are
             provided to the func. E.g. "callback(parameters)"
