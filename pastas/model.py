@@ -1001,7 +1001,7 @@ class Model:
 
     def reset_settings(self) -> None:
         """Method to reset the model settings to the default settings."""
-        self._settings = self.set_settings(
+        self.set_settings(
             tmin=self.get_tmin(use_oseries=True, use_stresses=True),
             tmax=self.get_tmax(use_oseries=True, use_stresses=True),
             freq=self._freq_original,
