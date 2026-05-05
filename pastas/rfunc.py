@@ -442,6 +442,9 @@ class Gamma(RfuncBase):
     use_impulse: bool, optional
         Indicates whether to use the impulse response function for computing
         the block response. Default is False.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -554,6 +557,9 @@ class Exponential(RfuncBase):
     use_impulse: bool, optional
         Indicates whether to use the impulse response function for computing
         the block response. Default is False.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -666,7 +672,19 @@ class HantushWellModel(RfuncBase):
         Indicates whether to use the impulse response function for computing
         the block response. Default is False.
     quad: bool, optional
-        Use the method 'numba_quad' to compute the step_response.
+        Use the method 'quad_step' to compute the step_response for
+        HantushWellModel using numerical integration. Default is False.
+    approximate_tmax: bool, optional
+        If True, get_tmax will use the fast Lambert W approximation (default). If False,
+        it will use the exact numerical root finding method.
+    log_b: bool, optional
+        Whether to use log10 scaling for parameter b, which is related to the diffusivity
+        and distance. Default is True, which means that the initial value and bounds
+        for b are set in log10 space. This can help with optimization when the expected
+        range of b spans several orders of magnitude.
+
+    Attributes
+    ----------
     up: bool, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False).
@@ -936,21 +954,20 @@ class Hantush(RfuncBase):
         Indicates whether to use the impulse response function for computing
         the block response. Default is False.
     quad: bool, optional
-        Use the method 'numba_quad' to compute the step_response.
+      Use the method 'quad_step' to compute the step_response using numerical
+        integration.
+    approximate_tmax: bool, optional
+        If True, get_tmax will use the fast Lambert W approximation (default). If False,
+        it will use the exact numerical root finding method.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
     gain_scale_factor: float, optional
         the scale factor is used to set the initial value and the bounds of the gain
         parameter, computed as 1 / gain_scale_factor.
-    cutoff: float, optional
-        proportion after which the step function is cut off.
-    quad: bool, optional
-        Use the method 'quad_step' to compute the step_response using numerical
-        integration.
-    approximate_tmax: bool, optional
-        If True, get_tmax will use the fast Lambert W approximation (default). If False,
-        it will use the exact numerical root finding method.
 
     Notes
     -----
@@ -1240,6 +1257,9 @@ class Polder(RfuncBase):
     use_impulse: bool, optional
         Indicates whether to use the impulse response function for computing
         the block response. Default is False.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -1370,6 +1390,9 @@ class One(RfuncBase):
         Indicates whether to use the impulse response function for computing
         the block response. Default is False. Has no influence for this response
         function because it has its own implementation of the block response function.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True) or
         down (False), if None (default) the head can go both ways.
@@ -1473,6 +1496,9 @@ class FourParam(RfuncBase):
     quad: bool, optional
         If true, use the 'quad' method from scipy.integrate to integrate the impulse
         response function. This may be more accurate but increases computation times.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -1719,6 +1745,9 @@ class DoubleExponential(RfuncBase):
     use_impulse: bool, optional
         Indicates whether to use the impulse response function for computing
         the block response. Default is False.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -1848,6 +1877,9 @@ class Edelman(RfuncBase):
     use_impulse: bool, optional
         Indicates whether to use the impulse response function for computing
         the block response. Default is False.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -1947,6 +1979,9 @@ class Kraijenhoff(RfuncBase):
         the block response. Default is False.
     n_terms: int, optional
         Number of terms.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
@@ -2125,6 +2160,9 @@ class Spline(RfuncBase):
         are 'quadratic' and 'cubic'.
     t: list, optional
         times at which the response function is defined.
+
+    Attributes
+    ----------
     up: bool or None, optional
         indicates whether a positive stress will cause the head to go up (True,
         default) or down (False), if None the head can go both ways.
