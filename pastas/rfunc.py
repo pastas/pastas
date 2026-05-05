@@ -229,7 +229,6 @@ class RfuncBase(ABC):
 
         Only used for internal consistency checks
         """
-        raise NotImplementedError
 
     @property
     def _name(self) -> str:
