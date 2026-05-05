@@ -63,7 +63,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python }}
-          enable-cache: true
+          enable-cache: false
 
       - name: Install dependencies
         run: |
@@ -77,7 +77,8 @@ jobs:
         run: uv run tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
       - name: Run codacy-coverage-reporter
-        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
+        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' &&
+          success() }}
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
