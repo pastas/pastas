@@ -369,7 +369,7 @@ class RfuncBase:
         self,
         p: ArrayLike,
         dt: float,
-        cutoff: float,
+        cutoff: float | None = None,
         maxtmax: float | None = None,
         warn: bool = True,
     ) -> ArrayLike:
@@ -383,9 +383,9 @@ class RfuncBase:
             parameters.
         dt: float
             timestep as a multiple of one day.
-        cutoff: float
+        cutoff: float | None, optional
             proportion after which the step function is cut off.
-        maxtmax: float, optional
+        maxtmax: float | None, optional
             The maximum time of the response, usually set to the simulation length.
         warn : bool, optional
             only used for HantushWellModel, whether to warn when r is set to 1.0
@@ -1231,9 +1231,9 @@ class Hantush(RfuncBase):
 
         """
         settings = super().to_dict() | {
-                "quad": self.quad,
-                "approximate_tmax": self.approximate_tmax,
-            }
+            "quad": self.quad,
+            "approximate_tmax": self.approximate_tmax,
+        }
         return settings
 
 
@@ -1542,12 +1542,6 @@ class FourParam(RfuncBase):
         )
         return parameters
 
-    @staticmethod
-    @latexfun(identifiers={"impulse": "theta"})
-    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        _, n, a, b = p
-        return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
-
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
         if cutoff is None:
             cutoff = self.cutoff
@@ -1697,6 +1691,12 @@ class FourParam(RfuncBase):
         else:
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
+    @staticmethod
+    @latexfun(identifiers={"impulse": "theta"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        _, n, a, b = p
+        return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
+
     @property
     def nparam(self) -> int:
         return 4
@@ -1799,14 +1799,6 @@ class DoubleExponential(RfuncBase):
     def gain(self, p: ArrayLike) -> float:
         return p[0]
 
-    @staticmethod
-    @latexfun(identifiers={"impulse": "theta"})
-    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        A, alpha, a_1, a_2 = p
-        return A * (
-            (1 - alpha) / a_1 * np.exp(-t / a_1) + alpha / a_2 * np.exp(-t / a_2)
-        )
-
     def step(
         self,
         p: ArrayLike,
@@ -1834,6 +1826,14 @@ class DoubleExponential(RfuncBase):
             return A * factorial(order) * ((1 - alpha) * a1**order + alpha * a2**order)
         else:
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
+
+    @staticmethod
+    @latexfun(identifiers={"impulse": "theta"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        A, alpha, a_1, a_2 = p
+        return A * (
+            (1 - alpha) / a_1 * np.exp(-t / a_1) + alpha / a_2 * np.exp(-t / a_2)
+        )
 
     @property
     def nparam(self) -> int:
@@ -1908,12 +1908,6 @@ class Edelman(RfuncBase):
     def gain(p: ArrayLike) -> float:
         return 1.0
 
-    @staticmethod
-    @latexfun(identifiers={"impulse": "theta"})
-    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        (a,) = p
-        return 1 / (np.sqrt(pi) * a * t**1.5) * np.exp(-1 / (a**2 * t))
-
     def step(
         self,
         p: ArrayLike,
@@ -1940,6 +1934,12 @@ class Edelman(RfuncBase):
             raise ValueError(
                 f"Invalid method {method}. Choose 'discrete' is supported for {self._name}."
             )
+
+    @staticmethod
+    @latexfun(identifiers={"impulse": "theta"})
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        (a,) = p
+        return 1 / (np.sqrt(pi) * a * t**1.5) * np.exp(-1 / (a**2 * t))
 
     @property
     def nparam(self) -> int:
@@ -2273,5 +2273,4 @@ class Spline(RfuncBase):
             "kind": self.kind,
             "t": self.t,
         }
-        )
         return settings
