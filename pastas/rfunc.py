@@ -161,7 +161,8 @@ class RfuncBase(ABC):
             Fraction of the step response used to determine the response cutoff.
             Defaults to `self.cutoff` if `cutoff is None`.
         maxtmax: float, optional
-            Maximum response time to compute.
+            Maximum response time to compute. Not used if None, else, the used
+            tmax is the minimum of the tmax determined from the cutoff and maxtmax.
         kwargs: dict
             Additional keyword arguments passed to :meth:`get_t` or used for specific
             response functions.
@@ -280,7 +281,7 @@ class RfuncBase(ABC):
     def get_t(
         self,
         p: ArrayLike,
-        dt: float,
+        dt: float | ArrayLike,
         cutoff: float | None = None,
         maxtmax: float | None = None,
         warn: bool = True,
@@ -293,12 +294,17 @@ class RfuncBase(ABC):
         ----------
         p: array_like
             Response function parameters.
-        dt: float
-            Time step in days.
+        dt: float | ArrayLike
+            Time step in days. If an array_like is provided, it is returned as is
+            and the cutoff and maxtmax parameters are ignored. If a float is
+            provided, the times are computed from dt until the tmax determined
+            from the cutoff and maxtmax parameters.
         cutoff: float | None, optional
             Fraction of the step response used to determine the response cutoff.
         maxtmax: float | None, optional
-            Maximum response time to compute, usually the simulation length.
+            Maximum response time to compute, usually the simulation length. Not
+            used if None, else, the used tmax is the minimum of the tmax determined
+            from the cutoff and maxtmax.
         warn : bool, optional
             Only used for HantushWellModel. Whether to warn when `r` is set to
             1.0 for calculations.
@@ -311,14 +317,14 @@ class RfuncBase(ABC):
         if isinstance(dt, np.ndarray):
             return dt
         else:
-            if isinstance(self, HantushWellModel):
-                tmax = self.get_tmax(p, cutoff, warn=warn)
-            else:
-                tmax = self.get_tmax(p, cutoff)
-            if maxtmax is not None:
-                tmax = min(tmax, maxtmax)
-            tmax = max(tmax, 3 * dt)
-            return np.arange(dt, tmax, dt)
+            tmax = (
+                self.get_tmax(p, cutoff, warn=warn)
+                if isinstance(self, HantushWellModel)
+                else self.get_tmax(p, cutoff)
+            )
+            tmax = max(min(tmax, maxtmax) if maxtmax is not None else tmax, 3 * dt)
+            t = np.arange(start_or_stop=dt, stop=tmax, step=dt, dtype=float)
+            return t
 
     def block(
         self,
@@ -340,7 +346,8 @@ class RfuncBase(ABC):
             Fraction of the step response used to determine the response cutoff.
             Defaults to `self.cutoff` if `cutoff is None`.
         maxtmax: float, optional
-            Maximum response time to compute.
+            Maximum response time to compute. Not used if None, else, the used
+            tmax is the minimum of the tmax determined from the cutoff and maxtmax.
         kwargs: dict
             Additional keyword arguments passed to :meth:`block_from_step` or
             :meth:`block_from_impulse`.
@@ -381,7 +388,8 @@ class RfuncBase(ABC):
             Fraction of the step response used to determine the response cutoff.
             Defaults to `self.cutoff` if `cutoff is None`.
         maxtmax: float, optional
-            Maximum response time to compute.
+            Maximum response time to compute. Not used if None, else, the used
+            tmax is the minimum of the tmax determined from the cutoff and maxtmax.
 
         Returns
         -------
@@ -412,7 +420,8 @@ class RfuncBase(ABC):
             Fraction of the step response used to determine the response cutoff.
             Defaults to `self.cutoff` if `cutoff is None`.
         maxtmax: float, optional
-            Maximum response time to compute.
+            Maximum response time to compute. Not used if None, else, the used
+            tmax is the minimum of the tmax determined from the cutoff and maxtmax.
         kwargs: dict
             Additional keyword arguments passed to :meth:`step`.
 
@@ -1085,7 +1094,8 @@ class Hantush(RfuncBase):
             Response function parameters `[A, a, b]`.
         cutoff : float, optional
             The fraction of the total step response area reached at tmax.
-            Must be strictly between 0 and 1. Defaults to `self.cutoff` if `cutoff is None`.
+            Must be strictly between 0 and 1. Defaults to `self.cutoff` if
+            `cutoff is None`.
 
         Returns
         -------
