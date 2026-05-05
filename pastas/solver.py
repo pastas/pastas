@@ -99,18 +99,19 @@ class BaseSolver:
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
+            array_like object with the values as floats representing the model
+            parameters.
         noise: Boolean
         weights: pandas.Series, optional
             A pandas Series used to scale the residual or noise (in the case
             of a `NoiseModel`) prior to optimization. The Series must share
             the same `DateTimeIndex` as the observations (`ml.observations()`)
             to ensure proper alignment. These weights are applied such that
-            the minimized objective function equals the weighted sum of squares,
-            defined as `sum(weights * residuals)**2`. Typically, values are set
-            between 0 and 1 to distinguish between training/calibration and
-            test/validation periods.
+            the minimized objective function in least-squares solvers is
+            ``sum((weights * residuals)**2)``. This means that a residual with
+            double the weight has four times as much influence. Typically,
+            values are set between 0 and 1 to distinguish between
+            training/calibration and test/validation periods.
         callback: ufunc, optional
             function that is called after each iteration. the parameters are
             provided to the func. E.g. "callback(parameters)"

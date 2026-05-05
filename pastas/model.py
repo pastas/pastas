@@ -844,8 +844,10 @@ class Model:
             True. If False, the optimal values from an earlier optimization are used.
         weights: pandas.Series, optional
             Pandas Series with weighted least-squares values, index-based. The
-            square-root of these values is multiplied with the residuals or noise time
-            series, so the minimized objective is ``sum(weights * residuals**2)``.
+            values are multiplied with the residuals or noise time series before
+            squaring in the least-squares solvers, so the minimized objective is
+            ``sum((weights * residuals)**2)``. This means that a residual with
+            double the weight has four times as much influence.
             Must have the same indices as the oseries. If None, equal weights are
             used. This can be used to put extra/less weight on
             certain periods (e.g., droughts) or measurements (i.e. outliers), and make
