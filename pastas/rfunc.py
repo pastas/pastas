@@ -10,6 +10,7 @@ Use response functions in stress models::
 
 """
 
+from abc import ABC, abstractmethod
 from logging import getLogger
 
 import numpy as np
@@ -63,7 +64,7 @@ __all__ = [
 ]
 
 
-class RfuncBase:
+class RfuncBase(ABC):
     """Base class for response functions."""
 
     def __init__(
@@ -99,6 +100,136 @@ class RfuncBase:
         # initialize attributes, these can be set with update_rfunc_settings()
         self.up = None
         self.gain_scale_factor = 1.0
+
+    @property
+    @abstractmethod
+    def nparam(self) -> int:
+        """Number of parameters of the response function."""
+
+    @abstractmethod
+    def get_init_parameters(self, name: str) -> DataFrame:
+        """Get initial parameters and bounds. It is called by the stressmodel.
+
+        Parameters
+        ----------
+        name: str
+            Name of the stressmodel.
+
+        Returns
+        -------
+        parameters: pandas DataFrame
+            The initial parameters and parameter bounds used by the solver.
+        """
+
+    @abstractmethod
+    def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
+        """Method to get the response time for a certain cutoff.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+        cutoff: float, optional
+            proportion after which the step function is cut off. default is 0.999.
+
+        Returns
+        -------
+        tmax: float
+            Number of days when 99.9% of the response has effectuated, when the
+            cutoff is chosen at 0.999.
+        """
+
+    @abstractmethod
+    def step(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+        **kwargs,
+    ) -> ArrayLike:
+        """Method to return the step function.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+        dt: float
+            timestep as a multiple of one day.
+        cutoff: float, optional
+            proportion after which the step function is cut off. default is 0.999.
+        maxtmax: float, optional
+            Maximum timestep to compute the block response for.
+        kwargs: dict
+            kwargs are passed onto self.step().
+
+        Returns
+        -------
+        s: array_like
+            Array with the step response.
+        """
+
+    @abstractmethod
+    def gain(self, p: ArrayLike) -> float:
+        """Method to return the gain for the response function."""
+
+    @abstractmethod
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete", "exact"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        """Compute the raw moment of the response function.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+        order : int
+            The order of the moment to compute (0 through 4).
+        method : {'discrete', 'exact'}, optional
+            Method to compute the moment. 'discrete' uses numerical integration of
+            the discrete impulse response values, 'exact' uses the analytical
+            expression for the moment if available. Default is 'discrete'.
+        dt : float, optional
+            Time step between impulse response values. Default is 1.0.
+        """
+
+    @staticmethod
+    @abstractmethod
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        """Method to return the impulse response function.
+
+        Parameters
+        ----------
+        t: array_like
+            array_like object with the times at which to evaluate the impulse
+            response, can be obtained with get_t() method
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+
+        Returns
+        -------
+        s: array_like
+            Array with the impulse response.
+
+        Notes
+        -----
+        The impulse response function for each response function class can be viewed on
+        the Documentation website or using `latexify` by running the following code in a
+        Jupyter notebook environment::
+
+            ps.RfuncName.impulse
+
+        Only used for internal consistency checks
+        """
+        raise NotImplementedError
 
     @property
     def _name(self) -> str:
@@ -147,47 +278,16 @@ class RfuncBase:
         if cutoff is not None:
             self.cutoff = cutoff
 
-    def get_init_parameters(self, name: str) -> DataFrame:
-        """Get initial parameters and bounds. It is called by the stressmodel.
-
-        Parameters
-        ----------
-        name: str
-            Name of the stressmodel.
-
-        Returns
-        -------
-        parameters: pandas DataFrame
-            The initial parameters and parameter bounds used by the solver.
-        """
-
-    def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
-        """Method to get the response time for a certain cutoff.
-
-        Parameters
-        ----------
-        p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
-        cutoff: float, optional
-            proportion after which the step function is cut off. default is 0.999.
-
-        Returns
-        -------
-        tmax: float
-            Number of days when 99.9% of the response has effectuated, when the
-            cutoff is chosen at 0.999.
-        """
-
-    def step(
+    def get_t(
         self,
         p: ArrayLike,
-        dt: float = 1.0,
+        dt: float,
         cutoff: float | None = None,
         maxtmax: float | None = None,
-        **kwargs,
+        warn: bool = True,
     ) -> ArrayLike:
-        """Method to return the step function.
+        """Internal method to determine the times at which to evaluate the step
+        response, from t=0.
 
         Parameters
         ----------
@@ -196,19 +296,30 @@ class RfuncBase:
             parameters.
         dt: float
             timestep as a multiple of one day.
-        cutoff: float, optional
-            proportion after which the step function is cut off. default is 0.999.
-        maxtmax: float, optional
-            Maximum timestep to compute the block response for.
-        kwargs: dict
-            kwargs are passed onto self.step().
+        cutoff: float | None, optional
+            proportion after which the step function is cut off.
+        maxtmax: float | None, optional
+            The maximum time of the response, usually set to the simulation length.
+        warn : bool, optional
+            only used for HantushWellModel, whether to warn when r is set to 1.0
+            for calculations.
 
         Returns
         -------
-        s: array_like
-            Array with the step response.
+        t: array_like
+            Array with the times.
         """
-        pass
+        if isinstance(dt, np.ndarray):
+            return dt
+        else:
+            if isinstance(self, HantushWellModel):
+                tmax = self.get_tmax(p, cutoff, warn=warn)
+            else:
+                tmax = self.get_tmax(p, cutoff)
+            if maxtmax is not None:
+                tmax = min(tmax, maxtmax)
+            tmax = max(tmax, 3 * dt)
+            return np.arange(dt, tmax, dt)
 
     def block(
         self,
@@ -311,108 +422,6 @@ class RfuncBase:
         b = np.append(s[0], np.subtract(s[1:], s[:-1]))
         return b
 
-    def moment(
-        self,
-        p: ArrayLike,
-        order: int,
-        method: Literal["discrete", "exact"] = "discrete",
-        dt: float = 1.0,
-    ) -> float:
-        """Compute the raw moment of the response function.
-
-        Parameters
-        ----------
-        p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
-        order : int
-            The order of the moment to compute (0 through 4).
-        method : {'discrete', 'exact'}, optional
-            Method to compute the moment. 'discrete' uses numerical integration of
-            the discrete impulse response values, 'exact' uses the analytical
-            expression for the moment if available. Default is 'discrete'.
-        dt : float, optional
-            Time step between impulse response values. Default is 1.0.
-        """
-
-    @staticmethod
-    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        """Method to return the impulse response function.
-
-        Parameters
-        ----------
-        t: array_like
-            array_like object with the times at which to evaluate the impulse
-            response, can be obtained with get_t() method
-        p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
-
-        Returns
-        -------
-        s: array_like
-            Array with the impulse response.
-
-        Notes
-        -----
-        The impulse response function for each response function class can be viewed on
-        the Documentation website or using `latexify` by running the following code in a
-        Jupyter notebook environment::
-
-            ps.RfuncName.impulse
-
-        Only used for internal consistency checks
-        """
-        pass
-
-    def get_t(
-        self,
-        p: ArrayLike,
-        dt: float,
-        cutoff: float | None = None,
-        maxtmax: float | None = None,
-        warn: bool = True,
-    ) -> ArrayLike:
-        """Internal method to determine the times at which to evaluate the step
-        response, from t=0.
-
-        Parameters
-        ----------
-        p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
-        dt: float
-            timestep as a multiple of one day.
-        cutoff: float | None, optional
-            proportion after which the step function is cut off.
-        maxtmax: float | None, optional
-            The maximum time of the response, usually set to the simulation length.
-        warn : bool, optional
-            only used for HantushWellModel, whether to warn when r is set to 1.0
-            for calculations.
-
-        Returns
-        -------
-        t: array_like
-            Array with the times.
-        """
-        if isinstance(dt, np.ndarray):
-            return dt
-        else:
-            if isinstance(self, HantushWellModel):
-                tmax = self.get_tmax(p, cutoff, warn=warn)
-            else:
-                tmax = self.get_tmax(p, cutoff)
-            if maxtmax is not None:
-                tmax = min(tmax, maxtmax)
-            tmax = max(tmax, 3 * dt)
-            return np.arange(dt, tmax, dt)
-
-    @property
-    def nparam(self) -> int:
-        """Number of parameters of the response function."""
-        return 0
-
     def to_dict(self):
         """Method to export the response function to a dictionary.
 
@@ -474,6 +483,10 @@ class Gamma(RfuncBase):
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+
+    @property
+    def nparam(self) -> int:
+        return 3
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -544,10 +557,6 @@ class Gamma(RfuncBase):
         A, n, a = p
         return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
 
-    @property
-    def nparam(self) -> int:
-        return 3
-
 
 class Exponential(RfuncBase):
     """Exponential response function with 2 parameters: A and a.
@@ -586,6 +595,10 @@ class Exponential(RfuncBase):
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+
+    @property
+    def nparam(self) -> int:
+        return 2
 
     def get_init_parameters(self, name: str) -> DataFrame:
         # Determine initial, pmin, pmax for parameter A based on self.up
@@ -656,10 +669,6 @@ class Exponential(RfuncBase):
         A, a = p
         return A / a * np.exp(-t / a)
 
-    @property
-    def nparam(self) -> int:
-        return 2
-
 
 class HantushWellModel(RfuncBase):
     """An implementation of the Hantush well function for multiple pumping wells.
@@ -718,11 +727,20 @@ class HantushWellModel(RfuncBase):
         log_b: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        if use_impulse:
+            logger.error(
+                "The impulse response function for HantushWellModel is not implemented. "
+                "Set use_impulse to False or choose a different response function."
+            )
+        super().__init__(cutoff=cutoff, use_impulse=False, **kwargs)
         self.distances: float | ArrayLike | None = None
         self.quad: bool = quad
         self.approximate_tmax: bool = approximate_tmax
         self.log_b: bool = log_b
+
+    @property
+    def nparam(self) -> int:
+        return 3
 
     def set_distances(self, distances: float | ArrayLike) -> None:
         self.distances: float | ArrayLike = distances
@@ -848,6 +866,16 @@ class HantushWellModel(RfuncBase):
             )
 
     @staticmethod
+    def impulse(
+        t: ArrayLike,
+        p: ArrayLike,
+        warn: bool = True,
+    ) -> ArrayLike:
+        raise NotImplementedError(
+            "The impulse response function for HantushWellModel is not implemented."
+        )
+
+    @staticmethod
     def variance_gain(
         A: float,
         b: float,
@@ -912,10 +940,6 @@ class HantushWellModel(RfuncBase):
 
         var_gain = dg_dA**2 * var_A + dg_db**2 * var_b + 2 * dg_dA * dg_db * cov_Ab
         return var_gain
-
-    @property
-    def nparam(self) -> int:
-        return 3
 
     def to_dict(self):
         """Method to export the response function to a dictionary.
@@ -993,6 +1017,10 @@ class Hantush(RfuncBase):
                 "computation times for get_tmax. Consider setting "
                 "approximate_tmax=True or quad=False."
             )
+
+    @property
+    def nparam(self) -> int:
+        return 3
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -1121,8 +1149,7 @@ class Hantush(RfuncBase):
             )
             return t0
 
-    @staticmethod
-    def gain(p: ArrayLike) -> float:
+    def gain(self, p: ArrayLike) -> float:
         return p[0]
 
     @staticmethod
@@ -1213,10 +1240,6 @@ class Hantush(RfuncBase):
         A, a, b = p
         return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
 
-    @property
-    def nparam(self) -> int:
-        return 3
-
     def to_dict(self):
         """Method to export the response function to a dictionary.
 
@@ -1276,6 +1299,10 @@ class Polder(RfuncBase):
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+
+    @property
+    def nparam(self) -> int:
+        return 3
 
     def get_init_parameters(self, name) -> DataFrame:
         parameters = DataFrame(
@@ -1361,10 +1388,6 @@ class Polder(RfuncBase):
             x / y - y
         )
 
-    @property
-    def nparam(self) -> int:
-        return 3
-
 
 class One(RfuncBase):
     """Instant response with no lag and one parameter A.
@@ -1397,6 +1420,10 @@ class One(RfuncBase):
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+
+    @property
+    def nparam(self) -> int:
+        return 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1464,9 +1491,13 @@ class One(RfuncBase):
                 f"{self._name}."
             )
 
-    @property
-    def nparam(self) -> int:
-        return 1
+    @staticmethod
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        """Instantaneous response is a Dirac delta and not represented discretely."""
+        raise NotImplementedError(
+            "One.impulse is not defined as an array-valued function. "
+            "Use step() or block() for this response function."
+        )
 
 
 class FourParam(RfuncBase):
@@ -1513,6 +1544,10 @@ class FourParam(RfuncBase):
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
         self.quad = quad
+
+    @property
+    def nparam(self) -> int:
+        return 4
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
@@ -1581,8 +1616,7 @@ class FourParam(RfuncBase):
             y = y / quad(self.impulse, 0, np.inf, args=p)[0]
             return np.searchsorted(y, cutoff)
 
-    @staticmethod
-    def gain(p: ArrayLike) -> float:
+    def gain(self, p: ArrayLike) -> float:
         return p[0]
 
     def step(
@@ -1697,10 +1731,6 @@ class FourParam(RfuncBase):
         _, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
-    @property
-    def nparam(self) -> int:
-        return 4
-
     def to_dict(self):
         """Method to export the response function to a dictionary.
 
@@ -1755,6 +1785,10 @@ class DoubleExponential(RfuncBase):
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+
+    @property
+    def nparam(self) -> int:
+        return 4
 
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
@@ -1835,10 +1869,6 @@ class DoubleExponential(RfuncBase):
             (1 - alpha) / a_1 * np.exp(-t / a_1) + alpha / a_2 * np.exp(-t / a_2)
         )
 
-    @property
-    def nparam(self) -> int:
-        return 4
-
 
 @PastasDeprecationWarning(
     version="2.0.0",
@@ -1889,6 +1919,10 @@ class Edelman(RfuncBase):
     ) -> None:
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
 
+    @property
+    def nparam(self) -> int:
+        return 1
+
     def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             [
@@ -1904,8 +1938,7 @@ class Edelman(RfuncBase):
             cutoff = self.cutoff
         return 1.0 / (p[0] * erfcinv(cutoff)) ** 2
 
-    @staticmethod
-    def gain(p: ArrayLike) -> float:
+    def gain(self, p: ArrayLike) -> float:
         return 1.0
 
     def step(
@@ -1940,10 +1973,6 @@ class Edelman(RfuncBase):
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         (a,) = p
         return 1 / (np.sqrt(pi) * a * t**1.5) * np.exp(-1 / (a**2 * t))
-
-    @property
-    def nparam(self) -> int:
-        return 1
 
 
 class Kraijenhoff(RfuncBase):
@@ -2004,6 +2033,10 @@ class Kraijenhoff(RfuncBase):
         super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
         self.n_terms = n_terms
 
+    @property
+    def nparam(self) -> int:
+        return 3
+
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
             initial_A, pmin_A, pmax_A = (
@@ -2036,8 +2069,7 @@ class Kraijenhoff(RfuncBase):
             cutoff = self.cutoff
         return -p[1] * np.log(1 - cutoff)
 
-    @staticmethod
-    def gain(p: ArrayLike) -> float:
+    def gain(self, p: ArrayLike) -> float:
         return p[0]
 
     def step(
@@ -2108,10 +2140,6 @@ class Kraijenhoff(RfuncBase):
                 for n in range(n_terms)
             )
         )
-
-    @property
-    def nparam(self) -> int:
-        return 3
 
     def to_dict(self):
         """Method to export the response function to a dictionary.
@@ -2186,6 +2214,10 @@ class Spline(RfuncBase):
         self.kind = kind
         self.t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024] if t is None else t
 
+    @property
+    def nparam(self) -> int:
+        return len(self.t) + 1
+
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
             initial_A, pmin_A, pmax_A = (
@@ -2252,9 +2284,11 @@ class Spline(RfuncBase):
                 f"{self._name}."
             )
 
-    @property
-    def nparam(self) -> int:
-        return len(self.t) + 1
+    @staticmethod
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        raise NotImplementedError(
+            "Spline does not define an impulse response. Use step() or block()."
+        )
 
     def to_dict(self):
         """Method to export the response function to a dictionary.
