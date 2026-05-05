@@ -34,7 +34,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.11"
-          enable-cache: true
+          enable-cache: false
 
       - name: Install dependencies
         run: |
@@ -46,4 +46,3 @@ jobs:
 
       - name: Test
         run: uv run tox -e ${{ matrix.toxenv }} --skip-pkg-install
-
