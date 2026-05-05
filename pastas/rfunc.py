@@ -354,19 +354,18 @@ class RfuncBase(ABC):
 
         Returns
         -------
-        b: array_like
+        array_like
             Block response values.
         """
-        block = (
-            self.block_from_impulse(
+        if self.use_impulse:
+            b = self.block_from_impulse(
                 p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
             )
-            if self.use_impulse
-            else self.block_from_step(
+        else:
+            b = self.block_from_step(
                 p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
             )
-        )
-        return block
+        return b
 
     def block_from_impulse(
         self,
@@ -393,12 +392,13 @@ class RfuncBase(ABC):
 
         Returns
         -------
-        b: array_like
+        array_like
             Block response values.
         """
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         t_mid = t - (0.5 * dt)  # compute times at the middle of the interval
-        return self.impulse(t_mid, p) * dt
+        b = self.impulse(t_mid, p) * dt
+        return b
 
     def block_from_step(
         self,
@@ -430,7 +430,7 @@ class RfuncBase(ABC):
         b: array_like
             Block response values.
         """
-        s = self.step(p=p, dt=dt, cutoff=self.cutoff, maxtmax=maxtmax, **kwargs)
+        s = self.step(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         b = np.append(s[0], np.subtract(s[1:], s[:-1]))
         return b
 
