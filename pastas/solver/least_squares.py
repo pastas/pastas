@@ -10,7 +10,7 @@ from scipy.optimize import Bounds, OptimizeResult, least_squares
 
 from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
-from pastas.typing import ArrayLike
+from pastas.typing import ArrayLike, CallBack
 
 from .base import BaseSolver
 
