@@ -915,11 +915,13 @@ class HantushWellModel(RfuncBase):
 
         """
         data = super().to_dict()
-        data.update({
-            "quad": self.quad,
-            "approximate_tmax": self.approximate_tmax,
-            "log_b": self.log_b,
-        })
+        data.update(
+            {
+                "quad": self.quad,
+                "approximate_tmax": self.approximate_tmax,
+                "log_b": self.log_b,
+            }
+        )
         return data
 
 
@@ -1219,10 +1221,12 @@ class Hantush(RfuncBase):
 
         """
         data = super().to_dict()
-        data.update({
-            "quad": self.quad,
-            "approximate_tmax": self.approximate_tmax,
-        })
+        data.update(
+            {
+                "quad": self.quad,
+                "approximate_tmax": self.approximate_tmax,
+            }
+        )
         return data
 
 
