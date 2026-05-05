@@ -314,8 +314,8 @@ class RfuncBase(ABC):
         t: array_like
             Times at which the response is evaluated.
         """
-        if isinstance(dt, np.ndarray):
-            return dt
+        if np.ndim(dt) > 0:
+            return np.asarray(dt, dtype=float)
         else:
             tmax = (
                 self.get_tmax(p, cutoff, warn=warn)
