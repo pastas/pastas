@@ -2159,7 +2159,8 @@ class Spline(RfuncBase):
         see scipy.interpolate.interp1d. Most useful for a smooth response function
         are 'quadratic' and 'cubic'.
     t: list, optional
-        times at which the response function is defined.
+        Times at which the response function is defined. Default is None which
+        falls back to [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024] days.
 
     Attributes
     ----------
@@ -2186,7 +2187,7 @@ class Spline(RfuncBase):
         self,
         cutoff: float = 0.999,
         use_impulse: bool = False,
-        kind: Literal["linear", "quadratic", "cubic"] = "quadratic",
+        kind: Literal["quadratic", "cubic"] = "quadratic",
         t: list[int] | None = None,
         **kwargs,
     ) -> None:
@@ -2198,9 +2199,7 @@ class Spline(RfuncBase):
 
         super().__init__(cutoff=cutoff, use_impulse=False, **kwargs)
         self.kind = kind
-        if t is None:
-            t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-        self.t = t
+        self.t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024] if t is None else t
 
     def get_init_parameters(self, name: str) -> DataFrame:
         if self.up:
