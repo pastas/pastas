@@ -1438,7 +1438,13 @@ class One(RfuncBase):
         use_impulse: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        if use_impulse:
+            logger.warning(
+                "The impulse response function for One is not defined. Therefore, "
+                "use_impulse=True has no effect for this response function and is "
+                "set to False."
+            )
+        super().__init__(cutoff=cutoff, use_impulse=False, **kwargs)
 
     @property
     def nparam(self) -> int:
@@ -2125,7 +2131,7 @@ class Kraijenhoff(RfuncBase):
     ) -> ArrayLike:
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         t_mid = t - (0.5 * dt)  # compute times at the middle of the interval
-        return self.impulse(t_mid, p, n_terms=self.n_terms) * dt
+        return self.impulse(t_mid, p, self.n_terms) * dt
 
     def moment(
         self,

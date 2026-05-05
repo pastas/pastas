@@ -21,6 +21,28 @@ def test_rfunc(rfunc_name: str, up: bool) -> None:
 
 
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
+@pytest.mark.parametrize("use_impulse", [True, False])
+def test_block_uses_configured_impulse_routing(
+    rfunc_name: str, use_impulse: bool
+) -> None:
+    if rfunc_name == "Edelman":
+        return pytest.skip("Edelman is deprecated")
+
+    rfunc = getattr(ps.rfunc, rfunc_name)(use_impulse=use_impulse)
+    if rfunc_name == "HantushWellModel":
+        rfunc.set_distances(100.0)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    if rfunc_name in ["HantushWellModel", "Spline", "One"]:
+        assert rfunc.use_impulse is False
+        np.testing.assert_allclose(rfunc.block(p), rfunc.block_from_step(p))
+        return
+
+    expected = rfunc.block_from_impulse(p) if use_impulse else rfunc.block_from_step(p)
+    np.testing.assert_allclose(rfunc.block(p), expected, rtol=1e-6)
+
+
+@pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
 @pytest.mark.parametrize("up", [True, False])
 def test_to_dict_rfuncs(rfunc_name: str, up: bool) -> None:
     if rfunc_name == "Edelman":

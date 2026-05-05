@@ -2011,7 +2011,7 @@ SIM_TRUTH = read_csv(
 
 # %%
 # Test the outcomes
-atol = 1e-6
+rtol = 1e-6
 TRUE_PARAMS = {
     "rch_A": 800.0,
     "rch_a": 175.0,
@@ -2035,7 +2035,7 @@ def test_simulate_with_block(head: Series, prec: Series, evap: Series) -> None:
     for param, value in TRUE_PARAMS.items():
         ml.set_parameter(param, optimal=value)
     sim = ml.simulate()
-    assert np.isclose(sim.values, SIM_TRUTH.values, atol=1e-6).all()
+    assert np.isclose(sim.values, SIM_TRUTH.values, rtol=rtol).all()
 
 
 def test_simulate_with_impulse(head: Series, prec: Series, evap: Series) -> None:
@@ -2054,4 +2054,4 @@ def test_simulate_with_impulse(head: Series, prec: Series, evap: Series) -> None
     for param, value in TRUE_PARAMS.items():
         ml.set_parameter(param, optimal=value)
     sim = ml.simulate()
-    assert np.isclose(sim.values, SIM_TRUTH.values, atol=1e-6).all()
+    assert np.isclose(sim.values, SIM_TRUTH.values, rtol=rtol).all()
