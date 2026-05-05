@@ -323,7 +323,7 @@ class RfuncBase(ABC):
                 else self.get_tmax(p, cutoff)
             )
             tmax = max(min(tmax, maxtmax) if maxtmax is not None else tmax, 3 * dt)
-            t = np.arange(start_or_stop=dt, stop=tmax, step=dt, dtype=float)
+            t = np.arange(dt, stop=tmax, step=dt, dtype=float)
             return t
 
     def block(
