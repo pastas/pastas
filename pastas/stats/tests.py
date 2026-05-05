@@ -250,7 +250,7 @@ def runs_test(series: Series, cutoff: str = "median") -> tuple[float, float]:
     >>>     print("Reject the Null-hypothesis")
     """
     # Make dichotomous sequence
-    r = series.copy().to_numpy()
+    r = series.to_numpy(copy=True)
     if cutoff == "mean":
         cutoff = r.mean()
     elif cutoff == "median":
