@@ -1454,14 +1454,14 @@ class WellModel(StressModelBase):
 
     def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
         if istress is None:
-            istress = list(range(len(self.stress)))
+            istress = list(range(len(self.stresses)))
         else:
             istress = [istress]
         responses = []
         for i in istress:
-            responses.extend(
-                super().get_responses(ml, block_or_step=block_or_step, istress=i)
-            )
+            s = super().get_responses(ml, block_or_step=block_or_step, istress=i)
+            s.name = self.stresses[i].name
+            responses.extend(s)
         return responses
 
 
@@ -2099,6 +2099,7 @@ class RechargeModel(StressModelBase):
                     add_0=True,
                     istress=i,
                 )
+                response.name = self.stresses[i].name
                 responses.append(response)
             return responses
         else:

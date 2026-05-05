@@ -286,10 +286,7 @@ class Plotting:
                 ax_response_xlim = ax_response.get_xlim()
                 rmax = max(rmax, ax_response_xlim[1])
                 ax_response.set_xlim(left=ax_response_xlim[0], right=rmax)
-                ax_response.set_title(
-                    f"{block_or_step.capitalize()} response",
-                    fontsize=plt.rcParams["legend.fontsize"],
-                )
+                ax_response.legend(loc=(0, 1), ncol=2, frameon=False)
                 i += 1
 
         # xlim sets minorticks back after plots:
@@ -508,7 +505,7 @@ class Plotting:
 
         # add legend to the upper response axes and share x-axes of responses
         response_axes = [axd[k] for k in [x[1] for x in mosaic] if k.startswith("rf_")]
-        response_axes[0].legend(loc=(0, 1), frameon=False)
+        response_axes[0].legend(loc=(0, 1), ncol=2, frameon=False)
 
         response_xlims = [ax.get_xlim() for ax in response_axes]
         share_xaxes(response_axes)
@@ -542,6 +539,11 @@ class Plotting:
         )
         responses = [x for x in responses if x is not None]
         if responses:
+            # Keep the first cycle color for a single response, but reserve it
+            # when plotting multiple responses.
+            if len(responses) > 1:
+                ax._get_lines.get_next_color()
+
             xlim_left = min(
                 [
                     x.index[0] if block_or_step == "step" else x.index[1]
@@ -551,14 +553,20 @@ class Plotting:
             )
             xlim_right = max([x.index[-1] for x in responses])
             for i, response in enumerate(responses):
-                if i == 0:
+                if i == 0 and block_or_step == "block":
+                    ax.set_xscale("log")
+                    ax.xaxis.set_major_formatter(LogFormatter())
+
+                if len(responses) == 1:
                     label = f"{block_or_step.capitalize()} response"
-                    if block_or_step == "block":
-                        ax.set_xscale("log")
-                        ax.xaxis.set_major_formatter(LogFormatter())
                 else:
-                    label = None
-                ax.plot(response.index, response.values, label=label)
+                    label = response.name
+                ax.plot(
+                    response.index,
+                    response.values,
+                    label=label,
+                    color=ax._get_lines.get_next_color(),
+                )
                 ax.set_xlim(left=xlim_left, right=xlim_right)
         return ax
 
