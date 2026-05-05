@@ -863,7 +863,7 @@ class HantushWellModel(RfuncBase):
         self,
         p: ArrayLike,
         order: int,
-        method: Literal["discrete"] = "discrete",
+        method: Literal["discrete", "exact"] = "discrete",
         dt: float = 1.0,
     ) -> float:
         if method == "discrete":
@@ -1237,7 +1237,7 @@ class Hantush(RfuncBase):
         self,
         p: ArrayLike,
         order: int,
-        method: Literal["discrete"] = "discrete",
+        method: Literal["discrete", "exact"] = "discrete",
         dt: float = 1.0,
     ) -> float:
         if method == "discrete":
@@ -1366,7 +1366,7 @@ class Polder(RfuncBase):
         self,
         p: ArrayLike,
         order: int,
-        method: Literal["discrete"] = "discrete",
+        method: Literal["discrete", "exact"] = "discrete",
         dt: float = 1.0,
     ) -> float:
         if method == "discrete":
@@ -1968,7 +1968,7 @@ class Edelman(RfuncBase):
         self,
         p: ArrayLike,
         order: int,
-        method: Literal["discrete"] = "discrete",
+        method: Literal["discrete", "exact"] = "discrete",
         dt: float = 1.0,
     ) -> float:
         if method == "discrete":
@@ -2121,7 +2121,7 @@ class Kraijenhoff(RfuncBase):
         self,
         p: ArrayLike,
         order: int,
-        method: Literal["discrete"] = "discrete",
+        method: Literal["discrete", "exact"] = "discrete",
         dt: float = 1.0,
     ) -> float:
         if method == "discrete":
