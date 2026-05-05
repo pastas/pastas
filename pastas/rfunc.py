@@ -418,22 +418,22 @@ class RfuncBase:
 
         Returns
         -------
-        data: dict
-            dictionary with all necessary information to reconstruct the rfunc object.
+        dict[str, Any]
+            dictionary with all necessary settings to reconstruct the rfunc object.
 
         Notes
         -----
-        The exported dictionary should exactly match the input arguments of __init__.
+        The exported dictionary should match the input arguments of __init__.
 
         """
-        data = {
+        settings = {
             "class": self._name,
             "cutoff": self.cutoff,
             "use_impulse": self.use_impulse,
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
         }
-        return data
+        return settings
 
 
 class Gamma(RfuncBase):
@@ -922,23 +922,20 @@ class HantushWellModel(RfuncBase):
 
         Returns
         -------
-        data: dict
-            dictionary with all necessary information to reconstruct the rfunc object.
+        dict[str, Any]
+            dictionary with all necessary settings to reconstruct the rfunc object.
 
         Notes
         -----
         The exported dictionary should exactly match the input arguments of __init__.
 
         """
-        data = super().to_dict()
-        data.update(
-            {
-                "quad": self.quad,
-                "approximate_tmax": self.approximate_tmax,
-                "log_b": self.log_b,
-            }
-        )
-        return data
+        settings = super().to_dict() | {
+            "quad": self.quad,
+            "approximate_tmax": self.approximate_tmax,
+            "log_b": self.log_b,
+        }
+        return settings
 
 
 class Hantush(RfuncBase):
@@ -1225,22 +1222,19 @@ class Hantush(RfuncBase):
 
         Returns
         -------
-        data: dict
-            dictionary with all necessary information to reconstruct the rfunc object.
+        dict[str, Any]
+            dictionary with all necessary settings to reconstruct the rfunc object.
 
         Notes
         -----
         The exported dictionary should exactly match the input arguments of __init__.
 
         """
-        data = super().to_dict()
-        data.update(
-            {
+        settings = super().to_dict() | {
                 "quad": self.quad,
                 "approximate_tmax": self.approximate_tmax,
             }
-        )
-        return data
+        return settings
 
 
 class Polder(RfuncBase):
@@ -1712,17 +1706,16 @@ class FourParam(RfuncBase):
 
         Returns
         -------
-        data: dict
-            dictionary with all necessary information to reconstruct the rfunc object.
+        dict[str, Any]
+            dictionary with all necessary settings to reconstruct the rfunc object.
 
         Notes
         -----
         The exported dictionary should exactly match the input arguments of __init__.
 
         """
-        data = super().to_dict()
-        data.update({"quad": self.quad})
-        return data
+        settings = super().to_dict() | {"quad": self.quad}
+        return settings
 
 
 class DoubleExponential(RfuncBase):
@@ -2125,17 +2118,16 @@ class Kraijenhoff(RfuncBase):
 
         Returns
         -------
-        data: dict
-            dictionary with all necessary information to reconstruct the rfunc object.
+        settings: dict[str, Any]
+            dictionary with all necessary settings to reconstruct the rfunc object.
 
         Notes
         -----
         The exported dictionary should exactly match the input arguments of __init__.
 
         """
-        data = super().to_dict()
-        data.update({"n_terms": self.n_terms})
-        return data
+        settings = super().to_dict() | {"n_terms": self.n_terms}
+        return settings
 
 
 class Spline(RfuncBase):
@@ -2269,19 +2261,17 @@ class Spline(RfuncBase):
 
         Returns
         -------
-        data: dict
-            dictionary with all necessary information to reconstruct the rfunc object.
+        settings: dict[str, Any]
+            dictionary with all necessary settings to reconstruct the rfunc object.
 
         Notes
         -----
         The exported dictionary should exactly match the input arguments of __init__.
 
         """
-        data = super().to_dict()
-        data.update(
-            {
-                "kind": self.kind,
-                "t": self.t,
-            }
+        settings = super().to_dict() | {
+            "kind": self.kind,
+            "t": self.t,
+        }
         )
-        return data
+        return settings
