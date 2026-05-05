@@ -64,7 +64,7 @@ __all__ = [
 
 
 class RfuncBase:
-    _name = "RfuncBase"
+    """Base class for response functions."""
 
     def __init__(
         self,
@@ -99,6 +99,10 @@ class RfuncBase:
         # initialize attributes, these can be set with update_rfunc_settings()
         self.up = None
         self.gain_scale_factor = 1.0
+
+    @property
+    def _name(self) -> str:
+        return self.__class__.__name__
 
     def update_rfunc_settings(
         self,
@@ -463,8 +467,6 @@ class Gamma(RfuncBase):
     The Gamma function is equal to the Exponential function when n=1.
     """
 
-    _name = "Gamma"
-
     def __init__(
         self,
         cutoff: float = 0.999,
@@ -576,8 +578,6 @@ class Exponential(RfuncBase):
         ps.Exponential.impulse
 
     """
-
-    _name = "Exponential"
 
     def __init__(
         self,
@@ -708,8 +708,6 @@ class HantushWellModel(RfuncBase):
 
     The implementation used here is explained in :cite:t:`veling_hantush_2010`.
     """
-
-    _name = "HantushWellModel"
 
     def __init__(
         self,
@@ -980,8 +978,6 @@ class Hantush(RfuncBase):
     The implementation used here is explained in :cite:t:`veling_hantush_2010`.
 
     """
-
-    _name = "Hantush"
 
     def __init__(
         self,
@@ -1279,8 +1275,6 @@ class Polder(RfuncBase):
 
     """
 
-    _name = "Polder"
-
     def __init__(
         self,
         cutoff: float = 0.999,
@@ -1402,8 +1396,6 @@ class One(RfuncBase):
 
     """
 
-    _name = "One"
-
     def __init__(
         self,
         cutoff: float = 0.999,
@@ -1517,8 +1509,6 @@ class FourParam(RfuncBase):
     The function is explained in :cite:t:`bakker_calibration_2008`.
 
     """
-
-    _name = "FourParam"
 
     def __init__(
         self,
@@ -1765,8 +1755,6 @@ class DoubleExponential(RfuncBase):
 
     """
 
-    _name = "DoubleExponential"
-
     def __init__(
         self,
         cutoff: float = 0.999,
@@ -1900,8 +1888,6 @@ class Edelman(RfuncBase):
 
     """
 
-    _name = "Edelman"
-
     def __init__(
         self,
         cutoff: float = 0.999,
@@ -2014,8 +2000,6 @@ class Kraijenhoff(RfuncBase):
       response function is most similar to the exponential response function.
 
     """
-
-    _name = "Kraijenhoff"
 
     def __init__(
         self,
@@ -2180,8 +2164,6 @@ class Spline(RfuncBase):
     background. Therefore, it can primarily be used to compare to other more physical
     response functions, that probably describe the groundwater system better.
     """
-
-    _name = "Spline"
 
     def __init__(
         self,
