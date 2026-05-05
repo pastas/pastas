@@ -673,8 +673,8 @@ class HantushWellModel(RfuncBase):
     def gain(self, p: ArrayLike, r: float | None = None) -> float:
         if r is None:
             r = self._get_distance_from_params(p)
-        b = 10 ** (p[2] / 2.0) if self.log_b else np.sqrt(p[2])
-        rho = 2.0 * r * b
+        b_scaled = 10 ** (p[2] / 2.0) if self.log_b else np.sqrt(p[2])
+        rho = 2.0 * r * b_scaled
         return p[0] * k0(rho)
 
     def step(
@@ -815,7 +815,8 @@ class Hantush(RfuncBase):
     cutoff: float, optional
         proportion after which the step function is cut off.
     quad: bool, optional
-        Use the method 'quad_step' to compute the step_response using numerical integration.
+        Use the method 'quad_step' to compute the step_response using numerical
+        integration.
     approximate_tmax: bool, optional
         If True, get_tmax will use the fast Lambert W approximation (default). If False,
         it will use the exact numerical root finding method.
@@ -955,7 +956,7 @@ class Hantush(RfuncBase):
         tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
         root, info = brentq(
             f=self._f_step,
-            a=0.0,
+            a=1e-30,  # avoid divide by zero warnings
             b=t0,
             xtol=tol,
             maxiter=100,  # generally converges within 10 iterations
