@@ -78,10 +78,11 @@ class RfuncBase(ABC):
         Parameters
         ----------
         cutoff: float, optional
-             Proportion after which the step function is cut off. Default is 0.999.
+            Fraction of the step response after which the response is truncated.
+            Default is 0.999.
         use_impulse: bool, optional
-             Indicates whether to use a step or impulse response function for computing
-             the block response. Default is False.
+            Use the impulse response instead of the step response to compute the
+            block response. Default is False.
         kwargs: dict
             Additional keyword arguments.
         """
@@ -123,21 +124,20 @@ class RfuncBase(ABC):
 
     @abstractmethod
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
-        """Method to get the response time for a certain cutoff.
+        """Method to get the response time for a certain cutoff. A cutoff of
+        0.999 returns a tmax when 99.9% of the step response has effectuated.
 
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
+            Response function parameters.
         cutoff: float, optional
-            proportion after which the step function is cut off. default is 0.999.
+            Fraction of the step response used to determine the response cutoff.
+            Defaults to `self.cutoff` if `cutoff is None`.
 
         Returns
         -------
         tmax: float
-            Number of days when 99.9% of the response has effectuated, when the
-            cutoff is chosen at 0.999.
         """
 
     @abstractmethod
@@ -154,16 +154,17 @@ class RfuncBase(ABC):
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
+            Response function parameters.
         dt: float
-            timestep as a multiple of one day.
+            Time step in days.
         cutoff: float, optional
-            proportion after which the step function is cut off. default is 0.999.
+            Fraction of the step response used to determine the response cutoff.
+            Defaults to `self.cutoff` if `cutoff is None`.
         maxtmax: float, optional
-            Maximum timestep to compute the block response for.
+            Maximum response time to compute.
         kwargs: dict
-            kwargs are passed onto self.step().
+            Additional keyword arguments passed to :meth:`get_t` or used for specific
+            response functions.
 
         Returns
         -------
@@ -188,16 +189,15 @@ class RfuncBase(ABC):
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
+            Response function parameters.
         order : int
-            The order of the moment to compute (0 through 4).
+            Order of the moment to compute.
         method : {'discrete', 'exact'}, optional
-            Method to compute the moment. 'discrete' uses numerical integration of
-            the discrete impulse response values, 'exact' uses the analytical
-            expression for the moment if available. Default is 'discrete'.
+            Method used to compute the moment. `"discrete"` uses the discrete
+            block response, while `"exact"` uses an analytical expression when
+            available. Default is `"discrete"`.
         dt : float, optional
-            Time step between impulse response values. Default is 1.0.
+            Time step in days. Default is 1.0.
         """
 
     @staticmethod
@@ -245,13 +245,13 @@ class RfuncBase(ABC):
         Parameters
         ----------
         up: bool or None, optional
-            indicates whether a positive stress will cause the head to go up (True,
-            default) or down (False), if None the head can go both ways.
+            Whether a positive stress causes the head to go up (`True`), down
+            (`False`), or either direction (`None`).
         gain_scale_factor: float, optional
-            the scale factor is used to set the initial value and the bounds of the gain
-            parameter, computed as 1 / gain_scale_factor.
+            Scale factor used to set the initial value and bounds of the gain
+            parameter, computed as `1 / gain_scale_factor`.
         cutoff: float, optional
-            proportion after which the step function is cut off.
+            Fraction of the step response after which the response is truncated.
 
         Notes
         -----
@@ -284,6 +284,7 @@ class RfuncBase(ABC):
         cutoff: float | None = None,
         maxtmax: float | None = None,
         warn: bool = True,
+        **kwargs,
     ) -> ArrayLike:
         """Internal method to determine the times at which to evaluate the step
         response, from t=0.
@@ -291,22 +292,21 @@ class RfuncBase(ABC):
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
+            Response function parameters.
         dt: float
-            timestep as a multiple of one day.
+            Time step in days.
         cutoff: float | None, optional
-            proportion after which the step function is cut off.
+            Fraction of the step response used to determine the response cutoff.
         maxtmax: float | None, optional
-            The maximum time of the response, usually set to the simulation length.
+            Maximum response time to compute, usually the simulation length.
         warn : bool, optional
-            only used for HantushWellModel, whether to warn when r is set to 1.0
-            for calculations.
+            Only used for HantushWellModel. Whether to warn when `r` is set to
+            1.0 for calculations.
 
         Returns
         -------
         t: array_like
-            Array with the times.
+            Times at which the response is evaluated.
         """
         if isinstance(dt, np.ndarray):
             return dt
@@ -333,31 +333,33 @@ class RfuncBase(ABC):
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
+            Response function parameters.
         dt: float
-            timestep as a multiple of one day.
+            Time step in days.
         cutoff: float, optional
-            proportion after which the step function is cut off. default is 0.999.
+            Fraction of the step response used to determine the response cutoff.
+            Defaults to `self.cutoff` if `cutoff is None`.
         maxtmax: float, optional
-            Maximum timestep to compute the block response for.
+            Maximum response time to compute.
         kwargs: dict
-            kwargs are passed onto or self.step() for self.block_from_step()
-            or self.get_t() for self.block_from_impulse().
+            Additional keyword arguments passed to :meth:`block_from_step` or
+            :meth:`block_from_impulse`.
 
         Returns
         -------
         b: array_like
-            Array with the block response.
+            Block response values.
         """
-        if self.use_impulse:
-            return self.block_from_impulse(
+        block = (
+            self.block_from_impulse(
                 p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
             )
-        else:
-            return self.block_from_step(
+            if self.use_impulse
+            else self.block_from_step(
                 p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
             )
+        )
+        return block
 
     def block_from_impulse(
         self,
@@ -372,19 +374,19 @@ class RfuncBase(ABC):
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
+            Response function parameters.
         dt: float
-            timestep as a multiple of one day.
+            Time step in days.
         cutoff: float, optional
-            proportion after which the step function is cut off. default is 0.999.
+            Fraction of the step response used to determine the response cutoff.
+            Defaults to `self.cutoff` if `cutoff is None`.
         maxtmax: float, optional
-            Maximum timestep to compute the block response for.
+            Maximum response time to compute.
 
         Returns
         -------
         b: array_like
-            Array with the block response.
+            Block response values.
         """
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         t_mid = t - (0.5 * dt)  # compute times at the middle of the interval
@@ -398,24 +400,26 @@ class RfuncBase(ABC):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
-        """Method to return the block function.
+        """Method to return the block function from the step response.
 
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
+            Response function parameters.
         dt: float
-            timestep as a multiple of one day.
+            Time step in days.
         cutoff: float, optional
-            proportion after which the step function is cut off. default is 0.999.
+            Fraction of the step response used to determine the response cutoff.
+            Defaults to `self.cutoff` if `cutoff is None`.
+        maxtmax: float, optional
+            Maximum response time to compute.
         kwargs: dict
-            kwargs are passed onto self.step()
+            Additional keyword arguments passed to :meth:`step`.
 
         Returns
         -------
-        s: array_like
-            Array with the block response.
+        b: array_like
+            Block response values.
         """
         s = self.step(p=p, dt=dt, cutoff=self.cutoff, maxtmax=maxtmax, **kwargs)
         b = np.append(s[0], np.subtract(s[1:], s[:-1]))
@@ -431,7 +435,7 @@ class RfuncBase(ABC):
 
         Notes
         -----
-        The exported dictionary should match the input arguments of __init__.
+        The exported dictionary matches the input arguments of `__init__`.
 
         """
         settings = {
@@ -450,19 +454,20 @@ class Gamma(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        proportion after which the step function is cut off.
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False.
+        Use the impulse response instead of the step response to compute the
+        block response. Default is False.
 
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False), if None the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        mean value of the stress, used to set the initial value such that the final
-        step times the mean stress equals 1.
+        Mean stress value used to scale the initial value so that the final step
+        response times the mean stress equals 1.
 
     Notes
     -----
@@ -528,8 +533,9 @@ class Gamma(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         s = p[0] * gammainc(p[1], t / p[2])
         return s
 
@@ -563,19 +569,20 @@ class Exponential(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        Proportion after which the step function is cut off. Default is 0.999.
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False.
+        Use the impulse response instead of the step response to compute the
+        block response. Default is False.
 
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False), if None the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
     Notes
     -----
@@ -640,8 +647,9 @@ class Exponential(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         s = p[0] * (1.0 - np.exp(-t / p[1]))
         return s
 
@@ -675,13 +683,14 @@ class HantushWellModel(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        Proportion after which the step function is cut off. Default is 0.999.
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False.
+        This option is not supported for HantushWellModel. If provided, Pastas
+        falls back to `False` and uses the step response.
     quad: bool, optional
-        Use the method 'quad_step' to compute the step_response for
-        HantushWellModel using numerical integration. Default is False.
+        Use `quad_step` to compute the step response using numerical
+        integration. Default is False.
     approximate_tmax: bool, optional
         If True, get_tmax will use the fast Lambert W approximation (default). If False,
         it will use the exact numerical root finding method.
@@ -694,25 +703,22 @@ class HantushWellModel(RfuncBase):
     Attributes
     ----------
     up: bool, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False).
+        Whether a positive stress causes the head to go up (`True`) or down
+        (`False`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
     Notes
     -----
-    The impulse response function for this class can be viewed on the Documentation
-    website or using `latexify` by running the following code in a Jupyter notebook
-    environment::
-
-        ps.HantushWellModel.impulse
-
     where r is the distance from the pumping well to the observation point and must
     be specified. A, a, and b are parameters, which are slightly different from the
     Hantush response function. The gain is defined as:
 
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
+
+    The direct impulse response is not implemented for this class. Block responses
+    are therefore always computed from the step response.
 
     The implementation used here is explained in :cite:t:`veling_hantush_2010`.
     """
@@ -742,6 +748,7 @@ class HantushWellModel(RfuncBase):
         return 3
 
     def set_distances(self, distances: float | ArrayLike) -> None:
+        """Method to set the distances from the pumping well(s) to the observation well."""
         self.distances: float | ArrayLike = distances
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -795,6 +802,9 @@ class HantushWellModel(RfuncBase):
 
     @staticmethod
     def _get_distance_from_params(p: ArrayLike, warn: bool = True) -> float:
+        """Internal method to get the distance from the parameters. If the distance is not
+        provided, it assumes a distance of 1.0 and raises a warning if warn is True.
+        """
         if len(p) == 3:
             r = 1.0
             if warn:
@@ -804,6 +814,7 @@ class HantushWellModel(RfuncBase):
         return r
 
     def _get_hantush_params(self, p: ArrayLike, warn: bool = True) -> np.ndarray:
+        """Internal method to convert the HantushWellModel to the Hantush parameters"""
         r = self._get_distance_from_params(p, warn=warn)
         A, a, b = p[:3]
         b_scaled = 10 ** (b / 2.0) if self.log_b else np.sqrt(b)
@@ -838,6 +849,7 @@ class HantushWellModel(RfuncBase):
         cutoff: float | None = None,
         maxtmax: float | None = None,
         warn: bool = True,
+        **kwargs,
     ) -> ArrayLike:
         p_h = self._get_hantush_params(p, warn=warn)
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, warn=warn)
@@ -868,8 +880,16 @@ class HantushWellModel(RfuncBase):
     def impulse(
         t: ArrayLike,
         p: ArrayLike,
-        warn: bool = True,
     ) -> ArrayLike:
+        """Raise an error because HantushWellModel has no direct impulse response.
+
+        Parameters
+        ----------
+        t: array_like
+            Times at which to evaluate the impulse response.
+        p: array_like
+            Response function parameters.
+        """
         raise NotImplementedError(
             "The impulse response function for HantushWellModel is not implemented."
         )
@@ -941,18 +961,6 @@ class HantushWellModel(RfuncBase):
         return var_gain
 
     def to_dict(self):
-        """Method to export the response function to a dictionary.
-
-        Returns
-        -------
-        dict[str, Any]
-            dictionary with all necessary settings to reconstruct the rfunc object.
-
-        Notes
-        -----
-        The exported dictionary should exactly match the input arguments of __init__.
-
-        """
         settings = super().to_dict() | {
             "quad": self.quad,
             "approximate_tmax": self.approximate_tmax,
@@ -967,13 +975,14 @@ class Hantush(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        Proportion after which the step function is cut off. Default is 0.999.
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False.
+        Use the impulse response instead of the step response to compute the
+        block response. Default is False.
     quad: bool, optional
-      Use the method 'quad_step' to compute the step_response using numerical
-        integration.
+        Use `quad_step` to compute the step response using numerical
+        integration. Default is False.
     approximate_tmax: bool, optional
         If True, get_tmax will use the fast Lambert W approximation (default). If False,
         it will use the exact numerical root finding method.
@@ -981,11 +990,11 @@ class Hantush(RfuncBase):
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False), if None the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
     Notes
     -----
@@ -1072,11 +1081,11 @@ class Hantush(RfuncBase):
 
         Parameters
         ----------
-        p : list[float]
-            Parameters of the response function [A, a, b].
+        p : array_like
+            Response function parameters `[A, a, b]`.
         cutoff : float, optional
             The fraction of the total step response area reached at tmax.
-            Must be strictly between 0 and 1. Default is 0.999.
+            Must be strictly between 0 and 1. Defaults to `self.cutoff` if `cutoff is None`.
 
         Returns
         -------
@@ -1107,9 +1116,20 @@ class Hantush(RfuncBase):
         return (step_val / A) - cutoff
 
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
-        """
-        Calculates tmax. Toggles between the fast NumPy approximation and
-        the exact root finding method based on self.approximate_tmax.
+        """Calculate `tmax` using either the approximation or root finding.
+
+        Parameters
+        ----------
+        p: array_like
+            Response function parameters.
+        cutoff: float, optional
+            Fraction of the step response used to determine the response cutoff.
+            Defaults to `self.cutoff` if `cutoff is None`.
+
+        Returns
+        -------
+        float
+            Response time in days corresponding to the selected cutoff.
         """
 
         cutoff = self.cutoff if cutoff is None else cutoff
@@ -1201,9 +1221,10 @@ class Hantush(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
         A, a, b = p
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
 
         step = (
             self.quad_step(A=A, a=a, b=b, t=t)
@@ -1240,18 +1261,6 @@ class Hantush(RfuncBase):
         return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
 
     def to_dict(self):
-        """Method to export the response function to a dictionary.
-
-        Returns
-        -------
-        dict[str, Any]
-            dictionary with all necessary settings to reconstruct the rfunc object.
-
-        Notes
-        -----
-        The exported dictionary should exactly match the input arguments of __init__.
-
-        """
         settings = super().to_dict() | {
             "quad": self.quad,
             "approximate_tmax": self.approximate_tmax,
@@ -1265,19 +1274,20 @@ class Polder(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        Proportion after which the step function is cut off. Default is 0.999.
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False.
+        Use the impulse response instead of the step response to compute the
+        block response. Default is False.
 
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False), if None the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
     Notes
     -----
@@ -1344,8 +1354,9 @@ class Polder(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         A, a, b = p
         s = A * self.polder_function(np.sqrt(b), np.sqrt(t / a))
         # / np.exp(-2 * np.sqrt(b))
@@ -1394,21 +1405,20 @@ class One(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        Proportion after which the step function is cut off. Has no influence for
-        this response function.
+        Fraction of the step response after which the response is truncated. This
+        setting has no effect for this response function.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False. Has no influence for this response
-        function because it has its own implementation of the block response function.
+        This setting has no effect because this response function defines its own
+        block response directly.
 
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True) or
-        down (False), if None (default) the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
     """
 
@@ -1457,6 +1467,7 @@ class One(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
         if isinstance(dt, np.ndarray):
             return p[0] * np.ones(len(dt))
@@ -1492,7 +1503,15 @@ class One(RfuncBase):
 
     @staticmethod
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        """Instantaneous response is a Dirac delta and not represented discretely."""
+        """Raise an error because the impulse response is a Dirac delta.
+
+        Parameters
+        ----------
+        t: array_like
+            Times at which to evaluate the impulse response.
+        p: array_like
+            Response function parameters.
+        """
         raise NotImplementedError(
             "One.impulse is not defined as an array-valued function. "
             "Use step() or block() for this response function."
@@ -1505,10 +1524,11 @@ class FourParam(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        proportion after which the step function is cut off.
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False.
+        Use the impulse response instead of the step response to compute the
+        block response. Default is False.
     quad: bool, optional
         If true, use the 'quad' method from scipy.integrate to integrate the impulse
         response function. This may be more accurate but increases computation times.
@@ -1516,11 +1536,11 @@ class FourParam(RfuncBase):
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False), if None the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
     Notes
     -----
@@ -1624,6 +1644,7 @@ class FourParam(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
         # Because Model.get_response_tmax() provides parameters for the stressmodel,
         # not only the response functions
@@ -1631,7 +1652,7 @@ class FourParam(RfuncBase):
             p = p[:4]
 
         if self.quad:
-            t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+            t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
             s = np.zeros_like(t)
             s[0] = quad(self.impulse, 0, dt, args=p)[0]
             for i in range(1, len(t)):
@@ -1669,7 +1690,7 @@ class FourParam(RfuncBase):
                 s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
                 return s[int(dt / step - 1) :: int(dt / step)]
             else:
-                t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+                t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
                 s = np.zeros_like(t)
 
                 # for interval [0,dt] Gaussian quadrate:
@@ -1731,18 +1752,6 @@ class FourParam(RfuncBase):
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def to_dict(self):
-        """Method to export the response function to a dictionary.
-
-        Returns
-        -------
-        dict[str, Any]
-            dictionary with all necessary settings to reconstruct the rfunc object.
-
-        Notes
-        -----
-        The exported dictionary should exactly match the input arguments of __init__.
-
-        """
         settings = super().to_dict() | {"quad": self.quad}
         return settings
 
@@ -1753,19 +1762,20 @@ class DoubleExponential(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        proportion after which the step function is cut off.
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False.
+        Use the impulse response instead of the step response to compute the
+        block response. Default is False.
 
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False), if None the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
     Notes
     -----
@@ -1838,8 +1848,9 @@ class DoubleExponential(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         s = p[0] * (1 - ((1 - p[1]) * np.exp(-t / p[2]) + p[1] * np.exp(-t / p[3])))
         return s
 
@@ -1883,19 +1894,20 @@ class Edelman(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        proportion after which the step function is cut off.
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False.
+        Use the impulse response instead of the step response to compute the
+        block response. Default is False.
 
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False), if None the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
 
     Notes
@@ -1946,8 +1958,9 @@ class Edelman(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         s = erfc(1 / (p[0] * np.sqrt(t)))
         return s
 
@@ -1980,21 +1993,22 @@ class Kraijenhoff(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        proportion after which the step function is cut off.
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False.
+        Use the impulse response instead of the step response to compute the
+        block response. Default is False.
     n_terms: int, optional
-        Number of terms.
+        Number of terms used in the truncated series expansion.
 
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False), if None the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
     Notes
     -----
@@ -2077,8 +2091,9 @@ class Kraijenhoff(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         h = 0
         for n in range(self.n_terms):
             h += (
@@ -2141,18 +2156,6 @@ class Kraijenhoff(RfuncBase):
         )
 
     def to_dict(self):
-        """Method to export the response function to a dictionary.
-
-        Returns
-        -------
-        settings: dict[str, Any]
-            dictionary with all necessary settings to reconstruct the rfunc object.
-
-        Notes
-        -----
-        The exported dictionary should exactly match the input arguments of __init__.
-
-        """
         settings = super().to_dict() | {"n_terms": self.n_terms}
         return settings
 
@@ -2163,27 +2166,26 @@ class Spline(RfuncBase):
     Parameters
     ----------
     cutoff: float, optional
-        proportion after which the step function is cut off. default is 0.999. this
-        parameter has no influence for this response function.
+        Fraction of the step response after which the response is truncated. This
+        setting has no effect for this response function.
     use_impulse: bool, optional
-        Indicates whether to use the impulse response function for computing
-        the block response. Default is False. This parameter has no influence for this
-        response function because it has no impulse response function.
-    kind: string, optional
-        see scipy.interpolate.interp1d. Most useful for a smooth response function
-        are 'quadratic' and 'cubic'.
-    t: list, optional
-        Times at which the response function is defined. Default is None which
-        falls back to [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024] days.
+        This setting has no effect because this response function does not define
+        an impulse response.
+    kind: str, optional
+        Interpolation kind passed to :func:`scipy.interpolate.interp1d`.
+        Common choices are `"quadratic"` and `"cubic"`.
+    t: list[int], optional
+        Times at which the response function is defined. Defaults to
+        `[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]`.
 
     Attributes
     ----------
     up: bool or None, optional
-        indicates whether a positive stress will cause the head to go up (True,
-        default) or down (False), if None the head can go both ways.
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
     gain_scale_factor: float, optional
-        the scale factor is used to set the initial value and the bounds of the gain
-        parameter, computed as 1 / gain_scale_factor.
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
 
 
     Notes
@@ -2260,9 +2262,10 @@ class Spline(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
         f = interp1d(self.t, p[1 : len(self.t) + 1], kind=self.kind)
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax)
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         s = p[0] * f(t)
         return s
 
@@ -2285,23 +2288,20 @@ class Spline(RfuncBase):
 
     @staticmethod
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        """Raise an error because Spline does not define an impulse response.
+
+        Parameters
+        ----------
+        t: array_like
+            Times at which to evaluate the impulse response.
+        p: array_like
+            Response function parameters.
+        """
         raise NotImplementedError(
             "Spline does not define an impulse response. Use step() or block()."
         )
 
     def to_dict(self):
-        """Method to export the response function to a dictionary.
-
-        Returns
-        -------
-        settings: dict[str, Any]
-            dictionary with all necessary settings to reconstruct the rfunc object.
-
-        Notes
-        -----
-        The exported dictionary should exactly match the input arguments of __init__.
-
-        """
         settings = super().to_dict() | {
             "kind": self.kind,
             "t": self.t,
