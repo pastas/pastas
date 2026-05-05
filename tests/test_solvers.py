@@ -1,7 +1,11 @@
 """Tests for the solver module in Pastas."""
 
+from functools import partial
+
+import numpy as np
 import pandas as pd
 import pytest
+from scipy.optimize._numdiff import approx_derivative
 
 import pastas as ps
 from pastas.solver import EmceeSolve, LmfitSolve
@@ -24,6 +28,23 @@ def test_fit_constant(ml_recharge: ps.Model) -> None:
 def test_no_noise(ml_recharge: ps.Model) -> None:
     ml_recharge.del_noisemodel()
     ml_recharge.solve()
+
+
+def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
+    """Verify weighted least-squares uses weights on residual terms."""
+    ml_recharge.del_noisemodel()
+    ml_recharge.solve(solver=ps.LeastSquares(), report=False)
+
+    p = ml_recharge.get_parameters()
+    residuals = ml_recharge.residuals(p)
+
+    weights = pd.Series(1.0, index=residuals.index)
+    weights.iloc[::5] = 0.25
+
+    misfit = ml_recharge.solver.misfit(p=p, noise=False, weights=weights)
+    expected = (residuals * weights).values
+
+    np.testing.assert_allclose(misfit, expected)
 
 
 # Tests for confidence intervals and prediction intervals
@@ -102,3 +123,80 @@ class TestOptionalSolvers:
                 solver.to_dict()
         except ImportError:
             pytest.skip("emcee not installed")
+
+
+def test_leastsquares_covariance_scenarios(head, prec, evap):
+    # 1. Setup Data & Model
+    # Using small subset for speed
+
+    ml = ps.Model(head)
+    rm = ps.RechargeModel(prec, evap, name="rch")
+    ml.add_stressmodel(rm)
+
+    weights_random = pd.Series(
+        np.random.RandomState(seed=0).rand(len(head)), index=head.index
+    )
+    weights_random_root = weights_random.pow(0.5)  # For sqrt(weights) scenario
+
+    # Solve
+    jac_method = "2-point"
+    ml.solve(weights=weights_random_root, report=False, jac=jac_method)
+    p_opt = ml.parameters.optimal.values
+    pcov_internal = ml.solver.pcov.values  # This uses the code you pasted
+
+    # 2. Define Manual Inversion Function (The "Traditional" way)
+    def manual_pcov(J, res, w, nobs, npar):
+        sse = np.sum(w * res**2)
+        s_sq = sse / (nobs - npar)
+        # Standard WLS formula: (J.T @ W @ J)^-1 * s_sq
+        return np.linalg.inv(J.T @ np.diag(w) @ J) * s_sq
+
+    # --- SCENARIO A: Verify Internal vs Manual (Weighted) ---
+    # We use the solver's Jacobian (which is weighted) and cost.
+    # To use manual_pcov with a weighted Jacobian, we pass weights=ones.
+    nobs, npar = ml.solver.result.jac.shape
+    res_weighted = ml.solver.misfit(p_opt, weights=weights_random_root, noise=False)
+    pcov_manual_weighted = manual_pcov(
+        ml.solver.result.jac, res_weighted, np.ones(nobs), nobs, npar
+    )
+
+    assert np.allclose(pcov_internal, pcov_manual_weighted, rtol=1e-6), (
+        "Internal SVD method differs from manual inversion using weighted Jacobian."
+    )
+
+    # --- SCENARIO B: Verify Pure Reconstruction ---
+    # Get unweighted (pure) components
+    res_pure = ml.solver.misfit(p_opt, weights=None, noise=False)
+
+    fun_pure = partial(
+        ml.solver.objfunction,
+        weights=None,
+        noise=False,
+        callback=None,
+    )
+    # Using same 2-point precision to match scipy.least_squares default
+    jac_pure = approx_derivative(fun_pure, x0=p_opt, method=jac_method)
+
+    # Now we can use the pure Jacobian and pure residuals with the original
+    # random weights to reconstruct pcov.
+    pcov_pure_reconstruction = manual_pcov(
+        jac_pure, res_pure, weights_random.values, nobs, npar
+    )
+
+    # Comparing numerical derivative result to analytical solver result
+    # We allow a slightly larger tolerance (1e-4) due to finite difference approx.
+    assert np.allclose(pcov_internal, pcov_pure_reconstruction, rtol=1e-4), (
+        "Internal pcov differs from pure Jacobian reconstruction."
+    )
+
+    # --- SCENARIO C: Verify scaling (absolute_sigma=True) ---
+    # If absolute_sigma=True, pcov should not be multiplied by s_sq.
+    pcov_abs = ml.solver.get_covariances(
+        ml.solver.result.jac, ml.solver.result.cost, absolute_sigma=True
+    )
+    # Recreate manually: (J_w.T @ J_w)^-1
+    pcov_manual_abs = np.linalg.inv(ml.solver.result.jac.T @ ml.solver.result.jac)
+
+    assert np.allclose(pcov_abs, pcov_manual_abs, rtol=1e-6), (
+        "absolute_sigma=True calculation is incorrect."
+    )
