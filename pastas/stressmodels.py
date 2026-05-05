@@ -227,9 +227,7 @@ class StressModelBase:
             (E.g. '1980-01-01 00:00:00').
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the maximum time of the series
-            (E.g. '2020-01-01 00:00:00'). Strings are converted to
-
-            pandas.Timestamp internally.
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp internally.
 
         Notes
         -----
@@ -892,9 +890,8 @@ class WellModel(StressModelBase):
         name of the stressmodel.
     distances: array_like
         array_like of distances between the stresses (wells) and the oseries
-        (monitoring well), must be in the same order as the stresses. This
-        distance is used to scale the HantushWellModel response function for
-        each stress.
+        (monitoring well), must be in the same order as the stresses. This distance is
+        used to scale the HantushWellModel response function foreach stress.
     rfunc: pastas.rfunc instance, optional
         this model only works with the HantushWellModel response function, default is
         None which will initialize a HantushWellModel response function.
@@ -1214,7 +1211,7 @@ class WellModel(StressModelBase):
         settings: dict or iterable
             settings dictionary.
         metadata : dict or list of dict
-            metadata dictionaries corresponding to stress
+            metadata dictionaries corresponding to stress.
 
         Returns
         -------
