@@ -29,13 +29,12 @@ class TestStressModelBase:
     def test_update_stress(self, stress_model: StressModel) -> None:
         """Test updating stress settings."""
         # Get original frequency
-        original_freq = stress_model.freq
+        original_freq = stress_model.stress.settings["freq"]
 
         # Update to weekly frequency
         stress_model.update_stress(freq="7D")
 
         # Check if frequency was updated
-        assert stress_model.freq == "7D"
         assert stress_model.stress.settings["freq"] == "7D"
 
         # Reset to original frequency
