@@ -78,6 +78,7 @@ class TrackSolve:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         update_iter: int | None = None,
+        pause: float = 1e-10,
     ) -> None:
         logger.warning(
             "TrackSolve feature under development. If you find any bugs please post "
@@ -92,6 +93,7 @@ class TrackSolve:
             )
         else:
             self.update_iter = update_iter  # update plot every update_iter
+        self.pause = pause  # pause time for plot update, set to 0 for no pause
 
         # get tmin/tmax
         if tmin is None:
@@ -393,7 +395,7 @@ class TrackSolve:
         self.ax0.set_title(
             "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
         )
-        plt.pause(1e-10)
+        plt.pause(self.pause)
         self.fig.canvas.draw()
 
     def plot_track_solve_history(self, fig: Figure | None = None) -> list[Axes]:
