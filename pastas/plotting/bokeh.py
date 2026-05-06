@@ -88,7 +88,9 @@ class Bokeh:
 
         """
 
-        data = self._model.get_output_series(tmin=tmin, tmax=tmax, split_contributions=False)
+        data = self._model.get_output_series(
+            tmin=tmin, tmax=tmax, split_contributions=False
+        )
         source = ColumnDataSource(data)
         rsq = self._model.stats.rsq(tmin=tmin, tmax=tmax)
 
@@ -164,7 +166,9 @@ class Bokeh:
         >>> fig = ml.bokeh.results()
 
         """
-        data = self._model.get_output_series(tmin=tmin, tmax=tmax, split_contributions=False)
+        data = self._model.get_output_series(
+            tmin=tmin, tmax=tmax, split_contributions=False
+        )
         ranges = data.max() - data.min()
 
         ranges = ranges.drop(ranges.iloc[:2].idxmin())
