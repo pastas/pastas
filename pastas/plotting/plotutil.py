@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pandas import Series, Timedelta
 
-from pastas.typing import Axes
+from pastas.typing import Axes, Model
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ def _get_height_ratios(ylims: list[tuple[float, float]]) -> list[float]:
     return [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
 
 
-def _get_stress_series(ml, split: bool = True) -> list[Series]:
+def _get_stress_series(ml: Model, split: bool = True) -> list[Series]:
     stresses = []
     for name in ml.stressmodels.keys():
         nstress = len(ml.stressmodels[name].stresses)

@@ -19,7 +19,7 @@ from collections import namedtuple
 from collections.abc import Iterable
 from inspect import isclass
 from logging import getLogger
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -302,7 +302,12 @@ class StressModelBase:
             p = model.get_parameters(self.name)
         return p
 
-    def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
+    def get_responses(
+        self,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+    ) -> list[Series]:
         responses = [
             ml._get_response(
                 block_or_step=block_or_step,
@@ -1431,14 +1436,19 @@ class WellModel(StressModelBase):
         )
         return vg
 
-    def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
+    def get_responses(
+        self,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+    ) -> list[Series]:
         if istress is None:
             istress = list(range(len(self.stresses)))
         else:
             istress = [istress]
         responses = []
         for i in istress:
-            s = super().get_responses(ml, block_or_step=block_or_step, istress=i)[0]
+            s = super().get_responses(ml=ml, block_or_step=block_or_step, istress=i)[0]
             s.name = self.stresses[i].name
             responses.append(s)
         return responses
@@ -2024,7 +2034,12 @@ class RechargeModel(StressModelBase):
                 p = p[:-1]
         return p
 
-    def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
+    def get_responses(
+        self,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+    ) -> list[Series]:
         if isinstance(self.recharge, Linear):
             if istress is None:
                 istress = list(range(len(self.stresses)))
@@ -2291,7 +2306,12 @@ class TarsoModel(RechargeModel):
                 h[i] = (d1 - d) * exp_a + r[i] * c * (1 - exp_a) + d
         return h
 
-    def get_responses(self, ml, block_or_step="step", istress=None) -> list[Series]:
+    def get_responses(
+        self,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+    ) -> list[Series]:
         dt = _get_dt(ml.settings["freq"])
         parnames = list(self.rfunc.get_init_parameters(self.name).index)
         response0 = getattr(self.rfunc, block_or_step)(
@@ -2546,9 +2566,9 @@ class ChangeModel(StressModelBase):
 
     def get_responses(
         self,
-        ml,
-        block_or_step="step",
-        istress=None,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
     ) -> list[Series]:
         dt = _get_dt(ml.settings["freq"])
         parnames0 = [

@@ -23,8 +23,7 @@ from pastas.plotting.plotutil import (
     plot_series_with_gaps,
     share_xaxes,
 )
-from pastas.stressmodels import StressModelBase
-from pastas.typing import Axes, Figure, Model
+from pastas.typing import Axes, Figure, Model, StressModel
 
 logger = logging.getLogger(__name__)
 
@@ -577,7 +576,7 @@ class Plotting:
 
     def _plot_response_in_results(
         self,
-        sm: StressModelBase,
+        sm: StressModel,
         block_or_step: Literal["step", "block"],
         ax: Axes,
         istress: int | None = None,
