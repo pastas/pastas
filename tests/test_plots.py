@@ -20,6 +20,17 @@ def test_decomposition(ml_noisemodel: Model) -> None:
     plt.close()
 
 
+def test_decomposition_kwargs(ml_noisemodel: Model) -> None:
+    _ = ml_noisemodel.plots.decomposition(split_contributions=False)
+    plt.close()
+
+
+def test_decomposition_split_deprecation(ml_noisemodel: Model) -> None:
+    with pytest.warns(DeprecationWarning, match="split"):
+        _ = ml_noisemodel.plots.decomposition(split=True)
+    plt.close()
+
+
 def test_results(ml_noisemodel: Model) -> None:
     _ = ml_noisemodel.plots.results()
     plt.close()
@@ -27,7 +38,7 @@ def test_results(ml_noisemodel: Model) -> None:
 
 def test_results_kwargs(ml_noisemodel: Model) -> None:
     _ = ml_noisemodel.plots.results(
-        split=True,
+        split_contributions=True,
         block_or_step="block",
         adjust_height=False,
         return_warmup=True,
@@ -35,8 +46,19 @@ def test_results_kwargs(ml_noisemodel: Model) -> None:
     plt.close()
 
 
+def test_results_kwargs_split_deprecation(ml_noisemodel: Model) -> None:
+    with pytest.warns(DeprecationWarning, match="split"):
+        _ = ml_noisemodel.plots.results(split=True)
+    plt.close()
+
+
 def test_results_mosaic(ml_noisemodel: Model) -> None:
     _ = ml_noisemodel.plots.results_mosaic(stderr=True)
+    plt.close()
+
+
+def test_results_mosaic_split(ml_noisemodel: Model) -> None:
+    _ = ml_noisemodel.plots.results_mosaic(split_contributions=True)
     plt.close()
 
 

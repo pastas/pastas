@@ -9,7 +9,11 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import DataFrame, Series, Timestamp, concat
 
-from pastas.decorators import PastasDeprecationWarning, model_tmin_tmax
+from pastas.decorators import (
+    PastasDeprecationWarning,
+    deprecate_args_or_kwargs,
+    model_tmin_tmax,
+)
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
 from pastas.plotting.plotutil import (
     _get_height_ratios,
@@ -129,7 +133,7 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 8),
-        split: bool = False,
+        split_contributions: bool = False,
         adjust_height: bool = True,
         return_warmup: bool = False,
         block_or_step: str = "step",
@@ -151,8 +155,9 @@ class Plotting:
             pandas.Timestamp internally.
         figsize: tuple, optional
             tuple of size 2 to determine the figure size in inches.
-        split: bool, optional
-            Split the stresses in multiple stresses when possible. Default is False.
+        split_contributions: bool, optional
+            Split the contributions in multiple stresses when possible. Default is
+            False.
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all the
             subplots on the left is equal. Default is True.
@@ -178,6 +183,14 @@ class Plotting:
         --------
         >>> ml.plots.results()
         """
+        if "split" in kwargs:
+            deprecate_args_or_kwargs(
+                name="split",
+                version="3.0.0",
+                reason="Use `split_contributions` instead.",
+            )
+            split_contributions = kwargs.pop("split")
+
         # Number of rows to make the figure with
         o = self.ml.observations(tmin=tmin, tmax=tmax)
         o_nu = self.ml.oseries.series_original.drop(o.index)
@@ -188,7 +201,10 @@ class Plotting:
         sim = self.ml.simulate(tmin=tmin, tmax=tmax, return_warmup=return_warmup)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         contribs = self.ml.get_contributions(
-            split=split, tmin=tmin, tmax=tmax, return_warmup=return_warmup
+            split=split_contributions,
+            tmin=tmin,
+            tmax=tmax,
+            return_warmup=return_warmup,
         )
 
         ylims = [
@@ -256,9 +272,9 @@ class Plotting:
         rmax = 0.0  # tmax of the response
         ax_response = None
         i = 0
-        for sm_name, sm in self.ml.stressmodels.items():
+        for sm in self.ml.stressmodels.values():
             # plot the contribution
-            nsplit = sm.get_nsplit() if split else 1
+            nsplit = sm.get_nsplit() if split_contributions else 1
             for istress in range(nsplit):
                 ax_contrib = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                 contribs[i].plot(ax=ax_contrib, x_compat=True)
@@ -266,7 +282,7 @@ class Plotting:
                 ax_contrib.set_ylabel("Rise")
                 if adjust_height:
                     ax_contrib.set_ylim(ylims[i + 2])
-                if not split:
+                if not split_contributions:
                     title = [stress.name for stress in sm.stresses]
                     if len(title) > 3:
                         title = title[:3] + ["..."]
@@ -281,7 +297,7 @@ class Plotting:
                     sm=sm,
                     block_or_step=block_or_step,
                     ax=ax_response,
-                    istress=istress if split else None,
+                    istress=istress if split_contributions else None,
                 )
                 ax_response_xlim = ax_response.get_xlim()
                 rmax = max(rmax, ax_response_xlim[1])
@@ -323,6 +339,7 @@ class Plotting:
         self,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
+        split_contributions: bool = False,
         stderr: bool = False,
         block_or_step: str = "step",
         return_warmup: bool = False,
@@ -345,6 +362,9 @@ class Plotting:
             A string or pandas.Timestamp with the end date for the period
             (E.g. '2020-01-01 00:00:00'). Strings are converted to
             pandas.Timestamp internally.
+        split_contributions: bool, optional
+            Split the contributions in multiple stresses when possible. Default is
+            False.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
         block_or_step: str, optional
@@ -382,15 +402,27 @@ class Plotting:
         )
         sim = self.ml.simulate(tmin=tmin, tmax=tmax, return_warmup=return_warmup)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        contribs = {
-            x.name: x
-            for x in self.ml.get_contributions(
-                tmin=tmin,
-                tmax=tmax,
-                return_warmup=return_warmup,
-                split=False,
-            )
-        }
+        contrib_list = self.ml.get_contributions(
+            split=split_contributions,
+            tmin=tmin,
+            tmax=tmax,
+            return_warmup=return_warmup,
+        )
+
+        contribs = {}
+        rows = []
+        i = 0
+        for sm_name, sm in self.ml.stressmodels.items():
+            nsplit = sm.get_nsplit() if split_contributions else 1
+            for istress in range(nsplit):
+                suffix = sm_name if not split_contributions else f"{sm_name}_{istress}"
+                con_key = f"con_{suffix}"
+                rf_key = f"rf_{suffix}"
+                contribs[con_key] = contrib_list[i]
+                rows.append(
+                    (con_key, rf_key, sm_name, istress if split_contributions else None)
+                )
+                i += 1
 
         # setup ylims
         ylims = {
@@ -404,7 +436,7 @@ class Plotting:
             yl_diff = (ylim[1] - ylim[0]) * 0.025
             ylims[k] = [ylim[0] - yl_diff, ylim[1] + yl_diff]
 
-        for cname, contrib in contribs.items():
+        for con_key, contrib in contribs.items():
             hs = contrib.loc[tmin:tmax]
             if hs.empty:
                 if contrib.empty:
@@ -413,7 +445,7 @@ class Plotting:
                     ylim_c = [contrib.min(), hs.max()]
             else:
                 ylim_c = [hs.min(), hs.max()]
-            ylims[f"con_{cname}"] = ylim_c
+            ylims[con_key] = ylim_c
 
         # construct mosoaic
         mosaic = [[x] for x in ylims]
@@ -472,27 +504,30 @@ class Plotting:
         axd["res"].legend(loc=(0, 1), ncol=2, frameon=False)
 
         # plot the contributions and responses of the stressmodels
-        for sm_name, sm in self.ml.stressmodels.items():
-            axd[f"con_{sm_name}"].plot(
-                contribs[sm_name].index,
-                contribs[sm_name].values,
-                label=sm_name,
+        for con_key, rf_key, sm_name, istress in rows:
+            sm = self.ml.stressmodels[sm_name]
+            axd[con_key].plot(
+                contribs[con_key].index,
+                contribs[con_key].values,
+                label=contribs[con_key].name,
             )
-            title = [stress.name for stress in sm.stresses]
-            if len(title) > 3:
-                title = title[:3] + ["..."]
-            if title:
-                axd[f"con_{sm_name}"].set_title(
-                    "Stresses: " + str(title).replace("'", ""),
-                    loc="right",
-                    fontsize=plt.rcParams["legend.fontsize"],
-                )
-            axd[f"con_{sm_name}"].legend(loc=(0, 1), ncol=1, frameon=False)
-            axd[f"con_{sm_name}"].set_ylim(ylims[f"con_{sm_name}"])
+            if not split_contributions:
+                title = [stress.name for stress in sm.stresses]
+                if len(title) > 3:
+                    title = title[:3] + ["..."]
+                if title:
+                    axd[con_key].set_title(
+                        "Stresses: " + str(title).replace("'", ""),
+                        loc="right",
+                        fontsize=plt.rcParams["legend.fontsize"],
+                    )
+            axd[con_key].legend(loc=(0, 1), ncol=1, frameon=False)
+            axd[con_key].set_ylim(ylims[con_key])
             _ = self._plot_response_in_results(
                 sm=sm,
                 block_or_step=block_or_step,
-                ax=axd[f"rf_{sm_name}"],
+                ax=axd[rf_key],
+                istress=istress,
             )
 
         # share x-axes of simulation, residuals and contributions
@@ -612,7 +647,7 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         ytick_base: bool = True,
-        split: bool = True,
+        split_contributions: bool = True,
         figsize: tuple = (10, 8),
         axes: Axes | None = None,
         name: str | None = None,
@@ -634,7 +669,7 @@ class Plotting:
             pandas.Timestamp internally.
         ytick_base: Boolean or float, optional
             Make the ytick-base constant if True, set this base to float if a float.
-        split: bool, optional
+        split_contributions: bool, optional
             Split the stresses in multiple stresses when possible. Default is True.
         axes: matplotlib.axes.Axes instance, optional
             Matplotlib Axes instance to plot the figure on to.
@@ -653,6 +688,14 @@ class Plotting:
         -------
         axes: list of matplotlib.axes.Axes
         """
+        if "split" in kwargs:
+            deprecate_args_or_kwargs(
+                name="split",
+                version="3.0.0",
+                reason="Use `split_contributions` instead.",
+            )
+            split_contributions = kwargs.pop("split")
+
         o = self.ml.observations(tmin=tmin, tmax=tmax)
 
         # determine the simulation
@@ -662,7 +705,10 @@ class Plotting:
 
         # determine the influence of the different stresses
         contribs = self.ml.get_contributions(
-            split=split, tmin=tmin, tmax=tmax, return_warmup=return_warmup
+            split=split_contributions,
+            tmin=tmin,
+            tmax=tmax,
+            return_warmup=return_warmup,
         )
         names = [s.name for s in contribs]
 
