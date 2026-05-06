@@ -860,6 +860,19 @@ class HantushWellModel(RfuncBase):
         else:
             return Hantush.numpy_step(p_h[0], p_h[1], p_h[2], t)
 
+    def block_from_impulse(
+        self,
+        p: ArrayLike,
+        dt: float = 1,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+        **kwargs,
+    ) -> ArrayLike:
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
+        t_mid = t - (0.5 * dt)  # compute times at the middle of the interval
+        p = self._get_hantush_params(p, warn=False)
+        return self.impulse(t=t_mid, p=p) * dt
+
     def moment(
         self,
         p: ArrayLike,
@@ -881,6 +894,7 @@ class HantushWellModel(RfuncBase):
     def impulse(
         t: ArrayLike,
         p: ArrayLike,
+        # log_b: bool = False,
     ) -> ArrayLike:
         """Raise an error because HantushWellModel has no direct impulse response.
 
@@ -891,9 +905,11 @@ class HantushWellModel(RfuncBase):
         p: array_like
             Response function parameters.
         """
-        raise NotImplementedError(
-            "The impulse response function for HantushWellModel is not implemented."
-        )
+
+        # A, a, b, r = p
+        # b = 10**b if log_b else b
+        # A / 2 * t * np.exp(-t / a - a * b * r**2 / t)
+        return Hantush.impulse(t=t, p=p)
 
     @staticmethod
     def variance_gain(
@@ -1473,6 +1489,7 @@ class One(RfuncBase):
         dt: float = 1.0,
         cutoff: float | None = None,
         maxtmax: float | None = None,
+        **kwargs,
     ) -> ArrayLike:
         return p[0] * np.ones(1)
 
@@ -2074,7 +2091,7 @@ class Kraijenhoff(RfuncBase):
     ) -> ArrayLike:
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         t_mid = t - (0.5 * dt)  # compute times at the middle of the interval
-        return self.impulse(t_mid, p, self.n_terms) * dt
+        return self.impulse(t=t_mid, p=p, log_b=self.log_b) * dt
 
     def moment(
         self,

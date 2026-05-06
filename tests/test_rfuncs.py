@@ -33,7 +33,7 @@ def test_block_uses_configured_impulse_routing(
         rfunc.set_distances(100.0)
     p = rfunc.get_init_parameters("test").initial.to_numpy()
 
-    if rfunc_name in ["HantushWellModel", "Spline", "One"]:
+    if rfunc_name in ["Spline", "One"]:
         assert rfunc.use_impulse is False
         np.testing.assert_allclose(rfunc.block(p), rfunc.block_from_step(p))
         return
