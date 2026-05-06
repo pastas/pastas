@@ -1668,7 +1668,8 @@ class Model:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         add_contributions: bool = True,
-        split: bool = True,
+        split_contributions: bool = True,
+        **kwargs,
     ) -> DataFrame:
         """Method to get all the modeled output time series from the Model.
 
@@ -1683,10 +1684,12 @@ class Model:
             (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
             internally. If none is provided, the tmax from the oseries is used.
         add_contributions: bool, optional
-            Add the contributions from the different stresses or not.
-        split: bool, optional
+            Add the contributions from the different stresses or not. Default is
+            True.
+        split_contributions: bool, optional
             Passed on to ml.get_contributions. Split the contribution from recharge
             into evaporation and precipitation. See also ml.get_contributions.
+            Default is True.
 
         Returns
         -------
@@ -1703,6 +1706,14 @@ class Model:
         >>> df = ml.get_output_series(tmin="2000", tmax="2010")
         >>> df.to_csv("fname.csv")
         """
+        if "split" in kwargs:
+            deprecate_args_or_kwargs(
+                name="split",
+                version="3.0.0",
+                reason="Use `split_contributions` instead.",
+            )
+            split_contributions = kwargs.pop("split")
+
         obs = self.observations(tmin=tmin, tmax=tmax)
         obs.name = "Head_Calibration"
 
@@ -1713,7 +1724,9 @@ class Model:
             df.append(self.noise(tmin=tmin, tmax=tmax))
 
         if add_contributions:
-            contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
+            contribs = self.get_contributions(
+                tmin=tmin, tmax=tmax, split=split_contributions
+            )
             for contrib in contribs:
                 df.append(contrib)
 
