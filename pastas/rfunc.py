@@ -318,7 +318,7 @@ class RfuncBase(ABC):
             return np.asarray(dt, dtype=float)
         else:
             tmax = (
-                self.get_tmax(p, cutoff, warn=warn)
+                HantushWellModel.get_tmax(self, p, cutoff, warn=warn)
                 if isinstance(self, HantushWellModel)
                 else self.get_tmax(p, cutoff)
             )
