@@ -40,6 +40,7 @@ def test_results_kwargs(ml_noisemodel: Model) -> None:
     _ = ml_noisemodel.plots.results(
         split_contributions=True,
         block_or_step="block",
+        all_responses=False,
         adjust_height=False,
         return_warmup=True,
     )
@@ -53,7 +54,7 @@ def test_results_kwargs_split_deprecation(ml_noisemodel: Model) -> None:
 
 
 def test_results_mosaic(ml_noisemodel: Model) -> None:
-    _ = ml_noisemodel.plots.results_mosaic(stderr=True)
+    _ = ml_noisemodel.plots.results_mosaic(stderr=True, all_responses=False)
     plt.close()
 
 

@@ -134,6 +134,7 @@ class Plotting:
         tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 8),
         split_contributions: bool = False,
+        all_responses: bool = True,
         adjust_height: bool = True,
         return_warmup: bool = False,
         block_or_step: str = "step",
@@ -158,6 +159,9 @@ class Plotting:
         split_contributions: bool, optional
             Split the contributions in multiple stresses when possible. Default is
             False.
+        all_responses: bool, optional
+            Plot all responses if True. If False, only the first response per
+            contribution is plotted. Default is True.
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all the
             subplots on the left is equal. Default is True.
@@ -297,7 +301,11 @@ class Plotting:
                     sm=sm,
                     block_or_step=block_or_step,
                     ax=ax_response,
-                    istress=istress if split_contributions else None,
+                    istress=(
+                        istress
+                        if split_contributions
+                        else (None if all_responses else 0)
+                    ),
                 )
                 ax_response_xlim = ax_response.get_xlim()
                 rmax = max(rmax, ax_response_xlim[1])
@@ -340,6 +348,7 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         split_contributions: bool = False,
+        all_responses: bool = True,
         stderr: bool = False,
         block_or_step: str = "step",
         return_warmup: bool = False,
@@ -365,6 +374,9 @@ class Plotting:
         split_contributions: bool, optional
             Split the contributions in multiple stresses when possible. Default is
             False.
+        all_responses: bool, optional
+            Plot all responses if True. If False, only the first response per
+            contribution is plotted. Default is True.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
         block_or_step: str, optional
@@ -527,7 +539,9 @@ class Plotting:
                 sm=sm,
                 block_or_step=block_or_step,
                 ax=axd[rf_key],
-                istress=istress,
+                istress=(
+                    istress if split_contributions else (None if all_responses else 0)
+                ),
             )
 
         # share x-axes of simulation, residuals and contributions
