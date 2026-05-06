@@ -140,6 +140,18 @@ class RfuncBase(ABC):
         tmax: float
         """
 
+    def _resolve_tmax(
+        self,
+        p: ArrayLike,
+        cutoff: float | None = None,
+        **kwargs,
+    ) -> float:
+        """Internal hook to determine `tmax` from :meth:`get_tmax`.
+
+        Subclasses can override this method to support extra keyword arguments.
+        """
+        return self.get_tmax(p=p, cutoff=cutoff)
+
     @abstractmethod
     def step(
         self,
@@ -284,7 +296,6 @@ class RfuncBase(ABC):
         dt: float | ArrayLike,
         cutoff: float | None = None,
         maxtmax: float | None = None,
-        warn: bool = True,
         **kwargs,
     ) -> ArrayLike:
         """Internal method to determine the times at which to evaluate the step
@@ -305,9 +316,8 @@ class RfuncBase(ABC):
             Maximum response time to compute, usually the simulation length. Not
             used if None, else, the used tmax is the minimum of the tmax determined
             from the cutoff and maxtmax.
-        warn : bool, optional
-            Only used for HantushWellModel. Whether to warn when `r` is set to
-            1.0 for calculations.
+        kwargs: dict
+            Additional keyword arguments used by specific response functions.
 
         Returns
         -------
@@ -316,15 +326,13 @@ class RfuncBase(ABC):
         """
         if np.ndim(dt) > 0:
             return np.asarray(dt, dtype=float)
-        else:
-            tmax = (
-                HantushWellModel.get_tmax(self, p, cutoff, warn=warn)
-                if isinstance(self, HantushWellModel)
-                else self.get_tmax(p, cutoff)
-            )
-            tmax = max(min(tmax, maxtmax) if maxtmax is not None else tmax, 3 * dt)
-            t = np.arange(dt, stop=tmax, step=dt, dtype=float)
-            return t
+
+        tmax = self._resolve_tmax(p=p, cutoff=cutoff, **kwargs)
+        # make sure tmax is at least 3*dt such that len(t) is at least 2
+        # make sure tmax does not exceed maxtmax if provided
+        tmax = max(min(tmax, maxtmax) if maxtmax is not None else tmax, 3 * dt)
+        t = np.arange(dt, stop=tmax, step=dt, dtype=float)
+        return t
 
     def block(
         self,
@@ -844,6 +852,19 @@ class HantushWellModel(RfuncBase):
         )
         return h.get_tmax(p_h, cutoff=cutoff)
 
+    def _resolve_tmax(
+        self,
+        p: ArrayLike,
+        cutoff: float | None = None,
+        **kwargs,
+    ) -> float:
+        """Internal hook to determine `tmax` from :meth:`get_tmax`,
+        with support for extra keyword arguments which is needed for
+        the warn argument used in the _get_distance_from_params method.
+        """
+        warn = kwargs.get("warn", True)
+        return self.get_tmax(p, cutoff=cutoff, warn=warn)
+
     def gain(self, p: ArrayLike, r: float | None = None) -> float:
         if r is None:
             r = self._get_distance_from_params(p)
@@ -861,7 +882,8 @@ class HantushWellModel(RfuncBase):
         **kwargs,
     ) -> ArrayLike:
         p_h = self._get_hantush_params(p, warn=warn)
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, warn=warn)
+        kwargs["warn"] = warn
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
 
         if self.quad:
             return Hantush.quad_step(p_h[0], p_h[1], p_h[2], t)
