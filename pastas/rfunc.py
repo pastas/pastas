@@ -2100,18 +2100,16 @@ class Kraijenhoff(RfuncBase):
     @staticmethod
     def impulse(t: ArrayLike, p: ArrayLike, n_terms: int = 10) -> ArrayLike:
         A, a, b = p
-        return (
-            A
-            * 8
-            / (pi**3 * ((1 / 4) - b**2))
-            * sum(
-                (-1) ** n
-                / (a * (2 * n + 1))
-                * np.cos((2 * n + 1) * pi * b)
-                * np.exp(-((2 * n + 1) ** 2 * t) / a)
-                for n in range(n_terms)
-            )
-        )
+        leading_term = A * 8 / (pi**3 * ((1 / 4) - b**2))
+
+        h = 0.0
+        for n in range(n_terms):
+            k = 2 * n + 1
+            oscillation_term = (-1) ** n / (a * k) * np.cos(k * pi * b)
+            decay_term = np.exp(-(k**2 * t) / a)
+            h += oscillation_term * decay_term
+
+        return leading_term * h
 
     def to_dict(self):
         settings = super().to_dict() | {"n_terms": self.n_terms}
