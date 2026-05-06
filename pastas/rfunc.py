@@ -2064,7 +2064,7 @@ class Kraijenhoff(RfuncBase):
     ) -> ArrayLike:
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         t_mid = t - (0.5 * dt)  # compute times at the middle of the interval
-        return self.impulse(t=t_mid, p=p, log_b=self.log_b) * dt
+        return self.impulse(t=t_mid, p=p, n_terms=self.n_terms) * dt
 
     def moment(
         self,
