@@ -719,12 +719,7 @@ class HantushWellModel(RfuncBase):
         log_b: bool = True,
         **kwargs,
     ) -> None:
-        if use_impulse:
-            logger.error(
-                "The impulse response function for HantushWellModel is not implemented. "
-                "Set use_impulse to False or choose a different response function."
-            )
-        super().__init__(cutoff=cutoff, use_impulse=False, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
         self.distances: float | ArrayLike | None = None
         self.quad: bool = quad
         self.approximate_tmax: bool = approximate_tmax
