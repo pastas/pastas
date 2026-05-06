@@ -34,7 +34,7 @@ from scipy.special import (
     wrightomega,
 )
 
-from .decorators import latexfun, njit
+from .decorators import njit
 
 try:
     from numba import prange
@@ -231,16 +231,6 @@ class RfuncBase(ABC):
         -------
         s: array_like
             Array with the impulse response.
-
-        Notes
-        -----
-        The impulse response function for each response function class can be viewed on
-        the Documentation website or using `latexify` by running the following code in a
-        Jupyter notebook environment::
-
-            ps.RfuncName.impulse
-
-        Only used for internal consistency checks
         """
 
     @property
@@ -485,16 +475,6 @@ class Gamma(RfuncBase):
     gain_scale_factor: float, optional
         Mean stress value used to scale the initial value so that the final step
         response times the mean stress equals 1.
-
-    Notes
-    -----
-    The impulse response function for this class can be viewed on the
-    Documentation website or using `latexify` by running the following code in a
-    Jupyter notebook environment::
-
-        ps.Gamma.impulse
-
-    The Gamma function is equal to the Exponential function when n=1.
     """
 
     def __init__(
@@ -574,7 +554,6 @@ class Gamma(RfuncBase):
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
-    @latexfun(identifiers={"impulse": "theta", "gamma": "Gamma"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, n, a = p
         return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
@@ -600,14 +579,6 @@ class Exponential(RfuncBase):
     gain_scale_factor: float, optional
         Scale factor used to set the initial value and bounds of the gain
         parameter, computed as `1 / gain_scale_factor`.
-
-    Notes
-    -----
-    The impulse response function for this class can be viewed on the Documentation
-    website or using `latexify` by running the following code in a Jupyter notebook
-    environment::
-
-        ps.Exponential.impulse
 
     """
 
@@ -688,7 +659,6 @@ class Exponential(RfuncBase):
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
-    @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a = p
         return A / a * np.exp(-t / a)
@@ -1029,12 +999,6 @@ class Hantush(RfuncBase):
 
     Notes
     -----
-    The impulse response function for this class can be viewed on the Documentation
-    website or using `latexify` by running the following code in a Jupyter notebook
-    environment::
-
-        ps.Hantush.impulse
-
     The implementation used here is explained in :cite:t:`veling_hantush_2010`.
 
     """
@@ -1287,7 +1251,6 @@ class Hantush(RfuncBase):
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
-    @latexfun(identifiers={"impulse": "theta", "k0": "K_0"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
         return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
@@ -1323,12 +1286,6 @@ class Polder(RfuncBase):
 
     Notes
     -----
-    The impulse response function for this class can be viewed on the Documentation
-    website or using `latexify` by running the following code in a Jupyter notebook
-    environment::
-
-        ps.Polder.impulse
-
     The function is explained in Eq. 123.32 in :cite:t:`bruggeman_analytical_1999`.
 
     """
@@ -1418,13 +1375,11 @@ class Polder(RfuncBase):
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
-    @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
         return A * np.sqrt(a * b / pi) * t ** (-1.5) * np.exp(-t / a - a * b / t)
 
     @staticmethod
-    @latexfun(use_raw_function_name=True)
     def polder_function(x: float, y: float) -> float:
         return 0.5 * np.exp(2 * x) * erfc(x / y + y) + 0.5 * np.exp(-2 * x) * erfc(
             x / y - y
@@ -1582,12 +1537,6 @@ class FourParam(RfuncBase):
 
     Notes
     -----
-    The impulse response function for this class can be viewed on the Documentation
-    website or using `latexify` by running the following code in a Jupyter notebook
-    environment::
-
-        ps.FourParam.impulse
-
     The function is explained in :cite:t:`bakker_calibration_2008`.
 
     """
@@ -1784,7 +1733,6 @@ class FourParam(RfuncBase):
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
-    @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         _, n, a, b = p
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
@@ -1814,14 +1762,6 @@ class DoubleExponential(RfuncBase):
     gain_scale_factor: float, optional
         Scale factor used to set the initial value and bounds of the gain
         parameter, computed as `1 / gain_scale_factor`.
-
-    Notes
-    -----
-    The impulse response function for this class can be viewed on the Documentation
-    website or using `latexify` by running the following code in a Jupyter notebook
-    environment::
-
-        ps.DoubleExponential.impulse
 
     """
 
@@ -1910,7 +1850,6 @@ class DoubleExponential(RfuncBase):
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
-    @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, alpha, a_1, a_2 = p
         return A * (
@@ -1946,17 +1885,6 @@ class Edelman(RfuncBase):
     gain_scale_factor: float, optional
         Scale factor used to set the initial value and bounds of the gain
         parameter, computed as `1 / gain_scale_factor`.
-
-
-    Notes
-    -----
-    The Edelman function is explained in :cite:t:`edelman_over_1947`.
-
-    The impulse response function for this class can be viewed on the Documentation
-    website or using `latexify` by running the following code in a Jupyter notebook
-    environment::
-
-        ps.Edelman.impulse
 
     """
 
@@ -2019,7 +1947,6 @@ class Edelman(RfuncBase):
             )
 
     @staticmethod
-    @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         (a,) = p
         return 1 / (np.sqrt(pi) * a * t**1.5) * np.exp(-1 / (a**2 * t))
@@ -2052,12 +1979,6 @@ class Kraijenhoff(RfuncBase):
     -----
     The Kraijenhoff van de Leur function is explained in
     :cite:t:`van_de_leur_study_1958`.
-
-    The impulse response function for this class can be viewed on the Documentation
-    website or using `latexify` by running the following code in a Jupyter notebook
-    environment::
-
-        ps.Kraijenhoff.impulse
 
     The function describes the response of a domain between two drainage channels.
     The function gives the same outcome as equation 133.15 in
@@ -2177,7 +2098,6 @@ class Kraijenhoff(RfuncBase):
             raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
 
     @staticmethod
-    @latexfun(identifiers={"impulse": "theta"})
     def impulse(t: ArrayLike, p: ArrayLike, n_terms: int = 10) -> ArrayLike:
         A, a, b = p
         return (
