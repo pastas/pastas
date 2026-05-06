@@ -886,21 +886,7 @@ class HantushWellModel(RfuncBase):
             )
 
     @staticmethod
-    def impulse(
-        t: ArrayLike,
-        p: ArrayLike,
-        # log_b: bool = False,
-    ) -> ArrayLike:
-        """Raise an error because HantushWellModel has no direct impulse response.
-
-        Parameters
-        ----------
-        t: array_like
-            Times at which to evaluate the impulse response.
-        p: array_like
-            Response function parameters.
-        """
-
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         # A, a, b, r = p
         # b = 10**b if log_b else b
         # A / 2 * t * np.exp(-t / a - a * b * r**2 / t)
@@ -1508,15 +1494,7 @@ class One(RfuncBase):
 
     @staticmethod
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        """Raise an error because the impulse response is a Dirac delta.
-
-        Parameters
-        ----------
-        t: array_like
-            Times at which to evaluate the impulse response.
-        p: array_like
-            Response function parameters.
-        """
+        """Raise a NotImplementedError because the impulse response is a Dirac delta."""
         raise NotImplementedError(
             "One.impulse is not defined as an array-valued function. "
             "Use step() or block() for this response function."
@@ -2256,15 +2234,7 @@ class Spline(RfuncBase):
 
     @staticmethod
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        """Raise an error because Spline does not define an impulse response.
-
-        Parameters
-        ----------
-        t: array_like
-            Times at which to evaluate the impulse response.
-        p: array_like
-            Response function parameters.
-        """
+        """Raise a NotImplementedError because Spline does not define an impulse response."""
         raise NotImplementedError(
             "Spline does not define an impulse response. Use step() or block()."
         )
