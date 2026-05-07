@@ -124,8 +124,11 @@ class RfuncBase(ABC):
 
     @abstractmethod
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
-        """Method to get the response time for a certain cutoff. A cutoff of
-        0.999 returns a tmax when 99.9% of the step response has effectuated.
+        """Method to get the response time for a certain cutoff.
+
+        For instance, a cutoff of 0.99 returns the time when the step
+        response has reached 99% of its upper limit, i.e. the gain.
+
 
         Parameters
         ----------
@@ -256,10 +259,6 @@ class RfuncBase(ABC):
         cutoff: float, optional
             Fraction of the step response after which the response is truncated.
 
-        Notes
-        -----
-        Only change the settings if values are provided!
-
         """
         if up != "nochange":
             self.up = up
@@ -303,9 +302,8 @@ class RfuncBase(ABC):
         cutoff: float | None, optional
             Fraction of the step response used to determine the response cutoff.
         maxtmax: float | None, optional
-            Maximum response time to compute, usually the simulation length. Not
-            used if None, else, the used tmax is the minimum of the tmax determined
-            from the cutoff and maxtmax.
+            Maximum response time to compute,. Not used if None, else, the used
+            tmax is the minimum of the tmax determined from the cutoff and maxtmax.
         kwargs: dict
             Additional keyword arguments used by specific response functions.
 
@@ -679,13 +677,14 @@ class HantushWellModel(RfuncBase):
         Use `quad_step` to compute the step response using numerical
         integration. Default is False.
     approximate_tmax: bool, optional
-        If True, get_tmax will use the fast Lambert W approximation (default). If False,
-        it will use the exact numerical root finding method.
+        If True, get_tmax will use the fast Lambert W approximation (default). If
+        False, it will use the exact numerical root finding method.
     log_b: bool, optional
-        Whether to use log10 scaling for parameter b, which is related to the diffusivity
-        and distance. Default is True, which means that the initial value and bounds
-        for b are set in log10 space. This can help with optimization when the expected
-        range of b spans several orders of magnitude.
+        Whether to use log10 scaling for parameter b, Default is True. In this Hantush
+        implementation parameter b is multiplied by distances squared meaning values
+        of b can get very small under certain conditions. Log scaling can help with
+        optimization when the value of b is very small and the range of b spans
+        several orders of magnitude.
 
     Attributes
     ----------
@@ -704,8 +703,6 @@ class HantushWellModel(RfuncBase):
 
     :math:`\\text{gain} = A K_0 \\left( 2r \\sqrt(b) \\right)`
 
-    The direct impulse response is not implemented for this class. Block responses
-    are therefore always computed from the step response.
 
     The implementation used here is explained in :cite:t:`veling_hantush_2010`.
     """
