@@ -19,6 +19,7 @@ from pandas import DataFrame, Series
 from scipy.integrate import quad
 from scipy.interpolate import interp1d
 from scipy.optimize import brentq
+from scipy.signal import unit_impulse
 from scipy.special import (
     erfc,
     erfcinv,
@@ -128,7 +129,6 @@ class RfuncBase(ABC):
 
         For instance, a cutoff of 0.99 returns the time when the step
         response has reached 99% of its upper limit, i.e. the gain.
-
 
         Parameters
         ----------
@@ -1409,13 +1409,7 @@ class One(RfuncBase):
         use_impulse: bool = False,
         **kwargs,
     ) -> None:
-        if use_impulse:
-            logger.warning(
-                "The impulse response function for One is not defined. Therefore, "
-                "use_impulse=True has no effect for this response function and is "
-                "set to False."
-            )
-        super().__init__(cutoff=cutoff, use_impulse=False, **kwargs)
+        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
 
     @property
     def nparam(self) -> int:
@@ -1443,7 +1437,7 @@ class One(RfuncBase):
         return parameters
 
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
-        return 0.0
+        return 1.0
 
     def gain(self, p: ArrayLike) -> float:
         return p[0]
@@ -1457,19 +1451,9 @@ class One(RfuncBase):
         **kwargs,
     ) -> ArrayLike:
         if isinstance(dt, np.ndarray):
-            return p[0] * np.ones(len(dt))
+            return np.full(len(dt), p[0], dtype=float)
         else:
-            return p[0] * np.ones(1)
-
-    def block(
-        self,
-        p: ArrayLike,
-        dt: float = 1.0,
-        cutoff: float | None = None,
-        maxtmax: float | None = None,
-        **kwargs,
-    ) -> ArrayLike:
-        return p[0] * np.ones(1)
+            return np.full(1, p[0], dtype=float)
 
     def moment(
         self,
@@ -1491,11 +1475,7 @@ class One(RfuncBase):
 
     @staticmethod
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        """Raise a NotImplementedError because the impulse response is a Dirac delta."""
-        raise NotImplementedError(
-            "One.impulse is not defined as an array-valued function. "
-            "Use step() or block() for this response function."
-        )
+        return unit_impulse(t.shape, idx=0, dtype=float) * p[0]
 
 
 class FourParam(RfuncBase):
