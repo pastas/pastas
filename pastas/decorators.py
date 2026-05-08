@@ -274,7 +274,7 @@ def conditional_cachedmethod(cache_getter):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             if USE_CACHE:
-                return cached_func(self, *args, **kwargs)
+                return cached_func.__get__(self, type(self))(*args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
 
