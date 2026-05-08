@@ -2027,7 +2027,7 @@ def test_simulate_with_block(head: Series, prec: Series, evap: Series) -> None:
         pex,
         name="rch",
         rfunc=ps.Exponential(
-            use_impulse=False
+            use_block=True
         ),  # simulate with the block response function
         settings="evap",
     )
@@ -2046,7 +2046,7 @@ def test_simulate_with_impulse(head: Series, prec: Series, evap: Series) -> None
         pex,
         name="rch",
         rfunc=ps.Exponential(
-            use_impulse=True
+            use_block=False
         ),  # simulate with the impulse response function
         settings="evap",
     )

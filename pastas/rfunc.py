@@ -71,7 +71,7 @@ class RfuncBase(ABC):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         **kwargs,
     ) -> None:
         """Base class for response functions.
@@ -81,14 +81,15 @@ class RfuncBase(ABC):
         cutoff: float, optional
             Fraction of the step response after which the response is truncated.
             Default is 0.999.
-        use_impulse: bool, optional
-            Use the impulse response instead of the step response to compute the
-            block response. Default is False.
+        use_block: bool, optional
+            Use the block response to compute the response (for convolution).
+            The block response is the difference of the step response. Default is
+            True. If False, the impulse response is computed and used for convolution.
         kwargs: dict
             Additional keyword arguments.
         """
         self.cutoff = cutoff
-        self.use_impulse = use_impulse
+        self.use_block = use_block
         if "up" in kwargs:
             raise TypeError(
                 "keyword argument 'up' is not supported in init. "
@@ -353,7 +354,7 @@ class RfuncBase(ABC):
         array_like
             Block response values.
         """
-        if self.use_impulse:
+        if self.use_block:
             b = self.block_from_impulse(
                 p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
             )
@@ -446,7 +447,7 @@ class RfuncBase(ABC):
         settings = {
             "class": self._name,
             "cutoff": self.cutoff,
-            "use_impulse": self.use_impulse,
+            "use_block": self.use_block,
             "up": self.up,
             "gain_scale_factor": self.gain_scale_factor,
         }
@@ -461,9 +462,10 @@ class Gamma(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
-    use_impulse: bool, optional
-        Use the impulse response instead of the step response to compute the
-        block response. Default is False.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
 
     Attributes
     ----------
@@ -478,10 +480,10 @@ class Gamma(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
 
     @property
     def nparam(self) -> int:
@@ -565,9 +567,10 @@ class Exponential(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
-    use_impulse: bool, optional
-        Use the impulse response instead of the step response to compute the
-        block response. Default is False.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
 
     Attributes
     ----------
@@ -583,10 +586,10 @@ class Exponential(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
 
     @property
     def nparam(self) -> int:
@@ -670,9 +673,10 @@ class HantushWellModel(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
-    use_impulse: bool, optional
-        This option is not supported for HantushWellModel. If provided, Pastas
-        falls back to `False` and uses the step response.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
     quad: bool, optional
         Use `quad_step` to compute the step response using numerical
         integration. Default is False.
@@ -710,13 +714,13 @@ class HantushWellModel(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         quad: bool = False,
         approximate_tmax: bool = True,
         log_b: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
         self.distances: float | ArrayLike | None = None
         self.quad: bool = quad
         self.approximate_tmax: bool = approximate_tmax
@@ -972,9 +976,10 @@ class Hantush(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
-    use_impulse: bool, optional
-        Use the impulse response instead of the step response to compute the
-        block response. Default is False.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
     quad: bool, optional
         Use `quad_step` to compute the step response using numerical
         integration. Default is False.
@@ -1000,12 +1005,12 @@ class Hantush(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         quad: bool = False,
         approximate_tmax: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
         self.quad = quad
         self.approximate_tmax = approximate_tmax
         if self.quad and not self.approximate_tmax:
@@ -1265,9 +1270,10 @@ class Polder(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
-    use_impulse: bool, optional
-        Use the impulse response instead of the step response to compute the
-        block response. Default is False.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
 
     Attributes
     ----------
@@ -1287,10 +1293,10 @@ class Polder(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
 
     @property
     def nparam(self) -> int:
@@ -1388,9 +1394,11 @@ class One(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated. This
         setting has no effect for this response function.
-    use_impulse: bool, optional
-        This setting has no effect because this response function defines its own
-        block response directly.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
+
 
     Attributes
     ----------
@@ -1406,10 +1414,10 @@ class One(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
 
     @property
     def nparam(self) -> int:
@@ -1486,9 +1494,10 @@ class FourParam(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
-    use_impulse: bool, optional
-        Use the impulse response instead of the step response to compute the
-        block response. Default is False.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
     quad: bool, optional
         If true, use the 'quad' method from scipy.integrate to integrate the impulse
         response function. This may be more accurate but increases computation times.
@@ -1511,11 +1520,11 @@ class FourParam(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         quad: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
         self.quad = quad
 
     @property
@@ -1717,9 +1726,10 @@ class DoubleExponential(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
-    use_impulse: bool, optional
-        Use the impulse response instead of the step response to compute the
-        block response. Default is False.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
 
     Attributes
     ----------
@@ -1735,10 +1745,10 @@ class DoubleExponential(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
 
     @property
     def nparam(self) -> int:
@@ -1840,9 +1850,10 @@ class Edelman(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
-    use_impulse: bool, optional
-        Use the impulse response instead of the step response to compute the
-        block response. Default is False.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
 
     Attributes
     ----------
@@ -1858,10 +1869,10 @@ class Edelman(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
 
     @property
     def nparam(self) -> int:
@@ -1927,9 +1938,10 @@ class Kraijenhoff(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
-    use_impulse: bool, optional
-        Use the impulse response instead of the step response to compute the
-        block response. Default is False.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
     n_terms: int, optional
         Number of terms used in the truncated series expansion.
 
@@ -1965,11 +1977,11 @@ class Kraijenhoff(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         n_terms: int = 10,
         **kwargs,
     ) -> None:
-        super().__init__(cutoff=cutoff, use_impulse=use_impulse, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
         self.n_terms = n_terms
 
     @property
@@ -2091,9 +2103,12 @@ class Spline(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated. This
         setting has no effect for this response function.
-    use_impulse: bool, optional
-        This setting has no effect because this response function does not define
-        an impulse response.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
+        Note that the Spline response function does not have an impulse response
+        function, so use_block must be False.
     kind: str, optional
         Interpolation kind passed to :func:`scipy.interpolate.interp1d`.
         Common choices are `"quadratic"` and `"cubic"`.
@@ -2123,18 +2138,18 @@ class Spline(RfuncBase):
     def __init__(
         self,
         cutoff: float = 0.999,
-        use_impulse: bool = False,
+        use_block: bool = True,
         kind: Literal["quadratic", "cubic"] = "quadratic",
         t: list[int] | None = None,
         **kwargs,
     ) -> None:
-        if use_impulse:
+        if use_block:
             logger.error(
                 "The Spline response function does not have an impulse response function, "
-                "so use_impulse cannot be True. Please set use_impulse to False."
+                "so use_block cannot be False. Please set use_block to True."
             )
 
-        super().__init__(cutoff=cutoff, use_impulse=False, **kwargs)
+        super().__init__(cutoff=cutoff, use_block=True, **kwargs)
         self.kind = kind
         self.t = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024] if t is None else t
 
