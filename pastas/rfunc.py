@@ -82,11 +82,11 @@ class RfuncBase(ABC):
             Fraction of the step response after which the response is truncated.
             Default is 0.999.
         use_block: bool, optional
-            Use the block response, i.e. the difference of the step response, to
-            compute the response (for convolution). Default is True, which ensures
-            that self.block() returns the block response. If False, self.block()
-            returns the discrete impulse response, evaluated at the midpoint of the
-            time interval (dt).
+            Use the block response (rather than the impulse response) to simulate
+            the effect of a stress. The block response approximates the stress
+            as uniform during a time interval dt. When False, the impulse response
+            is used which means that the the entire stress occurs midway the time
+            interval dt. The impulse response is generally quicker to compute.
         kwargs: dict
             Additional keyword arguments.
         """
@@ -465,11 +465,11 @@ class Gamma(RfuncBase):
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
     use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False, Gamma().block()
-        returns the discrete impulse response, evaluated at the midpoint of the
-        time interval (dt).
+        Use the block response (rather than the impulse response) to simulate
+        the effect of a stress. The block response approximates the stress
+        as uniform during a time interval dt. When False, the impulse response
+        is used which means that the the entire stress occurs midway the time
+        interval dt. The impulse response is generally quicker to compute.
 
     Attributes
     ----------
@@ -572,11 +572,11 @@ class Exponential(RfuncBase):
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
     use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False, Exponential().block()
-        returns the discrete impulse response, evaluated at the midpoint of the
-        time interval (dt).
+        Use the block response (rather than the impulse response) to simulate
+        the effect of a stress. The block response approximates the stress
+        as uniform during a time interval dt. When False, the impulse response
+        is used which means that the the entire stress occurs midway the time
+        interval dt. The impulse response is generally quicker to compute.
 
     Attributes
     ----------
@@ -680,11 +680,11 @@ class Hantush(RfuncBase):
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
     use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False, Hantush().block()
-        returns the discrete impulse response, evaluated at the midpoint of the
-        time interval (dt).
+        Use the block response (rather than the impulse response) to simulate
+        the effect of a stress. The block response approximates the stress
+        as uniform during a time interval dt. When False, the impulse response
+        is used which means that the the entire stress occurs midway the time
+        interval dt. The impulse response is generally quicker to compute.
     quad: bool, optional
         Use `quad_step` to compute the step response using numerical
         integration. Default is False.
@@ -976,11 +976,11 @@ class HantushWellModel(RfuncBase):
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
     use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False,
-        HantushWellModel().block() returns the discrete impulse response,
-        evaluated at the midpoint of the time interval (dt).
+        Use the block response (rather than the impulse response) to simulate
+        the effect of a stress. The block response approximates the stress
+        as uniform during a time interval dt. When False, the impulse response
+        is used which means that the the entire stress occurs midway the time
+        interval dt. The impulse response is generally quicker to compute.
     quad: bool, optional
         Use `quad_step` to compute the step response using numerical
         integration. Default is False.
@@ -1281,11 +1281,11 @@ class Polder(RfuncBase):
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
     use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False, Gamma().block()
-        returns the discrete impulse response, evaluated at the midpoint of the
-        time interval (dt).
+        Use the block response (rather than the impulse response) to simulate
+        the effect of a stress. The block response approximates the stress
+        as uniform during a time interval dt. When False, the impulse response
+        is used which means that the the entire stress occurs midway the time
+        interval dt. The impulse response is generally quicker to compute.
 
     Attributes
     ----------
@@ -1407,11 +1407,11 @@ class One(RfuncBase):
         Fraction of the step response after which the response is truncated. This
         setting has no effect for this response function.
     use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False, Gamma().block()
-        returns the discrete impulse response, evaluated at the midpoint of the
-        time interval (dt).
+        Use the block response (rather than the impulse response) to simulate
+        the effect of a stress. The block response approximates the stress
+        as uniform during a time interval dt. When False, the impulse response
+        is used which means that the the entire stress occurs midway the time
+        interval dt. The impulse response is generally quicker to compute.
 
     Attributes
     ----------
@@ -1508,11 +1508,11 @@ class FourParam(RfuncBase):
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
     use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False, Gamma().block()
-        returns the discrete impulse response, evaluated at the midpoint of the
-        time interval (dt).
+        Use the block response (rather than the impulse response) to simulate
+        the effect of a stress. The block response approximates the stress
+        as uniform during a time interval dt. When False, the impulse response
+        is used which means that the the entire stress occurs midway the time
+        interval dt. The impulse response is generally quicker to compute.
     quad: bool, optional
         If true, use the 'quad' method from scipy.integrate to integrate the impulse
         response function. This may be more accurate but increases computation times.
@@ -1742,11 +1742,11 @@ class DoubleExponential(RfuncBase):
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
     use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False, Gamma().block()
-        returns the discrete impulse response, evaluated at the midpoint of the
-        time interval (dt).
+        Use the block response (rather than the impulse response) to simulate
+        the effect of a stress. The block response approximates the stress
+        as uniform during a time interval dt. When False, the impulse response
+        is used which means that the the entire stress occurs midway the time
+        interval dt. The impulse response is generally quicker to compute.
 
     Attributes
     ----------
@@ -1860,11 +1860,11 @@ class Kraijenhoff(RfuncBase):
         Fraction of the step response after which the response is truncated.
         Default is 0.999.
     use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False, Gamma().block()
-        returns the discrete impulse response, evaluated at the midpoint of the
-        time interval (dt).
+        Use the block response (rather than the impulse response) to simulate
+        the effect of a stress. The block response approximates the stress
+        as uniform during a time interval dt. When False, the impulse response
+        is used which means that the the entire stress occurs midway the time
+        interval dt. The impulse response is generally quicker to compute.
     n_terms: int, optional
         Number of terms used in the truncated series expansion.
 
@@ -2026,13 +2026,8 @@ class Spline(RfuncBase):
     cutoff: float, optional
         Fraction of the step response after which the response is truncated. This
         setting has no effect for this response function.
-    use_block: bool, optional
-        Use the block response, i.e. the difference of the step response, to
-        compute the response (for convolution). Default is True, which ensures
-        that self.block() returns the block response. If False, Gamma().block()
-        returns the discrete impulse response, evaluated at the midpoint of the
-        time interval (dt). Note that the Spline response function does not
-        have an impulse response function, so use_block must be True.
+    use_block: bool
+        Must be True as Spline does not have an impulse response function
     kind: str, optional
         Interpolation kind passed to :func:`scipy.interpolate.interp1d`.
         Common choices are `"quadratic"` and `"cubic"`.

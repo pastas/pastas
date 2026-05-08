@@ -21,7 +21,6 @@ def test_rfunc(rfunc_name: str, up: bool) -> None:
 def test_block_uses_configured_impulse_routing(
     rfunc_name: str, use_block: bool
 ) -> None:
-
     rfunc = getattr(ps.rfunc, rfunc_name)(use_block=use_block)
     if rfunc_name == "HantushWellModel":
         rfunc.set_distances(1.0)
