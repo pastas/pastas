@@ -665,6 +665,300 @@ class Exponential(RfuncBase):
         return A / a * np.exp(-t / a)
 
 
+class Hantush(RfuncBase):
+    """The Hantush well function, using the standard A, a, b parameters.
+
+    Parameters
+    ----------
+    cutoff: float, optional
+        Fraction of the step response after which the response is truncated.
+        Default is 0.999.
+    use_block: bool, optional
+        Use the block response to compute the response (for convolution).
+        The block response is the difference of the step response. Default is
+        True. If False, the impulse response is computed and used for convolution.
+    quad: bool, optional
+        Use `quad_step` to compute the step response using numerical
+        integration. Default is False.
+    approximate_tmax: bool, optional
+        If True, get_tmax will use the fast Lambert W approximation (default). If False,
+        it will use the exact numerical root finding method.
+
+    Attributes
+    ----------
+    up: bool or None, optional
+        Whether a positive stress causes the head to go up (`True`), down
+        (`False`), or either direction (`None`).
+    gain_scale_factor: float, optional
+        Scale factor used to set the initial value and bounds of the gain
+        parameter, computed as `1 / gain_scale_factor`.
+
+    Notes
+    -----
+    The implementation used here is explained in :cite:t:`veling_hantush_2010`.
+
+    """
+
+    def __init__(
+        self,
+        cutoff: float = 0.999,
+        use_block: bool = True,
+        quad: bool = False,
+        approximate_tmax: bool = True,
+        **kwargs,
+    ) -> None:
+        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
+        self.quad = quad
+        self.approximate_tmax = approximate_tmax
+        if self.quad and not self.approximate_tmax:
+            logger.warning(
+                "Using quad_step with approximate_tmax=False can lead to long "
+                "computation times for get_tmax. Consider setting "
+                "approximate_tmax=True or quad=False."
+            )
+
+    @property
+    def nparam(self) -> int:
+        return 3
+
+    def get_init_parameters(self, name: str) -> DataFrame:
+        if self.up:
+            initial_A, pmin_A, pmax_A = (
+                1.0 / self.gain_scale_factor,
+                0.0,
+                100.0 / self.gain_scale_factor,
+            )
+        elif self.up is False:
+            initial_A, pmin_A, pmax_A = (
+                -1.0 / self.gain_scale_factor,
+                -100.0 / self.gain_scale_factor,
+                0.0,
+            )
+        else:
+            initial_A, pmin_A, pmax_A = 1.0 / self.gain_scale_factor, np.nan, np.nan
+
+        parameters = DataFrame(
+            [
+                (initial_A, pmin_A, pmax_A, True, name, "uniform"),
+                (1e2, 1e-3, 1e4, True, name, "uniform"),
+                (1.0, 1e-6, 25.0, True, name, "uniform"),
+            ],
+            index=[name + "_A", name + "_a", name + "_b"],
+            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+        )
+        return parameters
+
+    def get_tmax_approximation(
+        self, p: ArrayLike, cutoff: float | None = None
+    ) -> float:
+        """Approximates the time (tmax) when the step response reaches a specified cutoff.
+
+        This analytical approximation is derived by evaluating the tail of the
+        impulse response integral. The derivation relies on the following steps:
+        1.  The tail integral is mapped to dimensionless time x = t/a.
+        2.  Deep in the tail, the b/t term in the exponent is assumed negligible,
+            reducing the integral to the standard Exponential Integral, E1(x).
+        3.  E1(x) is approximated by its leading asymptotic term: exp(-x) / x.
+        4.  Equating this to the remaining area (1 - cutoff) yields an equation
+            of the form x * exp(x) = z, which is classically solved using the
+            Lambert W function: x = W(z).
+
+        To prevent crashing the calculation when rho is large (causing k0 to
+        underflow and z to overflow), the math is translated into log-space.
+        The exponentially scaled Bessel function (k0e) and the Wright Omega
+        function (the exact analytical solution to y + ln(y) = log_z)
+        are used. This provides a globally continuous, unbreakable equivalent to
+        lambertw(z).
+
+        Parameters
+        ----------
+        p : array_like
+            Response function parameters `[A, a, b]`.
+        cutoff : float, optional
+            The fraction of the total step response area reached at tmax.
+            Must be strictly between 0 and 1. Defaults to `self.cutoff` if
+            `cutoff is None`.
+
+        Returns
+        -------
+        float
+            The approximated tmax value.
+        """
+        cutoff = self.cutoff if cutoff is None else cutoff
+        a, b = p[1], p[2]
+        rho = 2.0 * np.sqrt(b)
+
+        # Compute log-space equivalent of z = 1 / ((1 - cutoff) * k0(rho))
+        # to prevent large values of rho returning 0.0 for k0(rho)
+        # and thus z = inf, which causes lambertw to return inf.
+        # ln(k0(rho)) = ln(k0e(rho)) - rho
+        log_z = rho - np.log(1 - cutoff) - np.log(k0e(rho))
+
+        # wrightomega(L) = lambertw(exp(L))
+        tmax = wrightomega(log_z).real * a
+        return tmax
+
+    def _f_step(self, t: float, A: float, a: float, b: float, cutoff: float) -> float:
+        """Objective function for root finding (t varies, other params fixed)."""
+        t_arr = np.array([t], dtype=float)
+        if self.quad:
+            step_val = self.quad_step(A=A, a=a, b=b, t=t_arr)[0]
+        else:
+            step_val = self.numpy_step(A=A, a=a, b=b, t=t_arr)[0]
+        return (step_val / A) - cutoff
+
+    def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
+        """Calculate `tmax` using either the approximation or root finding.
+
+        Parameters
+        ----------
+        p: array_like
+            Response function parameters.
+        cutoff: float, optional
+            Fraction of the step response used to determine the response cutoff.
+            Defaults to `self.cutoff` if `cutoff is None`.
+
+        Returns
+        -------
+        float
+            Response time in days corresponding to the selected cutoff.
+        """
+
+        cutoff = self.cutoff if cutoff is None else cutoff
+
+        t0 = self.get_tmax_approximation(p, cutoff)
+        if self.approximate_tmax:
+            return t0
+
+        A, a, b = p[0], p[1], p[2]
+
+        # Use Brentq's method
+        tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
+        root, info = brentq(
+            f=self._f_step,
+            a=1e-30,  # avoid divide by zero warnings
+            b=t0,
+            xtol=tol,
+            maxiter=100,  # generally converges within 10 iterations
+            args=(A, a, b, cutoff),
+            full_output=True,
+            disp=False,
+        )
+        # Check the convergence flag directly
+        if info.converged:
+            logger.debug(
+                "Root finding for tmax converged successfully. Brentq RootResults: %s",
+                info,
+            )
+            return root
+        else:
+            logger.warning(
+                "Root finding for tmax did not converge, returning approximate tmax. "
+                "Consider setting approximate_tmax=True for the Hantush response. "
+                "Brentq RootResults: %s",
+                info,
+            )
+            return t0
+
+    def gain(self, p: ArrayLike) -> float:
+        return p[0]
+
+    @staticmethod
+    def numpy_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
+        rho = 2.0 * np.sqrt(b)
+        k0rho = k0(rho)
+        if k0rho == 0.0:
+            logger.warning(
+                f"K_0(rho) is underflowing to 0.0 for b: {b:.4e}, rho = {rho:.4e}. "
+                "The parameter `b` is too high or which means that the observation well "
+                "is too far away. Consider lowering the initial value and bounds for b "
+                "to prevent this error."
+            )
+        exp1_rho = exp1(rho)
+        w = (exp1_rho - k0rho) / (exp1_rho - exp1(rho / 2.0))
+        w_minus_1 = w - 1.0
+        tau = t / a
+        b_over_tau = b / tau
+
+        F = np.empty_like(tau)
+        mask = tau < (rho / 2.0)
+        inv_mask = ~mask
+
+        tau1 = tau[mask]
+        b_tau1 = b_over_tau[mask]
+        F[mask] = w * exp1(b_tau1) - w_minus_1 * exp1(tau1 + b_tau1)
+
+        tau2 = tau[inv_mask]
+        b_tau2 = b_over_tau[inv_mask]
+        F[inv_mask] = 2.0 * k0rho - w * exp1(tau2) + w_minus_1 * exp1(tau2 + b_tau2)
+
+        return A * F / (2.0 * k0rho)
+
+    @staticmethod
+    @njit
+    def _integrand_hantush(y: float, b: float) -> float:
+        return np.exp(-y - (b / y)) / y
+
+    @staticmethod
+    def quad_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
+        F = np.zeros_like(t)
+        u = a * b / t
+        for i in range(0, len(t)):
+            F[i] = quad(Hantush._integrand_hantush, u[i], np.inf, args=(b,))[0]
+        return F * A / (2 * k0(2 * np.sqrt(b)))
+
+    def step(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+        **kwargs,
+    ) -> ArrayLike:
+        A, a, b = p
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
+
+        step = (
+            self.quad_step(A=A, a=a, b=b, t=t)
+            if self.quad
+            else self.numpy_step(A=A, a=a, b=b, t=t)
+        )
+        return step
+
+    def moment(
+        self,
+        p: ArrayLike,
+        order: int,
+        method: Literal["discrete", "exact"] = "discrete",
+        dt: float = 1.0,
+    ) -> float:
+        if method == "discrete":
+            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
+            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
+            return moment(b, order)
+        elif method == "exact":
+            A, a, b = p
+            return (
+                (a**2 * b) ** (order / 2)
+                * kv(order, 2 * np.sqrt(b))
+                / kv(0, 2 * np.sqrt(b))
+            )
+        else:
+            raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
+
+    @staticmethod
+    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
+        A, a, b = p
+        return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
+
+    def to_dict(self):
+        settings = super().to_dict() | {
+            "quad": self.quad,
+            "approximate_tmax": self.approximate_tmax,
+        }
+        return settings
+
+
 class HantushWellModel(RfuncBase):
     """An implementation of the Hantush well function for multiple pumping wells.
 
@@ -964,300 +1258,6 @@ class HantushWellModel(RfuncBase):
             "quad": self.quad,
             "approximate_tmax": self.approximate_tmax,
             "log_b": self.log_b,
-        }
-        return settings
-
-
-class Hantush(RfuncBase):
-    """The Hantush well function, using the standard A, a, b parameters.
-
-    Parameters
-    ----------
-    cutoff: float, optional
-        Fraction of the step response after which the response is truncated.
-        Default is 0.999.
-    use_block: bool, optional
-        Use the block response to compute the response (for convolution).
-        The block response is the difference of the step response. Default is
-        True. If False, the impulse response is computed and used for convolution.
-    quad: bool, optional
-        Use `quad_step` to compute the step response using numerical
-        integration. Default is False.
-    approximate_tmax: bool, optional
-        If True, get_tmax will use the fast Lambert W approximation (default). If False,
-        it will use the exact numerical root finding method.
-
-    Attributes
-    ----------
-    up: bool or None, optional
-        Whether a positive stress causes the head to go up (`True`), down
-        (`False`), or either direction (`None`).
-    gain_scale_factor: float, optional
-        Scale factor used to set the initial value and bounds of the gain
-        parameter, computed as `1 / gain_scale_factor`.
-
-    Notes
-    -----
-    The implementation used here is explained in :cite:t:`veling_hantush_2010`.
-
-    """
-
-    def __init__(
-        self,
-        cutoff: float = 0.999,
-        use_block: bool = True,
-        quad: bool = False,
-        approximate_tmax: bool = True,
-        **kwargs,
-    ) -> None:
-        super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
-        self.quad = quad
-        self.approximate_tmax = approximate_tmax
-        if self.quad and not self.approximate_tmax:
-            logger.warning(
-                "Using quad_step with approximate_tmax=False can lead to long "
-                "computation times for get_tmax. Consider setting "
-                "approximate_tmax=True or quad=False."
-            )
-
-    @property
-    def nparam(self) -> int:
-        return 3
-
-    def get_init_parameters(self, name: str) -> DataFrame:
-        if self.up:
-            initial_A, pmin_A, pmax_A = (
-                1.0 / self.gain_scale_factor,
-                0.0,
-                100.0 / self.gain_scale_factor,
-            )
-        elif self.up is False:
-            initial_A, pmin_A, pmax_A = (
-                -1.0 / self.gain_scale_factor,
-                -100.0 / self.gain_scale_factor,
-                0.0,
-            )
-        else:
-            initial_A, pmin_A, pmax_A = 1.0 / self.gain_scale_factor, np.nan, np.nan
-
-        parameters = DataFrame(
-            [
-                (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (1e2, 1e-3, 1e4, True, name, "uniform"),
-                (1.0, 1e-6, 25.0, True, name, "uniform"),
-            ],
-            index=[name + "_A", name + "_a", name + "_b"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
-        )
-        return parameters
-
-    def get_tmax_approximation(
-        self, p: ArrayLike, cutoff: float | None = None
-    ) -> float:
-        """Approximates the time (tmax) when the step response reaches a specified cutoff.
-
-        This analytical approximation is derived by evaluating the tail of the
-        impulse response integral. The derivation relies on the following steps:
-        1.  The tail integral is mapped to dimensionless time x = t/a.
-        2.  Deep in the tail, the b/t term in the exponent is assumed negligible,
-            reducing the integral to the standard Exponential Integral, E1(x).
-        3.  E1(x) is approximated by its leading asymptotic term: exp(-x) / x.
-        4.  Equating this to the remaining area (1 - cutoff) yields an equation
-            of the form x * exp(x) = z, which is classically solved using the
-            Lambert W function: x = W(z).
-
-        To prevent crashing the calculation when rho is large (causing k0 to
-        underflow and z to overflow), the math is translated into log-space.
-        The exponentially scaled Bessel function (k0e) and the Wright Omega
-        function (the exact analytical solution to y + ln(y) = log_z)
-        are used. This provides a globally continuous, unbreakable equivalent to
-        lambertw(z).
-
-        Parameters
-        ----------
-        p : array_like
-            Response function parameters `[A, a, b]`.
-        cutoff : float, optional
-            The fraction of the total step response area reached at tmax.
-            Must be strictly between 0 and 1. Defaults to `self.cutoff` if
-            `cutoff is None`.
-
-        Returns
-        -------
-        float
-            The approximated tmax value.
-        """
-        cutoff = self.cutoff if cutoff is None else cutoff
-        a, b = p[1], p[2]
-        rho = 2.0 * np.sqrt(b)
-
-        # Compute log-space equivalent of z = 1 / ((1 - cutoff) * k0(rho))
-        # to prevent large values of rho returning 0.0 for k0(rho)
-        # and thus z = inf, which causes lambertw to return inf.
-        # ln(k0(rho)) = ln(k0e(rho)) - rho
-        log_z = rho - np.log(1 - cutoff) - np.log(k0e(rho))
-
-        # wrightomega(L) = lambertw(exp(L))
-        tmax = wrightomega(log_z).real * a
-        return tmax
-
-    def _f_step(self, t: float, A: float, a: float, b: float, cutoff: float) -> float:
-        """Objective function for root finding (t varies, other params fixed)."""
-        t_arr = np.array([t], dtype=float)
-        if self.quad:
-            step_val = self.quad_step(A=A, a=a, b=b, t=t_arr)[0]
-        else:
-            step_val = self.numpy_step(A=A, a=a, b=b, t=t_arr)[0]
-        return (step_val / A) - cutoff
-
-    def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
-        """Calculate `tmax` using either the approximation or root finding.
-
-        Parameters
-        ----------
-        p: array_like
-            Response function parameters.
-        cutoff: float, optional
-            Fraction of the step response used to determine the response cutoff.
-            Defaults to `self.cutoff` if `cutoff is None`.
-
-        Returns
-        -------
-        float
-            Response time in days corresponding to the selected cutoff.
-        """
-
-        cutoff = self.cutoff if cutoff is None else cutoff
-
-        t0 = self.get_tmax_approximation(p, cutoff)
-        if self.approximate_tmax:
-            return t0
-
-        A, a, b = p[0], p[1], p[2]
-
-        # Use Brentq's method
-        tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
-        root, info = brentq(
-            f=self._f_step,
-            a=1e-30,  # avoid divide by zero warnings
-            b=t0,
-            xtol=tol,
-            maxiter=100,  # generally converges within 10 iterations
-            args=(A, a, b, cutoff),
-            full_output=True,
-            disp=False,
-        )
-        # Check the convergence flag directly
-        if info.converged:
-            logger.debug(
-                "Root finding for tmax converged successfully. Brentq RootResults: %s",
-                info,
-            )
-            return root
-        else:
-            logger.warning(
-                "Root finding for tmax did not converge, returning approximate tmax. "
-                "Consider setting approximate_tmax=True for the Hantush response. "
-                "Brentq RootResults: %s",
-                info,
-            )
-            return t0
-
-    def gain(self, p: ArrayLike) -> float:
-        return p[0]
-
-    @staticmethod
-    def numpy_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
-        rho = 2.0 * np.sqrt(b)
-        k0rho = k0(rho)
-        if k0rho == 0.0:
-            logger.warning(
-                f"K_0(rho) is underflowing to 0.0 for b: {b:.4e}, rho = {rho:.4e}. "
-                "The parameter `b` is too high or which means that the observation well "
-                "is too far away. Consider lowering the initial value and bounds for b "
-                "to prevent this error."
-            )
-        exp1_rho = exp1(rho)
-        w = (exp1_rho - k0rho) / (exp1_rho - exp1(rho / 2.0))
-        w_minus_1 = w - 1.0
-        tau = t / a
-        b_over_tau = b / tau
-
-        F = np.empty_like(tau)
-        mask = tau < (rho / 2.0)
-        inv_mask = ~mask
-
-        tau1 = tau[mask]
-        b_tau1 = b_over_tau[mask]
-        F[mask] = w * exp1(b_tau1) - w_minus_1 * exp1(tau1 + b_tau1)
-
-        tau2 = tau[inv_mask]
-        b_tau2 = b_over_tau[inv_mask]
-        F[inv_mask] = 2.0 * k0rho - w * exp1(tau2) + w_minus_1 * exp1(tau2 + b_tau2)
-
-        return A * F / (2.0 * k0rho)
-
-    @staticmethod
-    @njit
-    def _integrand_hantush(y: float, b: float) -> float:
-        return np.exp(-y - (b / y)) / y
-
-    @staticmethod
-    def quad_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
-        F = np.zeros_like(t)
-        u = a * b / t
-        for i in range(0, len(t)):
-            F[i] = quad(Hantush._integrand_hantush, u[i], np.inf, args=(b,))[0]
-        return F * A / (2 * k0(2 * np.sqrt(b)))
-
-    def step(
-        self,
-        p: ArrayLike,
-        dt: float = 1.0,
-        cutoff: float | None = None,
-        maxtmax: float | None = None,
-        **kwargs,
-    ) -> ArrayLike:
-        A, a, b = p
-        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
-
-        step = (
-            self.quad_step(A=A, a=a, b=b, t=t)
-            if self.quad
-            else self.numpy_step(A=A, a=a, b=b, t=t)
-        )
-        return step
-
-    def moment(
-        self,
-        p: ArrayLike,
-        order: int,
-        method: Literal["discrete", "exact"] = "discrete",
-        dt: float = 1.0,
-    ) -> float:
-        if method == "discrete":
-            t = self.get_t(p=p, dt=dt, cutoff=self.cutoff)
-            b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
-            return moment(b, order)
-        elif method == "exact":
-            A, a, b = p
-            return (
-                (a**2 * b) ** (order / 2)
-                * kv(order, 2 * np.sqrt(b))
-                / kv(0, 2 * np.sqrt(b))
-            )
-        else:
-            raise ValueError(f"Invalid method {method}. Choose 'discrete' or 'exact'.")
-
-    @staticmethod
-    def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        A, a, b = p
-        return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
-
-    def to_dict(self):
-        settings = super().to_dict() | {
-            "quad": self.quad,
-            "approximate_tmax": self.approximate_tmax,
         }
         return settings
 
