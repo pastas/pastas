@@ -7,77 +7,88 @@ import pastas as ps
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
 @pytest.mark.parametrize("up", [True, False])
 def test_rfunc(rfunc_name: str, up: bool) -> None:
-    if rfunc_name == "Edelman":
-        with pytest.raises(AttributeError):
-            _ = getattr(ps.rfunc, rfunc_name)()
-    else:
-        rfunc = getattr(ps.rfunc, rfunc_name)()
-        rfunc.update_rfunc_settings(up=up)
-        if rfunc_name == "HantushWellModel":
-            rfunc.set_distances(100.0)
-        p = rfunc.get_init_parameters("test").initial.to_numpy()
-        rfunc.block(p)
-        rfunc.step(p)
+    rfunc = getattr(ps.rfunc, rfunc_name)()
+    rfunc.update_rfunc_settings(up=up)
+    if rfunc_name == "HantushWellModel":
+        rfunc.set_distances(100.0)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+    rfunc.block(p)
+    rfunc.step(p)
+
+
+@pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
+@pytest.mark.parametrize("use_block", [False, True])
+def test_block_uses_configured_impulse_routing(
+    rfunc_name: str, use_block: bool
+) -> None:
+    rfunc = getattr(ps.rfunc, rfunc_name)(use_block=use_block)
+    if rfunc_name == "HantushWellModel":
+        rfunc.set_distances(1.0)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    if rfunc_name in ["Spline"]:
+        assert rfunc.use_block is True, "Spline should always use step method"
+        np.testing.assert_allclose(rfunc.block(p), rfunc.block_from_step(p))
+        return
+
+    expected = rfunc.block_from_impulse(p) if use_block else rfunc.block_from_step(p)
+    block = rfunc.block(p)
+    if rfunc_name == "One":
+        block = block[:1]
+        expected = expected[:1]
+    np.testing.assert_allclose(block, expected, atol=1e-3)
 
 
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
 @pytest.mark.parametrize("up", [True, False])
 def test_to_dict_rfuncs(rfunc_name: str, up: bool) -> None:
-    if rfunc_name == "Edelman":
-        with pytest.raises(AttributeError):
-            _ = getattr(ps.rfunc, rfunc_name)()
-    else:
-        rfunc1 = getattr(ps.rfunc, rfunc_name)(cutoff=0.5)
-        rfunc1.update_rfunc_settings(up=up)
+    rfunc1 = getattr(ps.rfunc, rfunc_name)(cutoff=0.5)
+    rfunc1.update_rfunc_settings(up=up)
 
-        # Create the exact same instance using to_dict
-        data = rfunc1.to_dict()
-        rfunc_class = data.pop("class")  # Determine response class
-        rfunc_up = data.pop("up", None)
-        rfunc_gsf = data.pop("gain_scale_factor", None)
-        rfunc2 = getattr(ps.rfunc, rfunc_class)(**data)
-        rfunc2.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
-        rfunc2.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
+    # Create the exact same instance using to_dict
+    data = rfunc1.to_dict()
+    rfunc_class = data.pop("class")  # Determine response class
+    rfunc_up = data.pop("up", None)
+    rfunc_gsf = data.pop("gain_scale_factor", None)
+    rfunc2 = getattr(ps.rfunc, rfunc_class)(**data)
+    rfunc2.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
+    rfunc2.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
 
-        if rfunc_name == "HantushWellModel":
-            rfunc1.set_distances(100.0)
-            rfunc2.set_distances(100.0)
+    if rfunc_name == "HantushWellModel":
+        rfunc1.set_distances(100.0)
+        rfunc2.set_distances(100.0)
 
-        p1 = rfunc1.get_init_parameters("test").initial.to_numpy()
-        p2 = rfunc2.get_init_parameters("test").initial.to_numpy()
+    p1 = rfunc1.get_init_parameters("test").initial.to_numpy()
+    p2 = rfunc2.get_init_parameters("test").initial.to_numpy()
 
-        assert (rfunc1.step(p1) - rfunc2.step(p2)).sum() == 0.0
+    assert (rfunc1.step(p1) - rfunc2.step(p2)).sum() == 0.0
 
 
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
 @pytest.mark.parametrize("up", [True, False, None])
 def test_gain_methods(rfunc_name: str, up: bool) -> None:
-    if rfunc_name == "Edelman":
-        with pytest.raises(AttributeError):
-            _ = getattr(ps.rfunc, rfunc_name)()
-    else:
-        rfunc = getattr(ps.rfunc, rfunc_name)()
-        rfunc.update_rfunc_settings(up=up)
+    rfunc = getattr(ps.rfunc, rfunc_name)()
+    rfunc.update_rfunc_settings(up=up)
 
-        # Set distances for HantushWellModel
-        if rfunc_name == "HantushWellModel":
-            rfunc.set_distances(100.0)
+    # Set distances for HantushWellModel
+    if rfunc_name == "HantushWellModel":
+        rfunc.set_distances(100.0)
 
-        # Get parameters
-        p = rfunc.get_init_parameters("test").initial.to_numpy()
+    # Get parameters
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
 
-        # Test gain method exists and returns expected type
-        gain_value = rfunc.gain(p)
-        assert isinstance(gain_value, (float, np.float64, np.ndarray))
+    # Test gain method exists and returns expected type
+    gain_value = rfunc.gain(p)
+    assert isinstance(gain_value, (float, np.float64, np.ndarray))
 
-        # Compare gain with final step value for steady-state response functions
-        if rfunc_name not in ["FourParam"]:  # Some functions need special handling
-            tmax = rfunc.get_tmax(p)
-            if np.isfinite(tmax) and tmax > 0:
-                step_response = rfunc.step(p)
-                # Check if they're approximately equal at steady state
-                if len(step_response) > 0:
-                    assert abs(gain_value - step_response[-1]) < 0.02
+    # Compare gain with final step value for steady-state response functions
+    if rfunc_name not in ["FourParam"]:  # Some functions need special handling
+        tmax = rfunc.get_tmax(p)
+        if np.isfinite(tmax) and tmax > 0:
+            step_response = rfunc.step(p)
+            # Check if they're approximately equal at steady state
+            if len(step_response) > 0:
+                assert abs(gain_value - step_response[-1]) < 0.02
 
 
 @pytest.mark.parametrize("rfunc_name", ["HantushWellModel"])
@@ -105,7 +116,7 @@ def test_gain_methods_with_distance(rfunc_name: str) -> None:
 
 
 # Response functions that support both discrete and exact moment methods
-# FourParam and Edelman have known issues with moment computation and are excluded
+# FourParam has known issues with moment computation and are excluded
 RFUNCS_WITH_EXACT_MOMENTS = [
     "Gamma",
     "Exponential",
@@ -136,10 +147,6 @@ def test_moment_discrete_works(rfunc_name: str) -> None:
     rfunc_name : str
         Name of the response function class to test.
     """
-    if rfunc_name == "Edelman":
-        with pytest.raises(AttributeError):
-            _ = getattr(ps.rfunc, rfunc_name)()
-        return
     rfunc = getattr(ps.rfunc, rfunc_name)(cutoff=0.999)
     p = rfunc.get_init_parameters("test").initial.to_numpy()
 
@@ -256,10 +263,6 @@ def test_moment_exact_not_implemented(rfunc_name: str) -> None:
     rfunc_name : str
         Name of the response function class to test.
     """
-    if rfunc_name == "Edelman":
-        with pytest.raises(AttributeError):
-            _ = getattr(ps.rfunc, rfunc_name)()
-        return
 
     rfunc = getattr(ps.rfunc, rfunc_name)()
     p = rfunc.get_init_parameters("test").initial.to_numpy()
