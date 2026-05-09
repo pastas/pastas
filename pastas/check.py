@@ -67,7 +67,7 @@ from matplotlib.colors import rgb2hex
 from pandas import DataFrame, Series, Timedelta, concat
 
 from pastas.stats import tests as diagnostic_tests
-from pastas.typing import Model, RFunc
+from pastas.typing import Model
 
 logger = logging.getLogger(__name__)
 

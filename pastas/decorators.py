@@ -225,30 +225,12 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
     return njit_decorator
 
 
-def latexfun(
-    function: Callable | None = None,
-    identifiers: dict[str, str] | None = None,
-    use_math_symbols: bool = True,
-    use_raw_function_name: bool = False,
-) -> Callable:
-    def latexify_decorator(f: Callable) -> Callable:
-        try:
-            import latexify
-
-            flatex = latexify.function(
-                f,
-                identifiers=identifiers,
-                use_math_symbols=use_math_symbols,
-                use_raw_function_name=use_raw_function_name,
-            )
-            return flatex
-        except ImportError:
-            return f
-
-    if function:
-        return latexify_decorator(function)
-
-    return latexify_decorator
+@PastasDeprecationWarning(
+    version="2.0.0",
+    reason="latexify was archived and is no longer maintained. This decorator will be removed in a future release.",
+)
+def latexfun(**kwargs) -> None:
+    pass
 
 
 def conditional_cachedmethod(cache_getter):

@@ -31,17 +31,16 @@ def generate_test_data(
     evap = pd.read_csv(data_path / "evap.csv", index_col=0, parse_dates=True).squeeze()
 
     # Temperature series
-    index = (
-        pd.read_csv(data_path / "evap.csv", index_col=0, parse_dates=True)
-        .squeeze()
-        .index
-    )
+    index = evap.index
     temp = pd.Series(
-        index=index, data=np.sin(np.arange(index.size) / 2200), dtype=float
+        index=index,
+        data=np.sin(np.arange(index.size) / 2200),
+        dtype=float,
+        name="TG_380",
     )
 
     # Step series (e.g., pumping)
-    step = pd.Series(np.zeros(len(dates)), index=dates, name="step")
+    step = pd.Series(np.zeros(len(dates)), index=dates, name="PUMP")
     step.loc[dates[len(dates) // 3] :] = 1.0  # Step at 1/3 of the time series
 
     return head, prec, evap, temp, step
