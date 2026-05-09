@@ -89,8 +89,7 @@ Pastas depends on a number of Python packages, of which all of the necessary are
 automatically installed when using the pip install manager. To know which dependencies
 exist, check the `pyproject.toml` file.
 
-To install the most important optional dependencies (solver LmFit and
-function visualisation Latexify) at the same time with Pastas use:
+To install the most important optional dependencies (solver with `LmFit` and caching via `cachetools`) at the same time with Pastas use:
 
     pip install pastas[full]
 

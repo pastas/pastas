@@ -1735,7 +1735,7 @@ class Model:
 
     def _get_response(
         self,
-        block_or_step: str,
+        block_or_step: Literal["block", "step"],
         name: str,
         p: ArrayLike | None = None,
         dt: float | None = None,
@@ -1747,7 +1747,7 @@ class Model:
 
         Parameters
         ----------
-        block_or_step: str
+        block_or_step: {"block", "step"}
             String with "step" or "block"
         name: str
             string with the name of the stressmodel
@@ -1768,22 +1768,22 @@ class Model:
         response: pandas.Series or None
             Pandas.Series with the response, None if not present.
         """
-        if self.stressmodels[name].rfunc is None:
+        rfunc = self.stressmodels[name].rfunc
+        if rfunc is None:
             logger.warning("Stressmodel %s has no rfunc.", name)
             return None
         else:
-            block_or_step = getattr(self.stressmodels[name].rfunc, block_or_step)
+            block_or_step = getattr(rfunc, block_or_step)
+            nparam = getattr(rfunc, "nparam")
 
-        if p is None:
-            p = self.get_parameters(name)
+        p = self.get_parameters(name) if p is None else p
 
-        if dt is None:
-            dt = _get_dt(self.settings["freq"])
+        dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
         if istress is not None and self.stressmodels[name].get_nsplit() > 1:
             p = self.stressmodels[name].get_parameters(model=self, istress=istress)
 
-        response = block_or_step(p, dt, **kwargs)
+        response = block_or_step(p[:nparam], dt, **kwargs)
 
         if add_0:
             if isinstance(dt, np.ndarray):

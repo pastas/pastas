@@ -136,7 +136,7 @@ class Plotting:
         all_responses: bool = True,
         adjust_height: bool = True,
         return_warmup: bool = False,
-        block_or_step: str = "step",
+        block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
         fig: Figure | None = None,
         **kwargs,
@@ -166,7 +166,7 @@ class Plotting:
             subplots on the left is equal. Default is True.
         return_warmup: bool, optional
             Show the warmup-period. Default is false.
-        block_or_step: str, optional
+        block_or_step: {"block", "step"}, optional
             Plot the block- or step-response on the right. Default is 'step'.
         stderr : bool, optional
             If True the standard error of the parameter values are shown. Please be
@@ -349,7 +349,7 @@ class Plotting:
         split_contributions: bool = False,
         all_responses: bool = True,
         stderr: bool = False,
-        block_or_step: str = "step",
+        block_or_step: Literal["block", "step"] = "step",
         return_warmup: bool = False,
         adjust_height: bool = True,
         figsize: tuple[float, float] | None = None,
@@ -378,7 +378,7 @@ class Plotting:
             contribution is plotted. Default is True.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
-        block_or_step: str, optional
+        block_or_step: {"block", "step"}, optional
             Plot the block- or step-response on the right. Default is 'step'.
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all the
@@ -1505,7 +1505,7 @@ class Plotting:
         name: str | None = None,
         plot_stress: bool = True,
         plot_response: bool = False,
-        block_or_step: str = "step",
+        block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
         ax: Axes | None = None,
         **kwargs,
@@ -1528,7 +1528,7 @@ class Plotting:
             Plot the stress on an overlay axes.
         plot_response: bool, optional
             Plot the step response on a separate axes on the right.
-        block_or_step: str, optional
+        block_or_step: {"block", "step"}, optional
             Type of response to plot, either 'block' or 'step'. Default is 'step'.
         istress: int, optional
             Index of the stress to plot the response for. Default is None.
