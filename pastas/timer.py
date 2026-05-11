@@ -20,6 +20,7 @@ This will print the following to the console::
 """
 
 from pastas.decorators import PastasDeprecationWarning
+import numpy as np
 
 
 @PastasDeprecationWarning(
@@ -83,3 +84,34 @@ class SolveTimer(tqdm):
                     f"Model solve time exceeded {self.max_time} seconds!"
                 )
         return displayed
+
+
+class RMSETimer(SolveTimer):
+    """SolveTimer that also displays RMSE for each iteration."""
+
+    def __init__(self, ml, *args, update_interval=None, **kwargs) -> None:
+        """
+        Parameters
+        ----------
+        ml : pastas.Model
+            The model being solved, used to compute residuals.
+        update_interval : int, optional
+            Number of iterations between RMSE updates. If None (default), the
+            RMSE is updated when iteration % number of varying parameters == 0.
+        """
+        self.ml = ml
+        if update_interval is not None:
+            self.update_interval = update_interval
+        else:
+            self.update_interval = self.ml.parameters.vary.sum()
+        super().__init__(*args, **kwargs)
+
+    def timer(self, p, n: int = 1):
+        """Callback method that updates RMSE in the progress bar."""
+        # extra overhead to compute residuals again, though with caching
+        # this will be faster
+        if (self.n % self.update_interval) == 0:
+            residuals = self.ml.residuals(p)
+            rmse = np.sqrt((residuals**2).mean())
+            self.set_postfix(RMSE=f"{rmse:.4e}")
+        return super().timer(p, n)
