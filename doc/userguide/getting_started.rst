@@ -60,4 +60,6 @@ Other optional, but recommended dependencies include::
 
     jupyter  #(for running notebooks)
     lmfit  #(alternative solver)
-    latexify #(visualising formula's of functions)
+    cachetools  #(for caching results)
+    bokeh/plotly  #(for interactive visualisation)
+    requests #(for downloading data from the pastas database)
