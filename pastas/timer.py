@@ -59,7 +59,7 @@ class SolveTimer(tqdm):
     updated quite as nicely.
     """
 
-    def __init__(self, max_time: float | None = None, *args, **kwargs) -> None:
+    def __init__(self, *args, max_time: float | None = None, **kwargs) -> None:
         """Initialize SolveTimer.
 
         Parameters
@@ -87,9 +87,9 @@ class SolveTimer(tqdm):
 
 
 class RMSETimer(SolveTimer):
-    """SolveTimer that also displays RMSE for each iteration."""
+    """SolveTimer that displays current RMSE each N iterations."""
 
-    def __init__(self, ml, *args, update_interval=None, **kwargs) -> None:
+    def __init__(self, ml, *args, update_interval: int | None = None, **kwargs) -> None:
         """
         Parameters
         ----------
