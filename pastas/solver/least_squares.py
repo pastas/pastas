@@ -783,7 +783,7 @@ class LeastSquares(BaseLeastSquares):
             function that is called after each iteration. the parameters are
             provided to the func.
         """
-        par = initial
+        par = initial.astype(p.dtype)  # copy + match dtype (real or complex for cs jac)
         par[vary] = p
         return self.misfit(p=par, noise=noise, weights=weights, callback=self.callback)
 
