@@ -30,7 +30,6 @@ from scipy.special import (
     gammaincinv,
     k0,
     k0e,
-    k1,
     kv,
     wrightomega,
 )
@@ -318,7 +317,7 @@ class RfuncBase(ABC):
         if np.ndim(dt) > 0:
             return np.asarray(dt, dtype=float)
 
-        tmax = self._resolve_tmax(p=p, cutoff=cutoff, **kwargs)
+        tmax = self._resolve_tmax(p=np.asarray(p).real, cutoff=cutoff, **kwargs)
         # make sure tmax is at least 3*dt such that len(t) is at least 2
         # make sure tmax does not exceed maxtmax if provided
         tmax = max(min(tmax, maxtmax) if maxtmax is not None else tmax, 3 * dt)
@@ -874,7 +873,7 @@ class Hantush(RfuncBase):
     @staticmethod
     def numpy_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
         rho = 2.0 * np.sqrt(b)
-        k0rho = k0(rho)
+        k0rho = kv(0, rho)
         if k0rho == 0.0:
             logger.warning(
                 f"K_0(rho) is underflowing to 0.0 for b: {b:.4e}, rho = {rho:.4e}. "
@@ -913,7 +912,7 @@ class Hantush(RfuncBase):
         u = a * b / t
         for i in range(0, len(t)):
             F[i] = quad(Hantush._integrand_hantush, u[i], np.inf, args=(b,))[0]
-        return F * A / (2 * k0(2 * np.sqrt(b)))
+        return F * A / (2 * kv(0, 2 * np.sqrt(b)))
 
     def step(
         self,
@@ -957,7 +956,7 @@ class Hantush(RfuncBase):
     @staticmethod
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
-        return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
+        return A / (2 * t * kv(0, 2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
 
     def to_dict(self):
         settings = super().to_dict() | {
@@ -1106,7 +1105,7 @@ class HantushWellModel(RfuncBase):
         A, a, b = p[:3]
         b_scaled = 10 ** (b / 2.0) if self.log_b else np.sqrt(b)
         rho = 2.0 * r * b_scaled
-        A_h = A * k0(rho)
+        A_h = A * kv(0, rho)
         b_h = (r * b_scaled) ** 2
         return np.array([A_h, a, b_h])
 
@@ -1140,7 +1139,7 @@ class HantushWellModel(RfuncBase):
             r = self._get_distance_from_params(p)
         b_scaled = 10 ** (p[2] / 2.0) if self.log_b else np.sqrt(p[2])
         rho = 2.0 * r * b_scaled
-        return p[0] * k0(rho)
+        return p[0] * kv(0, rho)
 
     def step(
         self,
@@ -1257,8 +1256,8 @@ class HantushWellModel(RfuncBase):
         rho = 2.0 * r * b_scaled
         drho_db = 2.0 * r * db_scaled
 
-        dg_dA = k0(rho)
-        dg_db = -A * k1(rho) * drho_db
+        dg_dA = kv(0, rho)
+        dg_db = -A * kv(1, rho) * drho_db
 
         var_gain = dg_dA**2 * var_A + dg_db**2 * var_b + 2 * dg_dA * dg_db * cov_Ab
         return var_gain
@@ -1470,9 +1469,9 @@ class One(RfuncBase):
         **kwargs,
     ) -> ArrayLike:
         if isinstance(dt, np.ndarray):
-            return np.full(len(dt), p[0], dtype=float)
+            return np.full(len(dt), p[0], dtype=np.asarray(p).dtype)
         else:
-            return np.full(1, p[0], dtype=float)
+            return np.full(1, p[0], dtype=np.asarray(p).dtype)
 
     def moment(
         self,
@@ -1587,7 +1586,7 @@ class FourParam(RfuncBase):
             func = self.impulse(x, p)
             func_half = self.impulse(x[:-1] + 1 / 2, p)
             y[1:] = y[0] + np.cumsum(1 / 6 * (func[:-1] + 4 * func_half + func[1:]))
-            y = y / quad(self.impulse, 0, np.inf, args=p)[0]
+            y = y / quad(self.impulse, 0, np.inf, args=(p,))[0]
             return np.searchsorted(y, cutoff)
 
         else:
@@ -1608,7 +1607,7 @@ class FourParam(RfuncBase):
                 + w3 * self.impulse(0.5 * t3 + 0.5, p)
             )
             y[1:] = y[0] + np.cumsum(1 / 6 * (func[:-1] + 4 * func_half + func[1:]))
-            y = y / quad(self.impulse, 0, np.inf, args=p)[0]
+            y = y / quad(self.impulse, 0, np.inf, args=(p,))[0]
             return np.searchsorted(y, cutoff)
 
     def gain(self, p: ArrayLike) -> float:
@@ -1633,7 +1632,7 @@ class FourParam(RfuncBase):
             s[0] = quad(self.impulse, 0, dt, args=p)[0]
             for i in range(1, len(t)):
                 s[i] = s[i - 1] + quad(self.impulse, t[i - 1], t[i], args=p)[0]
-            s = s * (p[0] / (quad(self.impulse, 0, np.inf, args=p))[0])
+            s = s * (p[0] / (quad(self.impulse, 0, np.inf, args=(p,)))[0])
             return s
 
         else:
@@ -1663,7 +1662,7 @@ class FourParam(RfuncBase):
                 s[1:] = s[0] + np.cumsum(
                     step / 6 * (func[:-1] + 4 * func_half + func[1:])
                 )
-                s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
+                s = s * (p[0] / quad(self.impulse, 0, np.inf, args=(p,))[0])
                 return s[int(dt / step - 1) :: int(dt / step)]
             else:
                 t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
@@ -1682,7 +1681,7 @@ class FourParam(RfuncBase):
                 s[1:] = s[0] + np.cumsum(
                     dt / 6 * (func[:-1] + 4 * func_half + func[1:])
                 )
-                s = s * (self.gain(p) / quad(self.impulse, 0, np.inf, args=p)[0])
+                s = s * (self.gain(p) / quad(self.impulse, 0, np.inf, args=(p,))[0])
                 return s
 
     def block_from_impulse(
