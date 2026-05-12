@@ -1882,7 +1882,7 @@ class RechargeModel(StressModelBase):
             p = np.asarray(p)
         b = self._get_block(p[: self.rfunc.nparam], dt, tmin, tmax)
         stress = self.get_stress(
-            p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress
+            p=np.asarray(p).real, tmin=tmin, tmax=tmax, freq=freq, istress=istress
         ).values
         name = self.name
 
