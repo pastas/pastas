@@ -529,6 +529,7 @@ class StressModel(StressModelBase):
             data=fftconvolve(stress, b, "full")[:npoints],
             index=stress.index,
             name=self.name,
+            dtype=np.asarray(p).dtype,
         )
         return h
 
@@ -1177,7 +1178,12 @@ class WellModel(StressModelBase):
         stress_df = self.get_stress(
             p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress, squeeze=False
         )
-        h = Series(data=0, index=self.stresses[0].series.index, name=self.name)
+        h = Series(
+            data=0,
+            index=self.stresses[0].series.index,
+            name=self.name,
+            dtype=np.asarray(p).dtype,
+        )
         for name, r in distances.items():
             stress = stress_df.loc[:, name]
             npoints = stress.index.size
@@ -1891,6 +1897,7 @@ class RechargeModel(StressModelBase):
             data=fftconvolve(stress, b, "full")[: stress.size],
             index=self.prec.series.index,
             name=name,
+            dtype=p.dtype,
         )
 
     def get_stress(
