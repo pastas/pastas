@@ -19,8 +19,10 @@ This will print the following to the console::
 
 """
 
-from pastas.decorators import PastasDeprecationWarning
 import numpy as np
+
+from pastas.decorators import PastasDeprecationWarning
+from pastas.stats import metrics
 
 
 @PastasDeprecationWarning(
@@ -86,15 +88,20 @@ class SolveTimer(tqdm):
         return displayed
 
 
-class RMSETimer(SolveTimer):
-    """SolveTimer that displays current RMSE each N iterations."""
+class StatTimer(SolveTimer):
+    """StatTimer that updates a user-specified solve statistic every N iterations."""
 
-    def __init__(self, ml, *args, update_interval: int | None = None, **kwargs) -> None:
+    def __init__(
+        self, ml, *args, statistic="rmse", update_interval: int | None = None, **kwargs
+    ) -> None:
         """
         Parameters
         ----------
         ml : pastas.Model
             The model being solved, used to compute residuals.
+        statistic : str, optional
+            The statistic to compute and display, by default "rmse". Must be a valid
+            statistic in pastas.stats.metrics that accepts ``res=`` as an argument.
         update_interval : int, optional
             Number of iterations between RMSE updates. If None (default), the
             RMSE is updated when iteration % number of varying parameters == 0.
@@ -104,6 +111,8 @@ class RMSETimer(SolveTimer):
             self.update_interval = update_interval
         else:
             self.update_interval = self.ml.parameters.vary.sum()
+        self.statistic = statistic
+        self.func = getattr(metrics, self.statistic)
         super().__init__(*args, **kwargs)
 
     def timer(self, p, n: int = 1):
@@ -111,7 +120,10 @@ class RMSETimer(SolveTimer):
         # extra overhead to compute residuals again, though with caching
         # this will be faster
         if (self.n % self.update_interval) == 0:
-            residuals = self.ml.residuals(p)
-            rmse = np.sqrt((residuals**2).mean())
-            self.set_postfix(RMSE=f"{rmse:.4e}")
+            if self.ml.noisemodel is not None:
+                rv = self.ml.noise(p) * self.ml.noise_weights(p)
+            else:
+                rv = self.ml.residuals(p)
+            stat = self.func(res=rv)
+            self.set_postfix(**{f"{self.statistic.upper()}": f"{stat:.4e}"})
         return super().timer(p, n)
