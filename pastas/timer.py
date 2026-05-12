@@ -19,8 +19,6 @@ This will print the following to the console::
 
 """
 
-import numpy as np
-
 from pastas.decorators import PastasDeprecationWarning
 from pastas.stats import metrics
 
