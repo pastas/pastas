@@ -21,6 +21,7 @@ This will print the following to the console::
 
 from pastas.decorators import PastasDeprecationWarning
 from pastas.stats import metrics
+from pastas.typing import Literal, Model
 
 
 @PastasDeprecationWarning(
@@ -90,7 +91,14 @@ class StatTimer(SolveTimer):
     """StatTimer that updates a user-specified solve statistic every N iterations."""
 
     def __init__(
-        self, ml, *args, statistic="rmse", update_interval: int | None = None, **kwargs
+        self,
+        ml: Model,
+        *args,
+        statistic: Literal[
+            "rmse", "sse", "mae", "rsq", "evp", "nse", "nnse", "aic", "aicc", "bic"
+        ] = "rmse",
+        update_interval: int | None = None,
+        **kwargs,
     ) -> None:
         """
         Parameters
