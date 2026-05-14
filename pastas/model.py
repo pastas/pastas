@@ -1733,6 +1733,64 @@ class Model:
         df = concat(df, axis=1, sort=True)
         return df
 
+    def _get_all_responses(
+        self,
+        block_or_step: Literal["block", "step"],
+        name: str,
+        dt: float | None = None,
+        add_0: bool = False,
+        **kwargs,
+    ) -> list[Series]:
+        """Internal method to get all the responses for a stressmodel.
+
+        Parameters
+        ----------
+        block_or_step: {"block", "step"}
+            String with "step" or "block"
+        name: str
+            string with the name of the stressmodel
+        dt: float, optional
+            timestep for the response function.
+        add_0: bool, optional
+            Add a zero at t=0.
+        kwargs: dict: passed to rfunc.step() or rfunc.block()
+
+
+        Returns
+        -------
+        responses: list of pandas.Series
+            List of pandas Series with the responses for all stresses in the
+            stressmodel.
+        """
+        responses = []
+
+        sm = self.stressmodels[name]
+
+        # For now just use the nsplit over the length of the stresses.
+        # TODO: this just by accident works for the TarsoModel
+        istresses = list(range(len(sm.stresses)))
+
+        # Fix for the recharge model
+        if hasattr(sm, "recharge"):
+            istresses = list(range(sm.get_nsplit()))
+        # Fix for the ChangeModel
+        if hasattr(sm, "rfunc2"):
+            istresses = list(range(2))
+
+        responses = []
+        for i in istresses:
+            s = self._get_response(
+                block_or_step=block_or_step,
+                name=name,
+                dt=dt,
+                add_0=add_0,
+                istress=i,
+                **kwargs,
+            )
+            s.name = sm.stresses[i].name
+            responses.append(s)
+        return responses
+
     def _get_response(
         self,
         block_or_step: Literal["block", "step"],
@@ -1768,36 +1826,41 @@ class Model:
         response: pandas.Series or None
             Pandas.Series with the response, None if not present.
         """
-        rfunc = self.stressmodels[name].rfunc
-        if rfunc is None:
-            logger.warning("Stressmodel %s has no rfunc.", name)
-            return None
-        else:
-            block_or_step = getattr(rfunc, block_or_step)
-            nparam = getattr(rfunc, "nparam")
-
-        p = self.get_parameters(name) if p is None else p
 
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
-        if istress is not None and self.stressmodels[name].get_nsplit() > 1:
-            p = self.stressmodels[name].get_parameters(model=self, istress=istress)
-
-        response = block_or_step(p[:nparam], dt, **kwargs)
-
-        if add_0:
-            if isinstance(dt, np.ndarray):
-                t = dt
-            else:
-                t = np.linspace(0, response.size * dt, response.size + 1)
-            response = np.insert(response, 0, 0.0)
+        sm = self.stressmodels[name]
+        if hasattr(sm, "_get_response"):
+            response = sm._get_response(ml=self, dt=dt, add_0=add_0, istress=istress)
         else:
-            if isinstance(dt, np.ndarray):
-                t = dt
+            rfunc = sm.rfunc
+            if rfunc is None:
+                logger.warning("Stressmodel %s has no rfunc.", name)
+                return None
             else:
-                t = np.linspace(dt, response.size * dt, response.size)
+                block_or_step = getattr(rfunc, block_or_step)
+                nparam = getattr(rfunc, "nparam")
 
-        response = Series(response, index=t, name=name)
+            p = self.get_parameters(name) if p is None else p
+
+            if istress is not None and sm.get_nsplit() > 1:
+                p = sm.get_parameters(model=self, istress=istress)
+
+            response = block_or_step(p[:nparam], dt, **kwargs)
+
+            if add_0:
+                if isinstance(dt, np.ndarray):
+                    t = dt
+                else:
+                    t = np.linspace(0, response.size * dt, response.size + 1)
+                response = np.insert(response, 0, 0.0)
+            else:
+                if isinstance(dt, np.ndarray):
+                    t = dt
+                else:
+                    t = np.linspace(dt, response.size * dt, response.size)
+
+            response = Series(response, index=t, name=name)
         response.index.name = "Time [days]"
 
         return response

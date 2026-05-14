@@ -26,6 +26,7 @@ from pastas.plotting.plotutil import (
 from pastas.typing import Axes, Figure, Model, StressModel
 
 logger = logging.getLogger(__name__)
+from pastas.stressmodels import RechargeModel
 
 
 class Plotting:
@@ -133,7 +134,7 @@ class Plotting:
         tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 8),
         split_contributions: bool = False,
-        all_responses: bool = True,
+        all_responses: bool = False,
         adjust_height: bool = True,
         return_warmup: bool = False,
         block_or_step: Literal["block", "step"] = "step",
@@ -300,11 +301,8 @@ class Plotting:
                     sm=sm,
                     block_or_step=block_or_step,
                     ax=ax_response,
-                    istress=(
-                        istress
-                        if split_contributions
-                        else (None if all_responses else 0)
-                    ),
+                    all_responses=all_responses,
+                    istress=istress if split_contributions else None,
                 )
                 ax_response_xlim = ax_response.get_xlim()
                 rmax = max(rmax, ax_response_xlim[1])
@@ -347,7 +345,7 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         split_contributions: bool = False,
-        all_responses: bool = True,
+        all_responses: bool = False,
         stderr: bool = False,
         block_or_step: Literal["block", "step"] = "step",
         return_warmup: bool = False,
@@ -538,9 +536,8 @@ class Plotting:
                 sm=sm,
                 block_or_step=block_or_step,
                 ax=axd[rf_key],
-                istress=(
-                    istress if split_contributions else (None if all_responses else 0)
-                ),
+                all_responses=all_responses,
+                istress=istress if split_contributions else None,
             )
 
         # share x-axes of simulation, residuals and contributions
@@ -579,12 +576,33 @@ class Plotting:
         sm: StressModel,
         block_or_step: Literal["step", "block"],
         ax: Axes,
+        all_responses: bool | None = None,
         istress: int | None = None,
     ):
         """Internal method to plot the response of a Stressmodel in the results-plot"""
-        responses = sm.get_responses(
-            self.ml, block_or_step=block_or_step, istress=istress
-        )
+        if all_responses is None and istress is None:
+            all_responses = (
+                False
+                if (isinstance(sm, RechargeModel) or istress is not None)
+                else True
+            )
+        if istress is not None:
+            responses = [
+                self.ml._get_response(
+                    block_or_step=block_or_step, name=sm.name, istress=istress
+                )
+            ]
+        elif all_responses:
+            responses = self.ml._get_all_responses(
+                block_or_step=block_or_step, name=sm.name
+            )
+        else:
+            responses = [
+                self.ml._get_response(
+                    block_or_step=block_or_step, name=sm.name, istress=istress
+                )
+            ]
+
         responses = [x for x in responses if x is not None]
         if responses:
             # Keep the first cycle color for a single response, but reserve it
