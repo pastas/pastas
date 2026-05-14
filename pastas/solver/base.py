@@ -26,7 +26,7 @@ class BaseSolver(ABC):
     ml: pastas.Model
         The Pastas Model instance that is being solved.
     parameters: pd.DataFrame
-        DataFrame with the initial parameters of the solver.
+        DataFrame with the initial parameters of the solver itself.
 
     """
 

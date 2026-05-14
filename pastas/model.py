@@ -369,6 +369,24 @@ class Model:
 
         self._parameters = self.get_init_parameters(initial=False)
 
+    def add_solver(self, solver: Solver) -> None:
+        """Method to add a solver to the model.
+
+        Parameters
+        ----------
+        solver: pastas.solver.Solver
+            Instance of a pastas Solver class used to solve the model. Options are:
+            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve().
+
+        See Also
+        --------
+        pastas.solver
+            Different solver objects are available to estimate parameters.
+        """
+        self.solver = solver
+        if not hasattr(self.solver, "ml") or self.solver.ml is None:
+            self.solver.set_model(self)
+
     @get_stressmodel
     def del_stressmodel(self, name: str):
         """Method to safely delete a stress model from the Model.
@@ -772,24 +790,6 @@ class Model:
     )
     def initialize(**kwargs) -> None:
         pass
-
-    def add_solver(self, solver: Solver) -> None:
-        """Method to add a solver to the model.
-
-        Parameters
-        ----------
-        solver: pastas.solver.Solver
-            Instance of a pastas Solver class used to solve the model. Options are:
-            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve().
-
-        See Also
-        --------
-        pastas.solver
-            Different solver objects are available to estimate parameters.
-        """
-        self.solver = solver
-        if not hasattr(self.solver, "ml") or self.solver.ml is None:
-            self.solver.set_model(self)
 
     def solve(
         self,

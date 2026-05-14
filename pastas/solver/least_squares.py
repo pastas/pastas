@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from functools import partial
+from itertools import combinations
 from logging import getLogger
 from typing import Literal
 
@@ -684,7 +685,7 @@ class BaseLeastSquares(BaseSolver):
         if corr:
             cor = DataFrame(columns=["value"])
             pcor = self.pcor
-            for idx, col in (pcor, 2):
+            for idx, col in combinations(pcor, 2):
                 if np.abs(pcor.loc[idx, col]) > 0.5:
                     cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
 
