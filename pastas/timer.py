@@ -19,9 +19,11 @@ This will print the following to the console::
 
 """
 
+from typing import Literal
+
 from pastas.decorators import PastasDeprecationWarning
 from pastas.stats import metrics
-from pastas.typing import Literal, Model
+from pastas.typing import Model
 
 
 @PastasDeprecationWarning(
