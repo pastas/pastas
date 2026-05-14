@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pastas.solver.objective_functions import GaussianLikelihood, GaussianLikelihoodAr1
+from pastas.solver.likelihood_functions import GaussianLikelihood, GaussianLikelihoodAr1
 
 
 class TestGaussianLikelihood:
@@ -27,7 +27,7 @@ class TestGaussianLikelihood:
 
         assert isinstance(params, pd.DataFrame)
         assert "test_var" in params.index
-        assert params.shape == (1, 7)
+        assert params.shape == (1, 6)
         assert params.loc["test_var", "initial"] == 0.05
         assert params.loc["test_var", "pmin"] == 1e-10
         assert params.loc["test_var", "pmax"] == 1
@@ -79,7 +79,7 @@ class TestGaussianLikelihoodAr1:
         assert isinstance(params, pd.DataFrame)
         assert "test_var" in params.index
         assert "test_phi" in params.index
-        assert params.shape == (2, 7)
+        assert params.shape == (2, 6)
 
         # Check var parameter
         assert params.loc["test_var", "initial"] == 0.05
