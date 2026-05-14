@@ -8,7 +8,7 @@ from pastas.decorators import deprecate_args_or_kwargs
 from pastas.typing import ArrayLike, CallBack
 
 from .base import BaseSolver
-from .objective_functions import GaussianLikelihood, GaussianLikelihoodAr1
+from .likelihood_functions import GaussianLikelihood, GaussianLikelihoodAr1
 
 logger = getLogger(__name__)
 
@@ -25,8 +25,8 @@ class EmceeSolve(BaseSolver):
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
     backend: emcee.backend, optional
-        One of the Backends from Emcee used to store MCMC results. See Emcee
-        for more information.
+        One of the Backends from Emcee used to store MCMC results. See the Emcee
+        documentation for more information.
     moves: emcee.moves, optional
         The moves argument determines how the next step for a walker is chosen in
         the MCMC approach. One of the Moves classes from Emcee has to be provided.
@@ -44,10 +44,7 @@ class EmceeSolve(BaseSolver):
     (MCMC) approach to find the optimal parameter values. The solver can be used as
     follows::
 
-        solver = ps.EmceeSolve(
-            nwalkers=20,
-            progress_bar=True,
-        )
+        solver = ps.EmceeSolve(nwalkers=20, progress_bar=True)
         ml.solve(solver=solver)
 
     The arguments provided are mostly passed on to the `emcee.EnsembleSampler`
@@ -82,7 +79,10 @@ class EmceeSolve(BaseSolver):
 
     def __init__(
         self,
-        objfunction: GaussianLikelihood | GaussianLikelihoodAr1 | None = None,
+        name: str = "solver",
+        objfunction: GaussianLikelihood
+        | GaussianLikelihoodAr1
+        | None = GaussianLikelihood(),
         nwalkers: int = 20,
         backend=None,
         moves=None,
@@ -90,13 +90,7 @@ class EmceeSolve(BaseSolver):
         progress_bar: bool = True,
         **kwargs,
     ) -> None:
-        # Check if emcee is installed, if not, return error
-        try:
-            global emcee
-            import emcee as emcee  # Import emcee here, so it is no dependency
-        except ImportError:
-            msg = "emcee not installed. Please install emcee first."
-            raise ImportError(msg) from None
+        self.assert_emcee_installation()
 
         if "objective_function" in kwargs:
             deprecate_args_or_kwargs(
@@ -106,7 +100,7 @@ class EmceeSolve(BaseSolver):
             )
             objfunction = kwargs.pop("objective_function")
 
-        super().__init__(**kwargs)
+        super().__init__(name=name, **kwargs)
 
         # Set sampler properties
         self.sampler = None
@@ -118,8 +112,33 @@ class EmceeSolve(BaseSolver):
         self.priors: list[DataFrame] = []
 
         # Set objective function
-        self.objfunction = GaussianLikelihood() if objfunction is None else objfunction
-        self.parameters = self.objfunction.get_init_parameters("ln")
+        self.objfunction = objfunction
+        self.set_init_parameters()
+
+    def _assert_emcee_installation(self) -> None:
+        try:
+            global emcee
+            import emcee as emcee  # Import emcee here, so it is no dependency
+        except ImportError:
+            msg = "emcee not installed. Please install emcee first."
+            raise ImportError(msg) from None
+
+    def get_init_parameters(self, name):
+        """Get the initial parameters for the solver.
+
+        Parameters
+        ----------
+        name: str
+            Name of the solver instance.
+
+        Returns
+        -------
+        parameters: DataFrame
+            Initial parameters for the solver.
+
+        """
+        parameters = self.objfunction.get_init_parameters(name if name else self.name)
+        return parameters
 
     def fit_report(self) -> str:
         return ""
