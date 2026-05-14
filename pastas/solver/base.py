@@ -25,10 +25,14 @@ class BaseSolver(ABC):
         Name of the solver instance.
     ml: pastas.Model
         The Pastas Model instance that is being solved.
+    parameters: pd.DataFrame
+        DataFrame with the initial parameters of the solver.
+
     """
 
-    def __init__(self, name: str = "solver") -> None:
+    def __init__(self, name: str = "solver", **kwargs) -> None:
         self.name = name
+        self.kwargs = kwargs
         self.ml: Model | None = None
         self.parameters: pd.DataFrame | None = None
         self.set_init_parameters()  # adds self.Parameters DataFrame
@@ -84,4 +88,8 @@ class BaseSolver(ABC):
         return self.__class__.__name__
 
     def to_dict(self) -> dict:
-        return {"class": self._name, "name": self.name}
+        return {
+            "class": self._name,
+            "name": self.name,
+            "kwargs": self.kwargs,
+        }
