@@ -671,6 +671,11 @@ def kge(
     :math:`\\gamma = \\frac{\\bar{\\sigma}_x / \\bar{x}}{\\bar{\\sigma}_y /
     \\bar{y}}`. If weighted equals True, the weighted mean, variance and
     pearson correlation are used.
+
+    .. versionchanged:: 2.0.0
+        The ``modified`` parameter was added to support the modified KGE
+        formulation from :cite:t:`kling_runoff_2012`. Previously, this could
+        only be computed via the (now deprecated) :func:`kge_2012` function.
     """
     if missing == "drop":
         obs = obs.dropna()
@@ -743,6 +748,9 @@ def kge_2012(
     \\frac{\\bar{\\sigma}_x / \\bar{x}}{\\bar{\\sigma}_y / \\bar{y}}`. If
     weighted equals True, the weighted mean, variance and pearson
     correlation are used.
+
+    .. deprecated:: 2.0.0
+        Use :func:`kge` with ``modified=True`` instead.
     """
     return kge(
         obs=obs,

@@ -773,6 +773,11 @@ class Model:
         reason="The initialize method is not needed anymore in favor of the `set_settings` method.",
     )
     def initialize(**kwargs) -> None:
+        """Initialize the model settings.
+
+        .. deprecated:: 2.0.0
+            Use :meth:`set_settings` instead.
+        """
         pass
 
     def add_solver(self, solver: Solver) -> None:
@@ -891,6 +896,15 @@ class Model:
         --------
         pastas.solver
             Different solver objects are available to estimate parameters.
+
+        .. versionchanged:: 1.5.0
+            The ``noise`` parameter was deprecated. Add a noise model via
+            :meth:`add_noisemodel` or remove it with :meth:`del_noisemodel`
+            before calling :meth:`solve`.
+
+        .. versionchanged:: 2.0.0
+            The ``initialize`` parameter was deprecated. Use
+            :meth:`set_settings` to configure model settings before solving.
         """
 
         if noise is not None:
@@ -1007,6 +1021,11 @@ class Model:
         version="2.0.0", reason="Use 'ml.observations()' instead."
     )
     def oseries_calib(self):
+        """The calibration observations series.
+
+        .. deprecated:: 2.0.0
+            Use :meth:`observations` instead.
+        """
         return self.oseries.series
 
     def reset_settings(self) -> None:
@@ -1064,6 +1083,8 @@ class Model:
         -----
         This method is used to change the model settings. It is called by the solve method, but can also be triggered manually.
 
+        .. versionadded:: 2.0.0
+            This method replaces the deprecated :meth:`initialize` method.
         """
         if tmin is not None:
             logger.debug("Updating model setting tmin to %s." % tmin)
@@ -2108,6 +2129,11 @@ class Model:
         The reported values for the fit use the residuals time series where possible.
         If interpolation is used this means that the result may slightly differ
         compared to using ml.simulate() and ml.observations().
+
+        .. versionchanged:: 2.0.0
+            The ``output`` parameter was deprecated. Use ``corr=True`` to include
+            the parameter correlation matrix and ``stderr=True`` to include standard
+            errors in the report.
         """
         model = {
             "nfev": self.solver.nfev,

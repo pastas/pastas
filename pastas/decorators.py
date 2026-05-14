@@ -140,6 +140,7 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
     def wrapper(obj: Any):
         name = obj.__name__
 
+        @wraps(obj)
         def _function(*args, **kwargs):
             VERSION = parse_version(version)
             if CURRENT_PASTAS_VERSION < VERSION:
@@ -230,6 +231,12 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
     reason="latexify was archived and is no longer maintained. This decorator will be removed in a future release.",
 )
 def latexfun(**kwargs) -> None:
+    """Decorator to render functions using LaTeX formatting.
+
+    .. deprecated:: 2.0.0
+        The ``latexify`` package was archived and is no longer maintained.
+        This function will be removed in a future release.
+    """
     pass
 
 

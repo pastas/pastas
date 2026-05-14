@@ -672,6 +672,13 @@ class TimeSeries:
 
 
 class ObservationSeries(TimeSeries):
+    """Time series class for observation series (e.g., groundwater head observations).
+
+    .. versionadded:: 2.0.0
+        This class was introduced to replace ``oseries_calib``. Use
+        :meth:`pastas.Model.observations` to access the calibration observations.
+    """
+
     def __init__(
         self,
         series: Series,

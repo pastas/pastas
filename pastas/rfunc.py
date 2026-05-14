@@ -217,6 +217,8 @@ class RfuncBase(ABC):
             available. Default is `"discrete"`.
         dt : float, optional
             Time step in days. Default is 1.0.
+
+        .. versionadded:: 2.0.0
         """
 
     @staticmethod

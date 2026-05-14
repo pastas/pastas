@@ -394,6 +394,9 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
     -------
     s_new : pandas.Series
         The resampled series
+
+    .. deprecated:: 2.1
+        Use :func:`time_weighted_resample` instead.
     """
     if isinstance(s, DataFrame):
         if len(s.columns) == 1:
@@ -514,6 +517,8 @@ def time_weighted_resample(
         Resampled time series. Each value represents the time-weighted mean
         over the corresponding period. Periods not covered by the original
         data are NaN.
+
+    .. versionadded:: 2.0.0
     """
     # Validate inputs
     if isinstance(s, DataFrame):

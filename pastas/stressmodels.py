@@ -698,6 +698,11 @@ class LinearTrend(StressModelBase):
     While possible, it is not recommended to vary the parameters for the start and
     end time of the linear trend. These parameters are usually hard or even impossible
     to estimate from the data.
+
+    .. versionchanged:: 2.0.0
+        The parameters ``start`` and ``end`` were renamed to ``tstart`` and ``tend``
+        for consistency. The old names are still accepted but will raise an error
+        from version 3.0.0 onwards.
     """
 
     _name = "LinearTrend"
@@ -1738,6 +1743,13 @@ class RechargeModel(StressModelBase):
         ),
     )
     def stress(self):
+        """Return all stress time series.
+
+        .. deprecated:: 2.0.0
+            Use the :attr:`stresses` property to obtain all stresses, or the
+            :attr:`prec`, :attr:`evap`, and :attr:`temp` attributes for individual
+            stresses. To update a stress, use :meth:`set_stress`.
+        """
         pass
 
     @property
