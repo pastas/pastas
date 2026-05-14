@@ -23,10 +23,10 @@ from pastas.plotting.plotutil import (
     plot_series_with_gaps,
     share_xaxes,
 )
+from pastas.stressmodels import RechargeModel
 from pastas.typing import Axes, Figure, Model, StressModel
 
 logger = logging.getLogger(__name__)
-from pastas.stressmodels import RechargeModel
 
 
 class Plotting:
