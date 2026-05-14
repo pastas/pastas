@@ -88,6 +88,12 @@ class BaseSolver(ABC):
         return self.__class__.__name__
 
     def to_dict(self) -> dict:
+        """Return a dictionary representation of the solver instance.
+
+        Notes
+        -----
+        This method is used to store Pastas models.
+        """
         return {
             "class": self._name,
             "name": self.name,
