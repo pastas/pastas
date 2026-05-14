@@ -366,6 +366,9 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
     """Resample a time series to a new time index, using an overlapping period
     weighted average.
 
+    .. deprecated:: 2.1
+        Use :func:`time_weighted_resample` instead.
+
     The original series and the new index do not have to be equidistant. Also, the
     timestep-edges of the new index do not have to overlap with the original series.
 
@@ -394,9 +397,6 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
     -------
     s_new : pandas.Series
         The resampled series
-
-    .. deprecated:: 2.1
-        Use :func:`time_weighted_resample` instead.
     """
     if isinstance(s, DataFrame):
         if len(s.columns) == 1:
@@ -486,6 +486,8 @@ def time_weighted_resample(
     """
     Time-weighted resampling of a time series to arbitrary periods.
 
+    .. versionadded:: 2.0.0
+
     Parameters
     ----------
     s : pandas.Series
@@ -517,8 +519,6 @@ def time_weighted_resample(
         Resampled time series. Each value represents the time-weighted mean
         over the corresponding period. Periods not covered by the original
         data are NaN.
-
-    .. versionadded:: 2.0.0
     """
     # Validate inputs
     if isinstance(s, DataFrame):
