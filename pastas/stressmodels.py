@@ -25,7 +25,7 @@ import numpy as np
 from packaging.version import parse as parse_version
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
 from pandas import __version__ as pd_version
-from scipy.signal import fftconvolve
+from scipy.signal import oaconvolve
 
 from pastas.typing import (
     ArrayLike,
@@ -528,7 +528,7 @@ class StressModel(StressModelBase):
         stress = self.stress.series
         npoints = stress.index.size
         h = Series(
-            data=fftconvolve(stress, b, "full")[:npoints],
+            data=oaconvolve(stress, b, "full")[:npoints],
             index=stress.index,
             name=self.name,
         )
@@ -655,7 +655,7 @@ class StepModel(StressModelBase):
         b = self._get_block(p[:-1], dt, tmin, tmax)
         npoints = h.index.size
         h = Series(
-            data=fftconvolve(h, b, "full")[:npoints],
+            data=oaconvolve(h, b, "full")[:npoints],
             index=h.index,
             name=self.name,
         )
@@ -1190,7 +1190,7 @@ class WellModel(StressModelBase):
             npoints = stress.index.size
             p_with_r = np.concatenate([p, np.array([r])])
             b = self._get_block(p_with_r, dt, tmin, tmax)
-            c = fftconvolve(stress, b, "full")[:npoints]
+            c = oaconvolve(stress, b, "full")[:npoints]
             h = h.add(Series(c, index=stress.index), fill_value=0.0)
         if istress is not None:
             if isinstance(istress, list):
@@ -1895,7 +1895,7 @@ class RechargeModel(StressModelBase):
                 name = f"{self.name} ({self.stresses[istress].name})"
 
         return Series(
-            data=fftconvolve(stress, b, "full")[: stress.size],
+            data=oaconvolve(stress, b, "full")[: stress.size],
             index=self.prec.series.index,
             name=name,
         )
@@ -2567,12 +2567,12 @@ class ChangeModel(StressModelBase):
         omega = 1 / (np.exp(beta * (t - sigma)) + 1)
 
         h1 = Series(
-            data=fftconvolve(stress, rfunc1, "full")[:npoints],
+            data=oaconvolve(stress, rfunc1, "full")[:npoints],
             index=stress.index,
             name=f"{self.name}_1",
         )
         h2 = Series(
-            data=fftconvolve(stress, rfunc2, "full")[:npoints],
+            data=oaconvolve(stress, rfunc2, "full")[:npoints],
             index=stress.index,
             name=f"{self.name}_2",
         )
