@@ -140,8 +140,7 @@ def me(
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    w = _get_weights(err, weighted=weighted, max_gap=max_gap)
-    return (w * err.to_numpy()).sum()
+    return mean(err, weighted=weighted, max_gap=max_gap)
 
 
 def rmse(
