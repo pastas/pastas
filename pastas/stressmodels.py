@@ -2115,28 +2115,32 @@ class TarsoModel(RechargeModel):
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.5 * (self.dmax - self.dmin)
-        pd0 = Series({
-            "initial": initial,
-            "pmin": np.nan,
-            "pmax": np.nan,
-            "vary": True,
-            "name": self.name,
-            "dist": "uniform",
-        })
+        pd0 = Series(
+            {
+                "initial": initial,
+                "pmin": np.nan,
+                "pmax": np.nan,
+                "vary": True,
+                "name": self.name,
+                "dist": "uniform",
+            }
+        )
         p0.loc[f"{self.name}_d"] = pd0
         p0.index = [f"{x}0" for x in p0.index]
 
         # parameters for the second drainage level
         p1 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.75 * (self.dmax - self.dmin)
-        pd1 = Series({
-            "initial": initial,
-            "pmin": self.dmin,
-            "pmax": self.dmax,
-            "vary": True,
-            "name": self.name,
-            "dist": "uniform",
-        })
+        pd1 = Series(
+            {
+                "initial": initial,
+                "pmin": self.dmin,
+                "pmax": self.dmax,
+                "vary": True,
+                "name": self.name,
+                "dist": "uniform",
+            }
+        )
         p1.loc[f"{self.name}_d"] = pd1
         p1.index = [f"{x}1" for x in p1.index]
 
