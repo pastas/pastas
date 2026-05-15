@@ -13,6 +13,7 @@ from .metrics import (
     kge,
     kge_2012,
     mae,
+    me,
     nnse,
     nse,
     pearsonr,
