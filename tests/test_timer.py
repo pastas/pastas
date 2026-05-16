@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pastas.timer import SolveTimer
+from pastas.solver.timer import SolveTimer
 
 
 class TestSolveTimer:
