@@ -76,7 +76,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Root mean squared error of the residuals.
+        """Root mean squared error of the model.
 
         Parameters
         ----------
@@ -170,7 +170,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Mean Absolute Error (MAE) of the residuals.
+        """Mean Absolute Error (MAE) of the model.
 
         Parameters
         ----------
@@ -201,7 +201,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Mean Error (ME) of the residuals.
+        """Mean Error (ME) of the model.
 
         Parameters
         ----------
