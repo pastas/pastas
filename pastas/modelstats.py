@@ -46,6 +46,7 @@ class Statistics:
         "rmsn",
         "sse",
         "mae",
+        "me",
         "nse",
         "evp",
         "rsq",
@@ -75,7 +76,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Root mean squared error of the residuals.
+        """Root mean squared error of the model.
 
         Parameters
         ----------
@@ -169,7 +170,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Mean Absolute Error (MAE) of the residuals.
+        """Mean Absolute Error (MAE) of the model.
 
         Parameters
         ----------
@@ -191,6 +192,37 @@ class Statistics:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         return metrics.mae(res=res, weighted=weighted, **kwargs)
+
+    @model_tmin_tmax
+    def me(
+        self,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        weighted: bool = False,
+        **kwargs,
+    ) -> float:
+        """Mean Error (ME) of the model.
+
+        Parameters
+        ----------
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally.
+        weighted: bool, optional
+            If weighted is True, the variances are computed using the time step
+            between observations as weights. Default is False.
+
+        See Also
+        --------
+        pastas.stats.me
+        """
+        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        return metrics.me(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def nse(

@@ -26,6 +26,7 @@ __all__ = [
     "rmse",
     "sse",
     "mae",
+    "me",
     "nse",
     "nnse",
     "evp",
@@ -91,6 +92,55 @@ def mae(
 
     w = _get_weights(err, weighted=weighted, max_gap=max_gap)
     return (w * npabs(err.to_numpy())).sum()
+
+
+def me(
+    obs: Series | None = None,
+    sim: Series | None = None,
+    res: Series | None = None,
+    missing: str = "drop",
+    weighted: bool = False,
+    max_gap: int = 30,
+) -> float:
+    """Compute the (weighted) Mean Error (ME).
+
+    Parameters
+    ----------
+    sim: pandas.Series, optional
+        Series with the simulated values.
+    obs: pandas.Series, optional
+        The Series with the observed values.
+    res: pandas.Series, optional
+        The Series with the residual values. If time series for the residuals are
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
+    missing: str, optional
+        string with the rule to deal with missing values. Only "drop" is supported now.
+    weighted: bool, optional
+        Weight the values by the normalized time step to account for irregular time
+        series. Default is False.
+    max_gap: int, optional
+        maximum allowed gap period in days to use for the computation of the weights.
+        All time steps larger than max_gap are replace with the max_gap value.
+        Default value is 30 days.
+
+    Notes
+    -----
+    The Mean Error (ME) between the observed (:math:`y_o`) and simulated
+    (:math:`y_s`) time series is computed as follows:
+
+    .. math:: \\text{ME} = \\sum_{i=1}^{N} w_i (y_o - y_s)
+
+    where :math:`N` is the number of observations in the observed time series.
+    """
+    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+
+    # Return nan if the time indices of the sim and obs don't match
+    if err.index.size == 0:
+        logger.warning("Time indices of the sim and obs don't match.")
+        return nan
+
+    return mean(err, weighted=weighted, max_gap=max_gap)
 
 
 def rmse(
