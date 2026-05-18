@@ -242,7 +242,7 @@ def _response_memory(
                 ]
         else:
             if sm.rfunc._name == "Hantush":
-                # get_tmax for Hantush has an approximation which can be overrriden
+                # get_tmax for Hantush has an approximation which can be overridden
                 rfunc = type(sm.rfunc)(quad=sm.rfunc.quad, approximate_tmax=False)
                 p = ml.get_parameters(sm_name)[0:3]
                 tmem = rfunc.get_tmax(p, cutoff=cutoff)
