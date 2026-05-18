@@ -23,7 +23,6 @@ from pastas.plotting.plotutil import (
     plot_series_with_gaps,
     share_xaxes,
 )
-from pastas.stressmodels import RechargeModel
 from pastas.typing import Axes, Figure, Model, StressModel
 
 logger = logging.getLogger(__name__)
@@ -134,7 +133,7 @@ class Plotting:
         tmax: Timestamp | str | None = None,
         figsize: tuple = (10, 8),
         split_contributions: bool = False,
-        all_responses: bool = True,
+        all_responses: bool = False,
         adjust_height: bool = True,
         return_warmup: bool = False,
         block_or_step: Literal["block", "step"] = "step",
@@ -161,7 +160,7 @@ class Plotting:
             False.
         all_responses: bool, optional
             Plot all responses if True. If False, only the first response per
-            contribution is plotted. Default is True.
+            contribution is plotted. Default is False.
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all the
             subplots on the left is equal. Default is True.
@@ -348,7 +347,7 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         split_contributions: bool = False,
-        all_responses: bool = True,
+        all_responses: bool = False,
         stderr: bool = False,
         block_or_step: Literal["block", "step"] = "step",
         return_warmup: bool = False,
@@ -376,7 +375,7 @@ class Plotting:
             False.
         all_responses: bool, optional
             Plot all responses if True. If False, only the first response per
-            contribution is plotted. Default is True.
+            contribution is plotted. Default is False.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
         block_or_step: {"block", "step"}, optional
@@ -583,7 +582,7 @@ class Plotting:
         istress: int | None = None,
     ):
         """Internal method to plot the response of a Stressmodel in the results-plot"""
-        responses = sm.get_responses(
+        responses = sm._get_responses(
             self.ml, block_or_step=block_or_step, istress=istress
         )
         responses = [x for x in responses if x is not None]

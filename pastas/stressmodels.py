@@ -306,7 +306,7 @@ class StressModelBase:
             p = model.get_parameters(self.name)
         return p
 
-    def get_responses(
+    def _get_responses(
         self,
         ml: Model,
         block_or_step: Literal["block", "step"] = "step",
@@ -1442,7 +1442,7 @@ class WellModel(StressModelBase):
         )
         return vg
 
-    def get_responses(
+    def _get_responses(
         self,
         ml: Model,
         block_or_step: Literal["block", "step"] = "step",
@@ -1454,7 +1454,7 @@ class WellModel(StressModelBase):
             istress = [istress]
         responses = []
         for i in istress:
-            s = super().get_responses(ml=ml, block_or_step=block_or_step, istress=i)[0]
+            s = super()._get_responses(ml=ml, block_or_step=block_or_step, istress=i)[0]
             s.name = self.stresses[i].name
             responses.append(s)
         return responses
@@ -2041,7 +2041,7 @@ class RechargeModel(StressModelBase):
                 p = p[:-1]
         return p
 
-    def get_responses(
+    def _get_responses(
         self,
         ml: Model,
         block_or_step: Literal["block", "step"] = "step",
@@ -2064,7 +2064,7 @@ class RechargeModel(StressModelBase):
                 responses.append(response)
             return responses
         else:
-            return super().get_responses(
+            return super()._get_responses(
                 ml, block_or_step=block_or_step, istress=istress
             )
 
@@ -2313,7 +2313,7 @@ class TarsoModel(RechargeModel):
                 h[i] = (d1 - d) * exp_a + r[i] * c * (1 - exp_a) + d
         return h
 
-    def get_responses(
+    def _get_responses(
         self,
         ml: Model,
         block_or_step: Literal["block", "step"] = "step",
@@ -2571,7 +2571,7 @@ class ChangeModel(StressModelBase):
 
         return h
 
-    def get_responses(
+    def _get_responses(
         self,
         ml: Model,
         block_or_step: Literal["block", "step"] = "step",
