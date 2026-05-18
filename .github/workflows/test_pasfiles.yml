@@ -39,7 +39,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.11"
+          python-version: "3.13"
           enable-cache: false
 
       - name: Install dependencies
