@@ -19,7 +19,7 @@ from collections import namedtuple
 from collections.abc import Iterable
 from inspect import isclass
 from logging import getLogger
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -44,7 +44,7 @@ from .decorators import (
 )
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
-from .timeseries import TimeSeries
+from .timeseries import TimeSeries, _get_dt
 from .utils import validate_name
 
 try:
@@ -210,9 +210,40 @@ class StressModelBase:
         istress = 0 if istress is None else istress
         return self.stresses[istress].series
 
-    def update_stress(self, *args, **kwargs) -> None:
-        """Placeholder for the update_stress method."""
-        pass
+    def update_stress(
+        self,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        freq: str | None = None,
+    ) -> None:
+        """Method to update the settings of the all stresses in the stress model.
+
+        Parameters
+        ----------
+        freq: str, optional
+            String representing the desired frequency of the time series. Must be one
+            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the minimum time of the series
+            (E.g. '1980-01-01 00:00:00').
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the maximum time of the series
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp internally.
+
+        Notes
+        -----
+        For the individual options for the different settings please refer to the
+        docstring from the TimeSeries.update_series() method.
+
+        See Also
+        --------
+        ps.timeseries.TimeSeries.update_series
+        """
+        for stress in self.stresses:
+            stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
+
+        if freq:
+            self.freq = freq
 
     def to_dict(self, **kwargs) -> None:
         """Placeholder for the to_dict method."""
@@ -274,6 +305,22 @@ class StressModelBase:
         else:
             p = model.get_parameters(self.name)
         return p
+
+    def _get_responses(
+        self,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+    ) -> list[Series]:
+        responses = [
+            ml._get_response(
+                block_or_step=block_or_step,
+                name=self.name,
+                add_0=True,
+                istress=istress,
+            )
+        ]
+        return responses
 
 
 class StressModel(StressModelBase):
@@ -445,42 +492,6 @@ class StressModel(StressModelBase):
         nt = namedtuple("StressesTuple", ["stress"])
         return nt(stress=self.stress)
 
-    def update_stress(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        freq: str | None = None,
-    ) -> None:
-        """Method to update the settings of the all stresses in the stress model.
-
-        Parameters
-        ----------
-        freq: str, optional
-            String representing the desired frequency of the time series. Must be one
-            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the minimum time of the series
-            (E.g. '1980-01-01 00:00:00').
-        tmax: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the maximum time of the series
-            (E.g. '2020-01-01 00:00:00'). Strings are converted to
-
-            pandas.Timestamp internally.
-
-        Notes
-        -----
-        For the individual options for the different settings please refer to the
-        docstring from the TimeSeries.update_series() method.
-
-        See Also
-        --------
-        ps.timeseries.TimeSeries.update_series
-        """
-        self._stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
-
-        if freq:
-            self.freq = freq
-
     def simulate(
         self,
         p: ArrayLike,
@@ -608,10 +619,6 @@ class StepModel(StressModelBase):
     @property
     def stresses(self) -> tuple:
         return ()
-
-    def update_stress(self, *args, **kwargs) -> None:
-        """Method that is required but has no effect."""
-        pass
 
     def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
@@ -752,10 +759,6 @@ class LinearTrend(StressModelBase):
     def stresses(self) -> tuple:
         return ()
 
-    def update_stress(self, *args, **kwargs) -> None:
-        """Method that is required but has no effect."""
-        pass
-
     def set_init_parameters(self) -> None:
         """Set the initial parameters for the stress model."""
         start = Timestamp(self.tstart).toordinal()
@@ -860,10 +863,6 @@ class Constant(StressModelBase):
     def stresses(self) -> tuple:
         return ()
 
-    def update_stress(self, *args, **kwargs) -> None:
-        """Method that is required but has no effect."""
-        pass
-
     def set_init_parameters(self):
         self.parameters.loc[self.name + "_d"] = (
             self.initial,
@@ -906,9 +905,8 @@ class WellModel(StressModelBase):
         name of the stressmodel.
     distances: array_like
         array_like of distances between the stresses (wells) and the oseries
-        (monitoring well), must be in the same order as the stresses. This
-        distance is used to scale the HantushWellModel response function for
-        each stress.
+        (monitoring well), must be in the same order as the stresses. This distance is
+        used to scale the HantushWellModel response function foreach stress.
     rfunc: pastas.rfunc instance, optional
         this model only works with the HantushWellModel response function, default is
         None which will initialize a HantushWellModel response function.
@@ -1049,7 +1047,6 @@ class WellModel(StressModelBase):
         )
 
         self.rfunc.set_distances(self.distances.values)
-
         self.freq = self.stresses[0].settings["freq"]
         self.set_init_parameters()
 
@@ -1230,7 +1227,7 @@ class WellModel(StressModelBase):
         settings: dict or iterable
             settings dictionary.
         metadata : dict or list of dict
-            metadata dictionaries corresponding to stress
+            metadata dictionaries corresponding to stress.
 
         Returns
         -------
@@ -1449,6 +1446,23 @@ class WellModel(StressModelBase):
             A=A, b=b, var_A=var_A, var_b=var_b, cov_Ab=cov_Ab, r=r, log_b=log_b
         )
         return vg
+
+    def _get_responses(
+        self,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+    ) -> list[Series]:
+        if istress is None:
+            istress = list(range(len(self.stresses)))
+        else:
+            istress = [istress]
+        responses = []
+        for i in istress:
+            s = super()._get_responses(ml=ml, block_or_step=block_or_step, istress=i)[0]
+            s.name = self.stresses[i].name
+            responses.append(s)
+        return responses
 
 
 class RechargeModel(StressModelBase):
@@ -1804,45 +1818,6 @@ class RechargeModel(StressModelBase):
             ]
         )
 
-    def update_stress(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        freq: str | None = None,
-    ) -> None:
-        """Method to update the settings of the all stresses in the stress model.
-
-        Parameters
-        ----------
-        freq: str, optional
-            String representing the desired frequency of the time series. Must be one
-            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the minimum time of the series
-            (E.g. '1980-01-01 00:00:00').
-        tmax: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the maximum time of the series
-            (E.g. '2020-01-01 00:00:00'). Strings are converted to
-
-            pandas.Timestamp internally.
-
-        Notes
-        -----
-        For the individual options for the different settings please refer to the
-        docstring from the TimeSeries.update_series() method.
-
-        See Also
-        --------
-        ps.timeseries.TimeSeries.update_series
-        """
-        self._prec.update_series(freq=freq, tmin=tmin, tmax=tmax)
-        self._evap.update_series(freq=freq, tmin=tmin, tmax=tmax)
-        if self.temp is not None:
-            self._temp.update_series(freq=freq, tmin=tmin, tmax=tmax)
-
-        if freq:
-            self.freq = freq
-
     def simulate(
         self,
         p: ArrayLike | None = None,
@@ -2077,6 +2052,33 @@ class RechargeModel(StressModelBase):
                 p[0] *= p[-1]
                 p = p[:-1]
         return p
+
+    def _get_responses(
+        self,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+    ) -> list[Series]:
+        if isinstance(self.recharge, Linear):
+            if istress is None:
+                istress = list(range(len(self.stresses)))
+            else:
+                istress = [istress]
+            responses = []
+            for i in istress:
+                response = ml._get_response(
+                    block_or_step=block_or_step,
+                    name=self.name,
+                    add_0=True,
+                    istress=i,
+                )
+                response.name = self.stresses[i].name
+                responses.append(response)
+            return responses
+        else:
+            return super()._get_responses(
+                ml, block_or_step=block_or_step, istress=istress
+            )
 
     def to_dict(self, series: bool = True) -> dict:
         """Method to export the RechargeModel object.
@@ -2323,6 +2325,32 @@ class TarsoModel(RechargeModel):
                 h[i] = (d1 - d) * exp_a + r[i] * c * (1 - exp_a) + d
         return h
 
+    def _get_responses(
+        self,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+    ) -> list[Series]:
+        dt = _get_dt(ml.settings["freq"])
+        parnames = list(self.rfunc.get_init_parameters(self.name).index)
+        response0 = getattr(self.rfunc, block_or_step)(
+            p=ml.parameters.loc[[f"{x}0" for x in parnames], "optimal"].values,
+            dt=dt,
+        )
+        response1 = getattr(self.rfunc, block_or_step)(
+            p=ml.parameters.loc[[f"{x}1" for x in parnames], "optimal"].values,
+            dt=dt,
+        )
+        responses = [
+            Series(
+                np.insert(response, 0, 0.0),
+                index=np.linspace(0, response.size * dt, response.size + 1),
+                name=f"{self.name}_rf{i}",
+            )
+            for i, response in enumerate([response0, response1])
+        ]
+        return responses
+
 
 class ChangeModel(StressModelBase):
     """Model where the response function changes from one to another over time.
@@ -2431,7 +2459,6 @@ class ChangeModel(StressModelBase):
         rfunc2.update_rfunc_settings(up=up)
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
-
         self.freq = self.stress.settings["freq"]
         self.set_init_parameters()
 
@@ -2476,42 +2503,6 @@ class ChangeModel(StressModelBase):
         """Return the stress time series as a tuple."""
         nt = namedtuple("StressesTuple", ["stress"])
         return nt(stress=self.stress)
-
-    def update_stress(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        freq: str | None = None,
-    ) -> None:
-        """Method to update the settings of the all stresses in the stress model.
-
-        Parameters
-        ----------
-        freq: str, optional
-            String representing the desired frequency of the time series. Must be one
-            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        tmin: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the minimum time of the series
-            (E.g. '1980-01-01 00:00:00').
-        tmax: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the maximum time of the series
-            (E.g. '2020-01-01 00:00:00'). Strings are converted to
-
-            pandas.Timestamp internally.
-
-        Notes
-        -----
-        For the individual options for the different settings please refer to the
-        docstring from the TimeSeries.update_series() method.
-
-        See Also
-        --------
-        ps.timeseries.TimeSeries.update_series
-        """
-        self._stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
-
-        if freq:
-            self.freq = freq
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
@@ -2591,6 +2582,41 @@ class ChangeModel(StressModelBase):
         h = (omega * h1 + (1 - omega) * h2).rename(self.name)
 
         return h
+
+    def _get_responses(
+        self,
+        ml: Model,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+    ) -> list[Series]:
+        dt = _get_dt(ml.settings["freq"])
+        parnames0 = [
+            x.split("_") for x in list(self.rfunc1.get_init_parameters(self.name).index)
+        ]
+        response0 = getattr(self.rfunc1, block_or_step)(
+            p=ml.parameters.loc[
+                [f"{x[0]}_1_{x[1]}" for x in parnames0], "optimal"
+            ].values,
+            dt=dt,
+        )
+        parnames1 = [
+            x.split("_") for x in list(self.rfunc2.get_init_parameters(self.name).index)
+        ]
+        response1 = getattr(self.rfunc2, block_or_step)(
+            p=ml.parameters.loc[
+                [f"{x[0]}_2_{x[1]}" for x in parnames1], "optimal"
+            ].values,
+            dt=dt,
+        )
+        responses = [
+            Series(
+                np.insert(response, 0, 0.0),
+                index=np.linspace(0, response.size * dt, response.size + 1),
+                name=f"{self.name}_rf{i}",
+            )
+            for i, response in enumerate([response0, response1])
+        ]
+        return responses
 
     def to_dict(self, series: bool = True):
         """Method to export the ChangeModel object.

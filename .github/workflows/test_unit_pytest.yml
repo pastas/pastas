@@ -9,7 +9,6 @@ on:
     branches:
       - master
       - dev
-      - dev2
 
 concurrency:
   # Group by workflow name and ref (branch or pull request ref).
@@ -42,9 +41,9 @@ jobs:
           - name: Test suite with py314-ubuntu
             python: "3.14"
             toxenv: py314
-            experimental: true
+            experimental: false
           - name: Test suite for all unit tests including Notebooks
-            python: "3.11"
+            python: "3.13"
             toxenv: all
             experimental: false
     env:
