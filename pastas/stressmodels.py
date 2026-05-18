@@ -20,6 +20,7 @@ from collections.abc import Iterable
 from inspect import isclass
 from logging import getLogger
 from typing import Any, Literal
+from warnings import warn
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -36,6 +37,7 @@ from pastas.typing import (
 )
 
 from .decorators import (
+    CURRENT_PASTAS_VERSION,
     PastasDeprecationWarning,
     conditional_cachedmethod,
     deprecate_args_or_kwargs,
@@ -96,7 +98,6 @@ class StressModelBase:
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
-        self.freq = None
 
         if rfunc is not None:
             if isclass(rfunc):
@@ -125,6 +126,31 @@ class StressModelBase:
     @property
     def nparam(self) -> tuple[int]:
         return self.parameters.index.size
+
+    @property
+    def freq(self) -> None:
+        """Deprecated: The freq attribute is no longer set on stressmodels.
+
+        .. deprecated:: 2.1.0
+            The freq attribute is deprecated and will be removed in a future version.
+            The frequency is determined by the Model, not the StressModel. Use
+            ``model.settings["freq"]`` to get the frequency of the model instead.
+        """
+        VERSION = parse_version("2.1.0")
+        if CURRENT_PASTAS_VERSION < VERSION:
+            msg = (
+                "The freq attribute is deprecated and will not be available from "
+                "Pastas version >= 2.1.0. The frequency is determined by the Model, "
+                "not the StressModel. Use model.settings['freq'] instead."
+            )
+            warn(msg, DeprecationWarning, stacklevel=2)
+            return None
+        else:
+            raise AttributeError(
+                "The freq attribute is not available since Pastas version 2.1.0. "
+                "The frequency is determined by the Model, not the StressModel. "
+                "Use model.settings['freq'] instead."
+            )
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
@@ -241,9 +267,6 @@ class StressModelBase:
         """
         for stress in self.stresses:
             stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
-
-        if freq:
-            self.freq = freq
 
     def to_dict(self, **kwargs) -> None:
         """Placeholder for the to_dict method."""
@@ -438,7 +461,6 @@ class StressModel(StressModelBase):
             max_cache_size=max_cache_size,
         )
         self.gain_scale_factor = gain_scale_factor
-        self.freq = self.stress.settings["freq"]
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
@@ -1042,7 +1064,6 @@ class WellModel(StressModelBase):
         )
 
         self.rfunc.set_distances(self.distances.values)
-        self.freq = self.stresses[0].settings["freq"]
         self.set_init_parameters()
 
     @property
@@ -1653,7 +1674,6 @@ class RechargeModel(StressModelBase):
             max_cache_size=max_cache_size,
         )
 
-        self.freq = self.prec.settings["freq"]
         self.set_init_parameters()
         if isinstance(self.recharge, Linear):
             self.nsplit = 2
@@ -2447,7 +2467,6 @@ class ChangeModel(StressModelBase):
         rfunc2.update_rfunc_settings(up=up)
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
-        self.freq = self.stress.settings["freq"]
         self.set_init_parameters()
 
     @property
