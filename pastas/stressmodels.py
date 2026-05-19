@@ -428,8 +428,7 @@ class StressModel(StressModelBase):
     ) -> None:
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
-        StressModelBase.__init__(
-            self,
+        super().__init__(
             name=name,
             tmin=self.stress.series.index.min(),
             tmax=self.stress.series.index.max(),
@@ -606,13 +605,11 @@ class StepModel(StressModelBase):
         up: bool = None,
         max_cache_size: int = None,
     ) -> None:
-        rfunc = One() if rfunc is None else rfunc
-        StressModelBase.__init__(
-            self,
+        super().__init__(
             name=name,
             tmin=Timestamp.min,
             tmax=Timestamp.max,
-            rfunc=rfunc,
+            rfunc=One() if rfunc is None else rfunc,
             up=up,
             max_cache_size=max_cache_size,
         )
@@ -744,9 +741,7 @@ class LinearTrend(StressModelBase):
         if tend is None:
             raise TypeError("LinearTrend.__init__() missing required argument: 'tend'")
 
-        StressModelBase.__init__(
-            self, name=name, tmin=Timestamp.min, tmax=Timestamp.max
-        )
+        super().__init__(name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.tstart = tstart
         self.tend = tend
         self.set_init_parameters()
@@ -847,9 +842,7 @@ class Constant(StressModelBase):
     """
 
     def __init__(self, name: str = "constant", initial: float = 0.0) -> None:
-        StressModelBase.__init__(
-            self, name=name, tmin=Timestamp.min, tmax=Timestamp.max
-        )
+        super().__init__(name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.initial = initial
         self.set_init_parameters()
 
@@ -1033,8 +1026,7 @@ class WellModel(StressModelBase):
         # parse stresses input
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
-        StressModelBase.__init__(
-            self,
+        super().__init__(
             name=name,
             tmin=tmin,
             tmax=tmax,
@@ -1643,8 +1635,7 @@ class RechargeModel(StressModelBase):
             p=p, tmin=index.min(), tmax=index.max(), freq=self.prec.settings["freq"]
         ).std()
 
-        StressModelBase.__init__(
-            self,
+        super().__init__(
             name=name,
             tmin=index.min(),
             tmax=index.max(),
