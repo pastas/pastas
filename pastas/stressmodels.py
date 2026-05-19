@@ -114,12 +114,11 @@ class StressModelBase(ABC):
             columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
         )
 
+        self._cache = None
         if CACHETOOLS_AVAILABLE:
             if max_cache_size is None:
                 max_cache_size = 32
             self._cache = LRUCache(maxsize=max_cache_size)
-        else:
-            self._cache = None
 
     @property
     def _name(self) -> str:
@@ -449,7 +448,7 @@ class StressModel(StressModelBase):
         settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
         gain_scale_factor: float | None = None,
-        max_cache_size: int = None,
+        max_cache_size: int | None = None,
     ) -> None:
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
@@ -628,8 +627,8 @@ class StepModel(StressModelBase):
         tstart: Timestamp | str,
         rfunc: RFunc | None = None,
         name: str = "step",
-        up: bool = None,
-        max_cache_size: int = None,
+        up: bool | None = None,
+        max_cache_size: int | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -1008,8 +1007,8 @@ class WellModel(StressModelBase):
         | Iterable[str]
         | Iterable[StressSettingsDict] = "well",
         sort_wells: bool = True,
-        metadata: Iterable[dict[str, Any]] = None,
-        max_cache_size: int = None,
+        metadata: Iterable[dict[str, Any]] | None = None,
+        max_cache_size: int | None = None,
     ) -> None:
         if not isinstance(stress, (tuple, list, dict)):
             msg = (
@@ -1308,7 +1307,8 @@ class WellModel(StressModelBase):
         istress: int | None = None,
         squeeze: bool = True,
         **kwargs,
-    ) -> DataFrame:
+    ) -> Series | DataFrame:
+        _ = p  # p is not used to calculate the stress
         if tmin is None:
             tmin = self.tmin
         if tmax is None:
@@ -1370,7 +1370,7 @@ class WellModel(StressModelBase):
             )
         else:
             p_with_r = np.r_[p, distances]
-        return p_with_r
+        return np.asarray(p_with_r, dtype=float)
 
     def variance_gain(
         self, model: Model, istress: int | None = None, r: ArrayLike | None = None
@@ -1415,7 +1415,7 @@ class WellModel(StressModelBase):
         cov_Ab = model.solver.pcov.at[self.name + "_A", self.name + "_b"]
 
         if istress is None and r is None:
-            r = np.asarray(self.distances)
+            r = np.asarray(self.distances, dtype=float)
         elif isinstance(istress, int) or isinstance(istress, list):
             if r is not None:
                 logger.warning("kwarg 'r' is only used if istress is None!")
@@ -1620,7 +1620,7 @@ class RechargeModel(StressModelBase):
             "evap",
         ),
         metadata: tuple[dict | None, dict | None, dict | None] = (None, None, None),
-        max_cache_size: int = None,
+        max_cache_size: int | None = None,
     ) -> None:
         if rfunc is None:
             rfunc = Exponential()
@@ -1962,8 +1962,12 @@ class RechargeModel(StressModelBase):
             return self.prec.series
         elif istress == 1:
             return self.evap.series
-        else:
+        elif istress == 2:
             return self.temp.series
+        else:
+            msg = "Invalid value for istress. Must be 0 for `prec`, 1 for `evap` or 2 for `temp`."
+            logger.error(msg)
+            raise ValueError(msg)
 
     def get_water_balance(
         self,
@@ -2242,18 +2246,28 @@ class TarsoModel(RechargeModel):
         tmax: Timestamp | str | None = None,
         freq=None,
         dt: float = 1.0,
+        istress: int | None = None,
     ) -> Series:
-        return self._simulate(tuple(p), tmin, tmax, freq, dt)
+        return self._simulate(
+            p=tuple(p),
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            dt=dt,
+            istress=istress,
+        )
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
         self,
-        p: tuple,
+        p: tuple | None = None,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
-        freq=None,
+        freq: str | None = None,
         dt: float = 1.0,
+        istress: int | None = None,
     ) -> Series:
+        _ = istress  # istress is not used for TarsoModel
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
         h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(copy=True), dt)
         sim = Series(h, name=self.name, index=stress.index)
