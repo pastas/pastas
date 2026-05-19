@@ -1312,43 +1312,39 @@ class WellModel(StressModelBase):
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
-        istress: int | None = None,
+        istress: int | list[int] | None = None,
         squeeze: bool = True,
         **kwargs,
-    ) -> Series | DataFrame:
+    ) -> Series:
         _ = p, kwargs
 
         tmin = self.tmin if tmin is None else tmin
         tmax = self.tmax if tmax is None else tmax
 
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+        stress_df = DataFrame.from_dict({s.name: s.series for s in self.stresses})
 
         if istress is None:
-            df = DataFrame.from_dict({s.name: s.series for s in self.stresses})
-            if squeeze:
-                return df.squeeze()
-            else:
-                return df
-        elif isinstance(istress, list):
-            return DataFrame.from_dict({s.name: s.series for s in self.stresses}).iloc[
-                :, istress
-            ]
+            return stress_df.squeeze() if squeeze else stress_df
+        elif isinstance(istress, int):
+            return (
+                stress_df.iloc[:, istress] if squeeze else stress_df.iloc[:, [istress]]
+            )
         else:
-            if squeeze:
-                return self.stresses[istress].series
-            else:
-                return self.stresses[istress].series.to_frame()
+            return stress_df.iloc[:, istress]
 
-    def get_distances(self, istress: int | None = None) -> DataFrame:
+    def get_distances(self, istress: int | list[int] | None = None) -> Series:
         """Get distances for the stress(es)."""
         if istress is None:
             return self.distances
-        elif isinstance(istress, list):
-            return self.distances.iloc[istress]
-        else:
+        elif isinstance(istress, int):
             return self.distances.iloc[istress : istress + 1]
+        else:
+            return self.distances.iloc[istress]
 
-    def get_parameters(self, model=None, istress: int | None = None) -> ArrayLike:
+    def get_parameters(
+        self, model=None, istress: int | list[int] | None = None
+    ) -> ArrayLike:
         """Get parameters of the wellmodel.
 
         Including distance to observation point and return as array
