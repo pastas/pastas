@@ -664,7 +664,7 @@ class StepModel(StressModelBase):
 
     @property
     def nsplit(self) -> int:
-        return len(self.stresses)
+        return 1
 
     def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
@@ -796,7 +796,7 @@ class LinearTrend(StressModelBase):
 
     @property
     def nsplit(self) -> int:
-        return len(self.stresses)
+        return 1
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters for the stress model."""
@@ -899,7 +899,7 @@ class Constant(StressModelBase):
 
     @property
     def nsplit(self) -> int:
-        return len(self.stresses)
+        return 1
 
     def set_init_parameters(self):
         self.parameters.loc[self.name + "_d"] = (
@@ -1639,11 +1639,8 @@ class RechargeModel(StressModelBase):
         metadata: tuple[dict | None, dict | None, dict | None] = (None, None, None),
         max_cache_size: int | None = None,
     ) -> None:
-        if rfunc is None:
-            rfunc = Exponential()
-
-        if recharge is None:
-            recharge = Linear()
+        rfunc = Exponential() if rfunc is None else rfunc
+        recharge = Linear() if recharge is None else recharge
 
         # Store the precipitation and evaporation time series
         self.set_stress(prec=prec, settings=settings[0], metadata=metadata[0])
