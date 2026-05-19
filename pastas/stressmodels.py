@@ -20,7 +20,6 @@ from collections.abc import Iterable
 from inspect import isclass
 from logging import getLogger
 from typing import Any, Literal
-from warnings import warn
 
 import numpy as np
 from packaging.version import parse as parse_version
@@ -37,7 +36,6 @@ from pastas.typing import (
 )
 
 from .decorators import (
-    CURRENT_PASTAS_VERSION,
     PastasDeprecationWarning,
     conditional_cachedmethod,
     deprecate_args_or_kwargs,
@@ -128,6 +126,13 @@ class StressModelBase:
         return self.parameters.index.size
 
     @property
+    @PastasDeprecationWarning(
+        version="2.1.0",
+        reason=(
+            "The frequency is determined by the Model, not the StressModel. "
+            "Use model.settings['freq'] instead."
+        ),
+    )
     def freq(self) -> None:
         """Deprecated: The freq attribute is no longer set on stressmodels.
 
@@ -136,21 +141,7 @@ class StressModelBase:
             The frequency is determined by the Model, not the StressModel. Use
             ``model.settings["freq"]`` to get the frequency of the model instead.
         """
-        VERSION = parse_version("2.1.0")
-        if CURRENT_PASTAS_VERSION < VERSION:
-            msg = (
-                "The freq attribute is deprecated and will not be available from "
-                "Pastas version >= 2.1.0. The frequency is determined by the Model, "
-                "not the StressModel. Use model.settings['freq'] instead."
-            )
-            warn(msg, DeprecationWarning, stacklevel=2)
-            return None
-        else:
-            raise AttributeError(
-                "The freq attribute is not available since Pastas version 2.1.0. "
-                "The frequency is determined by the Model, not the StressModel. "
-                "Use model.settings['freq'] instead."
-            )
+        return None
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
