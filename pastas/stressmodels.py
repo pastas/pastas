@@ -288,10 +288,7 @@ class StressModelBase(ABC):
     @property
     def nsplit(self) -> int:
         """Determine in how many time series the contribution can be split."""
-        if hasattr(self, "nsplit"):
-            return self.nsplit
-        else:
-            return len(self.stresses)
+        return len(self.stresses)
 
     def _get_block(
         self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
@@ -1663,11 +1660,7 @@ class RechargeModel(StressModelBase):
         )
 
         self.set_init_parameters()
-        if isinstance(self.recharge, Linear):
-            self.nsplit = 2
-        else:
-            self.nsplit = 1
-
+        if not isinstance(self.recharge, Linear):
             # Check if precipitation is likely in mm/d and not m/d. If the maximum
             # value of the annual sums is smaller than 12 (m/d), the highest annual
             # precipitation in the world, then the precipitation is very likely in m/d
@@ -1680,6 +1673,11 @@ class RechargeModel(StressModelBase):
                     "double-check if the stresses are in mm/d and not in m/d."
                 )
                 logger.warning(msg)
+
+    @property
+    def nsplit(self) -> int:
+        """Number of contributions returned by this stress model."""
+        return 2 if isinstance(self.recharge, Linear) else 1
 
     def set_stress(
         self,
@@ -2174,7 +2172,11 @@ class TarsoModel(RechargeModel):
         self.dmin = dmin
         self.dmax = dmax
         super().__init__(prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs)
-        self.nsplit = 1
+
+    @property
+    def nsplit(self) -> int:
+        """Tarso has a single effective contribution."""
+        return 1
 
     def set_init_parameters(self) -> None:
         # parameters for the first drainage level
