@@ -251,17 +251,18 @@ class StressModelBase(ABC):
         freq: str | None = None,
         istress: int | None = None,
         **kwargs,
-    ) -> Series:
+    ) -> Series | DataFrame:
         """Get the stress(es) of the time series object as a pandas Series.
 
         If the time series object has multiple stresses each column represents a stress.
 
         Returns
         -------
-        stress: pandas.Series
-            Series of the stress
+        stress: pandas.Series or pandas.DataFrame
+            Stress as a Series (single stress) or DataFrame (multiple stresses).
 
         """
+        _ = p, kwargs
         tmin = self.tmin if tmin is None else tmin
         tmax = self.tmax if tmax is None else tmax
 
@@ -1315,7 +1316,7 @@ class WellModel(StressModelBase):
         istress: int | list[int] | None = None,
         squeeze: bool = True,
         **kwargs,
-    ) -> Series:
+    ) -> Series | DataFrame:
         _ = p, kwargs
 
         tmin = self.tmin if tmin is None else tmin
