@@ -166,7 +166,8 @@ class StressModelBase(ABC):
         """Deprecated: The get_nsplit attribute is no available.
 
         .. deprecated:: 2.0.0
-            The freq attribute is deprecated and will be removed in a future version.
+            The get_nsplit attribute is deprecated and will be removed in a future
+            version.
             Use the property `nsplit` instead, e.g., `stressmodel.nsplit`."
         """
         return None
