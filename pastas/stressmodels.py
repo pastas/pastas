@@ -898,6 +898,7 @@ class Constant(StressModelBase):
         observed series.
     name: str, optional
         Name of the stressmodel. Default is "constant".
+
     """
 
     def __init__(self, initial: float = 0.0, name: str = "constant") -> None:
@@ -1138,6 +1139,7 @@ class WellModel(StressModelBase):
         -------
         stress: list
             return a list with the stresses transformed to pastas TimeSeries.
+
         """
         data = []
 
@@ -1482,6 +1484,7 @@ class WellModel(StressModelBase):
         -------
         data: dict
             dictionary with the dump of the stresses.
+
         """
         data = []
 
@@ -1800,6 +1803,7 @@ class RechargeModel(StressModelBase):
         Returns
         -------
         None
+
         """
 
         def _set_stress(
