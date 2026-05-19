@@ -15,6 +15,7 @@ See Also
 pastas.model.Model.add_stressmodel
 """
 
+from abc import ABC, abstractmethod
 from collections import namedtuple
 from collections.abc import Iterable
 from inspect import isclass
@@ -313,10 +314,9 @@ class StressModelBase(ABC):
         -----
         To update the settings of the time series, use the `update_stress` method.
         """
-        if len(self.stresses) == 0:
+        if not self.stresses:
             return None
-        else:
-            return {stress.name: stress.settings for stress in self.stresses}
+        return {stress.name: stress.settings for stress in self.stresses}
 
     def get_parameters(self, model=None) -> ArrayLike:
         """Get parameters and return as array.
@@ -335,10 +335,8 @@ class StressModelBase(ABC):
             An array of the parameters of the stressmodel.
         """
         if model is None:
-            p = self.parameters.initial.values
-        else:
-            p = model.get_parameters(self.name)
-        return p
+            return self.parameters.initial.values
+        return model.get_parameters(self.name)
 
     def _get_responses(
         self,
