@@ -881,7 +881,6 @@ class Constant(StressModelBase):
         observed series.
     name: str, optional
         Name of the stressmodel. Default is "constant".
-
     """
 
     def __init__(self, initial: float = 0.0, name: str = "constant") -> None:
