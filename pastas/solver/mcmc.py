@@ -18,10 +18,8 @@ class EmceeSolve(BaseSolver):
 
     Parameters
     ----------
-    objective_function: func, optional
-        An objective function to be minimized. If not provided, the
-        GaussianLikelihood is used. See the pastas.likelihood_functions module for
-        more information.
+    objfunction: func, optional
+        An objective function to be minimized. See the pastas.likelihood_functions module for more information.
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
     backend: emcee.backend, optional
