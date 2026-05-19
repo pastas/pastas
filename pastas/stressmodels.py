@@ -70,7 +70,7 @@ __all__ = [
 ]
 
 
-class StressModelBase:
+class StressModelBase(ABC):
     """StressModel Base class called by each StressModel object.
 
     Attributes
@@ -125,8 +125,9 @@ class StressModelBase:
         return self.__class__.__name__
 
     @property
+    @abstractmethod
     def stresses(self) -> tuple:
-        return ()
+        """Return the stresses used by the stress model."""
 
     @property
     def nparam(self) -> tuple[int]:
@@ -149,6 +150,11 @@ class StressModelBase:
         """
         return None
 
+    @abstractmethod
+    def simulate(self, *args, **kwargs) -> Any:
+        """Simulate the stress model contribution."""
+
+    @abstractmethod
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
 
