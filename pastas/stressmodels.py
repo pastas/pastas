@@ -277,20 +277,6 @@ class StressModelBase(ABC):
         for stress in self.stresses:
             stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
 
-    def to_dict(self) -> dict[str, Any]:
-        """Export the stress model to a dictionary.
-
-        Returns
-        -------
-        dict[str, Any]
-            Dictionary with base settings to reconstruct the stress model object.
-        """
-        settings = {
-            "class": self._name,
-            "name": self.name,
-        }
-        return settings
-
     def _get_block(
         self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
     ) -> ArrayLike:
@@ -353,6 +339,20 @@ class StressModelBase(ABC):
             )
         ]
         return responses
+
+    def to_dict(self) -> dict[str, Any]:
+        """Export the stress model to a dictionary.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary with base settings to reconstruct the stress model object.
+        """
+        settings = {
+            "class": self._name,
+            "name": self.name,
+        }
+        return settings
 
 
 class StressModel(StressModelBase):
@@ -469,10 +469,6 @@ class StressModel(StressModelBase):
         self.gain_scale_factor = gain_scale_factor
         self.set_init_parameters()
 
-    def set_init_parameters(self) -> None:
-        """Set the initial parameters (back) to their default values."""
-        self.parameters = self.rfunc.get_init_parameters(self.name)
-
     @property
     def stress(self) -> TimeSeries:
         """Return the stress time series."""
@@ -523,6 +519,10 @@ class StressModel(StressModelBase):
     @property
     def nsplit(self) -> int:
         return len(self.stresses)
+
+    def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
+        self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(
         self,
@@ -1089,6 +1089,76 @@ class WellModel(StressModelBase):
         """Set the stress time series."""
         self.set_stress(value)
 
+    @staticmethod
+    def _handle_stress(
+        stress: list[Series]
+        | dict[str, Series]
+        | list[TimeSeries]
+        | dict[str, TimeSeries],
+        settings: str
+        | list[str]
+        | StressSettingsDict
+        | list[StressSettingsDict]
+        | None,
+        metadata: dict[str, Any] | list[dict[str, Any]] | None,
+    ) -> list[TimeSeries]:
+        """Internal method to handle user provided stress in init.
+
+        Parameters
+        ----------
+        stress: pandas.Series, list or dict
+            stress or collection of stresses.
+        settings: dict or iterable
+            settings dictionary.
+        metadata : dict or list of dict
+            metadata dictionaries corresponding to stress.
+
+        Returns
+        -------
+        stress: list
+            return a list with the stresses transformed to pastas TimeSeries.
+        """
+        data = []
+
+        # parse settings input
+        if settings is None or isinstance(settings, str) or isinstance(settings, dict):
+            settings = len(stress) * [settings]
+
+        # if metadata is passed as dict -> convert to list
+        if metadata is not None and isinstance(metadata, dict):
+            metadata = len(stress) * [metadata]
+
+        if isinstance(stress, dict):
+            for i, (name, value) in enumerate(stress.items()):
+                if isinstance(value, TimeSeries):
+                    data.append(value)
+                else:
+                    if metadata is not None:
+                        imeta = metadata[i]
+                    else:
+                        imeta = None
+                    data.append(
+                        TimeSeries(
+                            value, name=name, settings=settings[i], metadata=imeta
+                        )
+                    )
+        elif isinstance(stress, list):
+            for i, value in enumerate(stress):
+                if isinstance(value, TimeSeries):
+                    data.append(value)
+                else:
+                    if metadata is not None:
+                        imeta = metadata[i]
+                    else:
+                        imeta = None
+                    data.append(TimeSeries(value, settings=settings[i], metadata=imeta))
+        else:
+            msg = "Cannot parse 'stress' input. Provide a Series, dict or list."
+            logger.error(msg)
+            raise TypeError(msg)
+
+        return data
+
     def set_stress(
         self,
         stress: Series | list[Series] | TimeSeries | list[TimeSeries],
@@ -1229,76 +1299,6 @@ class WellModel(StressModelBase):
             h.name = self.name
         return h
 
-    @staticmethod
-    def _handle_stress(
-        stress: list[Series]
-        | dict[str, Series]
-        | list[TimeSeries]
-        | dict[str, TimeSeries],
-        settings: str
-        | list[str]
-        | StressSettingsDict
-        | list[StressSettingsDict]
-        | None,
-        metadata: dict[str, Any] | list[dict[str, Any]] | None,
-    ) -> list[TimeSeries]:
-        """Internal method to handle user provided stress in init.
-
-        Parameters
-        ----------
-        stress: pandas.Series, list or dict
-            stress or collection of stresses.
-        settings: dict or iterable
-            settings dictionary.
-        metadata : dict or list of dict
-            metadata dictionaries corresponding to stress.
-
-        Returns
-        -------
-        stress: list
-            return a list with the stresses transformed to pastas TimeSeries.
-        """
-        data = []
-
-        # parse settings input
-        if settings is None or isinstance(settings, str) or isinstance(settings, dict):
-            settings = len(stress) * [settings]
-
-        # if metadata is passed as dict -> convert to list
-        if metadata is not None and isinstance(metadata, dict):
-            metadata = len(stress) * [metadata]
-
-        if isinstance(stress, dict):
-            for i, (name, value) in enumerate(stress.items()):
-                if isinstance(value, TimeSeries):
-                    data.append(value)
-                else:
-                    if metadata is not None:
-                        imeta = metadata[i]
-                    else:
-                        imeta = None
-                    data.append(
-                        TimeSeries(
-                            value, name=name, settings=settings[i], metadata=imeta
-                        )
-                    )
-        elif isinstance(stress, list):
-            for i, value in enumerate(stress):
-                if isinstance(value, TimeSeries):
-                    data.append(value)
-                else:
-                    if metadata is not None:
-                        imeta = metadata[i]
-                    else:
-                        imeta = None
-                    data.append(TimeSeries(value, settings=settings[i], metadata=imeta))
-        else:
-            msg = "Cannot parse 'stress' input. Provide a Series, dict or list."
-            logger.error(msg)
-            raise TypeError(msg)
-
-        return data
-
     def get_stress(
         self,
         p: ArrayLike | None = None,
@@ -1371,46 +1371,6 @@ class WellModel(StressModelBase):
         else:
             p_with_r = np.r_[p, distances]
         return p_with_r
-
-    def dump_stress(self, series: bool = True) -> list:
-        """Method to dump all stresses in the stresses list.
-
-        Parameters
-        ----------
-        series: bool, optional
-            True if time series are to be exported, False if only the name
-            of the time series are needed. Settings are always exported.
-
-        Returns
-        -------
-        data: dict
-            dictionary with the dump of the stresses.
-        """
-        data = []
-
-        for stress in self.stresses:
-            stress.name = validate_name(stress.name, raise_error=True)
-            data.append(stress.to_dict(series=series))
-
-        return data
-
-    def to_dict(self, series: bool = True) -> dict:
-        """Method to export the WellModel object.
-
-        Returns
-        -------
-        data: dict
-            dictionary with all necessary information to reconstruct the WellModel
-            object.
-        """
-        data = super().to_dict() | {
-            "stress": self.dump_stress(series),
-            "rfunc": self.rfunc.to_dict(),
-            "distances": self.distances.to_list(),
-            "up": True if self.rfunc.up else False,
-            "sort_wells": self.sort_wells,
-        }
-        return data
 
     def variance_gain(
         self, model: Model, istress: int | None = None, r: ArrayLike | None = None
@@ -1485,6 +1445,46 @@ class WellModel(StressModelBase):
             s.name = self.stresses[i].name
             responses.append(s)
         return responses
+
+    def dump_stress(self, series: bool = True) -> list:
+        """Method to dump all stresses in the stresses list.
+
+        Parameters
+        ----------
+        series: bool, optional
+            True if time series are to be exported, False if only the name
+            of the time series are needed. Settings are always exported.
+
+        Returns
+        -------
+        data: dict
+            dictionary with the dump of the stresses.
+        """
+        data = []
+
+        for stress in self.stresses:
+            stress.name = validate_name(stress.name, raise_error=True)
+            data.append(stress.to_dict(series=series))
+
+        return data
+
+    def to_dict(self, series: bool = True) -> dict:
+        """Method to export the WellModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the WellModel
+            object.
+        """
+        data = super().to_dict() | {
+            "stress": self.dump_stress(series),
+            "rfunc": self.rfunc.to_dict(),
+            "distances": self.distances.to_list(),
+            "up": True if self.rfunc.up else False,
+            "sort_wells": self.sort_wells,
+        }
+        return data
 
 
 class RechargeModel(StressModelBase):
@@ -1692,6 +1692,66 @@ class RechargeModel(StressModelBase):
                 )
                 logger.warning(msg)
 
+    @property
+    @PastasDeprecationWarning(
+        version="2.0.0",
+        reason=(
+            "for the RechargeModel. Use 'stresses' property instead if you want to"
+            " obtain all stresses. For individual stresses call the 'prec', 'evap' and "
+            "'temp' attributes. Changing the stress can be done using the `set_stress` method."
+        ),
+    )
+    def stress(self):
+        pass
+
+    @property
+    def prec(self) -> TimeSeries:
+        """Return the stress time series."""
+        return self._prec
+
+    @prec.setter
+    def prec(self, value: Series) -> None:
+        """Set the precipitation time series."""
+        self.set_stress(prec=value)
+
+    @property
+    def evap(self) -> TimeSeries:
+        """Return the stress time series."""
+        return self._evap
+
+    @evap.setter
+    def evap(self, value: Series) -> None:
+        """Set the evaporation time series."""
+        self.set_stress(evap=value)
+
+    @property
+    def temp(self) -> TimeSeries | None:
+        """Return the stress time series."""
+        return self._temp
+
+    @temp.setter
+    def temp(self, value: Series) -> None:
+        """Set the temperature time series."""
+        self.set_stress(temp=value)
+
+    @property
+    def stresses(self) -> tuple[TimeSeries]:
+        """Return the stress time series as a tuple."""
+        if self.temp is None:
+            nt = namedtuple("StressesTuple", ["prec", "evap"])
+            return nt(prec=self.prec, evap=self.evap)
+        else:
+            nt = namedtuple(
+                "StressesTuple",
+                ["prec", "evap", "temp"],
+            )
+            return nt(prec=self.prec, evap=self.evap, temp=self.temp)
+
+    @property
+    def nsplit(self) -> int:
+        """Number of contributions returned by this stress model."""
+        return 2 if isinstance(self.recharge, Linear) else 1
+
     def set_stress(
         self,
         prec: Series | None = None,
@@ -1760,66 +1820,6 @@ class RechargeModel(StressModelBase):
             msg = "No stress time series provided to set. Please provide either prec, evap or temp."
             logger.error(msg)
             raise ValueError(msg)
-
-    @property
-    @PastasDeprecationWarning(
-        version="2.0.0",
-        reason=(
-            "for the RechargeModel. Use 'stresses' property instead if you want to"
-            " obtain all stresses. For individual stresses call the 'prec', 'evap' and "
-            "'temp' attributes. Changing the stress can be done using the `set_stress` method."
-        ),
-    )
-    def stress(self):
-        pass
-
-    @property
-    def prec(self) -> TimeSeries:
-        """Return the stress time series."""
-        return self._prec
-
-    @prec.setter
-    def prec(self, value: Series) -> None:
-        """Set the precipitation time series."""
-        self.set_stress(prec=value)
-
-    @property
-    def evap(self) -> TimeSeries:
-        """Return the stress time series."""
-        return self._evap
-
-    @evap.setter
-    def evap(self, value: Series) -> None:
-        """Set the evaporation time series."""
-        self.set_stress(evap=value)
-
-    @property
-    def temp(self) -> TimeSeries | None:
-        """Return the stress time series."""
-        return self._temp
-
-    @temp.setter
-    def temp(self, value: Series) -> None:
-        """Set the temperature time series."""
-        self.set_stress(temp=value)
-
-    @property
-    def stresses(self) -> tuple[TimeSeries]:
-        """Return the stress time series as a tuple."""
-        if self.temp is None:
-            nt = namedtuple("StressesTuple", ["prec", "evap"])
-            return nt(prec=self.prec, evap=self.evap)
-        else:
-            nt = namedtuple(
-                "StressesTuple",
-                ["prec", "evap", "temp"],
-            )
-            return nt(prec=self.prec, evap=self.evap, temp=self.temp)
-
-    @property
-    def nsplit(self) -> int:
-        """Number of contributions returned by this stress model."""
-        return 2 if isinstance(self.recharge, Linear) else 1
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
@@ -2259,21 +2259,6 @@ class TarsoModel(RechargeModel):
         sim = Series(h, name=self.name, index=stress.index)
         return sim
 
-    def to_dict(self, series: bool = True) -> dict:
-        """Method to export the TarsoModel object.
-
-        Returns
-        -------
-        data: dict
-            dictionary with all necessary information to reconstruct the object.
-
-        Notes
-        -----
-        Settings and metadata are exported with the stress.
-        """
-        data = super().to_dict(series=series) | {"dmin": self.dmin, "dmax": self.dmax}
-        return data
-
     @staticmethod
     def _check_stressmodel_compatibility(ml: Model) -> None:
         """Internal method to check if no other stressmodels, a constants or a transform
@@ -2363,6 +2348,21 @@ class TarsoModel(RechargeModel):
             for i, response in enumerate([response0, response1])
         ]
         return responses
+
+    def to_dict(self, series: bool = True) -> dict:
+        """Method to export the TarsoModel object.
+
+        Returns
+        -------
+        data: dict
+            dictionary with all necessary information to reconstruct the object.
+
+        Notes
+        -----
+        Settings and metadata are exported with the stress.
+        """
+        data = super().to_dict(series=series) | {"dmin": self.dmin, "dmax": self.dmax}
+        return data
 
 
 class ChangeModel(StressModelBase):
