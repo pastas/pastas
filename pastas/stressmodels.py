@@ -900,7 +900,7 @@ class WellModel(StressModelBase):
     distances: array_like
         array_like of distances between the stresses (wells) and the oseries
         (monitoring well), must be in the same order as the stresses. This distance is
-        used to scale the HantushWellModel response function foreach stress.
+        used to scale the HantushWellModel response function for each stress.
     settings: str, list of dict, optional
         The settings of the stress. By default this is "well". This can be a string
         referring to a predefined settings dictionary (defined in
@@ -2344,7 +2344,7 @@ class ChangeModel(StressModelBase):
         The instance of the response function used in the convolution with the stress.
     rfunc2: pastas.rfunc instance
         The instance of the response function used in the convolution with the stress.
-    tchange: str
+    tchange: str | pandas.Timestamp
         string with the approximate date of the change.
     name: str
         Name of the stressmodel. Default is "change".
@@ -2416,7 +2416,7 @@ class ChangeModel(StressModelBase):
         stress: Series,
         rfunc1: RFunc,
         rfunc2: RFunc,
-        tchange: str | Timestamp | str,
+        tchange: str | Timestamp,
         name: str = "change",
         up: bool = True,
         settings: str | StressSettingsDict | None = None,
