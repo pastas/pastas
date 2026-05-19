@@ -287,9 +287,9 @@ class StressModelBase(ABC):
         return settings
 
     @property
+    @abstractmethod
     def nsplit(self) -> int:
         """Determine in how many time series the contribution can be split."""
-        return len(self.stresses)
 
     def _get_block(
         self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
@@ -520,6 +520,10 @@ class StressModel(StressModelBase):
         nt = namedtuple("StressesTuple", ["stress"])
         return nt(stress=self.stress)
 
+    @property
+    def nsplit(self) -> int:
+        return len(self.stresses)
+
     def simulate(
         self,
         p: ArrayLike,
@@ -641,6 +645,10 @@ class StepModel(StressModelBase):
     @property
     def stresses(self) -> tuple:
         return ()
+
+    @property
+    def nsplit(self) -> int:
+        return len(self.stresses)
 
     def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
@@ -770,6 +778,10 @@ class LinearTrend(StressModelBase):
     def stresses(self) -> tuple:
         return ()
 
+    @property
+    def nsplit(self) -> int:
+        return len(self.stresses)
+
     def set_init_parameters(self) -> None:
         """Set the initial parameters for the stress model."""
         start = Timestamp(self.tstart).toordinal()
@@ -868,6 +880,10 @@ class Constant(StressModelBase):
     @property
     def stresses(self) -> tuple:
         return ()
+
+    @property
+    def nsplit(self) -> int:
+        return len(self.stresses)
 
     def set_init_parameters(self):
         self.parameters.loc[self.name + "_d"] = (
@@ -1161,6 +1177,10 @@ class WellModel(StressModelBase):
         """Return the stress time series as a tuple."""
         nt = namedtuple("StressesTuple", [s.name for s in self._stress])
         return nt(*self._stress)
+
+    @property
+    def nsplit(self) -> int:
+        return len(self.stresses)
 
     def set_init_parameters(self) -> None:
         self.parameters = self.rfunc.get_init_parameters(self.name)
@@ -2493,6 +2513,10 @@ class ChangeModel(StressModelBase):
         """Return the stress time series as a tuple."""
         nt = namedtuple("StressesTuple", ["stress"])
         return nt(stress=self.stress)
+
+    @property
+    def nsplit(self) -> int:
+        return 1
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
