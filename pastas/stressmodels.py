@@ -1121,7 +1121,6 @@ class WellModel(StressModelBase):
         -------
         stress: list
             return a list with the stresses transformed to pastas TimeSeries.
-
         """
         data = []
 
@@ -1466,7 +1465,6 @@ class WellModel(StressModelBase):
         -------
         data: dict
             dictionary with the dump of the stresses.
-
         """
         data = []
 
@@ -1785,7 +1783,6 @@ class RechargeModel(StressModelBase):
         Returns
         -------
         None
-
         """
 
         def _set_stress(
