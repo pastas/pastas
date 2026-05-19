@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pastas.solver.likelihood_functions import GaussianLikelihood, GaussianLikelihoodAr1
+from pastas.solver.likelihood import GaussianLikelihood, GaussianLikelihoodAr1
 
 
 class TestGaussianLikelihood:

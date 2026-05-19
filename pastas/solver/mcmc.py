@@ -8,7 +8,7 @@ from pastas.decorators import deprecate_args_or_kwargs
 from pastas.typing import ArrayLike, CallBack
 
 from .base import BaseSolver
-from .likelihood_functions import GaussianLikelihood, GaussianLikelihoodAr1
+from .likelihood import GaussianLikelihood, GaussianLikelihoodAr1
 
 logger = getLogger(__name__)
 
@@ -20,7 +20,7 @@ class EmceeSolve(BaseSolver):
     ----------
     objective_function: func, optional
         An objective function to be minimized. If not provided, the
-        GaussianLikelihood is used. See the pastas.objective_functions module for
+        GaussianLikelihood is used. See the pastas.likelihood_functions module for
         more information.
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
@@ -90,7 +90,7 @@ class EmceeSolve(BaseSolver):
         progress_bar: bool = True,
         **kwargs,
     ) -> None:
-        self.assert_emcee_installation()
+        self._assert_emcee_installation()
 
         if "objective_function" in kwargs:
             deprecate_args_or_kwargs(

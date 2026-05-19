@@ -199,7 +199,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
         warn(message=msg, category=DeprecationWarning)
     else:
         msg = (
-            f"got an unexpected keyword argument {name}"
+            f"Got an unexpected keyword argument {name}. "
             f"The {name} argument is deprecated and is not available"
             f" since Pastas version {VERSION}. {reason}"
         )
