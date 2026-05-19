@@ -11,6 +11,7 @@ from typing import Any
 
 import pandas as pd
 
+from pastas.decorators import set_parameter
 from pastas.typing import Model
 
 logger = getLogger(__name__)
@@ -56,6 +57,56 @@ class BaseSolver(ABC):
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
         self.parameters = self.get_init_parameters(name=self.name)
+
+    @set_parameter
+    def _set_initial(self, name: str, value: float) -> None:
+        """Internal method to set the initial parameter value.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "initial"] = value
+
+    @set_parameter
+    def _set_pmin(self, name: str, value: float) -> None:
+        """Internal method to set the lower bound of the parameter value.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "pmin"] = value
+
+    @set_parameter
+    def _set_pmax(self, name: str, value: float) -> None:
+        """Internal method to set the upper bound of the parameter value.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "pmax"] = value
+
+    @set_parameter
+    def _set_vary(self, name: str, value: float) -> None:
+        """Internal method to set if the parameter is varied during optimization.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "vary"] = bool(value)
+
+    @set_parameter
+    def _set_dist(self, name: str, value: str) -> None:
+        """Internal method to set distribution of prior of the parameter.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "dist"] = str(value)
 
     def set_model(self, ml: Model) -> None:
         """Method to set the Pastas Model instance.

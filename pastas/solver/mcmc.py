@@ -100,6 +100,8 @@ class EmceeSolve(BaseSolver):
             )
             objfunction = kwargs.pop("objective_function")
 
+        self.objfunction = objfunction
+
         super().__init__(name=name, **kwargs)
 
         # Set sampler properties

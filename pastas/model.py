@@ -387,6 +387,8 @@ class Model:
         if not hasattr(self.solver, "ml") or self.solver.ml is None:
             self.solver.set_model(self)
 
+        self._parameters = self.get_init_parameters(initial=False)
+
     @get_stressmodel
     def del_stressmodel(self, name: str):
         """Method to safely delete a stress model from the Model.
@@ -1157,6 +1159,7 @@ class Model:
         noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
         constant = self.constant.name if self.constant else "NotPresent"
         transform = self.transform.name if self.transform else "NotPresent"
+        solver = self.solver.name if self.solver else "NotPresent"
 
         # Get the model component for the parameter
         cat = self._parameters.at[name, "name"]
@@ -1169,6 +1172,12 @@ class Model:
             obj = self.constant
         elif cat == transform:
             obj = self.transform
+        elif cat == solver:
+            obj = self.solver
+        else:
+            msg = f"Parameter {name} is not associated with a model component."
+            logger.error(msg)
+            raise KeyError(msg)
 
         # Move pmin and pmax based on the initial
         if move_bounds and initial:
@@ -1216,8 +1225,8 @@ class Model:
         if optimal is not None:
             self._parameters.at[name, "optimal"] = optimal
         for key, value in kwargs.items():
-            if key in self.parameters.columns:
-                self.parameters.at[name, key] = value
+            if key in self._parameters.columns:
+                self._parameters.at[name, key] = value
             else:
                 msg = f"Parameter property '{key}' is not recognized."
                 logger.error(msg)
