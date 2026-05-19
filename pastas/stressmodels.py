@@ -1333,7 +1333,7 @@ class WellModel(StressModelBase):
         istress: int | list[int] | None = None,
         squeeze: bool = True,
         **kwargs,
-    ) -> Series | DataFrame:
+    ) -> Series:
         _ = p, kwargs
 
         tmin = self.tmin if tmin is None else tmin
