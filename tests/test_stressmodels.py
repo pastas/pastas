@@ -55,7 +55,7 @@ class TestStressModelBase:
 
     def test_freq_deprecated(self, stress_model: StressModel) -> None:
         """Test that the freq attribute raises a DeprecationWarning."""
-        with pytest.warns(DeprecationWarning, match="freq"):
+        with pytest.warns(AttributeError, match="freq"):
             _ = stress_model.freq
 
 
