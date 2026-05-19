@@ -131,6 +131,11 @@ class StressModelBase(ABC):
         """Return the stresses used by the stress model."""
 
     @property
+    @abstractmethod
+    def nsplit(self) -> int:
+        """Determine in how many time series the contribution can be split."""
+
+    @property
     def nparam(self) -> tuple[int]:
         return self.parameters.index.size
 
@@ -285,11 +290,6 @@ class StressModelBase(ABC):
             "name": self.name,
         }
         return settings
-
-    @property
-    @abstractmethod
-    def nsplit(self) -> int:
-        """Determine in how many time series the contribution can be split."""
 
     def _get_block(
         self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
@@ -1692,11 +1692,6 @@ class RechargeModel(StressModelBase):
                 )
                 logger.warning(msg)
 
-    @property
-    def nsplit(self) -> int:
-        """Number of contributions returned by this stress model."""
-        return 2 if isinstance(self.recharge, Linear) else 1
-
     def set_stress(
         self,
         prec: Series | None = None,
@@ -1820,6 +1815,11 @@ class RechargeModel(StressModelBase):
                 ["prec", "evap", "temp"],
             )
             return nt(prec=self.prec, evap=self.evap, temp=self.temp)
+
+    @property
+    def nsplit(self) -> int:
+        """Number of contributions returned by this stress model."""
+        return 2 if isinstance(self.recharge, Linear) else 1
 
     def set_init_parameters(self) -> None:
         """Internal method to set the initial parameters."""
