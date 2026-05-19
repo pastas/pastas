@@ -129,9 +129,8 @@ class StressModelBase:
     @PastasDeprecationWarning(
         version="2.0.0",
         reason=(
-            "The freq attribute is deprecated. The frequency is dependent on the "
-            "stress(es), not the StressModel. Use `stressmodel.stress.settings['freq']` or"
-            " `stressmodel.stresses[i].settings['freq']` instead to inspect the frequency."
+            "The freq attribute is deprecated. To inspect the model frequency "
+            "use `ml.settings['freq']`."
         ),
     )
     def freq(self) -> None:
@@ -139,7 +138,7 @@ class StressModelBase:
 
         .. deprecated:: 2.0.0
             The freq attribute is deprecated and will be removed in a future version.
-            The frequency is determined by the stress(es), not the StressModel.
+            To inspect the model frequency use `ml.settings['freq']`."
         """
         return None
 
