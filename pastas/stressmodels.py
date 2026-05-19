@@ -277,18 +277,6 @@ class StressModelBase(ABC):
         for stress in self.stresses:
             stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
 
-    def _get_block(
-        self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
-    ) -> ArrayLike:
-        """Internal method to get the block-response function."""
-        if tmin is not None and tmax is not None:
-            day = Timedelta(1, "D")
-            maxtmax = (Timestamp(tmax) - Timestamp(tmin)) / day
-        else:
-            maxtmax = None
-        b = self.rfunc.block(p, dt, maxtmax=maxtmax)
-        return b
-
     def get_settings(self) -> dict[str, StressSettingsDict] | None:
         """Method to obtain the settings of the stresses.
 
@@ -323,6 +311,18 @@ class StressModelBase(ABC):
         if model is None:
             return self.parameters.initial.values
         return model.get_parameters(self.name)
+
+    def _get_block(
+        self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
+    ) -> ArrayLike:
+        """Internal method to get the block-response function."""
+        if tmin is not None and tmax is not None:
+            day = Timedelta(1, "D")
+            maxtmax = (Timestamp(tmax) - Timestamp(tmin)) / day
+        else:
+            maxtmax = None
+        b = self.rfunc.block(p, dt, maxtmax=maxtmax)
+        return b
 
     def _get_responses(
         self,
