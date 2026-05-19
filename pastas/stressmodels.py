@@ -94,7 +94,6 @@ class StressModelBase:
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
-        self.freq = None
 
         if rfunc is not None:
             if isclass(rfunc):
@@ -132,6 +131,23 @@ class StressModelBase:
     @property
     def nparam(self) -> tuple[int]:
         return self.parameters.index.size
+
+    @property
+    @PastasDeprecationWarning(
+        version="2.0.0",
+        reason=(
+            "The freq attribute is deprecated. To inspect the model frequency "
+            "use `ml.settings['freq']`."
+        ),
+    )
+    def freq(self) -> None:
+        """Deprecated: The freq attribute is no longer set on stressmodels.
+
+        .. deprecated:: 2.0.0
+            The freq attribute is deprecated and will be removed in a future version.
+            To inspect the model frequency use `ml.settings['freq']`."
+        """
+        return None
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
@@ -248,9 +264,6 @@ class StressModelBase:
         """
         for stress in self.stresses:
             stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
-
-        if freq:
-            self.freq = freq
 
     def to_dict(self, **kwargs) -> None:
         """Placeholder for the to_dict method."""
@@ -442,7 +455,6 @@ class StressModel(StressModelBase):
             max_cache_size=max_cache_size,
         )
         self.gain_scale_factor = gain_scale_factor
-        self.freq = self.stress.settings["freq"]
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
@@ -1037,7 +1049,6 @@ class WellModel(StressModelBase):
         )
 
         self.rfunc.set_distances(self.distances.values)
-        self.freq = self.stresses[0].settings["freq"]
         self.set_init_parameters()
 
     @property
@@ -1645,7 +1656,6 @@ class RechargeModel(StressModelBase):
             max_cache_size=max_cache_size,
         )
 
-        self.freq = self.prec.settings["freq"]
         self.set_init_parameters()
         if isinstance(self.recharge, Linear):
             self.nsplit = 2
@@ -2438,7 +2448,6 @@ class ChangeModel(StressModelBase):
         rfunc2.update_rfunc_settings(up=up)
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
-        self.freq = self.stress.settings["freq"]
         self.set_init_parameters()
 
     @property

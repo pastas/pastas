@@ -53,6 +53,11 @@ class TestStressModelBase:
         assert stress_limited.index[0] >= pd.Timestamp(tmin)
         assert stress_limited.index[-1] <= pd.Timestamp(tmax)
 
+    def test_freq_deprecated(self, stress_model: StressModel) -> None:
+        """Test that the freq attribute raises an AttributeError."""
+        with pytest.raises(AttributeError, match="freq"):
+            _ = stress_model.freq
+
 
 class TestStressModel:
     """Test StressModel."""
