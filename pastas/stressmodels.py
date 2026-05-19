@@ -271,11 +271,22 @@ class StressModelBase(ABC):
         for stress in self.stresses:
             stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
 
-    def to_dict(self, **kwargs) -> None:
-        """Placeholder for the to_dict method."""
-        pass
+    def to_dict(self) -> dict[str, Any]:
+        """Export the stress model to a dictionary.
 
-    def get_nsplit(self) -> int:
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary with base settings to reconstruct the stress model object.
+        """
+        settings = {
+            "class": self._name,
+            "name": self.name,
+        }
+        return settings
+
+    @property
+    def nsplit(self) -> int:
         """Determine in how many time series the contribution can be split."""
         if hasattr(self, "nsplit"):
             return self.nsplit
@@ -580,10 +591,8 @@ class StressModel(StressModelBase):
         -----
         Settings and metadata are exported with the stress.
         """
-        data = {
-            "class": self._name,
+        data = super().to_dict() | {
             "rfunc": self.rfunc.to_dict(),
-            "name": self.name,
             "up": self.rfunc.up,
             "stress": self.stress.to_dict(series=series),
             "gain_scale_factor": self.gain_scale_factor,
@@ -694,10 +703,8 @@ class StepModel(StressModelBase):
         data: dict
             dictionary with all necessary information to reconstruct object.
         """
-        data = {
-            "class": self._name,
+        data = super().to_dict() | {
             "tstart": self.tstart,
-            "name": self.name,
             "rfunc": self.rfunc.to_dict(),
             "up": self.rfunc.up,
         }
@@ -838,12 +845,11 @@ class LinearTrend(StressModelBase):
         -------
         data: dict
         """
-        data = {
-            "class": self._name,
+        data = super().to_dict() | {
             "tstart": self.tstart,
             "tend": self.tend,
-            "name": self.name,
         }
+
         return data
 
 
@@ -891,11 +897,7 @@ class Constant(StressModelBase):
             dictionary with all necessary information to reconstruct the StressModel
             object.
         """
-        data = {
-            "class": self._name,
-            "name": self.name,
-            "initial": self.initial,
-        }
+        data = super().to_dict() | {"initial": self.initial}
         return data
 
 
@@ -1386,11 +1388,9 @@ class WellModel(StressModelBase):
             dictionary with all necessary information to reconstruct the WellModel
             object.
         """
-        data = {
-            "class": self._name,
+        data = super().to_dict() | {
             "stress": self.dump_stress(series),
             "rfunc": self.rfunc.to_dict(),
-            "name": self.name,
             "distances": self.distances.to_list(),
             "up": True if self.rfunc.up else False,
             "sort_wells": self.sort_wells,
@@ -2088,12 +2088,10 @@ class RechargeModel(StressModelBase):
         -----
         Settings and metadata are exported with the stress.
         """
-        data = {
-            "class": self._name,
+        data = super().to_dict() | {
             "prec": self.prec.to_dict(series=series),
             "evap": self.evap.to_dict(series=series),
             "rfunc": self.rfunc.to_dict(),
-            "name": self.name,
             "recharge": self.recharge.to_dict(),
             "temp": self.temp.to_dict() if self.temp else None,
         }
@@ -2253,9 +2251,7 @@ class TarsoModel(RechargeModel):
         -----
         Settings and metadata are exported with the stress.
         """
-        data = super().to_dict(series)
-        data["dmin"] = self.dmin
-        data["dmax"] = self.dmax
+        data = super().to_dict(series=series) | {"dmin": self.dmin, "dmax": self.dmax}
         return data
 
     @staticmethod
@@ -2624,12 +2620,10 @@ class ChangeModel(StressModelBase):
         -----
         Settings and metadata are exported with the stress.
         """
-        data = {
-            "class": self._name,
+        data = super().to_dict() | {
             "stress": self.stresses[0].to_dict(series=series),
             "rfunc1": self.rfunc1.to_dict(),
             "rfunc2": self.rfunc2.to_dict(),
-            "name": self.name,
             "tchange": self.tchange,
             "up": self.rfunc1.up,
         }
