@@ -155,6 +155,23 @@ class StressModelBase(ABC):
         return None
 
     @property
+    @PastasDeprecationWarning(
+        version="2.0.0",
+        reason=(
+            "The get_nsplit methods is deprecated. To inspect the number of available split"
+            " options, use the property `nsplit` instead, e.g., `stressmodel.nsplit`."
+        ),
+    )
+    def get_nsplit(self) -> None:
+        """Deprecated: The get_nsplit attribute is no available.
+
+        .. deprecated:: 2.0.0
+            The freq attribute is deprecated and will be removed in a future version.
+            Use the property `nsplit` instead, e.g., `stressmodel.nsplit`."
+        """
+        return None
+
+    @property
     def nparam(self) -> tuple[int]:
         return self.parameters.index.size
 
