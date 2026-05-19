@@ -146,10 +146,11 @@ class StressModelBase(ABC):
         ),
     )
     def get_nsplit(self) -> None:
-        """Deprecated: The get_nsplit attribute is no available.
+        """Deprecated: The get_nsplit attribute is no longer available.
 
         .. deprecated:: 2.0.0
-            The freq attribute is deprecated and will be removed in a future version.
+            The get_nsplit attribute is deprecated and will be removed in a future
+            version.
             Use the property `nsplit` instead, e.g., `stressmodel.nsplit`."
         """
         return None
@@ -274,19 +275,19 @@ class StressModelBase(ABC):
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
     ) -> None:
-        """Update the settings of the all stresses in the stress model.
+        """Update the settings of all stresses in the stress model.
 
         Parameters
         ----------
-        freq: str, optional
-            String representing the desired frequency of the time series. Must be one
-            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the minimum time of the series
             (E.g. '1980-01-01 00:00:00').
         tmax: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the maximum time of the series
             (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp internally.
+        freq: str, optional
+            String representing the desired frequency of the time series. Must be one
+            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
 
         Notes
         -----
@@ -325,8 +326,6 @@ class StressModelBase(ABC):
         model : pastas.Model, optional
             If provided, and the model is solved, return optimal model parameter-values.
             Otherwise, return initial parameter-values.
-        istress : int, optional
-            if provided, return specific parameter set, else return all parameters.
 
         Returns
         -------
@@ -595,8 +594,8 @@ class StressModel(StressModelBase):
         freq: str, optional
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
-        dt: int, optional
-            Time step in days for the block response function. Default is 1 day.
+        dt: float, optional
+            Time step in days for the block response function. Default is 1.0 day.
 
         Returns
         -------
@@ -1317,11 +1316,10 @@ class WellModel(StressModelBase):
         squeeze: bool = True,
         **kwargs,
     ) -> Series | DataFrame:
-        _ = p  # p is not used to calculate the stress
-        if tmin is None:
-            tmin = self.tmin
-        if tmax is None:
-            tmax = self.tmax
+        _ = p, kwargs
+
+        tmin = self.tmin if tmin is None else tmin
+        tmax = self.tmax if tmax is None else tmax
 
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
@@ -1519,13 +1517,13 @@ class RechargeModel(StressModelBase):
         pandas.Series with pandas.DatetimeIndex containing the temperature series.
         It depends on the recharge model if this argument is required or not. The
         temperature series should be provided in degrees Celsius.
-    settings: list of dicts or str, optional
+    settings: tuple of str or dict, optional
         The settings of the precipitation, evaporation and optionally temperature time
         series, in this order. By default ("prec", "evap", "evap"). This can be a string
         referring to a predefined settings dict (defined in ps.rcParams["timeseries"]),
         or a dict with the settings to apply. For more information refer to Time Series
         Settings section below for more information.
-    metadata: tuple of dicts or list of dicts, optional
+    metadata: tuple of dict or None, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
     max_cache_size: int, optional
@@ -1591,12 +1589,10 @@ class RechargeModel(StressModelBase):
 
     Warnings
     --------
-    We recommend not to store a RechargeModel is a variable named `rm`. This name is
+    We recommend not to store a RechargeModel in a variable named `rm`. This name is
     already reserved in IPython to remove files and will cause problems later.
 
-    Raises
-    ------
-    A warning if the the maximum annual precipitation is smaller than 12 and a
+    A warning is raised if the maximum annual precipitation is smaller than 12 and a
     nonlinear recharge model is applied. This is likely an indication that the units of
     the precipitation series are in m/d instead of mm/d. Please check the units of the
     precipitation series.
@@ -1793,7 +1789,6 @@ class RechargeModel(StressModelBase):
             for more information.
         metadata : dict, optional
             Dictionary with metadata of the stress time series.
-            TimeSeries object.
 
         Returns
         -------
@@ -1951,7 +1946,7 @@ class RechargeModel(StressModelBase):
         Returns
         -------
         stress: pandas.Series
-            When no istress is selected, this return the estimated recharge flux that
+            When no istress is selected, this returns the estimated recharge flux that
             is convolved with a response function on the simulate method.
 
         """
@@ -2409,9 +2404,6 @@ class ChangeModel(StressModelBase):
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
         TimeSeries object.
-    max_cache_size: int, optional
-        Maximum size of the cache (in number of entries). Only used when cachetools is
-        installed and caching is enabled (see ps.set_use_cache()).
 
     Other Parameters
     ----------------
