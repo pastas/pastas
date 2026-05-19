@@ -81,8 +81,6 @@ class StressModelBase:
         The DataFrame containing the parameters.
     """
 
-    _name = "StressModelBase"
-
     def __init__(
         self,
         name: str,
@@ -103,6 +101,11 @@ class StressModelBase:
                     "the rfunc argument must be an instance of response function, not "
                     "a class. Please provide an instance, e.g., ps.Exponential()"
                 )
+            elif isinstance(rfunc, str):
+                raise TypeError(
+                    "the rfunc argument must be an instance of response function, not a string:"
+                    f" '{rfunc}'. Please provide a response function, e.g., ps.Exponential()"
+                )
             rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
@@ -116,6 +119,10 @@ class StressModelBase:
             self._cache = LRUCache(maxsize=max_cache_size)
         else:
             self._cache = None
+
+    @property
+    def _name(self) -> str:
+        return self.__class__.__name__
 
     @property
     def stresses(self) -> tuple:
@@ -346,7 +353,7 @@ class StressModel(StressModelBase):
     rfunc: pastas.rfunc instance
         An instance of the response function used in the convolution with the stress.
     name: str
-        Name of the stress.
+        Name of the stressmodel.
     up: bool or None, optional
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
@@ -421,8 +428,6 @@ class StressModel(StressModelBase):
     pastas.timeseries.TimeSeries
     """
 
-    _name = "StressModel"
-
     def __init__(
         self,
         stress: Series,
@@ -436,8 +441,7 @@ class StressModel(StressModelBase):
     ) -> None:
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
-        StressModelBase.__init__(
-            self,
+        super().__init__(
             name=name,
             tmin=self.stress.series.index.min(),
             tmax=self.stress.series.index.max(),
@@ -590,11 +594,11 @@ class StepModel(StressModelBase):
         String with the start date of the step, e.g. '2018-01-01'. This value is
         fixed by default. Use ml.set_parameter("step_tstart", vary=True) to vary the
         start time of the step trend.
-    name: str
-        String with the name of the stressmodel.
     rfunc: pastas.rfunc instance
         Pastas response function used to simulate the effect of the step. Default is
         ps.rfunc.One(), an instant effect.
+    name: str
+        Name of the stressmodel. Default is "step".
     up: bool, optional
         Force a direction of the step. Default is None.
 
@@ -605,23 +609,19 @@ class StepModel(StressModelBase):
     convolved with the block response to simulate a step trend.
     """
 
-    _name = "StepModel"
-
     def __init__(
         self,
         tstart: Timestamp | str,
-        name: str,
         rfunc: RFunc | None = None,
+        name: str = "step",
         up: bool = None,
         max_cache_size: int = None,
     ) -> None:
-        rfunc = One() if rfunc is None else rfunc
-        StressModelBase.__init__(
-            self,
+        super().__init__(
             name=name,
             tmin=Timestamp.min,
             tmax=Timestamp.max,
-            rfunc=rfunc,
+            rfunc=One() if rfunc is None else rfunc,
             up=up,
             max_cache_size=max_cache_size,
         )
@@ -710,7 +710,7 @@ class LinearTrend(StressModelBase):
         String with a date to end the trend (e.g., "2018-01-01"), will be transformed
         to an ordinal number internally.
     name: str, optional
-        String with the name of the stress model.
+        Name of the stressmodel. Default is "trend".
 
     Notes
     -----
@@ -719,15 +719,13 @@ class LinearTrend(StressModelBase):
     to estimate from the data.
     """
 
-    _name = "LinearTrend"
-
     def __init__(
         self,
-        tstart: Timestamp | str = None,
-        tend: Timestamp | str = None,
+        tstart: Timestamp | str | None = None,
+        tend: Timestamp | str | None = None,
         name: str = "trend",
-        start: Timestamp | str = None,
-        end: Timestamp | str = None,
+        start: Timestamp | str | None = None,
+        end: Timestamp | str | None = None,
     ) -> None:
         # Handle deprecated arguments
         if start is not None:
@@ -755,9 +753,7 @@ class LinearTrend(StressModelBase):
         if tend is None:
             raise TypeError("LinearTrend.__init__() missing required argument: 'tend'")
 
-        StressModelBase.__init__(
-            self, name=name, tmin=Timestamp.min, tmax=Timestamp.max
-        )
+        super().__init__(name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.tstart = tstart
         self.tend = tend
         self.set_init_parameters()
@@ -850,19 +846,15 @@ class Constant(StressModelBase):
 
     Parameters
     ----------
-    name: str, optional
-        Name of the stressmodel.
     initial: float, optional
         Initial estimate of the parameter value. For example, the minimum of the
         observed series.
+    name: str, optional
+        Name of the stressmodel. Default is "constant".
     """
 
-    _name = "Constant"
-
-    def __init__(self, name: str = "constant", initial: float = 0.0) -> None:
-        StressModelBase.__init__(
-            self, name=name, tmin=Timestamp.min, tmax=Timestamp.max
-        )
+    def __init__(self, initial: float = 0.0, name: str = "constant") -> None:
+        super().__init__(name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.initial = initial
         self.set_init_parameters()
 
@@ -907,20 +899,20 @@ class WellModel(StressModelBase):
     Parameters
     ----------
     stress: list
-        list containing the stresses time series.
-    name: str
-        name of the stressmodel.
-    distances: array_like
-        array_like of distances between the stresses (wells) and the oseries
-        (monitoring well), must be in the same order as the stresses. This distance is
-        used to scale the HantushWellModel response function foreach stress.
+        list containing the stresses time series
     rfunc: pastas.rfunc instance, optional
         this model only works with the HantushWellModel response function, default is
         None which will initialize a HantushWellModel response function.
+    name: str
+        Name of the stressmodel. Default is "well".
     up: bool, optional
         whether a positive stress has an increasing or decreasing effect on the model,
         by default False, in which case positive stress lowers e.g., the groundwater
         level.
+    distances: array_like
+        array_like of distances between the stresses (wells) and the oseries
+        (monitoring well), must be in the same order as the stresses. This distance is
+        used to scale the HantushWellModel response function for each stress.
     settings: str, list of dict, optional
         The settings of the stress. By default this is "well". This can be a string
         referring to a predefined settings dictionary (defined in
@@ -985,15 +977,13 @@ class WellModel(StressModelBase):
     Only works with the HantushWellModel response function.
     """
 
-    _name = "WellModel"
-
     def __init__(
         self,
         stress: Iterable[Series],
-        name: str,
-        distances: ArrayLike,
         rfunc: HantushWellModel | None = None,
+        name: str = "well",
         up: bool = False,
+        distances: ArrayLike | None = None,
         settings: str
         | StressSettingsDict
         | Iterable[str]
@@ -1017,6 +1007,12 @@ class WellModel(StressModelBase):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"
             )
+
+        if distances is None:
+            logger.warning(
+                "No distances provided for the WellModel. Defaulting to 1.0 for all stresses."
+            )
+            distances = [1.0] * len(stress)
 
         if len(distances) != len(stress):
             msg = (
@@ -1042,8 +1038,7 @@ class WellModel(StressModelBase):
         # parse stresses input
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
-        StressModelBase.__init__(
-            self,
+        super().__init__(
             name=name,
             tmin=tmin,
             tmax=tmax,
@@ -1488,7 +1483,7 @@ class RechargeModel(StressModelBase):
         Instance of the response function used in the convolution with the stress.
         Default is ps.Exponential().
     name: str, optional
-        Name of the stress. Default is "recharge".
+        Name of the stressmodel. Default is "recharge".
     recharge: pastas.recharge instance, optional
         Instance of a recharge model. Options are: Linear, FlexModel and Berendrecht.
         These can be accessed through ps.rch. Default is ps.rch.Linear().
@@ -1586,8 +1581,6 @@ class RechargeModel(StressModelBase):
     pastas.recharge
     """
 
-    _name = "RechargeModel"
-
     def __init__(
         self,
         prec: Series,
@@ -1653,8 +1646,7 @@ class RechargeModel(StressModelBase):
             p=p, tmin=index.min(), tmax=index.max(), freq=self.prec.settings["freq"]
         ).std()
 
-        StressModelBase.__init__(
-            self,
+        super().__init__(
             name=name,
             tmin=index.min(),
             tmax=index.max(),
@@ -2112,6 +2104,10 @@ class TarsoModel(RechargeModel):
     evap: pandas.Series
         pandas.Series with pandas.DatetimeIndex containing the potential evaporation
         series.
+    rfunc: pastas.rfunc instance
+        this model only works with the Exponential response function.
+    name: str, optional
+        Name of the stressmodel. Default is "tarso".
     oseries: pandas.Series, optional
         A pandas.Series with pandas.DatetimeIndex of observations to which the model
         will be calibrated. It is used to determine the initial values of the
@@ -2125,8 +2121,6 @@ class TarsoModel(RechargeModel):
         The maximum drainage level. It is used to determine the initial values of the
         drainage levels and the upper boundary of the upper drainage level. Specify
         either oseries or dmin and dmax.
-    rfunc: pastas.rfunc instance
-        this model only works with the Exponential response function.
     max_cache_size: int, optional
         Maximum size of the cache (in number of entries). Only used when cachetools is
         installed and caching is enabled (see ps.set_use_cache()).
@@ -2149,16 +2143,15 @@ class TarsoModel(RechargeModel):
     class are named above.
     """
 
-    _name = "TarsoModel"
-
     def __init__(
         self,
         prec: Series,
         evap: Series,
+        rfunc: Exponential | None = None,
+        name: str = "tarso",
         oseries: Series | None = None,
         dmin: float | None = None,
         dmax: float | None = None,
-        rfunc: RFunc | None = None,
         **kwargs,
     ) -> None:
         if oseries is not None:
@@ -2176,7 +2169,7 @@ class TarsoModel(RechargeModel):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
         self.dmin = dmin
         self.dmax = dmax
-        super().__init__(prec=prec, evap=evap, rfunc=rfunc, **kwargs)
+        super().__init__(prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs)
         self.nsplit = 1
 
     def set_init_parameters(self) -> None:
@@ -2361,10 +2354,10 @@ class ChangeModel(StressModelBase):
         The instance of the response function used in the convolution with the stress.
     rfunc2: pastas.rfunc instance
         The instance of the response function used in the convolution with the stress.
-    name: str
-        name of the stress.
-    tchange: str
+    tchange: str | pandas.Timestamp
         string with the approximate date of the change.
+    name: str
+        Name of the stressmodel. Default is "change".
     up: bool or None, optional
         True if response function is positive (default), False if negative. None if
         you don't want to define if response is positive or negative.
@@ -2428,15 +2421,13 @@ class ChangeModel(StressModelBase):
     This model is based on :cite:t:`obergfell_identification_2019`.
     """
 
-    _name = "ChangeModel"
-
     def __init__(
         self,
         stress: Series,
         rfunc1: RFunc,
         rfunc2: RFunc,
-        name: str,
-        tchange: str | Timestamp | str,
+        tchange: str | Timestamp,
+        name: str = "change",
         up: bool = True,
         settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
