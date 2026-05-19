@@ -81,8 +81,6 @@ class StressModelBase:
         The DataFrame containing the parameters.
     """
 
-    _name = "StressModelBase"
-
     def __init__(
         self,
         name: str,
@@ -117,6 +115,10 @@ class StressModelBase:
             self._cache = LRUCache(maxsize=max_cache_size)
         else:
             self._cache = None
+
+    @property
+    def _name(self) -> str:
+        return self.__class__.__name__
 
     @property
     def stresses(self) -> tuple:
@@ -408,8 +410,6 @@ class StressModel(StressModelBase):
     pastas.timeseries.TimeSeries
     """
 
-    _name = "StressModel"
-
     def __init__(
         self,
         stress: Series,
@@ -593,8 +593,6 @@ class StepModel(StressModelBase):
     convolved with the block response to simulate a step trend.
     """
 
-    _name = "StepModel"
-
     def __init__(
         self,
         tstart: Timestamp | str,
@@ -706,8 +704,6 @@ class LinearTrend(StressModelBase):
     end time of the linear trend. These parameters are usually hard or even impossible
     to estimate from the data.
     """
-
-    _name = "LinearTrend"
 
     def __init__(
         self,
@@ -845,8 +841,6 @@ class Constant(StressModelBase):
         observed series.
     """
 
-    _name = "Constant"
-
     def __init__(self, name: str = "constant", initial: float = 0.0) -> None:
         StressModelBase.__init__(
             self, name=name, tmin=Timestamp.min, tmax=Timestamp.max
@@ -972,8 +966,6 @@ class WellModel(StressModelBase):
 
     Only works with the HantushWellModel response function.
     """
-
-    _name = "WellModel"
 
     def __init__(
         self,
@@ -1575,8 +1567,6 @@ class RechargeModel(StressModelBase):
     pastas.recharge
     """
 
-    _name = "RechargeModel"
-
     def __init__(
         self,
         prec: Series,
@@ -2139,8 +2129,6 @@ class TarsoModel(RechargeModel):
     class are named above.
     """
 
-    _name = "TarsoModel"
-
     def __init__(
         self,
         prec: Series,
@@ -2417,8 +2405,6 @@ class ChangeModel(StressModelBase):
     -----
     This model is based on :cite:t:`obergfell_identification_2019`.
     """
-
-    _name = "ChangeModel"
 
     def __init__(
         self,
