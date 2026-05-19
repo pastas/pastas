@@ -102,6 +102,11 @@ class StressModelBase:
                     "the rfunc argument must be an instance of response function, not "
                     "a class. Please provide an instance, e.g., ps.Exponential()"
                 )
+            elif isinstance(rfunc, str):
+                raise TypeError(
+                    "the rfunc argument must be an instance of response function, not a string:"
+                    f" '{rfunc}'. Please provide a response function, e.g., ps.Exponential()"
+                )
             rfunc.update_rfunc_settings(up=up, gain_scale_factor=gain_scale_factor)
         self.rfunc = rfunc
 
@@ -596,8 +601,8 @@ class StepModel(StressModelBase):
     def __init__(
         self,
         tstart: Timestamp | str,
-        name: str,
         rfunc: RFunc | None = None,
+        name: str = "step",
         up: bool = None,
         max_cache_size: int = None,
     ) -> None:
@@ -970,9 +975,9 @@ class WellModel(StressModelBase):
     def __init__(
         self,
         stress: Iterable[Series],
-        name: str,
-        distances: ArrayLike,
         rfunc: HantushWellModel | None = None,
+        name: str = "well",
+        distances: ArrayLike | None = None,
         up: bool = False,
         settings: str
         | StressSettingsDict
@@ -997,6 +1002,12 @@ class WellModel(StressModelBase):
             raise NotImplementedError(
                 "WellModel only supports the rfunc HantushWellModel!"
             )
+
+        if distances is None:
+            logger.warning(
+                "No distances provided for the WellModel. Defaulting to 1.0 for all stresses."
+            )
+            distances = [1.0] * len(stress)
 
         if len(distances) != len(stress):
             msg = (
@@ -2133,10 +2144,11 @@ class TarsoModel(RechargeModel):
         self,
         prec: Series,
         evap: Series,
+        rfunc: Exponential | None = None,
+        name: str = "tarso",
         oseries: Series | None = None,
         dmin: float | None = None,
         dmax: float | None = None,
-        rfunc: RFunc | None = None,
         **kwargs,
     ) -> None:
         if oseries is not None:
@@ -2154,7 +2166,7 @@ class TarsoModel(RechargeModel):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
         self.dmin = dmin
         self.dmax = dmax
-        super().__init__(prec=prec, evap=evap, rfunc=rfunc, **kwargs)
+        super().__init__(prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs)
         self.nsplit = 1
 
     def set_init_parameters(self) -> None:
@@ -2411,8 +2423,8 @@ class ChangeModel(StressModelBase):
         stress: Series,
         rfunc1: RFunc,
         rfunc2: RFunc,
-        name: str,
         tchange: str | Timestamp | str,
+        name: str = "change",
         up: bool = True,
         settings: str | StressSettingsDict | None = None,
         metadata: dict | None = None,
