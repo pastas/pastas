@@ -111,8 +111,7 @@ class NoiseModelBase(ABC):
 
     def to_dict(self) -> dict:
         """Method to return a dict to store the noise model"""
-        settings = {"class": self._name, "norm": self.norm}
-        return settings
+        return {"class": self._name, "norm": self.norm}
 
     def weights(self, res: Series, p: ArrayLike) -> Series | int:
         return 1
@@ -274,8 +273,7 @@ class ArNoiseModel(NoiseModelBase):
 
     def to_dict(self) -> dict:
         """Method to return a dict to store the noise model"""
-        settings = super().to_dict()
-        return settings
+        return super().to_dict()
 
 
 @PastasDeprecationWarning(
@@ -373,8 +371,7 @@ class ArmaNoiseModel(NoiseModelBase):
 
     def to_dict(self) -> dict:
         """Method to return a dict to store the noise model"""
-        settings = super().to_dict()
-        return settings
+        return super().to_dict()
 
 
 @PastasDeprecationWarning(
