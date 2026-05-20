@@ -32,7 +32,7 @@ sm = ps.RechargeModel(
 ml.add_stressmodel(sm)
 
 # add a stepmodel with an exponential response
-sm = ps.stressmodels.StepModel("2007", "Step", rfunc=ps.One())
+sm = ps.stressmodels.StepModel("2007", name="step", rfunc=ps.One())
 ml.add_stressmodel(sm)
 
 # solve

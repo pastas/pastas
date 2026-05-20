@@ -168,7 +168,7 @@ def add_wellmodel(
     """
     wm = ps.WellModel(
         stresses,
-        "wellmodel",
+        name="wellmodel",
         distances=distances,
         rfunc=ps.HantushWellModel(**rfunc_kwargs),
     )
