@@ -18,7 +18,7 @@ from .base import SolverBase
 logger = getLogger(__name__)
 
 
-class BaseLeastSquares(SolverBase):
+class LeastSquaresBase(SolverBase):
     """Base class for least squares solvers."""
 
     def __init__(
@@ -39,12 +39,12 @@ class BaseLeastSquares(SolverBase):
         """
         if "nfev" in kwargs:
             logger.debug(
-                "The 'nfev' argument is not used in the BaseLeastSquares class and will be ignored."
+                "The 'nfev' argument is not used in the LeastSquaresBase class and will be ignored."
             )
             kwargs.pop("nfev")
         if "obj_func" in kwargs:
             logger.debug(
-                "The 'obj_func' argument is not used in the BaseLeastSquares class and will be ignored."
+                "The 'obj_func' argument is not used in the LeastSquaresBase class and will be ignored."
             )
             kwargs.pop("obj_func")
         super().__init__(name=name, **kwargs)
@@ -723,7 +723,7 @@ class BaseLeastSquares(SolverBase):
         return settings
 
 
-class LeastSquares(BaseLeastSquares):
+class LeastSquares(LeastSquaresBase):
     """Solver based on Scipy's least_squares method :cite:p:`virtanen_scipy_2020`.
 
 
@@ -1102,7 +1102,7 @@ class LeastSquares(BaseLeastSquares):
         return settings
 
 
-class LmfitSolve(BaseLeastSquares):
+class LmfitSolve(LeastSquaresBase):
     """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
     This is basically a wrapper around the scipy solvers, adding some cool

@@ -153,7 +153,7 @@ class SolverBase(ABC):
 
 
 @PastasDeprecationWarning(
-    version="2.2.0", reason="Use SolverBase instead of BaseSolver."
+    version="2.0.0", reason="Use SolverBase instead of BaseSolver."
 )
 class BaseSolver(SolverBase):
     """BaseSolver is deprecated and will be removed in a future version of Pastas.
