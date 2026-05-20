@@ -455,14 +455,9 @@ class Model:
         looks with only the initial parameters and no calibration.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
-        if tmin is None and self.settings["tmin"]:
-            tmin = self.settings["tmin"]
-        else:
-            tmin = self.get_tmin(tmin, use_oseries=False, use_stresses=True)
-        if tmax is None and self.settings["tmax"]:
-            tmax = self.settings["tmax"]
-        else:
-            tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
+        tmin = self.settings["tmin"] if tmin is None else tmin
+        tmax = self.settings["tmax"] if tmax is None else tmax
+
         freq = self.settings["freq"] if freq is None else freq
         warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
 
@@ -497,7 +492,11 @@ class Model:
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
             contrib = sm.simulate(
-                p[istart : istart + sm.nparam], sim_index.min(), tmax, freq, dt
+                p=p[istart : istart + sm.nparam],
+                tmin=sim_index.min(),
+                tmax=tmax,
+                freq=freq,
+                dt=dt,
             )
             sim = sim.add(contrib)
             istart += sm.nparam
