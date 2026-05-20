@@ -26,7 +26,7 @@ StressModel = TypeVar(
     "StressModel", bound="ps.stressmodels.StressModelBase"
 )  # Stress Model
 NoiseModel = TypeVar("NoiseModel", bound="ps.noisemodels.NoiseModelBase")  # Noise Model
-Solver = TypeVar("Solver", bound="ps.solver.BaseSolver")  # Base Solver
+Solver = TypeVar("Solver", bound="ps.solver.SolverBase")  # Base Solver
 Recharge = TypeVar("Recharge", bound="ps.recharge.RechargeBase")  # Recharge Base
 CallBack = TypeVar("CallBack", bound=Any)  # Callback
 RFunc = TypeVar("RFunc", bound="ps.rfunc.RfuncBase")  # rFunc Base

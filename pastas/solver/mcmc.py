@@ -7,13 +7,13 @@ from pandas import DataFrame, Series
 from pastas.decorators import deprecate_args_or_kwargs
 from pastas.typing import ArrayLike, CallBack
 
-from .base import BaseSolver
+from .base import SolverBase
 from .likelihood import GaussianLikelihood, GaussianLikelihoodAr1
 
 logger = getLogger(__name__)
 
 
-class EmceeSolve(BaseSolver):
+class EmceeSolve(SolverBase):
     """Solver based on MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`.
 
     Parameters
@@ -34,7 +34,7 @@ class EmceeSolve(BaseSolver):
     progress_bar: bool, optional
         Show the progress bar or not. Requires the `tqdm` package to be installed.
     **kwargs, optional
-        All other keyword arguments are passed on to the BaseSolver class.
+        All other keyword arguments are passed on to the SolverBase class.
 
     Notes
     -----

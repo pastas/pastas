@@ -13,12 +13,12 @@ from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cach
 from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike, CallBack
 
-from .base import BaseSolver
+from .base import SolverBase
 
 logger = getLogger(__name__)
 
 
-class BaseLeastSquares(BaseSolver):
+class BaseLeastSquares(SolverBase):
     """Base class for least squares solvers."""
 
     def __init__(

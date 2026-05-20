@@ -1,6 +1,6 @@
 """This module contains the base solver that used available for Pastas.
 
-All solvers inherit from the BaseSolver class, which contains general method for
+All solvers inherit from the SolverBase class, which contains general method for
 selecting the correct time series to misfit and options to weight the residuals or
 noise series.
 """
@@ -11,14 +11,14 @@ from typing import Any
 
 import pandas as pd
 
-from pastas.decorators import set_parameter
+from pastas.decorators import PastasDeprecationWarning, set_parameter
 from pastas.typing import Model
 
 logger = getLogger(__name__)
 
 
-class BaseSolver(ABC):
-    """All solver instances inherit from the BaseSolver class.
+class SolverBase(ABC):
+    """All solver instances inherit from the SolverBase class.
 
     Attributes
     ----------
@@ -150,3 +150,21 @@ class BaseSolver(ABC):
             "name": self.name,
             "kwargs": self.kwargs,
         }
+
+
+@PastasDeprecationWarning(
+    version="2.2.0", reason="Use SolverBase instead of BaseSolver."
+)
+class BaseSolver(SolverBase):
+    """BaseSolver is deprecated and will be removed in a future version of Pastas.
+
+    Please use the SolverBase class instead, which provides a more structured and
+    flexible approach to implementing solvers in Pastas. The SolverBase class includes
+    methods for setting initial parameters, bounds, and whether parameters should be
+    varied during optimization, as well as a method for associating the solver with a
+    Pastas Model instance.
+
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
