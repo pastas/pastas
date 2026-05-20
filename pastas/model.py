@@ -1227,6 +1227,7 @@ class Model:
         for key, value in kwargs.items():
             if key in self._parameters.columns:
                 self._parameters.at[name, key] = value
+                obj.parameters.at[name, key] = value
             else:
                 msg = f"Parameter property '{key}' is not recognized."
                 logger.error(msg)

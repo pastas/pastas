@@ -140,6 +140,71 @@ class EmceeSolve(BaseSolver):
         parameters = self.objfunction.get_init_parameters(name if name else self.name)
         return parameters
 
+    def misfit(
+        self,
+        p: ArrayLike,
+        noise: bool,
+        weights: Series | None = None,
+        callback: CallBack | None = None,
+        returnseparate: bool = False,
+    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
+        """This method is called by all LeastSquares solvers to obtain a series that are
+        minimized in the optimization process. It handles the application of the
+        weights, a noisemodel and other optimization options.
+
+        Parameters
+        ----------
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+        noise: Boolean
+            If True, minimizes the sum of squared noise computed by the NoiseModel.
+        weights: pandas.Series, optional
+            A pandas Series used to scale the residual or noise (in the case of a
+            `NoiseModel`) during optimization. The weights must share the same
+            `DateTimeIndex` as the observations (`ml.observations()`) to ensure proper
+            alignment. These weights are applied such that the minimized objective
+            function in least-squares solvers is ``sum((weights * residuals)**2)``.
+            This means that a residual with double the weight has four times as much
+            influence. If None, equal weights are used. This can be used to put extra/
+            less weight on certain periods (e.g., droughts) or measurements (i.e.
+            outliers), and make more complex calibration schemes (see, for example,
+            :cite:`colllenteur_analysis_2023`).
+        callback: ufunc, optional
+            function that is called after each iteration. the parameters are
+            provided to the func. E.g. "callback(parameters)"
+        returnseparate: bool, optional
+            return residuals, noise, noiseweights
+
+        Returns
+        -------
+        rv: array_like
+            residuals array (if noise=False) or noise array (if noise=True)
+        """
+        # Get the residuals or the noise
+        if noise:
+            rv = self.ml.noise(p) * self.ml._noise_weights(p)
+        else:
+            rv = self.ml.residuals(p)
+
+        # Determine if weights need to be applied
+        if weights is not None:
+            weights = weights.reindex(rv.index)
+            weights.fillna(1.0, inplace=True)
+            rv = rv.multiply(weights)
+
+        if callback is not None:
+            callback(p)
+
+        if returnseparate:
+            return (
+                self.ml.residuals(p).to_numpy(copy=True),
+                self.ml.noise(p).to_numpy(copy=True),
+                self.ml._noise_weights(p).to_numpy(copy=True),
+            )
+
+        return rv.to_numpy(copy=True)
+
     def fit_report(self) -> str:
         return ""
 
@@ -152,34 +217,20 @@ class EmceeSolve(BaseSolver):
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
         # Store initial parameters
-        self.initial = np.append(
-            self.ml.parameters.initial.values, self.parameters.initial.values
-        )
-        self.vary = np.append(
-            self.ml.parameters.vary.values, self.parameters.vary.values
-        )
+        self.initial = self.ml.parameters.initial.to_numpy(dtype=float)
+        self.vary = self.ml.parameters.vary.to_numpy(dtype=bool)
 
         # Set lower and upper bounds
-        lb = np.append(
-            self.ml.parameters[self.ml.parameters.vary].pmin.values,
-            self.parameters[self.parameters.vary].pmin.values,
-        )
-        ub = np.append(
-            self.ml.parameters[self.ml.parameters.vary].pmax.values,
-            self.parameters[self.parameters.vary].pmax.values,
-        )
+        lb = self.ml.parameters[self.ml.parameters.vary].pmin.to_numpy(dtype=float)
+        ub = self.ml.parameters[self.ml.parameters.vary].pmax.to_numpy(dtype=float)
         self.bounds = np.vstack([lb, ub]).T
 
         # Set priors
         self._set_priors()
 
         # Set initial positions of the walkers
-        pinit = np.append(
-            self.ml.parameters[self.ml.parameters.vary].initial.values,
-            self.parameters[self.parameters.vary].initial.values,
-        )
+        pinit = self.initial[self.vary]
         ndim = pinit.size
-
         pinit = pinit + np.abs(pinit) * 1e-2 * np.random.randn(self.nwalkers, ndim)
 
         # Create sampler and run mcmc
@@ -224,7 +275,7 @@ class EmceeSolve(BaseSolver):
         self.parameters.loc[:, "optimal"] = optimal[-self.objfunction.nparam :]
 
         # Don't estimate stderr for now
-        optimal = optimal[: -self.objfunction.nparam]
+        # optimal = optimal[: -self.objfunction.nparam]
         stderr = np.zeros(len(optimal)) * np.nan
 
         success = True
@@ -293,21 +344,19 @@ class EmceeSolve(BaseSolver):
         This method is always called by emcee.
 
         """
-        par = self.initial
+        par = self.initial.copy()
 
         # Set the parameters that are varied from the model and objective function
         par[self.vary] = p
 
         rv = self.misfit(
-            p=par[: -self.objective_function.nparam],
+            p=par[: -self.objfunction.nparam],
             noise=noise,
             weights=weights,
             callback=callback,
         )
 
-        lnlike = self.objective_function.compute(
-            rv, par[-self.objective_function.nparam :]
-        )
+        lnlike = self.objfunction.compute(rv, par[-self.objfunction.nparam :])
 
         return lnlike
 
@@ -343,29 +392,21 @@ class EmceeSolve(BaseSolver):
                 lp += prior.logpdf(param)
         return lp
 
-    def add_parameters_dist(self) -> None:
-        """Add the distribution of the parameters to the parameters DataFrame."""
-        # TODO: This method needs to be implemented such that the distribution
-        # of the parameters is added to the model parameters DataFrame.
-
-        # for i, prior in enumerate(self.priors):
-        # self.ml.parameters.loc[self.ml.parameters.vary, "dist"] = prior.dist.name
-
     def _set_priors(self) -> None:
         """Set the priors for the parameters."""
         self.priors = []
+        cols = ["initial", "pmin", "pmax", "sigma", "dist"]
 
         # Set the priors for the parameters that are varied from the model
-        for _, (loc, pmin, pmax, scale, dist) in self.ml.parameters.loc[
-            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
-        ].iterrows():
-            self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
-
-        # Set the priors for the parameters that are varied from the objective function
-        for _, (loc, pmin, pmax, scale, dist) in self.parameters.loc[
-            self.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
-        ].iterrows():
-            self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
+        for _, p in self.ml.parameters.loc[self.ml.parameters.vary, cols].iterrows():
+            prior = self._get_prior(
+                dist=p["dist"],
+                loc=p["initial"],
+                scale=p["sigma"],
+                pmin=p["pmin"],
+                pmax=p["pmax"],
+            )
+            self.priors.append(prior)
 
     def _get_prior(self, dist: str, loc: float, scale: float, pmin: float, pmax: float):
         """Set the prior for a parameter.
@@ -386,6 +427,7 @@ class EmceeSolve(BaseSolver):
         """
         # Import the distribution
         mod = importlib.import_module("scipy.stats")
+
         # Return the distribution
         if dist == "uniform":
             loc = pmin
