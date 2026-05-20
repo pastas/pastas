@@ -1620,8 +1620,8 @@ class FourParam(RfuncBase):
         w3 = 5 / 9
 
         # Start from a parameter-based scale and expand until cutoff is reached.
-        max_t = max(256, int(np.ceil(p[2] * p[3])))
         max_t_hard = 1_000_000
+        max_t = min(max(256, int(np.ceil(p[2] * p[3]))), max_t_hard)
 
         while True:
             x = np.arange(1, max_t + 1, dtype=float)

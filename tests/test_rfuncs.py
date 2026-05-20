@@ -426,6 +426,30 @@ def test_fourparam_get_tmax_matches_normalized_step_cutoff() -> None:
     )
 
 
+def test_fourparam_approximate_tmax_to_dict_roundtrip() -> None:
+    """Test that approximate_tmax survives to_dict/from_dict roundtrip for FourParam."""
+    for use_exact in [True, False]:
+        rfunc1 = ps.FourParam(approximate_tmax=not use_exact, cutoff=0.95)
+
+        data = rfunc1.to_dict()
+
+        rfunc_class = data.pop("class")
+        rfunc_up = data.pop("up", None)
+        rfunc_gsf = data.pop("gain_scale_factor", None)
+        rfunc2 = getattr(ps.rfunc, rfunc_class)(**data)
+        rfunc2.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
+
+        assert rfunc2.approximate_tmax == rfunc1.approximate_tmax, (
+            f"approximate_tmax not preserved: {rfunc1.approximate_tmax} vs {rfunc2.approximate_tmax}"
+        )
+
+        p = [2.0, 1.0, 50.0, 100.0]
+        tmax1 = rfunc1.get_tmax(p)
+        tmax2 = rfunc2.get_tmax(p)
+
+        assert tmax1 == tmax2, f"tmax values differ after roundtrip: {tmax1} vs {tmax2}"
+
+
 # Tests for HantushWellModel approximate_tmax and log_b options
 @pytest.mark.parametrize("log_b", [True, False])
 @pytest.mark.parametrize("approximate_tmax", [True, False])
