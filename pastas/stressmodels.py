@@ -1621,25 +1621,29 @@ class RechargeModel(StressModelBase):
         metadata: tuple[dict | None, dict | None, dict | None] = (None, None, None),
         max_cache_size: int | None = None,
     ) -> None:
+
         # Store the precipitation and evaporation time series
         self.set_stress(prec=prec, settings=settings[0], metadata=metadata[0])
         self.set_stress(evap=evap, settings=settings[1], metadata=metadata[1])
 
+        # Store recharge object
+        self.recharge = recharge if recharge is not None else Linear()
+
         # Store a temperature time series if provided/needed or set to None
-        if temp is None and hasattr(self.recharge, "snow") and self.recharge.snow:
-            msg = (
-                "Recharge model requires a temperature series. No temperature series "
-                "were provided."
-            )
-            raise TypeError(msg)
-        if temp is not None:
+        if temp is None:
+            if hasattr(self.recharge, "snow") and self.recharge.snow is True:
+                msg = (
+                    "Recharge model requires a temperature series. No temperature series "
+                    "were provided."
+                )
+                raise TypeError(msg)
+            self._temp = None
+        else:
             if len(settings) < 3 or len(metadata) < 3:
                 msg = "Number of values for the settings and/or metadata is incorrect."
                 raise TypeError(msg)
-            else:
-                self.set_stress(temp=temp, settings=settings[2], metadata=metadata[2])
-        else:
-            self._temp = None
+
+            self.set_stress(temp=temp, settings=settings[2], metadata=metadata[2])
 
         # Select indices from validated stress where both series are available.
         index = self.prec.series.index.intersection(self.evap.series.index)
@@ -1651,13 +1655,12 @@ class RechargeModel(StressModelBase):
             logger.error(msg)
             raise ValueError(msg)
 
-        # Store recharge object
-        self.recharge = Linear() if recharge is None else recharge
-
         # Calculate initial recharge estimation for initial rfunc parameters
-        p = self.recharge.get_init_parameters(name=name).loc[:, "initial"].values
         gain_scale_factor = self.get_stress(
-            p=p, tmin=index.min(), tmax=index.max(), freq=self.prec.settings["freq"]
+            p=self.recharge.get_init_parameters(name=name).initial.values,
+            tmin=index.min(),
+            tmax=index.max(),
+            freq=self.prec.settings["freq"],
         ).std()
 
         super().__init__(
@@ -1669,21 +1672,20 @@ class RechargeModel(StressModelBase):
             gain_scale_factor=gain_scale_factor,
             max_cache_size=max_cache_size,
         )
+
         self.set_init_parameters()
 
-        if not isinstance(self.recharge, Linear):
-            # Check if precipitation is likely in mm/d and not m/d. If the maximum
-            # value of the annual sums is smaller than 12 (m/d), the highest annual
-            # precipitation in the world, then the precipitation is very likely in m/d
-            # and not in mm/d. In this case a warning is given for nonlinear models.
-
-            freq_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
-            if self.prec.series.resample(freq_offset).sum().max() < 12:
-                msg = (
-                    "The maximum annual precipitation is smaller than 12 m/d. Please "
-                    "double-check if the stresses are in mm/d and not in m/d."
-                )
-                logger.warning(msg)
+        # Check if precipitation is likely in mm/d and not m/d. If the maximum
+        # value of the annual sums is smaller than 12 (m/d), the highest annual
+        # precipitation in the world, then the precipitation is very likely in m/d
+        # and not in mm/d. In this case a warning is given for nonlinear models.
+        freq_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
+        if self.prec.series.resample(freq_offset).sum().max() < 12:
+            msg = (
+                "The maximum annual precipitation is smaller than 12 m/d. Please "
+                "double-check if the stresses are in mm/d and not in m/d."
+            )
+            logger.warning(msg)
 
     @property
     @PastasDeprecationWarning(
