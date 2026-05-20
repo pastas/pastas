@@ -84,10 +84,18 @@ def test_emcee(ml_recharge: ps.Model) -> None:
     try:
         ml_recharge.solve(solver=ps.LeastSquares())
         ml_recharge.del_noisemodel()
+
+        s = ps.EmceeSolve(nwalkers=10)
+        ml_recharge.add_solver(s)
+
+        ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)
+
+        for name in ml_recharge.parameters.index:
+            ml_recharge.set_parameter(name, dist="uniform")
+
         ml_recharge.solve(
-            solver=ps.EmceeSolve(nwalkers=10),
             initial=False,
-            fit_constant=False,
+            fit_constant=True,
             steps=2,
         )
     except ImportError:
@@ -172,7 +180,6 @@ def test_leastsquares_covariance_scenarios(head, prec, evap):
         ml.solver.objfunction,
         weights=None,
         noise=False,
-        callback=None,
     )
     # Using same 2-point precision to match scipy.least_squares default
     jac_pure = approx_derivative(fun_pure, x0=p_opt, method=jac_method)

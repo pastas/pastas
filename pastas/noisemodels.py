@@ -38,9 +38,7 @@ class NoiseModelBase(ABC):
     def __init__(self, name: str, norm: bool | None = None) -> None:
         self.name = name
         self.norm = norm
-        self.parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name"]
-        )
+        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
 
     @property
     def _name(self) -> str:
@@ -154,7 +152,6 @@ class ArNoiseModel(NoiseModelBase):
             5000.0,
             True,
             self.name,
-            "uniform",
         )
 
     @property

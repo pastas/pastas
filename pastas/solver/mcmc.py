@@ -447,6 +447,6 @@ class EmceeSolve(SolverBase):
         -------
         dict
         """
-        # msg = "The EmceeSolve class does not support to_dict() and cannot be saved."
-        # raise NotImplementedError(msg)
-        return super().to_dict()
+        msg = "The EmceeSolve class does not support to_dict() and cannot be saved."
+        raise NotImplementedError(msg)
+        # return super().to_dict()
