@@ -1622,18 +1622,12 @@ class RechargeModel(StressModelBase):
         metadata: tuple[dict | None, dict | None, dict | None] = (None, None, None),
         max_cache_size: int | None = None,
     ) -> None:
-        rfunc = Exponential() if rfunc is None else rfunc
-        recharge = Linear() if recharge is None else recharge
-
         # Store the precipitation and evaporation time series
         self.set_stress(prec=prec, settings=settings[0], metadata=metadata[0])
         self.set_stress(evap=evap, settings=settings[1], metadata=metadata[1])
 
-        # Store recharge object
-        self.recharge = recharge
-
         # Store a temperature time series if provided/needed or set to None
-        if temp is None and hasattr(self.recharge, 'snow') and self.recharge.snow:
+        if temp is None and hasattr(self.recharge, "snow") and self.recharge.snow:
             msg = (
                 "Recharge model requires a temperature series. No temperature series "
                 "were provided."
@@ -1658,21 +1652,24 @@ class RechargeModel(StressModelBase):
             logger.error(msg)
             raise ValueError(msg)
 
-        super().__init__(
-            name=name,
-            tmin=index.min(),
-            tmax=index.max(),
-            rfunc=rfunc,
-            up=True,
-            gain_scale_factor=gain_scale_factor,
-            max_cache_size=max_cache_size,
-        )
-
         # Calculate initial recharge estimation for initial rfunc parameters
         p = self.recharge.get_init_parameters(name=self.name).initial.values
         gain_scale_factor = self.get_stress(
             p=p, tmin=index.min(), tmax=index.max(), freq=self.prec.settings["freq"]
         ).std()
+
+        super().__init__(
+            name=name,
+            tmin=index.min(),
+            tmax=index.max(),
+            rfunc=Exponential() if rfunc is None else rfunc,
+            up=True,
+            gain_scale_factor=gain_scale_factor,
+            max_cache_size=max_cache_size,
+        )
+
+        # Store recharge object
+        self.recharge = Linear() if recharge is None else recharge
 
         self.set_init_parameters()
         if not isinstance(self.recharge, Linear):
