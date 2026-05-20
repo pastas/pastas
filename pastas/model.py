@@ -455,8 +455,8 @@ class Model:
         looks with only the initial parameters and no calibration.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
-        tmin = self.settings["tmin"] if tmin is None else tmin
-        tmax = self.settings["tmax"] if tmax is None else tmax
+        tmin = self.settings["tmin"] if tmin is None else Timestamp(tmin)
+        tmax = self.settings["tmax"] if tmax is None else Timestamp(tmax)
 
         freq = self.settings["freq"] if freq is None else freq
         warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
@@ -1366,7 +1366,7 @@ class Model:
         else:
             tmin = ts_tmin
 
-        return tmin
+        return Timestamp(tmin)
 
     def get_tmax(
         self,
@@ -1433,7 +1433,7 @@ class Model:
         else:
             tmax = ts_tmax
 
-        return tmax
+        return Timestamp(tmax)
 
     def get_init_parameters(self, initial: bool = True) -> DataFrame:
         """Method to get all initial parameters from the individual objects.

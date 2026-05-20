@@ -103,8 +103,8 @@ def model_tmin_tmax(function: Callable) -> Callable:
         *args,
         **kwargs,
     ):
-        tmin = self.ml.settings["tmin"] if tmin is None else tmin
-        tmax = self.ml.settings["tmax"] if tmax is None else tmax
+        tmin = self.ml.settings["tmin"] if tmin is None else Timestamp(tmin)
+        tmax = self.ml.settings["tmax"] if tmax is None else Timestamp(tmax)
 
         return function(self, tmin, tmax, *args, **kwargs)
 
