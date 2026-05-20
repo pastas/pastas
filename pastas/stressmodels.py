@@ -1615,7 +1615,7 @@ class RechargeModel(StressModelBase):
         self.recharge = recharge
 
         # Store a temperature time series if provided/needed or set to None
-        if self.recharge.snow is True and temp is None:
+        if temp is None and hasattr(self.recharge, 'snow') and self.recharge.snow:
             msg = (
                 "Recharge model requires a temperature series. No temperature series "
                 "were provided."
