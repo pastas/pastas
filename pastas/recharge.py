@@ -596,7 +596,7 @@ class Berendrecht(RechargeBase):
     """
 
     def __init__(self) -> None:
-        RechargeBase.__init__(self)
+        super().__init__()
 
     @property
     def nparam(self) -> int:
