@@ -345,8 +345,8 @@ class Model:
 
         Parameters
         ----------
-        noisemodel: pastas.noisemodels.NoiseModelBase
-            Instance of NoiseModelBase.
+        noisemodel: NoiseModelType
+            Instance of a noise model class.
 
         Examples
         --------
