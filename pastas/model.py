@@ -455,8 +455,16 @@ class Model:
         looks with only the initial parameters and no calibration.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
-        tmin = self.settings["tmin"] if tmin is None else Timestamp(tmin)
-        tmax = self.settings["tmax"] if tmax is None else Timestamp(tmax)
+        tmin = (
+            self.settings["tmin"]
+            if tmin is None
+            else self.get_tmin(tmin=tmin, use_oseries=False, use_stresses=True)
+        )
+        tmax = (
+            self.settings["tmax"]
+            if tmax is None
+            else self.get_tmax(tmax=tmax, use_oseries=False, use_stresses=True)
+        )
 
         freq = self.settings["freq"] if freq is None else freq
         warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
