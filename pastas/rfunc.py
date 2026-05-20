@@ -1516,6 +1516,9 @@ class FourParam(RfuncBase):
     quad: bool, optional
         If true, use the 'quad' method from scipy.integrate to integrate the impulse
         response function. This may be more accurate but increases computation times.
+    approximate_tmax: bool, optional
+        If True, get_tmax will use a fast numerical approximation (default). If False,
+        it will use the exact numerical root finding method.
 
     Attributes
     ----------
@@ -1537,10 +1540,12 @@ class FourParam(RfuncBase):
         cutoff: float = 0.999,
         use_block: bool = True,
         quad: bool = False,
+        approximate_tmax: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
         self.quad = quad
+        self.approximate_tmax = approximate_tmax
 
     @property
     def nparam(self) -> int:
@@ -1574,44 +1579,185 @@ class FourParam(RfuncBase):
         )
         return parameters
 
-    def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
-        if cutoff is None:
-            cutoff = self.cutoff
+    def get_tmax_approximation(
+        self, p: ArrayLike, cutoff: float | None = None
+    ) -> float:
+        """Approximate tmax using adaptive cumulative integration.
+
+        Parameters
+        ----------
+        p : array_like
+            Response function parameters `[A, n, a, b]`.
+        cutoff : float, optional
+            Fraction of the total step response reached at tmax.
+
+        Returns
+        -------
+        float
+            Approximated tmax in days.
+        """
+        cutoff = self.cutoff if cutoff is None else cutoff
 
         # Because Model.get_response_tmax() provides parameters for the stressmodel,
         # not only the response functions
         if len(p) > 4:
             p = p[:4]
 
-        if self.quad:
-            x = np.arange(1, 10000, 1)
-            y = np.zeros_like(x)
-            func = self.impulse(x, p)
-            func_half = self.impulse(x[:-1] + 1 / 2, p)
-            y[1:] = y[0] + np.cumsum(1 / 6 * (func[:-1] + 4 * func_half + func[1:]))
-            y = y / quad(self.impulse, 0, np.inf, args=p)[0]
-            return np.searchsorted(y, cutoff)
-
-        else:
-            t1 = -np.sqrt(3 / 5)
-            t2 = 0
-            t3 = np.sqrt(3 / 5)
-            w1 = 5 / 9
-            w2 = 8 / 9
-            w3 = 5 / 9
-
-            x = np.arange(1, 10000, 1)
-            y = np.zeros_like(x)
-            func = self.impulse(x, p)
-            func_half = self.impulse(x[:-1] + 1 / 2, p)
-            y[0] = 0.5 * (
-                w1 * self.impulse(0.5 * t1 + 0.5, p)
-                + w2 * self.impulse(0.5 * t2 + 0.5, p)
-                + w3 * self.impulse(0.5 * t3 + 0.5, p)
+        impulse_integral = quad(self.impulse, 0, np.inf, args=p)[0]
+        if not np.isfinite(impulse_integral) or impulse_integral <= 0.0:
+            logger.warning(
+                "Unable to compute FourParam tmax approximation due to invalid "
+                "normalization integral (value=%s). Returning 1.0 day.",
+                impulse_integral,
             )
-            y[1:] = y[0] + np.cumsum(1 / 6 * (func[:-1] + 4 * func_half + func[1:]))
-            y = y / quad(self.impulse, 0, np.inf, args=p)[0]
-            return np.searchsorted(y, cutoff)
+            return 1.0
+
+        t1 = -np.sqrt(3 / 5)
+        t2 = 0
+        t3 = np.sqrt(3 / 5)
+        w1 = 5 / 9
+        w2 = 8 / 9
+        w3 = 5 / 9
+
+        # Start from a parameter-based scale and expand until cutoff is reached.
+        max_t = max(256, int(np.ceil(p[2] * p[3])))
+        max_t_hard = 1_000_000
+
+        while True:
+            x = np.arange(1, max_t + 1, dtype=float)
+            y = np.zeros_like(x)
+
+            func = self.impulse(x, p)
+            func_half = self.impulse(x[:-1] + 0.5, p)
+
+            if self.quad:
+                y[1:] = y[0] + np.cumsum(
+                    1.0 / 6.0 * (func[:-1] + 4.0 * func_half + func[1:])
+                )
+            else:
+                y[0] = 0.5 * (
+                    w1 * self.impulse(0.5 * t1 + 0.5, p)
+                    + w2 * self.impulse(0.5 * t2 + 0.5, p)
+                    + w3 * self.impulse(0.5 * t3 + 0.5, p)
+                )
+                y[1:] = y[0] + np.cumsum(
+                    1.0 / 6.0 * (func[:-1] + 4.0 * func_half + func[1:])
+                )
+
+            y /= impulse_integral
+            idx = np.searchsorted(y, cutoff)
+            if idx < len(x):
+                return float(x[idx])
+
+            if max_t >= max_t_hard:
+                logger.warning(
+                    "FourParam tmax approximation hit maximum search limit (%s days) "
+                    "without reaching cutoff=%s. Returning search limit.",
+                    max_t_hard,
+                    cutoff,
+                )
+                return float(max_t)
+
+            max_t = min(max_t * 2, max_t_hard)
+
+    def _f_step(
+        self,
+        t: float,
+        p: ArrayLike,
+        cutoff: float,
+        impulse_integral: float,
+    ) -> float:
+        """Objective function for exact tmax root finding."""
+        step_value = quad(self.impulse, 0, t, args=p)[0] / impulse_integral
+        return step_value - cutoff
+
+    def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
+        """Calculate `tmax` using approximation or root finding.
+
+        Parameters
+        ----------
+        p: array_like
+            Response function parameters.
+        cutoff: float, optional
+            Fraction of the step response used to determine the response cutoff.
+
+        Returns
+        -------
+        float
+            Response time in days corresponding to the selected cutoff.
+        """
+        cutoff = self.cutoff if cutoff is None else cutoff
+
+        # Because Model.get_response_tmax() provides parameters for the stressmodel,
+        # not only the response functions
+        if len(p) > 4:
+            p = p[:4]
+
+        t0 = self.get_tmax_approximation(p, cutoff)
+        if self.approximate_tmax:
+            return t0
+
+        impulse_integral = quad(self.impulse, 0, np.inf, args=p)[0]
+        if not np.isfinite(impulse_integral) or impulse_integral <= 0.0:
+            logger.warning(
+                "Unable to compute exact FourParam tmax due to invalid normalization "
+                "integral (value=%s). Returning approximate tmax.",
+                impulse_integral,
+            )
+            return t0
+
+        tol = min(10.0 ** np.floor(np.log10(max(t0, 1.0))) / 1e2, 0.1)
+        lower = 1e-30
+        upper = max(t0, 1.0)
+
+        f_upper = self._f_step(upper, p, cutoff, impulse_integral)
+        max_upper = 1e7
+        while f_upper < 0.0 and upper < max_upper:
+            upper *= 2.0
+            f_upper = self._f_step(upper, p, cutoff, impulse_integral)
+
+        if f_upper < 0.0:
+            logger.warning(
+                "Could not bracket exact FourParam tmax up to %s days for cutoff=%s. "
+                "Returning approximate tmax.",
+                max_upper,
+                cutoff,
+            )
+            return t0
+
+        try:
+            root, info = brentq(
+                f=self._f_step,
+                a=lower,
+                b=upper,
+                xtol=tol,
+                maxiter=100,
+                args=(p, cutoff, impulse_integral),
+                full_output=True,
+                disp=False,
+            )
+        except ValueError as err:
+            logger.warning(
+                "Exact FourParam tmax root finding failed (%s). Returning approximate "
+                "tmax.",
+                err,
+            )
+            return t0
+
+        if info.converged:
+            logger.debug(
+                "Root finding for FourParam tmax converged successfully. "
+                "Brentq RootResults: %s",
+                info,
+            )
+            return root
+
+        logger.warning(
+            "Root finding for FourParam tmax did not converge, returning "
+            "approximate tmax. Brentq RootResults: %s",
+            info,
+        )
+        return t0
 
     def gain(self, p: ArrayLike) -> float:
         return p[0]
@@ -1729,7 +1875,10 @@ class FourParam(RfuncBase):
         return (t ** (n - 1)) * np.exp(-t / a - a * b / t)
 
     def to_dict(self):
-        settings = super().to_dict() | {"quad": self.quad}
+        settings = super().to_dict() | {
+            "quad": self.quad,
+            "approximate_tmax": self.approximate_tmax,
+        }
         return settings
 
 

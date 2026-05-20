@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy.integrate import quad
 
 import pastas as ps
 
@@ -394,6 +395,35 @@ def test_hantush_approximate_tmax_to_dict_roundtrip() -> None:
         tmax2 = rfunc2.get_tmax(p)
 
         assert tmax1 == tmax2, f"tmax values differ after roundtrip: {tmax1} vs {tmax2}"
+
+
+@pytest.mark.parametrize("approximate_tmax", [True, False])
+def test_fourparam_approximate_tmax_parameter(approximate_tmax: bool) -> None:
+    """Test that FourParam approximate_tmax parameter works and is preserved."""
+    rfunc = ps.FourParam(approximate_tmax=approximate_tmax)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    tmax = rfunc.get_tmax(p)
+    assert np.isfinite(tmax) and tmax > 0, f"Invalid tmax: {tmax}"
+
+    data = rfunc.to_dict()
+    assert data["approximate_tmax"] == approximate_tmax
+
+
+def test_fourparam_get_tmax_matches_normalized_step_cutoff() -> None:
+    """Regression test for FourParam tmax clipping at hard-coded search limits."""
+    cutoff = 0.999
+    p = [2.0, 1.0, 50.0, 100.0]
+    rfunc = ps.FourParam(approximate_tmax=True)
+
+    tmax = rfunc.get_tmax(p, cutoff=cutoff)
+    total = quad(rfunc.impulse, 0, np.inf, args=p)[0]
+    reached = quad(rfunc.impulse, 0, tmax, args=p)[0] / total
+
+    assert reached >= cutoff, (
+        f"FourParam tmax ({tmax}) should reach at least the target cutoff ({cutoff}), "
+        f"got {reached:.6f}"
+    )
 
 
 # Tests for HantushWellModel approximate_tmax and log_b options
