@@ -92,7 +92,7 @@ class StressModelBase(ABC):
         rfunc: RFunc | None = None,
         up: bool = True,
         gain_scale_factor: float = 1.0,
-        max_cache_size: int = 32,
+        max_cache_size: int | None = 32,
     ) -> None:
         self.name = validate_name(name)
         self.tmin = tmin
@@ -118,8 +118,7 @@ class StressModelBase(ABC):
 
         self._cache = None
         if CACHETOOLS_AVAILABLE:
-            if max_cache_size is None:
-                max_cache_size = 32
+            max_cache_size = 32 if max_cache_size is None else max_cache_size
             self._cache = LRUCache(maxsize=max_cache_size)
 
     @property
