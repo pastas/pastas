@@ -14,8 +14,6 @@ documentation of each recharge model.
 The classes defined here are designed to be used in conjunction with the stressmodel
 "RechargeModel", which requires an instance of one of the classes defined here.
 
-.. codeauthor:: R.A. Collenteur, University of Graz
-
 See Also
 --------
 pastas.stressmodels.RechargeModel
@@ -79,10 +77,7 @@ class RechargeBase(ABC):
             dictionary with all necessary information to reconstruct the StressModel
             object.
         """
-        settings = {
-            "class": self._name,
-        }
-        return settings
+        return {"class": self._name}
 
 
 class Linear(RechargeBase):
