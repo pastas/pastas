@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from collections.abc import Callable
 from functools import partial
 from itertools import combinations
@@ -477,8 +478,10 @@ class LeastSquaresBase(SolverBase):
             **kwargs,
         )
 
+    @abstractmethod
     def solve(self) -> tuple[bool, ArrayLike, ArrayLike]:
-        """Abstract method that has to be implemented by all solvers.
+        """Abstract method that has to be implemented by
+        all least squares solvers.
 
         Returns
         -------
