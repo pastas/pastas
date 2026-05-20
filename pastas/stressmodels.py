@@ -1652,7 +1652,7 @@ class RechargeModel(StressModelBase):
             raise ValueError(msg)
 
         # Calculate initial recharge estimation for initial rfunc parameters
-        p = self.recharge.get_init_parameters(name=self.name).initial.values
+        p = self.recharge.get_init_parameters(name=name).loc[:, "initial"].values
         gain_scale_factor = self.get_stress(
             p=p, tmin=index.min(), tmax=index.max(), freq=self.prec.settings["freq"]
         ).std()
