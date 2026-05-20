@@ -248,7 +248,7 @@ class StressModelBase(ABC):
         istress: int | None = None,
         **kwargs,
     ) -> Series | DataFrame:
-        """Get the stress(es) of the time series object as a pandas Series.
+        """Get the stress(es) of the time series object(s).
 
         If the time series object has multiple stresses each column represents a stress.
 
