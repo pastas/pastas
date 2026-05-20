@@ -29,20 +29,15 @@ from numpy import (
     sqrt,
     where,
 )
-from packaging.version import parse as parse_version
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, concat, cut, to_datetime
-from pandas import __version__ as pd_version
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
 
 import pastas as ps
 from pastas.stats.core import acf
 
-pandas_version = parse_version(pd_version)
-
-year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
-
-month_offset = "ME" if pandas_version >= parse_version("2.2.0") else "M"
+year_offset = "YE"
+month_offset = "ME"
 
 __all__ = [
     "cv_period_mean",
