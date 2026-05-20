@@ -1651,6 +1651,9 @@ class RechargeModel(StressModelBase):
             logger.error(msg)
             raise ValueError(msg)
 
+        # Store recharge object
+        self.recharge = Linear() if recharge is None else recharge
+
         # Calculate initial recharge estimation for initial rfunc parameters
         p = self.recharge.get_init_parameters(name=name).loc[:, "initial"].values
         gain_scale_factor = self.get_stress(
@@ -1666,11 +1669,8 @@ class RechargeModel(StressModelBase):
             gain_scale_factor=gain_scale_factor,
             max_cache_size=max_cache_size,
         )
-
-        # Store recharge object
-        self.recharge = Linear() if recharge is None else recharge
-
         self.set_init_parameters()
+
         if not isinstance(self.recharge, Linear):
             # Check if precipitation is likely in mm/d and not m/d. If the maximum
             # value of the annual sums is smaller than 12 (m/d), the highest annual
