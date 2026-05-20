@@ -1630,16 +1630,16 @@ class FourParam(RfuncBase):
             func = self.impulse(x, p)
             func_half = self.impulse(x[:-1] + 0.5, p)
 
+            y[0] = 0.5 * (
+                w1 * self.impulse(0.5 * t1 + 0.5, p)
+                + w2 * self.impulse(0.5 * t2 + 0.5, p)
+                + w3 * self.impulse(0.5 * t3 + 0.5, p)
+            )
             if self.quad:
                 y[1:] = y[0] + np.cumsum(
                     1.0 / 6.0 * (func[:-1] + 4.0 * func_half + func[1:])
                 )
             else:
-                y[0] = 0.5 * (
-                    w1 * self.impulse(0.5 * t1 + 0.5, p)
-                    + w2 * self.impulse(0.5 * t2 + 0.5, p)
-                    + w3 * self.impulse(0.5 * t3 + 0.5, p)
-                )
                 y[1:] = y[0] + np.cumsum(
                     1.0 / 6.0 * (func[:-1] + 4.0 * func_half + func[1:])
                 )
