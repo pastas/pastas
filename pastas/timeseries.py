@@ -850,7 +850,12 @@ def _validate_series(
             # helpful specific message for multi-column DataFrames
             msg = "DataFrame with multiple columns. Please select one."
             logger.error(msg)
-            raise ValueError(msg)
+            if verbose:
+                print("❌ " + msg)
+                check = False
+                return check
+            else:
+                raise ValueError(msg)
 
     if isinstance(series, TimeSeries):
         series = series.series
@@ -872,7 +877,7 @@ def _validate_series(
     # 1. Make sure the values are float
     if not pd.api.types.is_float_dtype(series):
         msg = (
-            f"The dtype of the values of the series "
+            "The dtype of the values of the series "
             f"'{name}' is not float, but {series.dtype}."
         )
         logger.error(msg)
@@ -904,8 +909,8 @@ def _validate_series(
         if isinstance(series.index.dtype, pd.DatetimeTZDtype):
             msg = (
                 f"The index of series '{name}' is timezone aware. Please "
-                f"convert the series to timezone naive. Try using "
-                f"`series.index = series.index.tz_localize(None)`."
+                "convert the series to timezone naive. Try using "
+                "`series.index = series.index.tz_localize(None)`."
             )
         else:
             msg = (
@@ -925,7 +930,7 @@ def _validate_series(
     if series.index.hasnans:
         msg = (
             f"The index of series '{name}' contains NaNs/NaTs. "
-            f"Try to remove these with `series.loc[series.index.dropna()]`."
+            "Try to remove these with `series.loc[series.index.dropna()]`."
         )
         logger.error(msg)
         if verbose:
@@ -940,7 +945,7 @@ def _validate_series(
     if not series.index.is_monotonic_increasing:
         msg = (
             f"The datetimes in the index of series '{name}' are not monotonically "
-            f"increasing. Try to use `series.sort_index()` to fix it."
+            "increasing. Try to use `series.sort_index()` to fix it."
         )
         logger.error(msg)
         if verbose:
@@ -955,8 +960,8 @@ def _validate_series(
     if not series.index.is_unique:
         msg = (
             f"Duplicate indices were found in the series '{name}'. Try and fix by"
-            f" `grouped = series.groupby(level=0); series = grouped.mean()` "
-            f"or `series = series.loc[~series.index.duplicated(keep='first/last')].`"
+            " `grouped = series.groupby(level=0); series = grouped.mean()` "
+            "or `series = series.loc[~series.index.duplicated(keep='first/last')].`"
         )
         logger.error(msg)
         if verbose:
@@ -971,8 +976,8 @@ def _validate_series(
     if series.hasnans:
         msg = (
             f"The series '{name}' has nan-values. Pastas will use the `fill_nan` "
-            f"from the StressModel's settings (rcParams) parsed to the TimeSeries"
-            f" settings to fill up the nan-values."
+            "from the StressModel's settings (rcParams) parsed to the TimeSeries"
+            " settings to fill up the nan-values."
         )
         logger.warning(msg)
         if verbose:
@@ -983,11 +988,27 @@ def _validate_series(
 
     # 8. Make sure the time series has equidistant time steps
     if equidistant:
-        if not pd.infer_freq(series.index):
+        try:
+            inferred_freq = pd.infer_freq(series.index)
+            if not inferred_freq:
+                msg = (
+                    f"The frequency of the index of time series '{name}' could not be "
+                    "inferred. This indicates that there are gaps or duplicates in "
+                    "your time series. Please resample your time series to an "
+                    "equidistant time step."
+                )
+                logger.error(msg)
+                if verbose:
+                    print("❌ " + msg)
+                    check = False
+                else:
+                    raise ValueError(msg)
+            elif verbose:
+                print("✅ series has equidistant time steps.")
+        except TypeError:
             msg = (
                 f"The frequency of the index of time series '{name}' could not be "
-                f"inferred. This indicates that there are gaps in your time series."
-                f" Please resample your time series to an equidistant time step."
+                "inferred. Unable to check for equidistant time steps."
             )
             logger.error(msg)
             if verbose:
@@ -995,8 +1016,6 @@ def _validate_series(
                 check = False
             else:
                 raise ValueError(msg)
-        elif verbose:
-            print("✅ series has equidistant time steps.")
 
     # If all checks are passed, return True
     return check
