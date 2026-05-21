@@ -93,8 +93,11 @@ class Plotting:
         --------
         >>> ml.plot()
         """
+
+        kwargs = {} or kwargs
         if ax is None:
-            _, ax = plt.subplots(figsize=figsize, **kwargs)
+            layout = kwargs.pop("layout", "tight")
+            _, ax = plt.subplots(figsize=figsize, layout=layout, **kwargs)
 
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
@@ -123,7 +126,7 @@ class Plotting:
 
         if legend:
             ax.legend(ncol=2, numpoints=3)
-        plt.tight_layout()
+
         return ax
 
     @model_tmin_tmax
@@ -701,6 +704,7 @@ class Plotting:
         -------
         axes: list of matplotlib.axes.Axes
         """
+        kwargs = {} or kwargs
         if "split" in kwargs:
             deprecate_args_or_kwargs(
                 name="split",
@@ -757,8 +761,10 @@ class Plotting:
         if axes is None:
             # open a new figure
             gridspec_kw = {"height_ratios": height_ratios}
+            layout = kwargs.pop("layout", "tight")
             fig, axes = plt.subplots(
-                nrows, sharex=True, figsize=figsize, gridspec_kw=gridspec_kw, **kwargs
+                nrows, sharex=True, figsize=figsize, gridspec_kw=gridspec_kw, layout=layout,
+                **kwargs
             )
             axes = np.atleast_1d(axes)
             o_label = o.name
@@ -833,7 +839,6 @@ class Plotting:
             if tmax is not None:
                 tmax = Timestamp(tmax)
             axes[0].set_xlim(tmin, tmax)
-        fig.tight_layout(pad=0.0)
 
         return axes
 
@@ -1103,9 +1108,7 @@ class Plotting:
         for ax, stress in zip(axes, stresses):
             stress.plot(ax=ax)
             ax.legend([stress.name], loc=2)
-
-        plt.xlim(tmin, tmax)
-        fig.tight_layout(pad=0.0)
+            ax.set_xlim(tmin, tmax)
 
         return axes
 
@@ -1406,6 +1409,10 @@ class Plotting:
             diagnostics_kwargs = {}
 
         fig = plt.figure(figsize=(8.27, 11.69), dpi=50)
+
+        # alternative?
+        # axes = self.results(figsize=(8.27, (11.69 / 2) * 1.25), tmin=tmin, tmax=tmax, **results_kwargs)
+        # fig = axes[0].figure
 
         fig1, fig2 = fig.subfigures(2, 1, height_ratios=[1.25, 1.0])
 
