@@ -135,27 +135,26 @@ def _load_model(data: dict) -> Model:
         n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
         ml.add_noisemodel(n)
 
-    # Add solver object to the model from pas-files < 1.3.0  TODO Deprecate
-    if "fit" in data.keys():
-        logger.warning(
-            "The solver object is stored in the model.solver attribute since Pastas "
-            "1.3. Please update your pas-file to the new format by loading and saving "
-            "the file with Pastas 1.3."
-        )
-        solver = getattr(ps.solver, data["fit"].pop("class"))
-        ml.add_solver(solver(**data["fit"]))
-
-    # Add solver object to the model
-    if "solver" in data.keys():
-        solver = getattr(ps.solver, data["solver"].pop("class"))
-        ml.add_solver(solver(**data["solver"]))
+    solver_name = None
+    for solver_key in ("fit", "solver"):
+        if solver_key not in data:
+            continue
+        if solver_key == "fit":
+            logger.warning(
+                "The solver object is stored in the model.solver attribute since Pastas "
+                "1.3. Please update your pas-file to the new format by loading and saving "
+                "the file with Pastas 1.3."
+            )
+        solver_name = data[solver_key].pop("class")
+        solver = getattr(ps.solver, solver_name)
+        ml.add_solver(solver(**data[solver_key]))
 
     # Merge defaults with file parameters: file values win, defaults fill gaps.
     init_parameters = ml.get_init_parameters()
     file_parameters = data["parameters"]
-    if "dist" in file_parameters.columns and solver._name != "EmceeSolve":
-        # For old pas-files, the dist column is not relevant for non-MCMC solvers, so we can drop it.
+    if "dist" in file_parameters.columns and solver_name != "EmceeSolve":
         file_parameters = file_parameters.drop(columns=["dist"])
+
     ml._parameters = init_parameters.reindex(
         columns=init_parameters.columns.union(file_parameters.columns, sort=False)
     )
