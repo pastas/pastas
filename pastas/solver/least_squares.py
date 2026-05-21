@@ -1103,7 +1103,7 @@ class LmfitSolve(LeastSquaresBase):
         init_kwargs = [k for k in kwargs if hasattr(self, k)]
         for k in init_kwargs:
             logger.info(f"Setting {k} to {kwargs[k]} for LmfitSolve solver.")
-            setattr(self, k, kwargs.pop[k])
+            setattr(self, k, kwargs.pop(k))
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
