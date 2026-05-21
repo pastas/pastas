@@ -118,7 +118,7 @@ def _load_model(data: dict) -> Model:
     for name, smdata in data["stressmodels"].items():
         sm = _load_stressmodel(smdata, data)
         ml.add_stressmodel(sm)
-        if hasattr(sm, "rfunc") and sm.rfunc._name == "One":
+        if sm.rfunc is not None and sm.rfunc._name == "One":
             rfunc_one_sm_names.append(name)
 
     # Add transform
@@ -153,7 +153,9 @@ def _load_model(data: dict) -> Model:
         ml.add_solver(solver(**data[solver_key]))
 
     # Merge defaults with file parameters: file values win, defaults fill gaps.
-    file_parameters = data["parameters"]
+    file_parameters = data["parameters"].copy()
+
+    # Fix old parameter names for One response functions to match the naming convention from Pastas 2.0
     for rfunc_one_sm_name in rfunc_one_sm_names:
         if f"{rfunc_one_sm_name}_d" in file_parameters.index:
             logger.warning(
@@ -163,10 +165,22 @@ def _load_model(data: dict) -> Model:
             file_parameters = file_parameters.rename(
                 index={f"{rfunc_one_sm_name}_d": f"{rfunc_one_sm_name}_A"}
             )
-    init_parameters = ml.get_init_parameters()
+
+    # Remove columns that are no longer used by default in the parameters table since 2.0
     if "dist" in file_parameters.columns and solver_name != "EmceeSolve":
         file_parameters = file_parameters.drop(columns=["dist"])
 
+    # Remove stderr column if it is empty, as this column is no longer used by default in the parameters table since 2.0
+    if "stderr" in file_parameters.columns and file_parameters["stderr"].isnull().all():
+        logger.warning(
+            "The 'stderr' column in the parameters table is longer used if "
+            "empty and will be dropped. Please update your pas-file by"
+            "loading and saving the file with Pastas 1.5."
+        )
+        file_parameters = file_parameters.drop(columns=["stderr"])
+
+    # Populate the model parameters with the file parameters, keeping defaults for missing parameters
+    init_parameters = ml.get_init_parameters()
     ml._parameters = init_parameters.reindex(
         columns=init_parameters.columns.union(file_parameters.columns, sort=False)
     )
