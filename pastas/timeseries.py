@@ -972,7 +972,7 @@ def _validate_series(
     elif verbose:
         print("✅ series index has no duplicate indices.")
 
-    # 7. Check if the time series nan-values
+    # 7. Check if the time series has nan-values
     if series.hasnans:
         msg = (
             f"The series '{name}' has nan-values. Pastas will use the `fill_nan` "
