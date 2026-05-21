@@ -1232,7 +1232,11 @@ class Model:
                 self._parameters.at[name, key] = value
                 obj.parameters.at[name, key] = value
             else:
-                msg = f"Parameter property '{key}' is not recognized."
+                msg = (
+                    f"Parameter column '{key}' is not recognized in model parameters."
+                    f"Available columns are: {self._parameters.columns.tolist()}."
+                    f"Value {value} for parameter '{name}' was not set."
+                )
                 logger.error(msg)
 
         # Check if bounds are consistent
