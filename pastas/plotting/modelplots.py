@@ -1083,6 +1083,7 @@ class Plotting:
                         wnam: f"C{iw + 1}"
                         for iw, wnam in enumerate(sml.distances.index)
                     }
+                    stackcolors[sm] = "C0"  # add backup for single-stress WellModels
                 elif isinstance(stackcolors, list):
                     stackcolors = {
                         name: icolor
@@ -1091,9 +1092,9 @@ class Plotting:
                 elif not isinstance(stackcolors, dict):
                     raise TypeError("stackcolors must be None, list, or dict.")
                 nsplit = sml.nsplit
-                ax_step = axes[i]  # step response axis
-                ax_step.lines[0].remove()  # remove step response for r=1 m
                 if nsplit > 1:
+                    ax_step = axes[i]  # step response axis
+                    ax_step.lines[0].remove()  # remove step response for r=1 m
                     for istress in range(len(sml.stresses)):
                         h = self.ml.get_contribution(
                             sm, istress=istress, tmin=tmin, tmax=tmax

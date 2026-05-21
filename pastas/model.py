@@ -1778,7 +1778,6 @@ class Model:
             return None
         else:
             block_or_step = getattr(rfunc, block_or_step)
-            nparam = getattr(rfunc, "nparam")
 
         p = self.get_parameters(name) if p is None else p
 
@@ -1787,7 +1786,7 @@ class Model:
         if istress is not None and self.stressmodels[name].nsplit > 1:
             p = self.stressmodels[name].get_parameters(model=self, istress=istress)
 
-        response = block_or_step(p[:nparam], dt, **kwargs)
+        response = block_or_step(p, dt, **kwargs)
 
         if add_0:
             if isinstance(dt, np.ndarray):
