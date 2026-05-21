@@ -57,7 +57,6 @@ class Plotting:
         oseries: bool = True,
         simulation: bool = True,
         ax: Axes | None = None,
-        figsize: tuple[float, float] | None = None,
         legend: bool = True,
         **kwargs,
     ) -> Axes:
@@ -79,8 +78,6 @@ class Plotting:
             True to plot the simulated time series.
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
-        figsize: tuple, optional
-            Tuple with the height and width of the figure in inches.
         legend: bool, optional
             Boolean to determine to show the legend (True) or not (False).
 
@@ -97,6 +94,7 @@ class Plotting:
         kwargs = {} or kwargs
         if ax is None:
             layout = kwargs.pop("layout", "tight")
+            figsize = kwargs.pop("figsize", (8.0, 4.0))
             _, ax = plt.subplots(figsize=figsize, layout=layout, **kwargs)
 
         if oseries:
@@ -141,7 +139,6 @@ class Plotting:
         add_ylabels: bool = False,
         block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
-        figsize: tuple[float, float] | None = None,
         return_dict: bool = False,
         **kwargs,
     ) -> dict[str, Axes] | list[Axes]:
@@ -174,8 +171,6 @@ class Plotting:
             Plot the block- or step-response on the right. Default is 'step'.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
-        figsize: tuple, optional
-            tuple of size 2 to determine the figure size in inches.
         return_dict: bool, optional
             If True, a dictionary with the axes is returned. If False, a list of
             axes is returned. Default is False.
@@ -264,7 +259,7 @@ class Plotting:
             if adjust_height
             else kwargs.pop("height_ratios", None)
         )
-        figsize = (8.0, 4.0 + 2 * len(contribs)) if figsize is None else figsize
+        figsize = kwargs.pop("figsize", (8.0, 4.0 + 2 * len(contribs)))
         layout = kwargs.pop("layout", "constrained")
         fig = kwargs.pop("fig", None)
         if fig is None:
@@ -741,7 +736,6 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         ax: Axes | None = None,
-        figsize: tuple[float, float] = (5.0, 2.0),
         **kwargs,
     ) -> Axes:
         """Plot the cumulative frequency for the observations and simulation.
@@ -760,8 +754,6 @@ class Plotting:
             pandas.Timestamp internally.
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
-        figsize: tuple[float, float], optional
-            Tuple with the height and width of the figure in inches.
         **kwargs:
             Passed on to plot_cum_frequency.
 
@@ -775,13 +767,12 @@ class Plotting:
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return cum_frequency(obs, sim, ax=ax, figsize=figsize, **kwargs)
+        return cum_frequency(obs=obs, sim=sim, ax=ax, **kwargs)
 
     def block_response(
         self,
         stressmodels: list[str] | None = None,
         ax: Axes | None = None,
-        figsize: tuple[float, float] | None = None,
         legend: bool = True,
         **kwargs,
     ) -> Axes:
@@ -803,7 +794,9 @@ class Plotting:
         matplotlib.axes.Axes
             matplotlib axes instance.
         """
+        kwargs = {} or kwargs
         if ax is None:
+            figsize = kwargs.pop("figsize", (5.0, 3.0))
             _, ax = plt.subplots(figsize=figsize, **kwargs)
 
         if not stressmodels:

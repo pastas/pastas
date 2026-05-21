@@ -259,7 +259,7 @@ def acf(
     smooth_conf: bool = True,
     color: str = "k",
     ax: Axes | None = None,
-    figsize: tuple = (5, 2),
+    **kwargs,
 ) -> Axes:
     """Plot of the autocorrelation function of a time series.
 
@@ -281,9 +281,8 @@ def acf(
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to plot the ACF on. A new Figure and Axes is created
         when no value for ax is provided.
-    figsize: tuple, optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax is also
-        provided.
+    **kwargs: dict, optional
+        Optional keyword arguments, passed on to plt.subplots.
 
     Returns
     -------
@@ -301,7 +300,9 @@ def acf(
     will still run when dealing with many models.
 
     """
+    kwargs = {} or kwargs
     if ax is None:
+        figsize = kwargs.pop("figsize", (5.0, 3.0))
         _, ax = plt.subplots(1, 1, figsize=figsize)
 
     # Plot the autocorrelation
@@ -485,7 +486,7 @@ def cum_frequency(
     obs: Series,
     sim: Series | None = None,
     ax: Axes | None = None,
-    figsize: tuple[float, float] = (5.0, 2.0),
+    **kwargs,
 ) -> Axes:
     """Plot of the cumulative frequency of a time Series.
 
@@ -498,9 +499,8 @@ def cum_frequency(
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to create the plot on. A new Figure and Axes is
         created when no value for ax is provided.
-    figsize: tuple[float, float], optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax is also
-        provided.
+    **kwargs: dict, optional
+        Optional keyword arguments, passed on to plt.subplots.
 
     Returns
     -------
@@ -512,8 +512,10 @@ def cum_frequency(
     >>>                 data=np.random.normal(0, 1, 1000))
     >>> ps.stats.plot_cum_frequency(obs)
     """
+    kwargs = {} or kwargs
     if ax is None:
-        _, ax = plt.subplots(1, 1, figsize=figsize)
+        figsize = kwargs.pop("figsize", (5.0, 3.0))
+        _, ax = plt.subplots(1, 1, figsize=figsize, **kwargs)
 
     ax.plot(
         obs.sort_values(),
