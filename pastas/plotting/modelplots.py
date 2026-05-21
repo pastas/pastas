@@ -1,7 +1,7 @@
 """Plotting methods for Pastas Models, including time series and diagnostics plots."""
 
 import logging
-from typing import Any, Literal
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -264,23 +264,21 @@ class Plotting:
             if adjust_height
             else kwargs.pop("height_ratios", None)
         )
-
-        fig = kwargs.pop("fig", None)
         figsize = (8.0, 4.0 + 2 * len(contribs)) if figsize is None else figsize
         layout = kwargs.pop("layout", "constrained")
+        fig = kwargs.pop("fig", None)
         if fig is None:
             fig, axd = plt.subplot_mosaic(
-                mosaic,
+                mosaic=mosaic,
+                figsize=figsize,
+                layout=layout,
                 height_ratios=height_ratios,
                 width_ratios=width_ratios,
-                layout=layout,
-                figsize=figsize,
                 **kwargs,
             )
         else:
-            # SubFigure.subplot_mosaic does not accept pyplot figure kwargs
             axd = fig.subplot_mosaic(
-                mosaic,
+                mosaic=mosaic,
                 height_ratios=height_ratios,
                 width_ratios=width_ratios,
                 **kwargs,
@@ -471,7 +469,6 @@ class Plotting:
         tmax: Timestamp | str | None = None,
         ytick_base: bool = True,
         split_contributions: bool = True,
-        figsize: tuple = (10, 8),
         axes: Axes | None = None,
         name: str | None = None,
         return_warmup: bool = False,
@@ -496,8 +493,6 @@ class Plotting:
             Split the stresses in multiple stresses when possible. Default is True.
         axes: matplotlib.axes.Axes instance, optional
             Matplotlib Axes instance to plot the figure on to.
-        figsize: tuple, optional
-            tuple of size 2 to determine the figure size in inches.
         name: str, optional
             Name to give the simulated time series in the legend.
         return_warmup: bool, optional
@@ -569,9 +564,14 @@ class Plotting:
             # open a new figure
             gridspec_kw = {"height_ratios": height_ratios}
             layout = kwargs.pop("layout", "tight")
+            figsize = kwargs.pop("figsize", (8.0, 2.0 + 2.0 * len(contribs)))
             fig, axes = plt.subplots(
-                nrows, sharex=True, figsize=figsize, gridspec_kw=gridspec_kw, layout=layout,
-                **kwargs
+                nrows=nrows,
+                sharex=True,
+                figsize=figsize,
+                gridspec_kw=gridspec_kw,
+                layout=layout,
+                **kwargs,
             )
             axes = np.atleast_1d(axes)
             o_label = o.name
@@ -654,7 +654,6 @@ class Plotting:
         self,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
-        figsize: tuple = (10, 5),
         bins: int = 50,
         acf_options: dict | None = None,
         fig: Figure | None = None,
@@ -669,8 +668,6 @@ class Plotting:
             start time for which to calculate the residuals.
         tmax: pandas.Timestamp or str, optional
             end time for which to calculate the residuals.
-        figsize: tuple, optional
-            Tuple with the height and width of the figure in inches.
         bins: int optional
             number of bins used for the histogram. 50 is default.
         acf_options: dict, optional
@@ -719,7 +716,6 @@ class Plotting:
         return diagnostics(
             series=res,
             sim=sim,
-            figsize=figsize,
             bins=bins,
             fig=fig,
             acf_options=acf_options,
@@ -733,7 +729,7 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         ax: Axes | None = None,
-        figsize: tuple = (5, 2),
+        figsize: tuple[float, float] = (5.0, 2.0),
         **kwargs,
     ) -> Axes:
         """Plot the cumulative frequency for the observations and simulation.
@@ -752,7 +748,7 @@ class Plotting:
             pandas.Timestamp internally.
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
-        figsize: tuple, optional
+        figsize: tuple[float, float], optional
             Tuple with the height and width of the figure in inches.
         **kwargs:
             Passed on to plot_cum_frequency.
@@ -1208,14 +1204,11 @@ class Plotting:
         fig: matplotlib.pyplot.Figure instance
         """
 
-        results_kwargs = {} or results_kwargs
-        diagnostics_kwargs = {} or diagnostics_kwargs
-
         fig = plt.figure(figsize=(8.27, 11.69), dpi=50, layout="constrained")
         fig1, fig2 = fig.subfigures(2, 1, height_ratios=[2, 1], hspace=0.08)
 
-        self.results(fig=fig1, tmin=tmin, tmax=tmax, **results_kwargs)
-        self.diagnostics(fig=fig2, tmin=tmin, tmax=tmax, **diagnostics_kwargs)
+        self.results(fig=fig1, tmin=tmin, tmax=tmax, **results_kwargs or {})
+        self.diagnostics(fig=fig2, tmin=tmin, tmax=tmax, **diagnostics_kwargs or {})
 
         fig1.suptitle("Model Results", fontweight="bold")
         fig2.suptitle("Model Diagnostics", fontweight="bold")
@@ -1359,14 +1352,14 @@ class Plotting:
                     [["con", "rf"]],
                     width_ratios=[4, 1],
                     constrained_layout=True,
-                    figsize=(10, 2),
+                    figsize=(8.0, 2.0),
                 )
 
             else:
                 _, axd = plt.subplot_mosaic(
                     [["con"]],
                     constrained_layout=True,
-                    figsize=(10, 2),
+                    figsize=(8.0, 2.0),
                 )
         else:
             if not isinstance(ax, dict):
