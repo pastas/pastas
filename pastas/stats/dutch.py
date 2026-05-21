@@ -7,15 +7,11 @@ groundwater time series in the Netherlands.
 from collections.abc import Callable
 
 from numpy import nan
-from packaging.version import parse as parse_version
 from pandas import Series, Timedelta, Timestamp, concat, date_range
-from pandas import __version__ as pd_version
 
 from pastas.timeseries_utils import get_sample
 
-pandas_version = parse_version(pd_version)
-
-year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
+year_offset = "YE"
 
 
 def q_ghg(
