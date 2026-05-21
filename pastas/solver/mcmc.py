@@ -99,9 +99,9 @@ class EmceeSolve(SolverBase):
             )
             objfunction = kwargs.pop("objective_function")
 
-        super().__init__(name=name, **kwargs)
-
         self.objfunction = objfunction
+
+        super().__init__(name=name, **kwargs)
 
         # Set sampler properties
         self.sampler = None
