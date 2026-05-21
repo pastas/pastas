@@ -114,9 +114,12 @@ def _load_model(data: dict) -> Model:
         ml.file_info.update(data["file_info"])
 
     # Add stressmodels
+    rfunc_one_sm_names = []
     for name, smdata in data["stressmodels"].items():
         sm = _load_stressmodel(smdata, data)
         ml.add_stressmodel(sm)
+        if sm.rfunc._name == "One":
+            rfunc_one_sm_names.append(name)
 
     # Add transform
     if "transform" in data.keys():
@@ -150,8 +153,17 @@ def _load_model(data: dict) -> Model:
         ml.add_solver(solver(**data[solver_key]))
 
     # Merge defaults with file parameters: file values win, defaults fill gaps.
-    init_parameters = ml.get_init_parameters()
     file_parameters = data["parameters"]
+    for rfunc_one_sm_name in rfunc_one_sm_names:
+        if f"{rfunc_one_sm_name}_d" in file_parameters.index:
+            logger.warning(
+                f"Renaming parameter {rfunc_one_sm_name}_d to {rfunc_one_sm_name}_A"
+                " to match the naming convention of the ps.One() response function."
+            )
+            file_parameters = file_parameters.rename(
+                index={f"{rfunc_one_sm_name}_d": f"{rfunc_one_sm_name}_A"}
+            )
+    init_parameters = ml.get_init_parameters()
     if "dist" in file_parameters.columns and solver_name != "EmceeSolve":
         file_parameters = file_parameters.drop(columns=["dist"])
 
