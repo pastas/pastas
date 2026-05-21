@@ -482,18 +482,19 @@ class LeastSquaresBase(SolverBase):
         )
 
     @abstractmethod
-    def solve(self) -> tuple[bool, ArrayLike, ArrayLike]:
+    def solve(self) -> tuple[bool, DataFrame]:
         """Abstract method that has to be implemented by
         all least squares solvers.
 
         Returns
         -------
+        tuple [bool, DataFrame]
         success: bool
             Boolean indicating whether the optimization was successful.
-        optimal: array_like
-            array_like object with the optimal parameter values as floats.
-        stderr: array_like
-            array_like object with the standard error of the parameters as floats.
+        result: pandas.DataFrame
+            DataFrame with the optimal parameter values and their standard error.
+            The index of the DataFrame corresponds to the parameter names, and it
+            contains at least the following columns: "optimal", "stderr"
 
         """
         pass
@@ -771,7 +772,7 @@ class LeastSquares(LeastSquaresBase):
         self,
         weights: Series | None = None,
         **kwargs,
-    ) -> tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, DataFrame]:
         """Solve method calling scipy.optimize.least_squares"""
 
         if self.ml is None:
@@ -859,7 +860,15 @@ class LeastSquares(LeastSquaresBase):
         stderr = np.zeros(len(optimal)) * np.nan
         stderr[vary] = self.get_stderr(self.pcov).to_numpy(dtype=float, copy=True)
 
-        return success, optimal, stderr
+        result = DataFrame(
+            {
+                "optimal": optimal,
+                "stderr": stderr,
+            },
+            index=self.ml.parameters.index,
+        )
+
+        return success, result
 
     @staticmethod
     def get_stderr(pcov: DataFrame) -> Series:
@@ -1098,7 +1107,7 @@ class LmfitSolve(LeastSquaresBase):
         noise: bool = True,
         weights: Series | None = None,
         **kwargs,
-    ) -> tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, DataFrame]:
         """Solve method calling lmfit.Minimizer.minimize"""
 
         # Overwrite kwargs of init if parsed to solve
@@ -1154,7 +1163,15 @@ class LmfitSolve(LeastSquaresBase):
 
         idx = -1 if "is_weighted" in kwargs and not kwargs["is_weighted"] else None
 
-        return success, optimal[:idx], stderr[:idx]
+        result = DataFrame(
+            {
+                "optimal": optimal[:idx],
+                "stderr": stderr[:idx],
+            },
+            index=self.ml.parameters.index,
+        )
+
+        return success, result
 
     def objfunction(
         self, parameters: DataFrame, noise: bool, weights: Series

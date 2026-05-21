@@ -969,9 +969,13 @@ class Model:
             self.add_solver(solver=LeastSquares())
 
         # Solve model
-        success, optimal, stderr = self.solver.solve(weights=weights, **kwargs)
-        if not success:
+        solve_success, result = self.solver.solve(weights=weights, **kwargs)
+        if not solve_success:
             logger.warning("Model parameters could not be estimated well.")
+
+        # Update the parameters with the results from the optimization
+        for column in result.columns:
+            self._parameters.loc[result.index, column] = result[column].values
 
         if self.settings["fit_constant"] is False:
             # Determine the residuals and set the constant to their mean.
@@ -979,13 +983,9 @@ class Model:
             # constant_d was fixed at 0 during optimization, so (obs - sim) gives
             # (obs - other_contributions), whose mean is the optimal constant.
             self._settings["fit_constant"] = True
-            res = self.residuals(optimal).mean()
+            res = self.residuals(p=self._parameters[:, "optimal"].values).mean()
             self._settings["fit_constant"] = False
-            optimal[self._parameters.name == self.constant.name] = res
-
-        self._parameters.loc[:, "optimal"] = optimal
-        self._parameters.loc[:, "stderr"] = stderr
-        self._solve_success = success  # store for fit_report
+            result.at[self._parameters.name == self.constant.name, "optimal"] = res
 
         if report:
             if isinstance(report, str) and report == "full":

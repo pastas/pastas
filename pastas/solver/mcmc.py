@@ -151,7 +151,7 @@ class EmceeSolve(SolverBase):
         steps: int = 5000,
         callback: CallBack | None = None,
         **kwargs,
-    ) -> tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, DataFrame]:
         # Store initial parameters
         self.initial = self.ml.parameters.initial.to_numpy(dtype=float)
         self.vary = self.ml.parameters.vary.to_numpy(dtype=bool)
@@ -215,12 +215,16 @@ class EmceeSolve(SolverBase):
         # Set the optimal values for the objective function parameters
         self.parameters.loc[:, "optimal"] = optimal[-self.objfunction.nparam :]
 
-        # Don't estimate stderr for now
-        # optimal = optimal[: -self.objfunction.nparam]
-        stderr = np.zeros(len(optimal)) * np.nan
-
         success = True
-        return success, optimal, stderr
+        result = DataFrame(
+            {
+                "optimal": optimal,
+                # "Q025": TODO: compute credible intervals
+                # "Q975": TODO: compute credible intervals
+            },
+            index=self.ml.parameters.index,
+        )
+        return success, result
 
     def log_probability(
         self,
