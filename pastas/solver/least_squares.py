@@ -873,6 +873,7 @@ class LeastSquares(LeastSquaresBase):
                 "stderr": stderr,
             },
             index=self.ml.parameters.index,
+            dtype=float,
         )
 
         return success, result
@@ -1176,6 +1177,7 @@ class LmfitSolve(LeastSquaresBase):
                 "stderr": stderr[:idx],
             },
             index=self.ml.parameters.index,
+            dtype=float,
         )
 
         return success, result

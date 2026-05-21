@@ -155,7 +155,9 @@ def _load_model(data: dict) -> Model:
     ml._parameters = init_parameters.reindex(
         columns=init_parameters.columns.union(data["parameters"].columns, sort=False)
     )
-    ml._parameters.loc[data["parameters"].index, data["parameters"].columns] = data["parameters"]
+    ml._parameters.loc[data["parameters"].index, data["parameters"].columns] = data[
+        "parameters"
+    ]
 
     # Convert parameters to numeric
     ml._parameters = ml._parameters.infer_objects()

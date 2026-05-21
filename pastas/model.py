@@ -981,9 +981,11 @@ class Model:
             # constant_d was fixed at 0 during optimization, so (obs - sim) gives
             # (obs - other_contributions), whose mean is the optimal constant.
             self._settings["fit_constant"] = True
-            res = self.residuals(p=self._parameters[:, "optimal"].values).mean()
+            residual_mean = np.mean(self.residuals())
             self._settings["fit_constant"] = False
-            result.at[self._parameters.name == self.constant.name, "optimal"] = res
+            self._parameters.loc[
+                self._parameters.name == self.constant.name, "optimal"
+            ] = residual_mean
 
         if report:
             if isinstance(report, str) and report == "full":

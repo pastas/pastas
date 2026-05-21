@@ -223,6 +223,7 @@ class EmceeSolve(SolverBase):
                 # "Q975": TODO: compute credible intervals
             },
             index=self.ml.parameters.index,
+            dtype=float,
         )
         return success, result
 
