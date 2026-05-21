@@ -11,8 +11,8 @@ def test_comparison_plot_sim_kwargs(ml_solved: ps.Model, ml_sm: ps.Model) -> Non
     _ = mc.plot()
 
 
-def test_comparison_plot_custom(ml_solved: ps.Model, ml_sm: ps.Model) -> None:
-    mc = ps.CompareModels(models=[ml_solved, ml_sm])
+def test_comparison_plot_custom(ml_solved: ps.Model, ml_noisemodel: ps.Model) -> None:
+    mc = ps.CompareModels(models=[ml_solved, ml_noisemodel])
     mosaic: list[list[str]] = [
         ["ose", "ose", "met"],
         ["sim", "sim", "tab"],
