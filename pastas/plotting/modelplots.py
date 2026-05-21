@@ -185,6 +185,13 @@ class Plotting:
         --------
         >>> ml.plots.results_mosaic()
         """
+        if "split" in kwargs:
+            deprecate_args_or_kwargs(
+                name="split",
+                version="2.2.0",
+                reason="Use `split_contributions` instead.",
+            )
+            split_contributions = kwargs.pop("split")
 
         tmin = Timestamp(tmin) if tmin is not None else None
         tmax = Timestamp(tmax) if tmax is not None else None
