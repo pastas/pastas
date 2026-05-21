@@ -9,6 +9,7 @@ from pastas.typing import ArrayLike, CallBack
 
 from .base import SolverBase
 from .likelihood import GaussianLikelihood, GaussianLikelihoodAr1
+from .objective_function import misfit
 
 logger = getLogger(__name__)
 
@@ -82,8 +83,8 @@ class EmceeSolve(SolverBase):
         | GaussianLikelihoodAr1
         | None = GaussianLikelihood(),
         nwalkers: int = 20,
-        backend: "emcee.backend" | None = None,
-        moves: "emcee.moves" | None = None,
+        backend: None = None,
+        moves: None = None,
         parallel: bool = False,
         progress_bar: bool = True,
         **kwargs,
@@ -139,71 +140,6 @@ class EmceeSolve(SolverBase):
         """
         parameters = self.objfunction.get_init_parameters(name if name else self.name)
         return parameters
-
-    def misfit(
-        self,
-        p: ArrayLike,
-        noise: bool,
-        weights: Series | None = None,
-        callback: CallBack | None = None,
-        returnseparate: bool = False,
-    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
-        """This method is called by all LeastSquares solvers to obtain a series that are
-        minimized in the optimization process. It handles the application of the
-        weights, a noisemodel and other optimization options.
-
-        Parameters
-        ----------
-        p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
-        noise: Boolean
-            If True, minimizes the sum of squared noise computed by the NoiseModel.
-        weights: pandas.Series, optional
-            A pandas Series used to scale the residual or noise (in the case of a
-            `NoiseModel`) during optimization. The weights must share the same
-            `DateTimeIndex` as the observations (`ml.observations()`) to ensure proper
-            alignment. These weights are applied such that the minimized objective
-            function in least-squares solvers is ``sum((weights * residuals)**2)``.
-            This means that a residual with double the weight has four times as much
-            influence. If None, equal weights are used. This can be used to put extra/
-            less weight on certain periods (e.g., droughts) or measurements (i.e.
-            outliers), and make more complex calibration schemes (see, for example,
-            :cite:`colllenteur_analysis_2023`).
-        callback: ufunc, optional
-            function that is called after each iteration. the parameters are
-            provided to the func. E.g. "callback(parameters)"
-        returnseparate: bool, optional
-            return residuals, noise, noiseweights
-
-        Returns
-        -------
-        rv: array_like
-            residuals array (if noise=False) or noise array (if noise=True)
-        """
-        # Get the residuals or the noise
-        if noise:
-            rv = self.ml.noise(p) * self.ml._noise_weights(p)
-        else:
-            rv = self.ml.residuals(p)
-
-        # Determine if weights need to be applied
-        if weights is not None:
-            weights = weights.reindex(rv.index)
-            weights.fillna(1.0, inplace=True)
-            rv = rv.multiply(weights)
-
-        if callback is not None:
-            callback(p)
-
-        if returnseparate:
-            return (
-                self.ml.residuals(p).to_numpy(copy=True),
-                self.ml.noise(p).to_numpy(copy=True),
-                self.ml._noise_weights(p).to_numpy(copy=True),
-            )
-
-        return rv.to_numpy(copy=True)
 
     def fit_report(self) -> str:
         return ""
@@ -354,11 +290,13 @@ class EmceeSolve(SolverBase):
         # Set the parameters that are varied from the model and objective function
         par[self.vary] = p
 
-        rv = self.misfit(
-            p=par[: -self.objfunction.nparam],
+        rv = misfit(
+            p=p,
             noise=noise,
+            ml=self.ml,
             weights=weights,
             callback=callback,
+            returnseparate=False,
         )
 
         lnlike = self.objfunction.compute(rv, par[-self.objfunction.nparam :])

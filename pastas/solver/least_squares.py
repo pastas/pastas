@@ -15,6 +15,7 @@ from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike, CallBack
 
 from .base import SolverBase
+from .objective_function import misfit
 
 logger = getLogger(__name__)
 
@@ -503,62 +504,17 @@ class LeastSquaresBase(SolverBase):
         callback: CallBack | None = None,
         returnseparate: bool = False,
     ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
-        """This method is called by all LeastSquares solvers to obtain a series that are
-        minimized in the optimization process. It handles the application of the
-        weights, a noisemodel and other optimization options.
-
-        Parameters
-        ----------
-        p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
-        noise: Boolean
-            If True, minimizes the sum of squared noise computed by the NoiseModel.
-        weights: pandas.Series, optional
-            A pandas Series used to scale the residual or noise (in the case of a
-            `NoiseModel`) during optimization. The weights must share the same
-            `DateTimeIndex` as the observations (`ml.observations()`) to ensure proper
-            alignment. These weights are applied such that the minimized objective
-            function in least-squares solvers is ``sum((weights * residuals)**2)``.
-            This means that a residual with double the weight has four times as much
-            influence. If None, equal weights are used. This can be used to put extra/
-            less weight on certain periods (e.g., droughts) or measurements (i.e.
-            outliers), and make more complex calibration schemes (see, for example,
-            :cite:`colllenteur_analysis_2023`).
-        callback: ufunc, optional
-            function that is called after each iteration. the parameters are
-            provided to the func. E.g. "callback(parameters)"
-        returnseparate: bool, optional
-            return residuals, noise, noiseweights
-
-        Returns
-        -------
-        rv: array_like
-            residuals array (if noise=False) or noise array (if noise=True)
         """
-        # Get the residuals or the noise
-        if noise:
-            rv = self.ml.noise(p) * self.ml._noise_weights(p)
-        else:
-            rv = self.ml.residuals(p)
-
-        # Determine if weights need to be applied
-        if weights is not None:
-            weights = weights.reindex(rv.index)
-            weights.fillna(1.0, inplace=True)
-            rv = rv.multiply(weights)
-
-        if callback is not None:
-            callback(p)
-
-        if returnseparate:
-            return (
-                self.ml.residuals(p).to_numpy(copy=True),
-                self.ml.noise(p).to_numpy(copy=True),
-                self.ml._noise_weights(p).to_numpy(copy=True),
-            )
-
-        return rv.to_numpy(copy=True)
+        Wrapper for the shared `objfunction` to calculate residuals or noise.
+        """
+        return misfit(
+            ml=self.ml,
+            p=p,
+            noise=noise,
+            weights=weights,
+            callback=callback,
+            returnseparate=returnseparate,
+        )
 
     def fit_report(
         self,
@@ -788,8 +744,8 @@ class LeastSquares(LeastSquaresBase):
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
+            array_like object with the values as floats representing the model
+            parameters.
         noise: Boolean
             If True, minimizes the sum of squared noise computed by the NoiseModel.
         weights: pandas.Series | None
@@ -805,7 +761,9 @@ class LeastSquares(LeastSquaresBase):
         """
         par = initial
         par[vary] = p
-        return self.misfit(p=par, noise=noise, weights=weights, callback=self.callback)
+        return misfit(
+            ml=self.ml, p=par, noise=noise, weights=weights, callback=self.callback
+        )
 
     def solve(
         self,
@@ -1200,7 +1158,14 @@ class LmfitSolve(LeastSquaresBase):
         self, parameters: DataFrame, noise: bool, weights: Series
     ) -> ArrayLike:
         p = np.array([p.value for p in parameters.values()])
-        return self.misfit(p=p, noise=noise, weights=weights, callback=None)
+        return misfit(
+            ml=self.ml,
+            p=p,
+            noise=noise,
+            weights=weights,
+            callback=None,
+            returnseparate=False,
+        )
 
     def fit_report(
         self,
