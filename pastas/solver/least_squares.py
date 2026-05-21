@@ -223,8 +223,9 @@ class LeastSquaresBase(SolverBase):
 
         # Start truncated multivariate sampling
         it = 0
+        rng = np.random.default_rng()
         while samples.shape[0] < n:
-            s = np.random.multivariate_normal(p, pcov, size=(n,), check_valid="ignore")
+            s = rng.multivariate_normal(mean=p, cov=pcov, size=(n,), check_valid="ignore")
             accept = s[
                 (np.min(s - pmin, axis=1) >= 0) & (np.max(s - pmax, axis=1) <= 0)
             ]
@@ -284,14 +285,13 @@ class LeastSquaresBase(SolverBase):
         """
 
         sigr = self.ml.residuals().std()
-
         data = self._get_realizations(
             func=self.ml.simulate, n=n, name=None, max_iter=max_iter, **kwargs
         )
-        data = data + sigr * np.random.randn(data.shape[0], data.shape[1])
-
+        rng = np.random.default_rng()
+        datan = data + rng.normal(loc=0, scale=sigr, size=data.shape)
         q = [alpha / 2, 1 - alpha / 2]
-        rv = data.quantile(q, axis=1).transpose()
+        rv = datan.quantile(q, axis=1).transpose()
         return rv
 
     def ci_simulation(
