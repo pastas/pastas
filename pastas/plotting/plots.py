@@ -411,7 +411,7 @@ def diagnostics(
 
     # Create the figure and axes
     kwargs = {} or kwargs
-    figsize = kwargs.pop("figsize", (8.0, 5.0))
+    figsize = kwargs.pop("figsize", (8.0, 4.0))
     layout = kwargs.pop("layout", "constrained")
     if heteroscedasicity:
         mosaic = [["series", "hist", "het_res"], ["acf", "qq", "het_sqrt"]]
@@ -423,6 +423,7 @@ def diagnostics(
     fig = kwargs.pop("fig", None)
     if fig is None:
         fig, axd = plt.subplot_mosaic(
+            mosaic=mosaic,
             figsize=figsize,
             width_ratios=width_ratios,
             layout=layout,
@@ -430,7 +431,7 @@ def diagnostics(
         )
     else:
         axd = fig.subplot_mosaic(
-            mosaic,
+            mosaic=mosaic,
             width_ratios=width_ratios,
             **kwargs,
         )
