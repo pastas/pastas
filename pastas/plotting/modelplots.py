@@ -868,7 +868,7 @@ class Plotting:
         sharex: bool = True,
         figsize: tuple = (10, 8),
         **kwargs,
-    ) -> Axes:
+    ) -> list[Axes]:
         """This method creates a graph with all the stresses used in the model.
 
         Parameters
@@ -892,8 +892,8 @@ class Plotting:
 
         Returns
         -------
-        axes: matplotlib.axes.Axes
-            matplotlib axes instance.
+        axes: list[matplotlib.axes.Axes]
+            List of matplotlib axes instances.
         """
         stresses = _get_stress_series(self.ml, split=split)
 
@@ -912,7 +912,7 @@ class Plotting:
             ax.legend([stress.name], loc=2)
             ax.set_xlim(tmin, tmax)
 
-        return axes
+        return fig.axes
 
     @PastasDeprecationWarning(
         version="1.6.0",
@@ -1014,12 +1014,11 @@ class Plotting:
         self,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
-        figsize: tuple = (10, 8),
         stackcolors: dict[str, str] | list[str] | None = None,
         stacklegend: bool = False,
         stacklegend_kws: dict | None = None,
         **kwargs,
-    ) -> Axes:
+    ) -> list[Axes]:
         """Create a results plot, similar to `ml.plots.results()`, in which the
         individual contributions of stresses (in stressmodels with multiple stresses)
         are stacked.
@@ -1034,7 +1033,6 @@ class Plotting:
             A string or pandas.Timestamp with the end date for the period
             (E.g. '2020-01-01 00:00:00'). Strings are converted to
             pandas.Timestamp internally.
-        figsize : tuple, optional
         stackcolors : dict or list, optional
             Either dictionary with stress names as keys and colors as values, or a
             list of colors. By default None which applies colors according to the
@@ -1057,7 +1055,7 @@ class Plotting:
             return t[1].mean()
 
         # Create standard results plot
-        axes = self.ml.plots.results(tmin=tmin, tmax=tmax, figsize=figsize, **kwargs)
+        axes = self.ml.plots.results(tmin=tmin, tmax=tmax, **kwargs)
 
         nsm = len(self.ml.stressmodels)
 
@@ -1131,7 +1129,8 @@ class Plotting:
                 elif (ylower > 0) and (yupper > 0):
                     ax.set_ylim(bottom=0)
 
-        return axes
+        fig = axes[0].figure
+        return fig.axes
 
     @model_tmin_tmax
     def series(
@@ -1168,8 +1167,8 @@ class Plotting:
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         stresses = _get_stress_series(self.ml, split=split)
-        axes = series(obs, stresses=stresses, **kwargs)
-        return axes
+        ax = series(obs, stresses=stresses, **kwargs)
+        return ax
 
     @model_tmin_tmax
     def summary(
@@ -1229,7 +1228,7 @@ class Plotting:
         fig1.suptitle("Model Results", fontweight="bold")
         fig2.suptitle("Model Diagnostics", fontweight="bold")
 
-        plt.subplots_adjust(left=0.1, top=0.9, right=0.95, bottom=0.1)
+        fig.subplots_adjust(left=0.1, top=0.9, right=0.95, bottom=0.1)
         return fig
 
     @model_tmin_tmax
@@ -1322,7 +1321,7 @@ class Plotting:
         istress: int | None = None,
         ax: Axes | None = None,
         **kwargs,
-    ):
+    ) -> dict[str, Axes]:
         """Plot the contribution of a stressmodel and optionally the stress and the response.
 
         Parameters
@@ -1366,23 +1365,26 @@ class Plotting:
 
         if ax is None:
             if plot_response:
-                _, axes = plt.subplot_mosaic(
-                    [["con", "con", "con", "con", "rf"]],
+                _, axd = plt.subplot_mosaic(
+                    [["con", "rf"]],
+                    width_ratios=[4, 1],
                     constrained_layout=True,
                     figsize=(10, 2),
                 )
 
             else:
-                _, axes = plt.subplot_mosaic(
+                _, axd = plt.subplot_mosaic(
                     [["con"]],
                     constrained_layout=True,
                     figsize=(10, 2),
                 )
         else:
             if not isinstance(ax, dict):
-                axes = {"con": ax}
+                axd = {"con": ax}
+            else:
+                axd = ax
 
-        axes["con"].plot(c.index, c, label=f"contribution {c.name}")
+        axd["con"].plot(c.index, c, label=f"contribution {c.name}")
 
         if plot_stress:
             sm = self.ml.stressmodels[name]
@@ -1407,10 +1409,10 @@ class Plotting:
             up = 1.0 if sm.rfunc.up in [True, None] else -1.0
 
             # add second axes for stress
-            axes["stress"] = axes["con"].twinx()
+            axd["stress"] = axd["con"].twinx()
             if "c" not in kwargs:
                 color = kwargs.pop("color", (0.4, 0.4, 0.4))
-            axes["stress"].plot(
+            axd["stress"].plot(
                 s.index,
                 up * s,
                 color=color,
@@ -1418,43 +1420,43 @@ class Plotting:
                 label="stress",
                 **kwargs,
             )
-            axes["stress"].set_ylabel(f"stress '{stress_name}'")
+            axd["stress"].set_ylabel(f"stress '{stress_name}'")
             # flip order of stress and contributions axes (contributions on top)
-            axes["con"].patch.set_visible(False)
-            axes["stress"].patch.set_visible(True)
-            axes["con"].set_zorder(axes["stress"].get_zorder() + 1)
+            axd["con"].patch.set_visible(False)
+            axd["stress"].patch.set_visible(True)
+            axd["con"].set_zorder(axd["stress"].get_zorder() + 1)
             # add both lines to legend
-            h1, l1 = axes["con"].get_legend_handles_labels()
-            h2, l2 = axes["stress"].get_legend_handles_labels()
-            axes["con"].legend(
+            h1, l1 = axd["con"].get_legend_handles_labels()
+            h2, l2 = axd["stress"].get_legend_handles_labels()
+            axd["con"].legend(
                 h1 + h2, l1 + l2, loc=(0, 1), frameon=False, ncol=2, fontsize="small"
             )
         else:
-            axes["con"].legend(loc=(0, 1), frameon=False, ncol=1, fontsize="small")
+            axd["con"].legend(loc=(0, 1), frameon=False, ncol=1, fontsize="small")
 
         if plot_response:
-            if "rf" not in axes:
+            if "rf" not in axd:
                 raise ValueError(
                     "No axes defined for response. "
                     "Provide a dictionary containing axes with 'con' and 'rf' as keys."
                 )
             if block_or_step == "step":
-                self.step_response(stressmodels=[name], ax=axes["rf"], legend=False)
+                self.step_response(stressmodels=[name], ax=axd["rf"], legend=False)
             else:
-                self.block_response(stressmodels=[name], ax=axes["rf"], legend=False)
-            axes["rf"].yaxis.set_label_position("right")
-            axes["rf"].yaxis.tick_right()
-            h3, _ = axes["rf"].get_legend_handles_labels()
+                self.block_response(stressmodels=[name], ax=axd["rf"], legend=False)
+            axd["rf"].yaxis.set_label_position("right")
+            axd["rf"].yaxis.tick_right()
+            h3, _ = axd["rf"].get_legend_handles_labels()
             if len(h3) == 1:
-                axes["rf"].legend(
+                axd["rf"].legend(
                     h3,
                     [f"{block_or_step} response"],
                     loc=(0, 1),
                     frameon=False,
                     fontsize="small",
                 )
-            axes["rf"].grid(True)
+            axd["rf"].grid(True)
 
-        axes["con"].grid(True)
-        axes["con"].set_ylabel("rise")
-        return axes
+        axd["con"].grid(True)
+        axd["con"].set_ylabel("rise")
+        return axd
