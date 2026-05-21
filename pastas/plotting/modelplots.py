@@ -277,7 +277,7 @@ class Plotting:
         i = 0
         for sm in self.ml.stressmodels.values():
             # plot the contribution
-            nsplit = sm.get_nsplit() if split_contributions else 1
+            nsplit = sm.nsplit if split_contributions else 1
             for istress in range(nsplit):
                 ax_contrib = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
                 contribs[i].plot(ax=ax_contrib, x_compat=True)
@@ -424,7 +424,7 @@ class Plotting:
         rows = []
         i = 0
         for sm_name, sm in self.ml.stressmodels.items():
-            nsplit = sm.get_nsplit() if split_contributions else 1
+            nsplit = sm.nsplit if split_contributions else 1
             for istress in range(nsplit):
                 suffix = sm_name if not split_contributions else f"{sm_name}_{istress}"
                 con_key = f"con_{suffix}"
@@ -1274,7 +1274,7 @@ class Plotting:
                     }
                 elif not isinstance(stackcolors, dict):
                     raise TypeError("stackcolors must be None, list, or dict.")
-                nsplit = sml.get_nsplit()
+                nsplit = sml.nsplit
                 ax_step = axes[i]  # step response axis
                 ax_step.lines[0].remove()  # remove step response for r=1 m
                 if nsplit > 1:

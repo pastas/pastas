@@ -1637,7 +1637,7 @@ class Model:
         """
         contribs = []
         for name in self.stressmodels:
-            nsplit = self.stressmodels[name].get_nsplit()
+            nsplit = self.stressmodels[name].nsplit
             if split and nsplit > 1:
                 for istress in range(nsplit):
                     contrib = self.get_contribution(name, istress=istress, **kwargs)
@@ -1792,7 +1792,7 @@ class Model:
 
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
-        if istress is not None and self.stressmodels[name].get_nsplit() > 1:
+        if istress is not None and self.stressmodels[name].nsplit > 1:
             p = self.stressmodels[name].get_parameters(model=self, istress=istress)
 
         response = block_or_step(p[:nparam], dt, **kwargs)
