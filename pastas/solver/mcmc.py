@@ -82,8 +82,8 @@ class EmceeSolve(SolverBase):
         | GaussianLikelihoodAr1
         | None = GaussianLikelihood(),
         nwalkers: int = 20,
-        backend=None,
-        moves=None,
+        backend: "emcee.backend" | None = None,
+        moves: "emcee.moves" | None = None,
         parallel: bool = False,
         progress_bar: bool = True,
         **kwargs,
@@ -98,9 +98,9 @@ class EmceeSolve(SolverBase):
             )
             objfunction = kwargs.pop("objective_function")
 
-        self.objfunction = objfunction
-
         super().__init__(name=name, **kwargs)
+
+        self.objfunction = objfunction
 
         # Set sampler properties
         self.sampler = None
@@ -251,7 +251,10 @@ class EmceeSolve(SolverBase):
                 )
 
                 self.sampler.run_mcmc(
-                    pinit, steps, progress=self.progress_bar, **kwargs
+                    initial_state=pinit,
+                    nsteps=steps,
+                    progress=self.progress_bar,
+                    **kwargs,
                 )
         else:
             self.sampler = emcee.EnsembleSampler(
@@ -264,7 +267,9 @@ class EmceeSolve(SolverBase):
                 args=(noise, weights, callback),
             )
 
-            self.sampler.run_mcmc(pinit, steps, progress=self.progress_bar, **kwargs)
+            self.sampler.run_mcmc(
+                initial_state=pinit, nsteps=steps, progress=self.progress_bar, **kwargs
+            )
 
         # Get optimal values
         optimal = self.initial.copy()
@@ -447,6 +452,10 @@ class EmceeSolve(SolverBase):
         -------
         dict
         """
-        msg = "The EmceeSolve class does not support to_dict() and cannot be saved."
-        raise NotImplementedError(msg)
-        # return super().to_dict()
+        logger.warning(
+            "Note that the EmceeSolve class is not fully reproducible. "
+            "The EmceeSolve class has some attributes that are not saved"
+            " and cannot be reproduced. To ensure reproducibility, it "
+            " is recommended to save the attributes separately."
+        )
+        return super().to_dict() | {"nwalkers": self.nwalkers}

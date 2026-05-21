@@ -49,7 +49,7 @@ class LeastSquaresBase(SolverBase):
             )
             kwargs.pop("obj_func")
         super().__init__(name=name, **kwargs)
-        self.pcov = pcov
+        self.pcov: DataFrame | None = pcov
         self.result: OptimizeResult | "lmfit.minimize.MinimizerResult" | None = None
 
     @property
@@ -717,13 +717,7 @@ class LeastSquaresBase(SolverBase):
         return report
 
     def to_dict(self) -> dict:
-        settings = super().to_dict()
-        settings.update(
-            {
-                "pcov": self.pcov,
-            }
-        )
-        return settings
+        return super().to_dict() | {"pcov": self.pcov}
 
 
 class LeastSquares(LeastSquaresBase):
@@ -888,7 +882,7 @@ class LeastSquares(LeastSquaresBase):
         )
 
         self.pcov = DataFrame(
-            LeastSquares.get_covariances(
+            self.get_covariances(
                 self.result.jac,
                 self.result.cost,
                 method=self.method,
@@ -1091,23 +1085,20 @@ class LeastSquares(LeastSquaresBase):
         )
 
     def to_dict(self) -> dict:
-        settings = super().to_dict()
-        settings.update(
-            {
-                "jac": self.jac,
-                "method": self.method,
-                "ftol": self.ftol,
-                "xtol": self.xtol,
-                "gtol": self.gtol,
-                "x_scale": self.x_scale,
-                "loss": self.loss,
-                "f_scale": self.f_scale,
-                "max_nfev": self.max_nfev,
-                "diff_step": self.diff_step,
-                "tr_solver": self.tr_solver,
-                "tr_options": self.tr_options,
-            }
-        )
+        settings = super().to_dict() | {
+            "jac": self.jac,
+            "method": self.method,
+            "ftol": self.ftol,
+            "xtol": self.xtol,
+            "gtol": self.gtol,
+            "x_scale": self.x_scale,
+            "loss": self.loss,
+            "f_scale": self.f_scale,
+            "max_nfev": self.max_nfev,
+            "diff_step": self.diff_step,
+            "tr_solver": self.tr_solver,
+            "tr_options": self.tr_options,
+        }
         return settings
 
 
@@ -1232,10 +1223,4 @@ class LmfitSolve(LeastSquaresBase):
         )
 
     def to_dict(self) -> dict:
-        settings = super().to_dict()
-        settings.update(
-            {
-                "method": self.method,
-            }
-        )
-        return settings
+        return super().to_dict() | {"method": self.method}
