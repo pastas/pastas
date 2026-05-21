@@ -40,13 +40,12 @@ class GaussianLikelihood:
 
         """
         parameters = DataFrame(
-            [(0.05, 1e-10, 1.0, True, 0.01, name, 1.0, "norm")],
+            [(0.05, 1e-10, 1.0, True, name, 1.0, "norm")],
             columns=[
                 "initial",
                 "pmin",
                 "pmax",
                 "vary",
-                "stderr",
                 "name",
                 "sigma",
                 "dist",
@@ -128,15 +127,14 @@ class GaussianLikelihoodAr1:
         """
         return DataFrame(
             [
-                (0.05, 1e-10, 1.0, True, 0.01, name, 1.0, "norm"),
-                (0.5, 1e-10, 0.99999, True, 0.2, name, 1.0, "norm"),
+                (0.05, 1e-10, 1.0, True, name, 1.0, "norm"),
+                (0.5, 1e-10, 0.99999, True, name, 1.0, "norm"),
             ],
             columns=[
                 "initial",
                 "pmin",
                 "pmax",
                 "vary",
-                "stderr",
                 "name",
                 "sigma",
                 "dist",
