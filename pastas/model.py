@@ -123,7 +123,6 @@ class Model:
                 "pmin",
                 "pmax",
                 "vary",
-                "stderr",
             ]
         )
 
@@ -1484,14 +1483,15 @@ class Model:
         else:
             parameters = concat(frames)
             parameters = parameters.infer_objects()
-            parameters["stderr"] = np.nan
+            # parameters["stderr"] = np.nan
             parameters["optimal"] = np.nan
 
         # Set initial parameters to optimal parameters from model
         if not initial:
             parameters.update({"initial": self._parameters.loc[:, "optimal"]})
             parameters.update({"optimal": self._parameters.loc[:, "optimal"]})
-            parameters.update({"stderr": self._parameters.loc[:, "stderr"]})
+            if "stderr" in self._parameters.columns:
+                parameters.update({"stderr": self._parameters.loc[:, "stderr"]})
 
         return parameters
 

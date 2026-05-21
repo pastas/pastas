@@ -637,11 +637,14 @@ class Plotting:
             _table_formatter_params
         )
         if stderr:
-            stderrper = (
-                self.ml.parameters.loc[:, "stderr"]
-                / self.ml.parameters.loc[:, "optimal"]
-            )
-            p.loc[:, "stderr"] = stderrper.abs().apply(_table_formatter_stderr)
+            if "stderr" not in self.ml.parameters.columns:
+                logger.error("Standard errors are not available in the model parameters.")
+            else:
+                stderrper = (
+                    self.ml.parameters.loc[:, "stderr"]
+                    / self.ml.parameters.loc[:, "optimal"]
+                )
+                p.loc[:, "stderr"] = stderrper.abs().apply(_table_formatter_stderr)
         ax.axis("off")
         raw_widths = [max(p[col].str.len().max(), len(col)) for col in p.columns]
         total = sum(raw_widths)
