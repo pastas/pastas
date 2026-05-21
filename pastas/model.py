@@ -970,8 +970,6 @@ class Model:
 
         # Solve model
         solve_success, result = self.solver.solve(weights=weights, **kwargs)
-        if not solve_success:
-            logger.warning("Model parameters could not be estimated well.")
 
         # Update the parameters with the results from the optimization
         for column in result.columns:
@@ -993,7 +991,8 @@ class Model:
             else:
                 print(self.fit_report())
         else:
-            self._generate_warnings_report()  # log warnings even if no report
+            # log warnings even if no report
+            self._generate_warnings_report(log=True, solve_success=solve_success)
 
     @property
     @PastasDeprecationWarning(
@@ -2030,13 +2029,17 @@ class Model:
 
         return file_info
 
-    def _generate_warnings_report(self, log: bool = True) -> list[str]:
+    def _generate_warnings_report(
+        self, log: bool = True, solve_success: bool = True
+    ) -> list[str]:
         """Internal method to generate warnings after model optimization.
 
         Parameters
         ----------
         log: bool, optional
             If True, the warnings are logged using the logging module. Default is True.
+        solve_success: bool, optional
+            If True, the solve was successful and no warnings are generated. Default is True.
 
         Returns
         -------
@@ -2046,7 +2049,7 @@ class Model:
 
         msg = []
         # model optimization unsuccessful
-        if not self._solve_success:
+        if not solve_success:
             msg.append("Model parameters could not be estimated well.")
 
         def _append_warning(warning: str) -> None:

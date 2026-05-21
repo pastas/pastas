@@ -661,7 +661,14 @@ class LeastSquaresBase(SolverBase):
 
         warnings_rep = ""
         if warnings:
-            msg = self.ml._generate_warnings_report(log=False)
+            solve_success = (
+                self.result.success
+                if self.result is not None and hasattr(self.result, "success")
+                else False
+            )
+            msg = self.ml._generate_warnings_report(
+                log=False, solve_success=solve_success
+            )
 
             # create message
             if len(msg) > 0:
