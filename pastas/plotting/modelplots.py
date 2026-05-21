@@ -258,23 +258,33 @@ class Plotting:
                 mos.append("tab")
 
         kwargs = {} or kwargs
-        if "width_ratios" not in kwargs:
-            kwargs["width_ratios"] = [2.0, 1.0]
+        width_ratios = kwargs.pop("width_ratios", [2.0, 1.0])
         height_ratios = (
             _get_height_ratios(list(ylims.values()))
             if adjust_height
             else kwargs.pop("height_ratios", None)
         )
 
+        fig = kwargs.pop("fig", None)
         figsize = (8.0, 4.0 + 2 * len(contribs)) if figsize is None else figsize
         layout = kwargs.pop("layout", "constrained")
-        fig, axd = plt.subplot_mosaic(
-            mosaic,
-            height_ratios=height_ratios,
-            layout=layout,
-            figsize=figsize,
-            **kwargs,
-        )
+        if fig is None:
+            fig, axd = plt.subplot_mosaic(
+                mosaic,
+                height_ratios=height_ratios,
+                width_ratios=width_ratios,
+                layout=layout,
+                figsize=figsize,
+                **kwargs,
+            )
+        else:
+            # SubFigure.subplot_mosaic does not accept pyplot figure kwargs
+            axd = fig.subplot_mosaic(
+                mosaic,
+                height_ratios=height_ratios,
+                width_ratios=width_ratios,
+                **kwargs,
+            )
 
         # plot observations and simulation
         axd["sim"].plot(
@@ -1204,31 +1214,18 @@ class Plotting:
         fig: matplotlib.pyplot.Figure instance
         """
 
-        if results_kwargs is None:
-            results_kwargs = {}
+        results_kwargs = {} or results_kwargs
+        diagnostics_kwargs = {} or diagnostics_kwargs
 
-        if diagnostics_kwargs is None:
-            diagnostics_kwargs = {}
-
-        fig = plt.figure(figsize=(8.27, 11.69), dpi=50)
-
-        # alternative 1 ?
-        # axes = self.results(figsize=(8.27, (11.69 / 2) * 1.25), tmin=tmin, tmax=tmax, **results_kwargs)
-        # fig = axes[0].figure
-
-        fig1, fig2 = fig.subfigures(2, 1, height_ratios=[1.25, 1.0])
-
-        # alternative 2 ?
-        # self.results(fig=fig1, tmin=tmin, tmax=tmax, num=fig1, figsize=(8.27, (11.69 / 2) * 1.25), **results_kwargs)
+        fig = plt.figure(figsize=(8.27, 11.69), dpi=50, layout="constrained")
+        fig1, fig2 = fig.subfigures(2, 1, height_ratios=[2, 1], hspace=0.08)
 
         self.results(fig=fig1, tmin=tmin, tmax=tmax, **results_kwargs)
         self.diagnostics(fig=fig2, tmin=tmin, tmax=tmax, **diagnostics_kwargs)
-        fig2.subplots_adjust(wspace=0.2)
 
         fig1.suptitle("Model Results", fontweight="bold")
         fig2.suptitle("Model Diagnostics", fontweight="bold")
 
-        fig.subplots_adjust(left=0.1, top=0.9, right=0.95, bottom=0.1)
         return fig
 
     @model_tmin_tmax
@@ -1267,15 +1264,14 @@ class Plotting:
         fig: matplotlib.pyplot.Figure instance
         """
         fname = "{}.pdf".format(self.ml.name) if fname is None else fname
-        pdf = PdfPages(fname)
         fig = self.summary(
             tmin=tmin,
             tmax=tmax,
             results_kwargs=results_kwargs,
             diagnostics_kwargs=diagnostics_kwargs,
         )
-        pdf.savefig(fig, orientation="portrait", dpi=dpi)
-        pdf.close()
+        with PdfPages(fname) as pdf:
+            pdf.savefig(fig, orientation="portrait", dpi=dpi)
         return fig
 
     @model_tmin_tmax
