@@ -225,7 +225,9 @@ class LeastSquaresBase(SolverBase):
         it = 0
         rng = np.random.default_rng()
         while samples.shape[0] < n:
-            s = rng.multivariate_normal(mean=p, cov=pcov, size=(n,), check_valid="ignore")
+            s = rng.multivariate_normal(
+                mean=p, cov=pcov, size=(n,), check_valid="ignore"
+            )
             accept = s[
                 (np.min(s - pmin, axis=1) >= 0) & (np.max(s - pmax, axis=1) <= 0)
             ]

@@ -116,14 +116,7 @@ class Model:
         )
 
         self._parameters = DataFrame(
-            columns=[
-                "initial",
-                "name",
-                "optimal",
-                "pmin",
-                "pmax",
-                "vary",
-            ]
+            columns=["initial", "pmin", "pmax", "vary", "name", "optimal"]
         )
 
         # Define the model components

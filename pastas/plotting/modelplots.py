@@ -638,7 +638,9 @@ class Plotting:
         )
         if stderr:
             if "stderr" not in self.ml.parameters.columns:
-                logger.error("Standard errors are not available in the model parameters.")
+                logger.error(
+                    "Standard errors are not available in the model parameters."
+                )
             else:
                 stderrper = (
                     self.ml.parameters.loc[:, "stderr"]
