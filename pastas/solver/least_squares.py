@@ -903,9 +903,15 @@ class LeastSquares(LeastSquaresBase):
         optimal = initial
         optimal[vary] = np.array(self.result.x, dtype=float)
         stderr = np.zeros(len(optimal)) * np.nan
-        stderr[vary] = np.sqrt(np.diag(self.pcov))
+        stderr[vary] = self.get_stderr(self.pcov).to_numpy(dtype=float, copy=True)
 
         return success, optimal, stderr
+
+    @staticmethod
+    def get_stderr(pcov: DataFrame) -> Series:
+        if pcov is None:
+            raise RuntimeError("Covariance matrix `pcov` is not available.")
+        return Series(np.sqrt(np.diag(pcov)), index=pcov.index)
 
     @staticmethod
     def get_covariances(
