@@ -246,9 +246,9 @@ def _get_sim_index(
     Parameters
     ----------
     tmin : pandas.Timestamp
-        Timestamp of the end date for the simulation period.
-    tmax : pandas.Timestamp
         Timestamp of the start date for the simulation period.
+    tmax : pandas.Timestamp
+        Timestamp of the end date for the simulation period.
     freq : str
         String representing the desired frequency of the time series. Must be one
         of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -263,11 +263,11 @@ def _get_sim_index(
 
     """
     tmin = tmin.floor(freq) + time_offset
-    sim_index = date_range(tmin, tmax, freq=freq)
+    sim_index = date_range(start=tmin, end=tmax, freq=freq)
     return sim_index
 
 
-def _parse_warmup(warmup):
+def _parse_warmup(warmup: Timedelta | float | int | str) -> Timedelta:
     """Parse the warmup period to a pandas Timedelta.
 
     Parameters
