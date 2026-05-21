@@ -27,7 +27,7 @@ class TestGaussianLikelihood:
 
         assert isinstance(params, pd.DataFrame)
         assert "test_var" in params.index
-        assert params.shape == (1, 8)
+        assert params.shape == (1, 7)
         assert params.loc["test_var", "initial"] == 0.05
         assert params.loc["test_var", "pmin"] == 1e-10
         assert params.loc["test_var", "pmax"] == 1
@@ -79,7 +79,7 @@ class TestGaussianLikelihoodAr1:
         assert isinstance(params, pd.DataFrame)
         assert "test_var" in params.index
         assert "test_phi" in params.index
-        assert params.shape == (2, 8)
+        assert params.shape == (2, 7)
 
         # Check var parameter
         assert params.loc["test_var", "initial"] == 0.05
@@ -148,5 +148,4 @@ def test_likelihood_parameter_types(likelihood_class: Type[Any]) -> None:
     assert isinstance(
         params.loc[:, "vary"].values[0], (bool, np.bool_)
     )  # Allow Python bool
-    assert isinstance(params.loc[:, "stderr"].values[0], float)
     assert isinstance(params.loc[:, "name"].values[0], str)
