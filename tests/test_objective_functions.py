@@ -1,4 +1,4 @@
-"""Tests for the objective functions in pastas.solver.objective_functions."""
+"""Tests for the likelihood functions in pastas.solver.likelihood."""
 
 from typing import Any, Type
 
