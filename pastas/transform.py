@@ -45,22 +45,30 @@ class ThresholdTransform:
     of the lake, the (groundwater) level then rises slower when it rains.
     """
 
-    _name = "ThresholdTransform"
-
     def __init__(
         self,
         value: float = np.nan,
         vmin: float = np.nan,
         vmax: float = np.nan,
-        name: str = "ThresholdTransform",
+        name: str = "threshold",
         nparam: int = 2,
     ) -> None:
         self.value = value
         self.vmin = vmin
         self.vmax = vmax
         self.name = validate_name(name)
-        self.nparam = nparam
+        self._nparam = nparam
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
+
+    @property
+    def nparam(self) -> int:
+        return self._nparam
+
+    @nparam.setter
+    def nparam(self, value: int) -> None:
+        if hasattr(self, "_nparam"):
+            raise AttributeError("nparam can only be set during initialization.")
+        self._nparam = value
 
     def set_model(self, ml: Model) -> None:
         obs = ml.observations()
@@ -144,6 +152,10 @@ class ThresholdTransform:
         else:
             raise ValueError("Not yet implemented yet")
         return h
+
+    @property
+    def _name(self) -> str:
+        return self.__class__.__name__
 
     def to_dict(self) -> dict:
         data = {
