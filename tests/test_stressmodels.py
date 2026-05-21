@@ -29,13 +29,12 @@ class TestStressModelBase:
     def test_update_stress(self, stress_model: StressModel) -> None:
         """Test updating stress settings."""
         # Get original frequency
-        original_freq = stress_model.freq
+        original_freq = stress_model.stress.settings["freq"]
 
         # Update to weekly frequency
         stress_model.update_stress(freq="7D")
 
         # Check if frequency was updated
-        assert stress_model.freq == "7D"
         assert stress_model.stress.settings["freq"] == "7D"
 
         # Reset to original frequency
@@ -53,6 +52,11 @@ class TestStressModelBase:
         stress_limited = stress_model.get_stress(tmin=tmin, tmax=tmax)
         assert stress_limited.index[0] >= pd.Timestamp(tmin)
         assert stress_limited.index[-1] <= pd.Timestamp(tmax)
+
+    def test_freq_deprecated(self, stress_model: StressModel) -> None:
+        """Test that the freq attribute raises an AttributeError."""
+        with pytest.raises(AttributeError, match="freq"):
+            _ = stress_model.freq
 
 
 class TestStressModel:

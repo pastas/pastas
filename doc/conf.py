@@ -43,9 +43,8 @@ extensions = [
 
 templates_path = ["_templates"]
 source_suffix = ".rst"
-source_encoding = "utf-8"
 
-master_doc = "index"  # The master toctree document.
+root_doc = "index"  # The root toctree document.
 
 # General information about the project.
 project = "Pastas"
@@ -90,7 +89,7 @@ html_theme_options = {
         {
             "name": "GitHub",  # Label for this link
             "url": "https://github.com/pastas/pastas",  # required
-            "icon": "fab fa-github-square",
+            "icon": "fa-brands fa-square-github",
             "type": "fontawesome",  # Default is fontawesome
         }
     ],

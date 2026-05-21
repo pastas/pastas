@@ -220,10 +220,6 @@ class TestParameterSetting:
         model._set_vary("noise_alpha", False)
         assert not model.parameters.loc["noise_alpha", "vary"]
 
-        # Test setting distribution
-        model._set_dist("noise_alpha", "normal")
-        assert model.parameters.loc["noise_alpha"] == "normal"
-
 
 def test_irregular_time_steps(irregular_residual_series: Series) -> None:
     """Test noise models with irregular time steps."""

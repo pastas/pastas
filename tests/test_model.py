@@ -561,6 +561,22 @@ class TestModelContributions:
         assert "Simulation" in df.columns
         assert "Residuals" in df.columns
 
+    def test_get_output_series_split_contributions(
+        self, ml_noisemodel: ps.Model
+    ) -> None:
+        """Test getting all output series with split_contributions."""
+        df = ml_noisemodel.get_output_series(split_contributions=False)
+
+        assert isinstance(df, pd.DataFrame)
+        assert "Head_Calibration" in df.columns
+
+    def test_get_output_series_split_deprecation(self, ml_noisemodel: ps.Model) -> None:
+        """Test deprecated split keyword for get_output_series."""
+        with pytest.warns(DeprecationWarning, match="split"):
+            df = ml_noisemodel.get_output_series(split=False)
+
+        assert isinstance(df, pd.DataFrame)
+
     def test_get_response_tmax(self, ml_noisemodel: ps.Model) -> None:
         """Test getting response tmax."""
         # Get the first stressmodel name

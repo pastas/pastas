@@ -103,10 +103,8 @@ def model_tmin_tmax(function: Callable) -> Callable:
         *args,
         **kwargs,
     ):
-        if tmin is None:
-            tmin = self.ml.settings["tmin"]
-        if tmax is None:
-            tmax = self.ml.settings["tmax"]
+        tmin = self.ml.settings["tmin"] if tmin is None else Timestamp(tmin)
+        tmax = self.ml.settings["tmax"] if tmax is None else Timestamp(tmax)
 
         return function(self, tmin, tmax, *args, **kwargs)
 
@@ -150,7 +148,7 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
                 warn(message=msg, category=DeprecationWarning)
             else:
                 msg = (
-                    f"module has no attribute '{name}'"
+                    f"Module has no attribute '{name}'. "
                     f"{name} is deprecated and is not available since"
                     f" Pastas version {VERSION}. {reason}"
                 )
@@ -199,7 +197,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
         warn(message=msg, category=DeprecationWarning)
     else:
         msg = (
-            f"got an unexpected keyword argument {name}"
+            f"Got an unexpected keyword argument {name}. "
             f"The {name} argument is deprecated and is not available"
             f" since Pastas version {VERSION}. {reason}"
         )
@@ -256,7 +254,7 @@ def conditional_cachedmethod(cache_getter):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             if USE_CACHE:
-                return cached_func(self, *args, **kwargs)
+                return cached_func.__get__(self, type(self))(*args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
 

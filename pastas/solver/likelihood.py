@@ -23,7 +23,7 @@ class GaussianLikelihood:
     """
 
     def __init__(self):
-        self.nparam = 1
+        pass
 
     def get_init_parameters(self, name: str) -> DataFrame:
         """Get the initial parameters for the log-likelihood function.
@@ -40,8 +40,17 @@ class GaussianLikelihood:
 
         """
         parameters = DataFrame(
-            [(0.05, 1e-10, 1.0, True, 0.01, name)],
-            columns=["initial", "pmin", "pmax", "vary", "stderr", "name"],
+            [(0.05, 1e-10, 1.0, True, 0.01, name, 1.0, "norm")],
+            columns=[
+                "initial",
+                "pmin",
+                "pmax",
+                "vary",
+                "stderr",
+                "name",
+                "sigma",
+                "dist",
+            ],
             index=[name + "_var"],
         )
         return parameters
@@ -69,7 +78,11 @@ class GaussianLikelihood:
 
     @property
     def _name(self):
-        return "GaussianLikelihood"
+        return self.__class__.__name__
+
+    @property
+    def nparam(self):
+        return 1
 
 
 class GaussianLikelihoodAr1:
@@ -97,7 +110,7 @@ class GaussianLikelihoodAr1:
     """
 
     def __init__(self):
-        self.nparam = 2
+        pass
 
     def get_init_parameters(self, name: str) -> DataFrame:
         """Get the initial parameters for the log-likelihood function.
@@ -115,10 +128,19 @@ class GaussianLikelihoodAr1:
         """
         return DataFrame(
             [
-                (0.05, 1e-10, 1.0, True, 0.01, name),
-                (0.5, 1e-10, 0.99999, True, 0.2, name),
+                (0.05, 1e-10, 1.0, True, 0.01, name, 1.0, "norm"),
+                (0.5, 1e-10, 0.99999, True, 0.2, name, 1.0, "norm"),
             ],
-            columns=["initial", "pmin", "pmax", "vary", "stderr", "name"],
+            columns=[
+                "initial",
+                "pmin",
+                "pmax",
+                "vary",
+                "stderr",
+                "name",
+                "sigma",
+                "dist",
+            ],
             index=[name + "_var", name + "_phi"],
         )
 
@@ -148,4 +170,8 @@ class GaussianLikelihoodAr1:
 
     @property
     def _name(self):
-        return "GaussianLikelihoodAr1"
+        return self.__class__.__name__
+
+    @property
+    def nparam(self):
+        return 2

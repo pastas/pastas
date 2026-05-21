@@ -7,26 +7,25 @@ from pandas import DataFrame, Series
 from pastas.decorators import deprecate_args_or_kwargs
 from pastas.typing import ArrayLike, CallBack
 
-from .base import BaseSolver
-from .objective_functions import GaussianLikelihood, GaussianLikelihoodAr1
+from .base import SolverBase
+from .likelihood import GaussianLikelihood, GaussianLikelihoodAr1
+from .objective_function import misfit
 
 logger = getLogger(__name__)
 
 
-class EmceeSolve(BaseSolver):
+class EmceeSolve(SolverBase):
     """Solver based on MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`.
 
     Parameters
     ----------
-    objective_function: func, optional
-        An objective function to be minimized. If not provided, the
-        GaussianLikelihood is used. See the pastas.objective_functions module for
-        more information.
+    objfunction: func, optional
+        An objective function to be minimized. See the pastas.likelihood_functions module for more information.
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
     backend: emcee.backend, optional
-        One of the Backends from Emcee used to store MCMC results. See Emcee
-        for more information.
+        One of the Backends from Emcee used to store MCMC results. See the Emcee
+        documentation for more information.
     moves: emcee.moves, optional
         The moves argument determines how the next step for a walker is chosen in
         the MCMC approach. One of the Moves classes from Emcee has to be provided.
@@ -36,7 +35,7 @@ class EmceeSolve(BaseSolver):
     progress_bar: bool, optional
         Show the progress bar or not. Requires the `tqdm` package to be installed.
     **kwargs, optional
-        All other keyword arguments are passed on to the BaseSolver class.
+        All other keyword arguments are passed on to the SolverBase class.
 
     Notes
     -----
@@ -44,10 +43,7 @@ class EmceeSolve(BaseSolver):
     (MCMC) approach to find the optimal parameter values. The solver can be used as
     follows::
 
-        solver = ps.EmceeSolve(
-            nwalkers=20,
-            progress_bar=True,
-        )
+        solver = ps.EmceeSolve(nwalkers=20, progress_bar=True)
         ml.solve(solver=solver)
 
     The arguments provided are mostly passed on to the `emcee.EnsembleSampler`
@@ -82,21 +78,18 @@ class EmceeSolve(BaseSolver):
 
     def __init__(
         self,
-        objfunction: GaussianLikelihood | GaussianLikelihoodAr1 | None = None,
+        name: str = "solver",
+        objfunction: GaussianLikelihood
+        | GaussianLikelihoodAr1
+        | None = GaussianLikelihood(),
         nwalkers: int = 20,
-        backend=None,
-        moves=None,
+        backend: None = None,
+        moves: None = None,
         parallel: bool = False,
         progress_bar: bool = True,
         **kwargs,
     ) -> None:
-        # Check if emcee is installed, if not, return error
-        try:
-            global emcee
-            import emcee as emcee  # Import emcee here, so it is no dependency
-        except ImportError:
-            msg = "emcee not installed. Please install emcee first."
-            raise ImportError(msg) from None
+        self._assert_emcee_installation()
 
         if "objective_function" in kwargs:
             deprecate_args_or_kwargs(
@@ -106,7 +99,9 @@ class EmceeSolve(BaseSolver):
             )
             objfunction = kwargs.pop("objective_function")
 
-        super().__init__(**kwargs)
+        self.objfunction = objfunction
+
+        super().__init__(name=name, **kwargs)
 
         # Set sampler properties
         self.sampler = None
@@ -118,8 +113,33 @@ class EmceeSolve(BaseSolver):
         self.priors: list[DataFrame] = []
 
         # Set objective function
-        self.objfunction = GaussianLikelihood() if objfunction is None else objfunction
-        self.parameters = self.objfunction.get_init_parameters("ln")
+        self.objfunction = objfunction
+        self.set_init_parameters()
+
+    def _assert_emcee_installation(self) -> None:
+        try:
+            global emcee
+            import emcee as emcee  # Import emcee here, so it is no dependency
+        except ImportError:
+            msg = "emcee not installed. Please install emcee first."
+            raise ImportError(msg) from None
+
+    def get_init_parameters(self, name):
+        """Get the initial parameters for the solver.
+
+        Parameters
+        ----------
+        name: str
+            Name of the solver instance.
+
+        Returns
+        -------
+        parameters: DataFrame
+            Initial parameters for the solver.
+
+        """
+        parameters = self.objfunction.get_init_parameters(name if name else self.name)
+        return parameters
 
     def fit_report(self) -> str:
         return ""
@@ -133,34 +153,20 @@ class EmceeSolve(BaseSolver):
         **kwargs,
     ) -> tuple[bool, ArrayLike, ArrayLike]:
         # Store initial parameters
-        self.initial = np.append(
-            self.ml.parameters.initial.values, self.parameters.initial.values
-        )
-        self.vary = np.append(
-            self.ml.parameters.vary.values, self.parameters.vary.values
-        )
+        self.initial = self.ml.parameters.initial.to_numpy(dtype=float)
+        self.vary = self.ml.parameters.vary.to_numpy(dtype=bool)
 
         # Set lower and upper bounds
-        lb = np.append(
-            self.ml.parameters[self.ml.parameters.vary].pmin.values,
-            self.parameters[self.parameters.vary].pmin.values,
-        )
-        ub = np.append(
-            self.ml.parameters[self.ml.parameters.vary].pmax.values,
-            self.parameters[self.parameters.vary].pmax.values,
-        )
+        lb = self.ml.parameters[self.ml.parameters.vary].pmin.to_numpy(dtype=float)
+        ub = self.ml.parameters[self.ml.parameters.vary].pmax.to_numpy(dtype=float)
         self.bounds = np.vstack([lb, ub]).T
 
         # Set priors
         self._set_priors()
 
         # Set initial positions of the walkers
-        pinit = np.append(
-            self.ml.parameters[self.ml.parameters.vary].initial.values,
-            self.parameters[self.parameters.vary].initial.values,
-        )
+        pinit = self.initial[self.vary]
         ndim = pinit.size
-
         pinit = pinit + np.abs(pinit) * 1e-2 * np.random.randn(self.nwalkers, ndim)
 
         # Create sampler and run mcmc
@@ -181,7 +187,10 @@ class EmceeSolve(BaseSolver):
                 )
 
                 self.sampler.run_mcmc(
-                    pinit, steps, progress=self.progress_bar, **kwargs
+                    initial_state=pinit,
+                    nsteps=steps,
+                    progress=self.progress_bar,
+                    **kwargs,
                 )
         else:
             self.sampler = emcee.EnsembleSampler(
@@ -194,7 +203,9 @@ class EmceeSolve(BaseSolver):
                 args=(noise, weights, callback),
             )
 
-            self.sampler.run_mcmc(pinit, steps, progress=self.progress_bar, **kwargs)
+            self.sampler.run_mcmc(
+                initial_state=pinit, nsteps=steps, progress=self.progress_bar, **kwargs
+            )
 
         # Get optimal values
         optimal = self.initial.copy()
@@ -205,7 +216,7 @@ class EmceeSolve(BaseSolver):
         self.parameters.loc[:, "optimal"] = optimal[-self.objfunction.nparam :]
 
         # Don't estimate stderr for now
-        optimal = optimal[: -self.objfunction.nparam]
+        # optimal = optimal[: -self.objfunction.nparam]
         stderr = np.zeros(len(optimal)) * np.nan
 
         success = True
@@ -274,21 +285,21 @@ class EmceeSolve(BaseSolver):
         This method is always called by emcee.
 
         """
-        par = self.initial
+        par = self.initial.copy()
 
         # Set the parameters that are varied from the model and objective function
         par[self.vary] = p
 
-        rv = self.misfit(
-            p=par[: -self.objective_function.nparam],
+        rv = misfit(
+            p=p,
             noise=noise,
+            ml=self.ml,
             weights=weights,
             callback=callback,
+            returnseparate=False,
         )
 
-        lnlike = self.objective_function.compute(
-            rv, par[-self.objective_function.nparam :]
-        )
+        lnlike = self.objfunction.compute(rv, par[-self.objfunction.nparam :])
 
         return lnlike
 
@@ -324,29 +335,21 @@ class EmceeSolve(BaseSolver):
                 lp += prior.logpdf(param)
         return lp
 
-    def add_parameters_dist(self) -> None:
-        """Add the distribution of the parameters to the parameters DataFrame."""
-        # TODO: This method needs to be implemented such that the distribution
-        # of the parameters is added to the model parameters DataFrame.
-
-        # for i, prior in enumerate(self.priors):
-        # self.ml.parameters.loc[self.ml.parameters.vary, "dist"] = prior.dist.name
-
     def _set_priors(self) -> None:
         """Set the priors for the parameters."""
         self.priors = []
+        cols = ["initial", "pmin", "pmax", "sigma", "dist"]
 
         # Set the priors for the parameters that are varied from the model
-        for _, (loc, pmin, pmax, scale, dist) in self.ml.parameters.loc[
-            self.ml.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
-        ].iterrows():
-            self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
-
-        # Set the priors for the parameters that are varied from the objective function
-        for _, (loc, pmin, pmax, scale, dist) in self.parameters.loc[
-            self.parameters.vary, ["initial", "pmin", "pmax", "stderr", "dist"]
-        ].iterrows():
-            self.priors.append(self._get_prior(dist, loc, scale, pmin, pmax))
+        for _, p in self.ml.parameters.loc[self.ml.parameters.vary, cols].iterrows():
+            prior = self._get_prior(
+                dist=p["dist"],
+                loc=p["initial"],
+                scale=p["sigma"],
+                pmin=p["pmin"],
+                pmax=p["pmax"],
+            )
+            self.priors.append(prior)
 
     def _get_prior(self, dist: str, loc: float, scale: float, pmin: float, pmax: float):
         """Set the prior for a parameter.
@@ -367,6 +370,7 @@ class EmceeSolve(BaseSolver):
         """
         # Import the distribution
         mod = importlib.import_module("scipy.stats")
+
         # Return the distribution
         if dist == "uniform":
             loc = pmin
@@ -386,6 +390,10 @@ class EmceeSolve(BaseSolver):
         -------
         dict
         """
-        # msg = "The EmceeSolve class does not support to_dict() and cannot be saved."
-        # raise NotImplementedError(msg)
-        return super().to_dict()
+        logger.warning(
+            "Note that the EmceeSolve class is not fully reproducible. "
+            "The EmceeSolve class has some attributes that are not saved"
+            " and cannot be reproduced. To ensure reproducibility, it "
+            " is recommended to save the attributes separately."
+        )
+        return super().to_dict() | {"nwalkers": self.nwalkers}

@@ -1,6 +1,6 @@
 """This module contains the base solver that used available for Pastas.
 
-All solvers inherit from the BaseSolver class, which contains general method for
+All solvers inherit from the SolverBase class, which contains general method for
 selecting the correct time series to misfit and options to weight the residuals or
 noise series.
 """
@@ -11,13 +11,14 @@ from typing import Any
 
 import pandas as pd
 
+from pastas.decorators import PastasDeprecationWarning, set_parameter
 from pastas.typing import Model
 
 logger = getLogger(__name__)
 
 
-class BaseSolver(ABC):
-    """All solver instances inherit from the BaseSolver class.
+class SolverBase(ABC):
+    """All solver instances inherit from the SolverBase class.
 
     Attributes
     ----------
@@ -25,10 +26,14 @@ class BaseSolver(ABC):
         Name of the solver instance.
     ml: pastas.Model
         The Pastas Model instance that is being solved.
+    parameters: pd.DataFrame
+        DataFrame with the initial parameters of the solver itself.
+
     """
 
-    def __init__(self, name: str = "solver") -> None:
+    def __init__(self, name: str = "solver", **kwargs) -> None:
         self.name = name
+        self.kwargs = kwargs
         self.ml: Model | None = None
         self.parameters: pd.DataFrame | None = None
         self.set_init_parameters()  # adds self.Parameters DataFrame
@@ -52,6 +57,56 @@ class BaseSolver(ABC):
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
         self.parameters = self.get_init_parameters(name=self.name)
+
+    @set_parameter
+    def _set_initial(self, name: str, value: float) -> None:
+        """Internal method to set the initial parameter value.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "initial"] = value
+
+    @set_parameter
+    def _set_pmin(self, name: str, value: float) -> None:
+        """Internal method to set the lower bound of the parameter value.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "pmin"] = value
+
+    @set_parameter
+    def _set_pmax(self, name: str, value: float) -> None:
+        """Internal method to set the upper bound of the parameter value.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "pmax"] = value
+
+    @set_parameter
+    def _set_vary(self, name: str, value: float) -> None:
+        """Internal method to set if the parameter is varied during optimization.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "vary"] = bool(value)
+
+    @set_parameter
+    def _set_dist(self, name: str, value: str) -> None:
+        """Internal method to set distribution of prior of the parameter.
+
+        Notes
+        -----
+        The preferred method for parameter setting is through the model.
+        """
+        self.parameters.at[name, "dist"] = str(value)
 
     def set_model(self, ml: Model) -> None:
         """Method to set the Pastas Model instance.
@@ -84,4 +139,32 @@ class BaseSolver(ABC):
         return self.__class__.__name__
 
     def to_dict(self) -> dict:
-        return {"class": self._name, "name": self.name}
+        """Return a dictionary representation of the solver instance.
+
+        Notes
+        -----
+        This method is used to store Pastas models.
+        """
+        return {
+            "class": self._name,
+            "name": self.name,
+            "kwargs": self.kwargs,
+        }
+
+
+@PastasDeprecationWarning(
+    version="2.0.0", reason="Use SolverBase instead of BaseSolver."
+)
+class BaseSolver(SolverBase):
+    """BaseSolver is deprecated and will be removed in a future version of Pastas.
+
+    Please use the SolverBase class instead, which provides a more structured and
+    flexible approach to implementing solvers in Pastas. The SolverBase class includes
+    methods for setting initial parameters, bounds, and whether parameters should be
+    varied during optimization, as well as a method for associating the solver with a
+    Pastas Model instance.
+
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)

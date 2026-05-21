@@ -19,7 +19,11 @@ This will print the following to the console::
 
 """
 
+from typing import Literal
+
 from pastas.decorators import PastasDeprecationWarning
+from pastas.stats import metrics
+from pastas.typing import Model
 
 
 @PastasDeprecationWarning(
@@ -58,7 +62,7 @@ class SolveTimer(tqdm):
     updated quite as nicely.
     """
 
-    def __init__(self, max_time: float | None = None, *args, **kwargs) -> None:
+    def __init__(self, *args, max_time: float | None = None, **kwargs) -> None:
         """Initialize SolveTimer.
 
         Parameters
@@ -83,3 +87,51 @@ class SolveTimer(tqdm):
                     f"Model solve time exceeded {self.max_time} seconds!"
                 )
         return displayed
+
+
+class StatTimer(SolveTimer):
+    """StatTimer that updates a user-specified solve statistic every N iterations."""
+
+    def __init__(
+        self,
+        ml: Model,
+        *args,
+        statistic: Literal[
+            "rmse", "sse", "mae", "rsq", "evp", "nse", "nnse", "aic", "aicc", "bic"
+        ] = "rmse",
+        update_interval: int | None = None,
+        **kwargs,
+    ) -> None:
+        """
+        Parameters
+        ----------
+        ml : pastas.Model
+            The model being solved, used to compute residuals.
+        statistic : str, optional
+            The statistic to compute and display, by default "rmse". Must be a valid
+            statistic in pastas.stats.metrics that accepts ``res=`` as an argument.
+        update_interval : int, optional
+            Number of iterations between RMSE updates. If None (default), the
+            RMSE is updated when iteration % number of varying parameters == 0.
+        """
+        self.ml = ml
+        if update_interval is not None:
+            self.update_interval = update_interval
+        else:
+            self.update_interval = self.ml.parameters.vary.sum()
+        self.statistic = statistic
+        self.func = getattr(metrics, self.statistic)
+        super().__init__(*args, **kwargs)
+
+    def timer(self, p, n: int = 1):
+        """Callback method that updates RMSE in the progress bar."""
+        # extra overhead to compute residuals again, though with caching
+        # this will be faster
+        if (self.n % self.update_interval) == 0:
+            if self.ml.noisemodel is not None:
+                rv = self.ml.noise(p) * self.ml.noise_weights(p)
+            else:
+                rv = self.ml.residuals(p)
+            stat = self.func(res=rv)
+            self.set_postfix(**{f"{self.statistic.upper()}": f"{stat:.4e}"})
+        return super().timer(p, n)

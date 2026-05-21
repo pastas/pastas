@@ -297,9 +297,6 @@ class Model:
                     "The stress of the stressmodel has no overlap with ml.oseries."
                 )
         self._check_stressmodel_compatibility()
-        tmin = self.get_tmin(use_oseries=True, use_stresses=True)
-        tmax = self.get_tmax(use_oseries=True, use_stresses=True)
-        self.set_settings(tmin=tmin, tmax=tmax)
 
     def add_constant(self, constant: Constant) -> None:
         """Add a Constant to the time series Model.
@@ -345,8 +342,8 @@ class Model:
 
         Parameters
         ----------
-        noisemodel: pastas.noisemodels.NoiseModelBase
-            Instance of NoiseModelBase.
+        noisemodel: NoiseModelType
+            Instance of a noise model class.
 
         Examples
         --------
@@ -366,6 +363,26 @@ class Model:
         noise_alpha = self.noisemodel.parameters.initial.iat[0]
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
+
+        self._parameters = self.get_init_parameters(initial=False)
+
+    def add_solver(self, solver: Solver) -> None:
+        """Method to add a solver to the model.
+
+        Parameters
+        ----------
+        solver: pastas.solver.Solver
+            Instance of a pastas Solver class used to solve the model. Options are:
+            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve().
+
+        See Also
+        --------
+        pastas.solver
+            Different solver objects are available to estimate parameters.
+        """
+        self.solver = solver
+        if not hasattr(self.solver, "ml") or self.solver.ml is None:
+            self.solver.set_model(self)
 
         self._parameters = self.get_init_parameters(initial=False)
 
@@ -456,14 +473,17 @@ class Model:
         looks with only the initial parameters and no calibration.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
-        if tmin is None and self.settings["tmin"]:
-            tmin = self.settings["tmin"]
-        else:
-            tmin = self.get_tmin(tmin, use_oseries=False, use_stresses=True)
-        if tmax is None and self.settings["tmax"]:
-            tmax = self.settings["tmax"]
-        else:
-            tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
+        tmin = (
+            self.settings["tmin"]
+            if tmin is None
+            else self.get_tmin(tmin=tmin, use_oseries=False, use_stresses=True)
+        )
+        tmax = (
+            self.settings["tmax"]
+            if tmax is None
+            else self.get_tmax(tmax=tmax, use_oseries=False, use_stresses=True)
+        )
+
         freq = self.settings["freq"] if freq is None else freq
         warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
 
@@ -498,7 +518,11 @@ class Model:
         istart = 0  # Track parameters index to pass to stressmodel object
         for sm in self.stressmodels.values():
             contrib = sm.simulate(
-                p[istart : istart + sm.nparam], sim_index.min(), tmax, freq, dt
+                p=p[istart : istart + sm.nparam],
+                tmin=sim_index.min(),
+                tmax=tmax,
+                freq=freq,
+                dt=dt,
             )
             sim = sim.add(contrib)
             istart += sm.nparam
@@ -772,24 +796,6 @@ class Model:
     )
     def initialize(**kwargs) -> None:
         pass
-
-    def add_solver(self, solver: Solver) -> None:
-        """Method to add a solver to the model.
-
-        Parameters
-        ----------
-        solver: pastas.solver.Solver
-            Instance of a pastas Solver class used to solve the model. Options are:
-            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve().
-
-        See Also
-        --------
-        pastas.solver
-            Different solver objects are available to estimate parameters.
-        """
-        self.solver = solver
-        if not hasattr(self.solver, "ml") or self.solver.ml is None:
-            self.solver.set_model(self)
 
     def solve(
         self,
@@ -1157,6 +1163,7 @@ class Model:
         noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
         constant = self.constant.name if self.constant else "NotPresent"
         transform = self.transform.name if self.transform else "NotPresent"
+        solver = self.solver.name if self.solver else "NotPresent"
 
         # Get the model component for the parameter
         cat = self._parameters.at[name, "name"]
@@ -1169,6 +1176,12 @@ class Model:
             obj = self.constant
         elif cat == transform:
             obj = self.transform
+        elif cat == solver:
+            obj = self.solver
+        else:
+            msg = f"Parameter {name} is not associated with a model component."
+            logger.error(msg)
+            raise KeyError(msg)
 
         # Move pmin and pmax based on the initial
         if move_bounds and initial:
@@ -1216,8 +1229,9 @@ class Model:
         if optimal is not None:
             self._parameters.at[name, "optimal"] = optimal
         for key, value in kwargs.items():
-            if key in self.parameters.columns:
-                self.parameters.at[name, key] = value
+            if key in self._parameters.columns:
+                self._parameters.at[name, key] = value
+                obj.parameters.at[name, key] = value
             else:
                 msg = f"Parameter property '{key}' is not recognized."
                 logger.error(msg)
@@ -1370,7 +1384,7 @@ class Model:
         else:
             tmin = ts_tmin
 
-        return tmin
+        return Timestamp(tmin)
 
     def get_tmax(
         self,
@@ -1437,7 +1451,7 @@ class Model:
         else:
             tmax = ts_tmax
 
-        return tmax
+        return Timestamp(tmax)
 
     def get_init_parameters(self, initial: bool = True) -> DataFrame:
         """Method to get all initial parameters from the individual objects.
@@ -1627,7 +1641,7 @@ class Model:
         """
         contribs = []
         for name in self.stressmodels:
-            nsplit = self.stressmodels[name].get_nsplit()
+            nsplit = self.stressmodels[name].nsplit
             if split and nsplit > 1:
                 for istress in range(nsplit):
                     contrib = self.get_contribution(name, istress=istress, **kwargs)
@@ -1670,7 +1684,8 @@ class Model:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         add_contributions: bool = True,
-        split: bool = True,
+        split_contributions: bool = True,
+        **kwargs,
     ) -> DataFrame:
         """Method to get all the modeled output time series from the Model.
 
@@ -1685,10 +1700,12 @@ class Model:
             (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
             internally. If none is provided, the tmax from the oseries is used.
         add_contributions: bool, optional
-            Add the contributions from the different stresses or not.
-        split: bool, optional
+            Add the contributions from the different stresses or not. Default is
+            True.
+        split_contributions: bool, optional
             Passed on to ml.get_contributions. Split the contribution from recharge
             into evaporation and precipitation. See also ml.get_contributions.
+            Default is True.
 
         Returns
         -------
@@ -1705,6 +1722,14 @@ class Model:
         >>> df = ml.get_output_series(tmin="2000", tmax="2010")
         >>> df.to_csv("fname.csv")
         """
+        if "split" in kwargs:
+            deprecate_args_or_kwargs(
+                name="split",
+                version="3.0.0",
+                reason="Use `split_contributions` instead.",
+            )
+            split_contributions = kwargs.pop("split")
+
         obs = self.observations(tmin=tmin, tmax=tmax)
         obs.name = "Head_Calibration"
 
@@ -1715,7 +1740,9 @@ class Model:
             df.append(self.noise(tmin=tmin, tmax=tmax))
 
         if add_contributions:
-            contribs = self.get_contributions(tmin=tmin, tmax=tmax, split=split)
+            contribs = self.get_contributions(
+                tmin=tmin, tmax=tmax, split=split_contributions
+            )
             for contrib in contribs:
                 df.append(contrib)
 
@@ -1769,7 +1796,7 @@ class Model:
 
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
-        if istress is not None and self.stressmodels[name].get_nsplit() > 1:
+        if istress is not None and self.stressmodels[name].nsplit > 1:
             p = self.stressmodels[name].get_parameters(model=self, istress=istress)
 
         response = block_or_step(p[:nparam], dt, **kwargs)

@@ -1,5 +1,7 @@
+from abc import abstractmethod
 from collections.abc import Callable
 from functools import partial
+from itertools import combinations
 from logging import getLogger
 from typing import Literal
 
@@ -12,12 +14,13 @@ from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cach
 from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike, CallBack
 
-from .base import BaseSolver
+from .base import SolverBase
+from .objective_function import misfit
 
 logger = getLogger(__name__)
 
 
-class BaseLeastSquares(BaseSolver):
+class LeastSquaresBase(SolverBase):
     """Base class for least squares solvers."""
 
     def __init__(
@@ -30,30 +33,35 @@ class BaseLeastSquares(BaseSolver):
 
         Parameters
         ----------
+        name: str, optional
+            Name of the solver instance. Default is "solver".
         pcov: DataFrame, optional
             DataFrame with the covariance matrix of the parameters. Default is None.
+
         """
         if "nfev" in kwargs:
             logger.debug(
-                "The 'nfev' argument is not used in the BaseLeastSquares class and will be ignored."
+                "The 'nfev' argument is not used in the LeastSquaresBase class and will be ignored."
             )
             kwargs.pop("nfev")
         if "obj_func" in kwargs:
             logger.debug(
-                "The 'obj_func' argument is not used in the BaseLeastSquares class and will be ignored."
+                "The 'obj_func' argument is not used in the LeastSquaresBase class and will be ignored."
             )
             kwargs.pop("obj_func")
         super().__init__(name=name, **kwargs)
-        self.pcov = pcov
+        self.pcov: DataFrame | None = pcov
         self.result: OptimizeResult | "lmfit.minimize.MinimizerResult" | None = None
 
     @property
     def pcor(self) -> DataFrame | None:
         """Property to obtain the parameter correlations from the covariance matrix.
+
         Returns
         -------
         pcor: pandas.DataFrame or None
             Pandas DataFrame with the correlations for the parameters. If `pcov` is None, returns None.
+
         """
         if self.pcov is None:
             return None
@@ -122,13 +130,13 @@ class BaseLeastSquares(BaseSolver):
         Parameters
         ----------
         name: str, optional
-            Name of the stressmodel or model component to obtain the
-            parameters for.
+            Name of the stressmodel or model component to obtain the parameters for.
 
         Returns
         -------
         pcov: pandas.DataFrame
             Pandas DataFrame with the covariances for the parameters.
+
         """
         if name:
             index = self.ml.parameters.loc[
@@ -155,6 +163,7 @@ class BaseLeastSquares(BaseSolver):
         -------
         pcor: pandas.DataFrame
             n x n Pandas DataFrame with the correlations.
+
         """
         index = pcov.index
         pcov_values = pcov.to_numpy(dtype=float, copy=True)
@@ -173,20 +182,27 @@ class BaseLeastSquares(BaseSolver):
         Parameters
         ----------
         name: str, optional
-            Name of the stressmodel or model component to obtain the
-            parameters for.
+            Name of the stressmodel or model component to obtain the parameters for.
         n: int, optional
-            Number of random samples drawn from the bivariate normal
-            distribution.
+            Number of random samples drawn from the bivariate normal distribution. If
+            None, the number of samples is determined by the number of parameters that
+            are varied, using 10^k where k is the number of parameters that are varied.
         max_iter : int, optional
-            maximum number of iterations for truncated multivariate
-            sampling, default is 10. Increase this value if number of
-            accepted parameter samples is lower than n.
+            maximum number of iterations for truncated multivariate sampling, default
+            is 10. Increase this value if number of accepted parameter samples is lower
+            than n.
 
         Returns
         -------
         array_like
             array with N parameter samples.
+
+        Notes
+        -----
+        The parameter samples are drawn from a multivariate normal distribution, and
+        thus assume that the a normal distribution applies for the parameter
+        uncertainty.
+
         """
         p = self.ml.get_parameters(name=name)
         pcov = self._get_covariance_matrix(name=name)
@@ -264,6 +280,7 @@ class BaseLeastSquares(BaseSolver):
         -----
         Add residuals assuming a Normal distribution with standard deviation
         equal to the standard deviation of the residuals.
+
         """
 
         sigr = self.ml.residuals().std()
@@ -379,11 +396,15 @@ class BaseLeastSquares(BaseSolver):
         name: str
             Name of the step response for which to calculate the confidence interval.
         n: int, optional
-            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+            Number of random samples drawn from the bivariate normal distribution to
+            compute the confidence interval. Default is 1000.
         alpha: float, optional
-            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+            Significance level for the confidence interval. Default is 0.05, which
+            corresponds to a 95% confidence interval.
         max_iter: int, optional
-            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+            Maximum number of iterations for truncated multivariate sampling, default
+            is 10. Increase this value if number of accepted parameter samples is lower
+            than n.
         **kwargs
             Additional keyword arguments are passed to the `ml.get_step_response()`
             method.
@@ -394,6 +415,7 @@ class BaseLeastSquares(BaseSolver):
         to parameter uncertainty. In other words, there is a 95% probability
         that the true best-fit line for the observed data lies within the
         95% confidence interval.
+
         """
         dt = self.ml.get_block_response(name=name).index.values
         return self._get_confidence_interval(
@@ -421,13 +443,18 @@ class BaseLeastSquares(BaseSolver):
         name: str
             Name of the contribution for which to calculate the confidence interval.
         n: int, optional
-            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+            Number of random samples drawn from the bivariate normal distribution to
+            compute the confidence interval. Default is 1000.
         alpha: float, optional
-            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+            Significance level for the confidence interval. Default is 0.05, which
+            corresponds to a 95% confidence interval.
         max_iter: int, optional
-            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+            Maximum number of iterations for truncated multivariate sampling, default
+            is 10. Increase this value if number of accepted parameter samples is lower
+            than n.
         **kwargs
-            Additional keyword arguments are passed to the `ml.get_contribution()` method.
+            Additional keyword arguments are passed to the `ml.get_contribution()`
+            method.
 
         Returns
         -------
@@ -452,8 +479,10 @@ class BaseLeastSquares(BaseSolver):
             **kwargs,
         )
 
+    @abstractmethod
     def solve(self) -> tuple[bool, ArrayLike, ArrayLike]:
-        """Abstract method that has to be implemented by all solvers.
+        """Abstract method that has to be implemented by
+        all least squares solvers.
 
         Returns
         -------
@@ -462,8 +491,7 @@ class BaseLeastSquares(BaseSolver):
         optimal: array_like
             array_like object with the optimal parameter values as floats.
         stderr: array_like
-            array_like object with the standard error of the parameters as
-            floats.
+            array_like object with the standard error of the parameters as floats.
 
         """
         pass
@@ -476,63 +504,17 @@ class BaseLeastSquares(BaseSolver):
         callback: CallBack | None = None,
         returnseparate: bool = False,
     ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
-        """This method is called by all solvers to obtain a series that are
-        minimized in the optimization process. It handles the application of
-        the weights, a noisemodel and other optimization options.
-
-        Parameters
-        ----------
-        p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
-        noise: Boolean
-            If True, minimizes the sum of squared noise computed by the NoiseModel.
-        weights: pandas.Series, optional
-            A pandas Series used to scale the residual or noise (in the case
-            of a `NoiseModel`) during optimization. The weights must share
-            the same `DateTimeIndex` as the observations (`ml.observations()`)
-            to ensure proper alignment. These weights are applied such that
-            the minimized objective function in least-squares solvers is
-            ``sum((weights * residuals)**2)``. This means that a residual with
-            double the weight has four times as much influence. If None, equal
-            weights are used. This can be used to put extra/less weight on certain
-            periods (e.g., droughts) or measurements (i.e. outliers), and make more
-            complex calibration schemes (see, for example,
-            :cite:`colllenteur_analysis_2023`).
-        callback: ufunc, optional
-            function that is called after each iteration. the parameters are
-            provided to the func. E.g. "callback(parameters)"
-        returnseparate: bool, optional
-            return residuals, noise, noiseweights
-
-        Returns
-        -------
-        rv: array_like
-            residuals array (if noise=False) or noise array (if noise=True)
         """
-        # Get the residuals or the noise
-        if noise:
-            rv = self.ml.noise(p) * self.ml._noise_weights(p)
-        else:
-            rv = self.ml.residuals(p)
-
-        # Determine if weights need to be applied
-        if weights is not None:
-            weights = weights.reindex(rv.index)
-            weights.fillna(1.0, inplace=True)
-            rv = rv.multiply(weights)
-
-        if callback is not None:
-            callback(p)
-
-        if returnseparate:
-            return (
-                self.ml.residuals(p).to_numpy(copy=True),
-                self.ml.noise(p).to_numpy(copy=True),
-                self.ml._noise_weights(p).to_numpy(copy=True),
-            )
-
-        return rv.to_numpy(copy=True)
+        Wrapper for the shared `objfunction` to calculate residuals or noise.
+        """
+        return misfit(
+            ml=self.ml,
+            p=p,
+            noise=noise,
+            weights=weights,
+            callback=callback,
+            returnseparate=returnseparate,
+        )
 
     def fit_report(
         self,
@@ -562,7 +544,6 @@ class BaseLeastSquares(BaseSolver):
             Value of the found minimal loss function value from the
             optimization algorithm. Generally obtained from the result attribute
             which is not present when loading the solver, thus by default nan.
-
 
         Returns
         -------
@@ -663,7 +644,7 @@ class BaseLeastSquares(BaseSolver):
         if corr:
             cor = DataFrame(columns=["value"])
             pcor = self.pcor
-            for idx, col in (pcor, 2):
+            for idx, col in combinations(pcor, 2):
                 if np.abs(pcor.loc[idx, col]) > 0.5:
                     cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
 
@@ -692,17 +673,12 @@ class BaseLeastSquares(BaseSolver):
         return report
 
     def to_dict(self) -> dict:
-        settings = super().to_dict()
-        settings.update(
-            {
-                "pcov": self.pcov,
-            }
-        )
-        return settings
+        return super().to_dict() | {"pcov": self.pcov}
 
 
-class LeastSquares(BaseLeastSquares):
+class LeastSquares(LeastSquaresBase):
     """Solver based on Scipy's least_squares method :cite:p:`virtanen_scipy_2020`.
+
 
     Notes
     -----
@@ -768,8 +744,8 @@ class LeastSquares(BaseLeastSquares):
         Parameters
         ----------
         p: array_like
-            array_like object with the values as floats representing the
-            model parameters.
+            array_like object with the values as floats representing the model
+            parameters.
         noise: Boolean
             If True, minimizes the sum of squared noise computed by the NoiseModel.
         weights: pandas.Series | None
@@ -785,7 +761,9 @@ class LeastSquares(BaseLeastSquares):
         """
         par = initial.astype(p.dtype)  # copy + match dtype (real or complex for cs jac)
         par[vary] = p
-        return self.misfit(p=par, noise=noise, weights=weights, callback=self.callback)
+        return misfit(
+            ml=self.ml, p=par, noise=noise, weights=weights, callback=self.callback
+        )
 
     def solve(
         self,
@@ -807,8 +785,10 @@ class LeastSquares(BaseLeastSquares):
         vary = self.ml.parameters.vary.to_numpy(dtype=bool, copy=True)
         initial = self.ml.parameters.initial.to_numpy(dtype=float, copy=True)
         parameters = self.ml.parameters.loc[vary]
-        pmin = parameters.loc[:, "pmin"].to_numpy(dtype=float, copy=True)
-        pmax = parameters.loc[:, "pmax"].to_numpy(dtype=float, copy=True)
+        pmin = (
+            parameters.loc[:, "pmin"].fillna(-np.inf).to_numpy(dtype=float, copy=True)
+        )
+        pmax = parameters.loc[:, "pmax"].fillna(np.inf).to_numpy(dtype=float, copy=True)
 
         # Set the boundaries
         if self.method == "lm":
@@ -826,8 +806,8 @@ class LeastSquares(BaseLeastSquares):
             self.ml._parameters.loc[vary, "pmax"] = np.nan
         else:
             bounds = Bounds(
-                lb=np.where(np.isnan(pmin), -np.inf, pmin),
-                ub=np.where(np.isnan(pmax), np.inf, pmax),
+                lb=pmin,
+                ub=pmax,
                 keep_feasible=True,
             )
 
@@ -860,7 +840,7 @@ class LeastSquares(BaseLeastSquares):
         )
 
         self.pcov = DataFrame(
-            LeastSquares.get_covariances(
+            self.get_covariances(
                 self.result.jac,
                 self.result.cost,
                 method=self.method,
@@ -875,9 +855,15 @@ class LeastSquares(BaseLeastSquares):
         optimal = initial
         optimal[vary] = np.array(self.result.x, dtype=float)
         stderr = np.zeros(len(optimal)) * np.nan
-        stderr[vary] = np.sqrt(np.diag(self.pcov))
+        stderr[vary] = self.get_stderr(self.pcov).to_numpy(dtype=float, copy=True)
 
         return success, optimal, stderr
+
+    @staticmethod
+    def get_stderr(pcov: DataFrame) -> Series:
+        if pcov is None:
+            raise RuntimeError("Covariance matrix `pcov` is not available.")
+        return Series(np.sqrt(np.diag(pcov)), index=pcov.index)
 
     @staticmethod
     def get_covariances(
@@ -894,23 +880,21 @@ class LeastSquares(BaseLeastSquares):
         jacobian : ArrayLike
             The jacobian matrix with dimensions nobs, npar.
         cost : float
-            The cost value of the scipy.optimize.OptimizeResult which is half
-            the sum of squares. That's why the cost is multiplied by a factor
-            of two internally to get the sum of squares.
+            The cost value of the scipy.optimize.OptimizeResult which is half the sum
+            of squares. That's why the cost is multiplied by a factor of two internally
+            to get the sum of squares.
         method : Literal["trf", "dogbox", "lm"], optional
             Algorithm with which the minimization is performed. Default is "trf".
         absolute_sigma : bool, optional
-            If True, `sigma` is used in an absolute sense and the estimated
-            parameter covariance `pcov` reflects these absolute values. If
-            False (default), only the relative magnitudes of the `sigma` values
-            matter. The returned parameter covariance matrix `pcov` is based on
-            scaling `sigma` by a constant factor. This constant is set by
-            demanding that the reduced `chisq` for the optimal parameters
-            `popt` when using the *scaled* `sigma` equals unity. In other
-            words, `sigma` is scaled to match the sample variance of the
-            residuals after the fit. Default is False.
-            Mathematically, ``pcov(absolute_sigma=False) =
-            pcov(absolute_sigma=True) * chisq(popt)/(M-N)``
+            If True, `sigma` is used in an absolute sense and the estimated parameter
+            covariance `pcov` reflects these absolute values. If False (default), only
+            the relative magnitudes of the `sigma` values matter. The returned
+            parameter covariance matrix `pcov` is based on scaling `sigma` by a
+            constant factor. This constant is set by demanding that the reduced `chisq`
+            for the optimal parameters `popt` when using the *scaled* `sigma` equals
+            unity. In other words, `sigma` is scaled to match the sample variance of
+            the residuals after the fit. Default is False. Mathematically, ``pcov
+             (absolute_sigma=False) =pcov(absolute_sigma=True) * chisq(popt)/(M-N)``
 
         Returns
         -------
@@ -919,7 +903,7 @@ class LeastSquares(BaseLeastSquares):
 
         Notes
         -----
-        This method is copied from Scipy:
+        This method is copied from Scipy (version 1.14.1):
         https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py
         Please refer to the SciPy optimization module::
         https://docs.scipy.org/doc/scipy/reference/optimize.html
@@ -1059,31 +1043,28 @@ class LeastSquares(BaseLeastSquares):
         )
 
     def to_dict(self) -> dict:
-        settings = super().to_dict()
-        settings.update(
-            {
-                "jac": self.jac,
-                "method": self.method,
-                "ftol": self.ftol,
-                "xtol": self.xtol,
-                "gtol": self.gtol,
-                "x_scale": self.x_scale,
-                "loss": self.loss,
-                "f_scale": self.f_scale,
-                "max_nfev": self.max_nfev,
-                "diff_step": self.diff_step,
-                "tr_solver": self.tr_solver,
-                "tr_options": self.tr_options,
-            }
-        )
+        settings = super().to_dict() | {
+            "jac": self.jac,
+            "method": self.method,
+            "ftol": self.ftol,
+            "xtol": self.xtol,
+            "gtol": self.gtol,
+            "x_scale": self.x_scale,
+            "loss": self.loss,
+            "f_scale": self.f_scale,
+            "max_nfev": self.max_nfev,
+            "diff_step": self.diff_step,
+            "tr_solver": self.tr_solver,
+            "tr_options": self.tr_options,
+        }
         return settings
 
 
-class LmfitSolve(BaseLeastSquares):
+class LmfitSolve(LeastSquaresBase):
     """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
-        This is basically a wrapper around the scipy solvers, adding some cool
-        functionality for boundary conditions.
+    This is basically a wrapper around the scipy solvers, adding some cool
+    functionality for boundary conditions.
 
     Notes
     -----
@@ -1177,7 +1158,14 @@ class LmfitSolve(BaseLeastSquares):
         self, parameters: DataFrame, noise: bool, weights: Series
     ) -> ArrayLike:
         p = np.array([p.value for p in parameters.values()])
-        return self.misfit(p=p, noise=noise, weights=weights, callback=None)
+        return misfit(
+            ml=self.ml,
+            p=p,
+            noise=noise,
+            weights=weights,
+            callback=None,
+            returnseparate=False,
+        )
 
     def fit_report(
         self,
@@ -1200,10 +1188,4 @@ class LmfitSolve(BaseLeastSquares):
         )
 
     def to_dict(self) -> dict:
-        settings = super().to_dict()
-        settings.update(
-            {
-                "method": self.method,
-            }
-        )
-        return settings
+        return super().to_dict() | {"method": self.method}
