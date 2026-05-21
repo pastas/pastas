@@ -118,7 +118,7 @@ def _load_model(data: dict) -> Model:
     for name, smdata in data["stressmodels"].items():
         sm = _load_stressmodel(smdata, data)
         ml.add_stressmodel(sm)
-        if sm.rfunc._name == "One":
+        if hasattr(sm, "rfunc") and sm.rfunc._name == "One":
             rfunc_one_sm_names.append(name)
 
     # Add transform
