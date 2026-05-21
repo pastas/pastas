@@ -50,7 +50,7 @@ class ThresholdTransform:
         value: float = np.nan,
         vmin: float = np.nan,
         vmax: float = np.nan,
-        name: str = "ThresholdTransform",
+        name: str = "threshold",
         nparam: int = 2,
     ) -> None:
         self.value = value
