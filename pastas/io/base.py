@@ -152,12 +152,14 @@ def _load_model(data: dict) -> Model:
 
     # Merge defaults with file parameters: file values win, defaults fill gaps.
     init_parameters = ml.get_init_parameters()
+    file_parameters = data["parameters"]
+    if "dist" in file_parameters.columns and solver._name != "EmceeSolve":
+        # For old pas-files, the dist column is not relevant for non-MCMC solvers, so we can drop it.
+        file_parameters = file_parameters.drop(columns=["dist"])
     ml._parameters = init_parameters.reindex(
-        columns=init_parameters.columns.union(data["parameters"].columns, sort=False)
+        columns=init_parameters.columns.union(file_parameters.columns, sort=False)
     )
-    ml._parameters.loc[data["parameters"].index, data["parameters"].columns] = data[
-        "parameters"
-    ]
+    ml._parameters.loc[file_parameters.index, file_parameters.columns] = file_parameters
 
     # Convert parameters to numeric
     ml._parameters = ml._parameters.infer_objects()
