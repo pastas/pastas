@@ -123,12 +123,12 @@ class TestOptionalSolvers:
         except ImportError:
             pytest.skip("emcee not installed")
 
-    def test_emcee_to_dict_raises(self) -> None:
-        """Test that EmceeSolve.to_dict raises NotImplementedError."""
+    def test_emcee_to_dict_warning(self, caplog) -> None:
+        """Test that EmceeSolve.to_dict caplogs a logger.warning."""
         try:
             solver = EmceeSolve()
-            with pytest.raises(NotImplementedError):
-                solver.to_dict()
+            solver.to_dict()
+            assert "Note that the EmceeSolve class is not fully reproducible." in caplog.text
         except ImportError:
             pytest.skip("emcee not installed")
 
