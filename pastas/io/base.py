@@ -150,14 +150,19 @@ def _load_model(data: dict) -> Model:
         solver = getattr(ps.solver, data["solver"].pop("class"))
         ml.add_solver(solver(**data["solver"]))
 
-    # Add parameters, use update to maintain correct order
-    ml._parameters = ml.get_init_parameters()
-    ml._parameters.update(data["parameters"])
+    # Merge defaults with file parameters: file values win, defaults fill gaps.
+    init_parameters = ml.get_init_parameters()
+    ml._parameters = init_parameters.reindex(
+        columns=init_parameters.columns.union(data["parameters"].columns, sort=False)
+    )
+    ml._parameters.loc[data["parameters"].index, data["parameters"].columns] = data["parameters"]
 
     # Convert parameters to numeric
     ml._parameters = ml._parameters.infer_objects()
 
     # When parameter initial values and bounds changed
+    # set it as well in the stressmodel, noisemodel
+    # and solver instances
     for pname, pdata in ml.parameters.iterrows():
         ml.set_parameter(
             name=pname,
