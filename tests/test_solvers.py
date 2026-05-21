@@ -11,6 +11,7 @@ import pastas as ps
 from pastas.solver import EmceeSolve, LmfitSolve
 from pastas.solver.objective_function import misfit
 
+
 # Existing integration tests with real models
 def test_least_squares(ml_recharge: ps.Model) -> None:
     ml_recharge.solve(solver=ps.LeastSquares())
@@ -128,12 +129,17 @@ class TestOptionalSolvers:
         try:
             solver = EmceeSolve()
             solver.to_dict()
-            assert "Note that the EmceeSolve class is not fully reproducible." in caplog.text
+            assert (
+                "Note that the EmceeSolve class is not fully reproducible."
+                in caplog.text
+            )
         except ImportError:
             pytest.skip("emcee not installed")
 
 
-def test_leastsquares_covariance_scenarios(head: pd.Series, prec: pd.Series, evap: pd.Series) -> None:
+def test_leastsquares_covariance_scenarios(
+    head: pd.Series, prec: pd.Series, evap: pd.Series
+) -> None:
     """Test the covariance matrix calculation in LeastSquares solver under different scenarios.
 
     This test verifies that the internal SVD method for calculating the covariance matrix is
