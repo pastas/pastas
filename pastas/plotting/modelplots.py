@@ -382,6 +382,18 @@ class Plotting:
 
         return axd if return_dict else list(axd.values())
 
+    @PastasDeprecationWarning(
+        version="2.2.0", reason="Use `results` instead with the return_dict argument."
+    )
+    def results_mosaic(self, *args, **kwargs) -> dict[str, Axes]:
+        """Deprecated method to plot the results of the model in a mosaic plot.
+        Use `results` instead with the return_dict argument to specify the layout
+        of the mosaic plot.
+        """
+        kwargs = {} or kwargs
+        kwargs["return_dict"] = True
+        return self.results(*args, **kwargs)
+
     def _plot_response_in_results(
         self,
         sm: StressModel,

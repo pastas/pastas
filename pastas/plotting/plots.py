@@ -26,7 +26,7 @@ def compare(
     tmin: Timestamp | str | None = None,
     tmax: Timestamp | str | None = None,
     **kwargs,
-) -> dict:
+) -> dict[str, Axes]:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Notes
@@ -59,7 +59,7 @@ def compare(
 
     Returns
     -------
-    matplotlib.axes
+        dict[str, matplotlib.axes.Axes]
     """
     mc = CompareModels(models, names=names, tmin=tmin, tmax=tmax)
     mc.plot(adjust_height=adjust_height, **kwargs)
@@ -77,7 +77,7 @@ def series(
     tmax: Timestamp | str | None = None,
     colors_stresses: list[str] | None = None,
     labels: list[str] | None = None,
-    figsize: tuple = (10, 5),
+    figsize: tuple = (8.0, 4.0),
     **kwargs,
 ) -> Axes:
     """Plot all the input time Series in a single plot.
