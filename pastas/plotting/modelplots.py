@@ -1067,70 +1067,62 @@ class Plotting:
         axes: list of axes objects
         """
 
-        # Contribution per stress on model results plot
-        def custom_sort(t):
-            """Sort by mean contribution."""
-            return t[1].mean()
-
         # Create standard results plot
-        axes = self.ml.plots.results(tmin=tmin, tmax=tmax, **kwargs)
-
-        nsm = len(self.ml.stressmodels)
-
+        kwargs["return_dict"] = True
+        axd = self.ml.plots.results(tmin=tmin, tmax=tmax, **kwargs)
         # loop over axes showing stressmodel contributions
-        for i, sm in zip(range(3, 3 + 2 * nsm, 2), self.ml.stressmodels.keys()):
+        for sm_name, sm in self.ml.stressmodels.items():
             # Get the contributions for StressModels with multiple stresses
-            contributions = []
-            sml = self.ml.stressmodels[sm]
-            if (len(sml.stresses) > 0) and (sml._name == "WellModel"):
+            contributions = {}
+            if (len(sm.stresses) > 0) and (sm._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
-                        wnam: f"C{iw + 1}"
-                        for iw, wnam in enumerate(sml.distances.index)
+                        wnam: f"C{i + 1}" for i, wnam in enumerate(sm.stresses._fields)
                     }
-                    stackcolors[sm] = "C0"  # add backup for single-stress WellModels
-                elif isinstance(stackcolors, list):
-                    stackcolors = {
-                        name: icolor
-                        for name, icolor in zip(sml.distances.index, stackcolors)
-                    }
+                    stackcolors[sm_name] = (
+                        "C0"  # add backup for single-stress WellModels
+                    )
+                elif isinstance(stackcolors, (list, tuple)):
+                    stackcolors = dict(zip(sm.stresses._fields, stackcolors))
                 elif not isinstance(stackcolors, dict):
                     raise TypeError("stackcolors must be None, list, or dict.")
-                nsplit = sml.nsplit
-                if nsplit > 1:
-                    ax_step = axes[i]  # step response axis
-                    ax_step.lines[0].remove()  # remove step response for r=1 m
-                    for istress in range(len(sml.stresses)):
+                if sm.nsplit > 1:
+                    axd[f"rf_{sm_name}"].lines[
+                        0
+                    ].remove()  # remove step response for r=1 m
+                    for istress in range(len(sm.stresses)):
                         h = self.ml.get_contribution(
-                            sm, istress=istress, tmin=tmin, tmax=tmax
+                            sm_name, istress=istress, tmin=tmin, tmax=tmax
                         )
-                        name = sml.stresses[istress].name
-                        if name is None:
-                            name = sm
-                        contributions.append((name, h))
+                        name = sm.stresses[istress].name
+                        name = sm if name is None else name
+                        contributions[name] = h
 
                         # plot step responses for each well, scaled with distance
-                        p = sml.get_parameters(model=self.ml, istress=istress)
-                        step = self.ml.get_step_response(sm, p=p)
-                        ax_step.plot(step.index, step, c=stackcolors[name], label=name)
-                        # recalculate y-limits step response axes
-                        ax_step.relim()
+                        p = sm.get_parameters(model=self.ml, istress=istress)
+                        step = self.ml.get_step_response(sm_name, p=p)
+                        axd[f"rf_{sm_name}"].plot(
+                            step.index, step, c=stackcolors[name], label=name
+                        )
+                        axd[f"rf_{sm_name}"].relim()
                 else:
-                    h = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
-                    name = sm
-                    contributions.append((name, h))
-
-                contributions.sort(key=custom_sort)
+                    contributions[sm_name] = self.ml.get_contribution(
+                        sm_name, tmin=tmin, tmax=tmax
+                    )
+                contributions_df = concat(contributions, axis=1, sort=False)
+                order = contributions_df.mean(axis=0).sort_values(ascending=False).index
+                contributions_df = contributions_df[order]
 
                 # add stacked plot to correct axes
-                ax = axes[i - 1]
-                ax.lines[0].remove()  # delete existing line
+                axd[f"con_{sm_name}"].lines[0].remove()  # delete existing line
 
-                names = [c[0] for c in contributions]  # get names
-                contrib = [c[1] for c in contributions]  # get time series
-                vstack = concat(contrib, axis=1, sort=False)
-                colors = [stackcolors[name] for name in names]
-                ax.stackplot(vstack.index, vstack.values.T, colors=colors, labels=names)
+                colors = [stackcolors[name] for name in contributions_df.columns]
+                axd[f"con_{sm_name}"].stackplot(
+                    contributions_df.index,
+                    contributions_df.values.T,
+                    colors=colors,
+                    labels=contributions_df.columns,
+                )
                 if stacklegend:
                     if stacklegend_kws is None:
                         stacklegend_kws = {}
@@ -1138,17 +1130,18 @@ class Plotting:
                     fontsize = stacklegend_kws.pop("fontsize", 6)
                     loc = stacklegend_kws.pop("loc", "best")
 
-                    ax.legend(loc=loc, ncol=ncol, fontsize=fontsize, **stacklegend_kws)
+                    axd[f"con_{sm_name}"].legend(
+                        loc=loc, ncol=ncol, fontsize=fontsize, **stacklegend_kws
+                    )
 
                 # y-scale does not show 0
-                ylower, yupper = ax.get_ylim()
+                ylower, yupper = axd[f"con_{sm_name}"].get_ylim()
                 if (ylower < 0) and (yupper < 0):
-                    ax.set_ylim(top=0)
+                    axd[f"con_{sm_name}"].set_ylim(top=0)
                 elif (ylower > 0) and (yupper > 0):
-                    ax.set_ylim(bottom=0)
+                    axd[f"con_{sm_name}"].set_ylim(bottom=0)
 
-        fig = axes[0].figure
-        return fig.axes
+        return list(axd.values())
 
     @model_tmin_tmax
     def series(
