@@ -110,6 +110,7 @@ class EmceeSolve(SolverBase):
         self.parallel = parallel
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
+        self.nsteps = None
         self.priors: list[DataFrame] = []
 
         # Set objective function
@@ -141,9 +142,6 @@ class EmceeSolve(SolverBase):
         parameters = self.objfunction.get_init_parameters(name if name else self.name)
         return parameters
 
-    def fit_report(self) -> str:
-        return ""
-
     def solve(
         self,
         noise: bool = False,
@@ -163,6 +161,8 @@ class EmceeSolve(SolverBase):
 
         # Set priors
         self._set_priors()
+
+        self.nsteps = steps
 
         # Set initial positions of the walkers
         pinit = self.initial[self.vary]
@@ -387,6 +387,124 @@ class EmceeSolve(SolverBase):
             raise ValueError(msg)
 
         return getattr(mod, dist)(loc=loc, scale=scale)
+
+    def fit_report(
+        self,
+        warnings: bool = True,
+        obj_func: float = np.nan,
+        output: str | None = None,
+    ) -> str:
+        """Method that reports on the fit after a model is optimized.
+
+        Parameters
+        ----------
+        warnings : bool, optional
+            print warnings in case of optimization failure, parameters hitting
+            bounds, or length of responses exceeding calibration period.
+        output : str, optional (deprecated)
+            deprecated argument, use corr and stderr arguments instead.
+        obj_func : float, optional
+            Value of the found minimal loss function value from the
+            optimization algorithm. Generally obtained from the result attribute
+            which is not present when loading the solver, thus by default nan.
+
+        Returns
+        -------
+        report: str
+            String with the report.
+
+        Examples
+        --------
+        This method is called by the solve method if report=True, but can also be
+        called on its own::
+
+        >>> print(ml.fit_report)
+
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where possible.
+        If interpolation is used this means that the result may slightly differ
+        compared to using ml.simulate() and ml.observations().
+        """
+        model = {
+            "nwalkers": self.nwalkers,
+            "nsteps": self.nsteps,
+            "nobs": self.ml.observations().index.size,
+            "tmin": str(self.ml.settings["tmin"]),
+            "tmax": str(self.ml.settings["tmax"]),
+            "freq": self.ml.settings["freq"],
+            "freq_obs": str(self.ml.settings["freq_obs"]),
+            "warmup": str(self.ml.settings["warmup"]),
+            "solver": self._name,
+        }
+        fit = {
+            "EVP": f"{self.ml.stats.evp():.2f}",
+            "R2": f"{self.ml.stats.rsq():.2f}",
+            "RMSE": f"{self.ml.stats.rmse():.2f}",
+            "AICc": f"{self.ml.stats.aicc():.2f}",
+            "BIC": f"{self.ml.stats.bic():.2f}",
+            "Obj": f"{obj_func:.2f}",
+            "___": "",
+            "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
+        }
+
+        if isinstance(output, str) and output == "full":
+            pass  # This can be used to put all options to true and produce the full report.
+
+        parameters = self.ml._parameters.loc[
+            :, ["optimal", "initial", "vary", "sigma", "dist"]
+        ].copy()
+
+        # determine width of the fit_report
+        len_fit = max([len(v) for v in fit.values()]) + max([
+            len(v) for v in fit.keys()
+        ])
+        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max([
+            len(v) for v in model.keys()
+        ])
+        len_param = len(parameters.to_string().split("\n")[1])
+        width = max((len_fit + len_model + 8), len_param)
+        string = "{:{fill}{align}{width}}"
+        string = "{:{fill}{align}{width}}"
+
+        # Create the first header with model information and stats
+        wspace = max(width - (11 + 14 + len(self.name)), 1)
+        mspace = width - wspace - (11 + 14)
+        header = (
+            f"Fit report {self.name:<{mspace}.{mspace}}"
+            f"{string.format('', fill=' ', align='>', width=wspace)}"
+            f"Fit Statistics\n"
+            f"{string.format('', fill='=', align='>', width=width)}\n"
+        )
+
+        basic = ""
+        len_val4 = max([len(v) for v in fit.values()])
+        wspace = width - (9 + 23 + 9 + len_val4)
+        for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
+            basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
+
+        # Create the parameters block
+        params = (
+            f"\nParameters ({parameters.vary.sum()} optimized)\n"
+            f"{string.format('', fill='=', align='>', width=width)}\n"
+            f"{parameters.to_string()}"
+        )
+
+        warnings_rep = ""
+        if warnings:
+            msg = self.ml._generate_warnings_report(log=False, solve_success=True)
+
+            # create message
+            if len(msg) > 0:
+                msg = [
+                    f"\n\nWarnings! ({len(msg)})\n"
+                    f"{string.format('', fill='=', align='>', width=width)}"
+                ] + msg
+                warnings_rep += "\n".join(msg)
+
+        report = f"{header}{basic}{params}{warnings_rep}"
+
+        return report
 
     def to_dict(self) -> dict:
         """This method is not supported for this solver.
