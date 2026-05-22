@@ -1,3 +1,6 @@
+"""This module contains the likelihood functions for Pastas to be used in solvers using
+Bayesian approaches."""
+
 import numpy as np
 from pandas import DataFrame
 

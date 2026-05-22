@@ -1,3 +1,5 @@
+"""This module contains the objective function for solvers to calculate residuals or noise."""
+
 from collections.abc import Callable
 
 from pandas import Series

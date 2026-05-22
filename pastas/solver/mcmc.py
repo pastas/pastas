@@ -1,3 +1,5 @@
+"""This module contains the EmceeSolve class, which is a solver based on the MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`."""
+
 import importlib
 from logging import getLogger
 

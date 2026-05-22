@@ -1,3 +1,5 @@
+"""This module contains the least squares based solvers for Pastas."""
+
 from abc import abstractmethod
 from collections.abc import Callable
 from functools import partial
