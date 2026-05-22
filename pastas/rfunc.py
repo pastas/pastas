@@ -1597,8 +1597,6 @@ class FourParam(RfuncBase):
             Approximated tmax in days.
         """
         cutoff = self.cutoff if cutoff is None else cutoff
-        if not 0.0 < cutoff < 1.0:
-            raise ValueError("Cutoff must be between 0 and 1.")
 
         # Because Model.get_response_tmax() provides parameters for the stressmodel,
         # not only the response functions
