@@ -820,14 +820,16 @@ class Model:
             internally. If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
-            the following (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+            the following (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D". If
+            None, the frequency from ml.settings is used (defaults to "D").
         warmup: float, optional
             Warmup period (in Days) for which the simulation is calculated, but not
-            used for the calibration period.
+            used for the calibration period. If None, the warmup from ml.settings is
+            used (defaults to 3650 days).
         solver: Class pastas.solver.Solver, optional
-            Instance of a pastas Solver class used to solve the model. Options are:
-            ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
-            of Pastas 0.23, not a class!
+            Instance of a pastas Solver class used to solve the model. See pastas.
+            solver for the options. If None, the solver from ml.solver is used, and if
+            that is also None, the default ps.LeastSquares() is used.
         report: bool | Literal["full"] | dict, optional
             Print a report to the screen after optimization finished. Set to
             True (default) to print a standard report, "full" to print a
@@ -874,8 +876,7 @@ class Model:
 
         reset_settings: bool = False,
             If True, the model settings are reset to their default values before
-            solving.
-            This calls the Model.set_settings() method with default values.
+            solving. This calls the Model.set_settings() method with default values.
             Default is False.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
