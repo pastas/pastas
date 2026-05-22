@@ -2,6 +2,7 @@
 
 import importlib
 from logging import getLogger
+from typing import Any
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -85,11 +86,11 @@ class EmceeSolve(SolverBase):
         | GaussianLikelihoodAr1
         | None = GaussianLikelihood(),
         nwalkers: int = 20,
-        backend: None = None,
-        moves: None = None,
+        backend: Any | None = None,
+        moves: Any | None = None,
         parallel: bool = False,
         progress_bar: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         self._assert_emcee_installation()
 
@@ -106,14 +107,17 @@ class EmceeSolve(SolverBase):
         super().__init__(name=name, **kwargs)
 
         # Set sampler properties
-        self.sampler = None
+        self.sampler: Any | None = None
         self.backend = backend
         self.moves = moves
         self.parallel = parallel
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
-        self.nsteps = None
+        self.nsteps: int | None = None
         self.priors: list[DataFrame] = []
+        self.initial: np.ndarray
+        self.vary: np.ndarray
+        self.bounds: np.ndarray
 
         # Set objective function
         self.objfunction = objfunction
@@ -127,7 +131,7 @@ class EmceeSolve(SolverBase):
             msg = "emcee not installed. Please install emcee first."
             raise ImportError(msg) from None
 
-    def get_init_parameters(self, name):
+    def get_init_parameters(self, name: str) -> DataFrame:
         """Get the initial parameters for the solver.
 
         Parameters
@@ -150,7 +154,7 @@ class EmceeSolve(SolverBase):
         weights: Series | None = None,
         steps: int = 5000,
         callback: CallBack | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> tuple[bool, DataFrame]:
         # Store initial parameters
         self.initial = self.ml.parameters.initial.to_numpy(dtype=float)
@@ -358,7 +362,9 @@ class EmceeSolve(SolverBase):
             )
             self.priors.append(prior)
 
-    def _get_prior(self, dist: str, loc: float, scale: float, pmin: float, pmax: float):
+    def _get_prior(
+        self, dist: str, loc: float, scale: float, pmin: float, pmax: float
+    ) -> Any:
         """Set the prior for a parameter.
 
         Parameters

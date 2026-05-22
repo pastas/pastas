@@ -1484,6 +1484,8 @@ class Model:
         if self.solver is not None:
             frames.append(self.solver.parameters)
 
+        frames = [frame for frame in frames if frame is not None and not frame.empty]
+
         if not frames:
             parameters = DataFrame(columns=self._parameters.columns)
         else:
@@ -2058,7 +2060,7 @@ class Model:
 
         msg = []
         # model optimization unsuccessful
-        if not solve_success:
+        if solve_success is False:
             msg.append("Model parameters could not be estimated well.")
 
         def _append_warning(warning: str) -> None:

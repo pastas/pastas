@@ -31,7 +31,7 @@ class SolverBase(ABC):
 
     """
 
-    def __init__(self, name: str = "solver", **kwargs) -> None:
+    def __init__(self, name: str = "solver", **kwargs: Any) -> None:
         self.name = name
         self.kwargs = kwargs
         self.ml: Model | None = None
@@ -138,7 +138,7 @@ class SolverBase(ABC):
         """Name of the solver class."""
         return self.__class__.__name__
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Return a dictionary representation of the solver instance.
 
         Notes
@@ -166,5 +166,5 @@ class BaseSolver(SolverBase):
 
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

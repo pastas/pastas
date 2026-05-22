@@ -4,6 +4,8 @@ Bayesian approaches."""
 import numpy as np
 from pandas import DataFrame
 
+from pastas.typing import ArrayLike
+
 
 class GaussianLikelihood:
     """Gaussian likelihood function for homoscedastic, uncorrelated errors.
@@ -25,7 +27,7 @@ class GaussianLikelihood:
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -57,7 +59,7 @@ class GaussianLikelihood:
         )
         return parameters
 
-    def compute(self, rv, p):
+    def compute(self, rv: ArrayLike, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
@@ -79,11 +81,11 @@ class GaussianLikelihood:
         return ln
 
     @property
-    def _name(self):
+    def _name(self) -> str:
         return self.__class__.__name__
 
     @property
-    def nparam(self):
+    def nparam(self) -> int:
         return 1
 
 
@@ -111,7 +113,7 @@ class GaussianLikelihoodAr1:
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -145,7 +147,7 @@ class GaussianLikelihoodAr1:
             index=[name + "_var", name + "_phi"],
         )
 
-    def compute(self, rv, p):
+    def compute(self, rv: ArrayLike, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
@@ -170,9 +172,9 @@ class GaussianLikelihoodAr1:
         return ln
 
     @property
-    def _name(self):
+    def _name(self) -> str:
         return self.__class__.__name__
 
     @property
-    def nparam(self):
+    def nparam(self) -> int:
         return 2

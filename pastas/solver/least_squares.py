@@ -220,6 +220,8 @@ class LeastSquaresBase(SolverBase):
         if n is None:
             # only use parameters that are varied.
             n = int(10 ** parameters.vary.sum())
+        elif isinstance(n, float):
+            n = int(n)
 
         samples = np.zeros((0, p.size))
 
@@ -662,7 +664,7 @@ class LeastSquaresBase(SolverBase):
             solve_success = (
                 self.result.success
                 if self.result is not None and hasattr(self.result, "success")
-                else False
+                else None
             )
             msg = self.ml._generate_warnings_report(
                 log=False, solve_success=solve_success
