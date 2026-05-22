@@ -578,7 +578,7 @@ class Plotting:
             # open a new figure
             gridspec_kw = {"height_ratios": height_ratios}
             layout = kwargs.pop("layout", "tight")
-            figsize = kwargs.pop("figsize", (8.0, 2.0 + 2.0 * len(contribs)))
+            figsize = kwargs.pop("figsize", (8.0, 2.0 + 1.5 * len(contribs)))
             fig, axes = plt.subplots(
                 nrows=nrows,
                 sharex=True,
