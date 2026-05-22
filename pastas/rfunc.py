@@ -1605,9 +1605,7 @@ class FourParam(RfuncBase):
         if len(p) > 4:
             p = p[:4]
 
-        return self._tmax_from_log_cdf(
-            p=p, cutoff=cutoff, n_grid=4000, conservative=True
-        )
+        return self._tmax_from_log_cdf(p=p, cutoff=cutoff, n_grid=4000)
 
     @staticmethod
     def _impulse_integral(p: ArrayLike) -> float:
@@ -1632,7 +1630,6 @@ class FourParam(RfuncBase):
         p: ArrayLike,
         cutoff: float,
         n_grid: int,
-        conservative: bool = False,
     ) -> float:
         """Compute tmax by integrating cumulative mass on a log-time grid."""
         impulse_integral = self._impulse_integral(p)
@@ -1669,19 +1666,11 @@ class FourParam(RfuncBase):
             return float(np.exp(max_u))
 
         frac = np.clip(frac, 0.0, 1.0)
-        if conservative:
-            # Conservative mode returns the first grid point where cutoff is reached.
-            # This intentionally overestimates tmax versus interpolation.
-            idx = int(np.searchsorted(frac, cutoff, side="left"))
-            idx = min(max(idx, 0), len(u) - 1)
-            return float(np.exp(u[idx]))
-
-        frac_unique, idx = np.unique(frac, return_index=True)
-        u_unique = u[idx]
-        if frac_unique.size < 2:
-            return float(np.exp(u_unique[-1]))
-        u_tmax = np.interp(cutoff, frac_unique, u_unique)
-        return float(np.exp(u_tmax))
+        # Conservative mode returns the first grid point where cutoff is reached.
+        # This intentionally overestimates tmax versus interpolation.
+        idx = int(np.searchsorted(frac, cutoff, side="left"))
+        idx = min(max(idx, 0), len(u) - 1)
+        return float(np.exp(u[idx]))
 
     def _f_step(
         self,
