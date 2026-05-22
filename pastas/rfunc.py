@@ -1603,7 +1603,7 @@ class FourParam(RfuncBase):
         if len(p) > 4:
             p = p[:4]
 
-        impulse_integral = self._impulse_integral_for_mode(p)
+        impulse_integral = self._impulse_integral(p)
         if not np.isfinite(impulse_integral) or impulse_integral <= 0.0:
             logger.warning(
                 "Unable to compute FourParam tmax due to invalid normalization "
