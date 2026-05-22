@@ -1822,8 +1822,8 @@ class RechargeModel(StressModelBase):
     def set_init_parameters(self) -> None:
         self.parameters = concat(
             [
-                self.rfunc.get_init_parameters(self.name),
-                self.recharge.get_init_parameters(self.name),
+                self.rfunc.get_init_parameters(name=self.name),
+                self.recharge.get_init_parameters(name=self.name),
             ]
         )
 

@@ -1,5 +1,6 @@
 """Tests for the solver module in Pastas."""
 
+import logging
 from functools import partial
 
 import numpy as np
@@ -128,11 +129,12 @@ class TestOptionalSolvers:
         """Test that EmceeSolve.to_dict caplogs a logger.warning."""
         try:
             solver = EmceeSolve()
-            solver.to_dict()
-            assert (
-                "Note that the EmceeSolve class is not fully reproducible."
-                in caplog.text
-            )
+            with caplog.at_level(logging.WARNING, logger="pastas.solver.mcmc"):
+                solver.to_dict()
+                assert (
+                    "Note that the EmceeSolve class is not fully reproducible."
+                    in caplog.text
+                )
         except ImportError:
             pytest.skip("emcee not installed")
 

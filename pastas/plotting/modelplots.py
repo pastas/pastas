@@ -637,11 +637,16 @@ class Plotting:
             _table_formatter_params
         )
         if stderr:
-            stderrper = (
-                self.ml.parameters.loc[:, "stderr"]
-                / self.ml.parameters.loc[:, "optimal"]
-            )
-            p.loc[:, "stderr"] = stderrper.abs().apply(_table_formatter_stderr)
+            if "stderr" not in self.ml.parameters.columns:
+                logger.error(
+                    "Standard errors are not available in the model parameters."
+                )
+            else:
+                stderrper = (
+                    self.ml.parameters.loc[:, "stderr"]
+                    / self.ml.parameters.loc[:, "optimal"]
+                )
+                p.loc[:, "stderr"] = stderrper.abs().apply(_table_formatter_stderr)
         ax.axis("off")
         raw_widths = [max(p[col].str.len().max(), len(col)) for col in p.columns]
         total = sum(raw_widths)
@@ -1267,6 +1272,7 @@ class Plotting:
                         wnam: f"C{iw + 1}"
                         for iw, wnam in enumerate(sml.distances.index)
                     }
+                    stackcolors[sm] = "C0"  # add backup for single-stress WellModels
                 elif isinstance(stackcolors, list):
                     stackcolors = {
                         name: icolor
@@ -1275,9 +1281,9 @@ class Plotting:
                 elif not isinstance(stackcolors, dict):
                     raise TypeError("stackcolors must be None, list, or dict.")
                 nsplit = sml.nsplit
-                ax_step = axes[i]  # step response axis
-                ax_step.lines[0].remove()  # remove step response for r=1 m
                 if nsplit > 1:
+                    ax_step = axes[i]  # step response axis
+                    ax_step.lines[0].remove()  # remove step response for r=1 m
                     for istress in range(len(sml.stresses)):
                         h = self.ml.get_contribution(
                             sm, istress=istress, tmin=tmin, tmax=tmax
