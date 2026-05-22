@@ -133,6 +133,7 @@ def stat_ufunc_threshold(
     ufunc: Callable,
     statistic: str,
     threshold: float,
+    **kwargs,
 ):
     """Generic function to compare a model statistic with a threshold using a ufunc.
 
@@ -147,17 +148,19 @@ def stat_ufunc_threshold(
         Name of the statistic to be compared.
     threshold: float
         Threshold value for the statistic.
+    **kwargs
+        Additional keyword arguments to pass to the statistic function.
 
     Returns
     -------
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    val = getattr(ml.stats, statistic)()
+    val = getattr(ml.stats, statistic)(**kwargs)
     return _value_ufunc_threshold(val, ufunc, threshold, statistic)
 
 
-def rsq_geq_threshold(ml: Model, threshold: float = 0.7):
+def rsq_geq_threshold(ml: Model, threshold: float = 0.7, **kwargs):
     """Check R^2 >= threshold.
 
     Parameters
@@ -166,13 +169,16 @@ def rsq_geq_threshold(ml: Model, threshold: float = 0.7):
         Pastas model instance.
     threshold: float
         Threshold value for the R^2 statistic.
+    **kwargs
+        Additional keyword arguments to pass to the statistic function.
+
 
     Returns
     -------
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    return stat_ufunc_threshold(ml, np.greater_equal, "rsq", threshold)
+    return stat_ufunc_threshold(ml, np.greater_equal, "rsq", threshold, **kwargs)
 
 
 def _response_memory(
@@ -509,9 +515,14 @@ def uncertainty_parameters(
 
     """
     if parameters is None:
-        parameters = ml.parameters.index.tolist()
+        mask_vary = ml.parameters["vary"]
+        parameters = ml.parameters.loc[mask_vary].index.tolist()
     elif isinstance(parameters, str):
-        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
+        parameters = [
+            iparam
+            for iparam in ml.parameters.index
+            if (parameters in iparam) and ml.parameters.loc[iparam, "vary"]
+        ]
 
     # loop through parameters
     results = []
@@ -553,7 +564,7 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
             std = sm.variance_gain(model=ml, istress=iw)
             check = np.abs(p) > (n_std * std)
             df.loc[f"|{parameter} ({sm.distances.index[iw]})| > {n_std}σ"] = [
-                p,
+                np.abs(p),
                 ">",
                 n_std * std,
                 guess_unit_or_dims(parameter),
@@ -565,7 +576,7 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
         std = ml.parameters.loc[parameter, "stderr"]
         check = np.abs(p) > (n_std * std)
         df.loc[f"|{parameter}| > {n_std}σ"] = [
-            p,
+            np.abs(p),
             ">",
             n_std * std,
             guess_unit_or_dims(parameter),
@@ -782,6 +793,7 @@ def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
         else:
             raise TypeError("Check must be str, callable, or dict.")
     df = concat(results)
+    df.index.name = ml.name
     # deal with duplicated index labels by appending .1, .2, etc.
     if df.index.duplicated().any():
         new_index = []
