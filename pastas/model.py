@@ -868,7 +868,7 @@ class Model:
             advanced option since some model settings can be missing. Default
             is False and deprecated since version 2.0.0.
 
-            .. Deprecated:: 2.0.0
+            .. deprecated:: 2.0.0
                 The initialize argument is deprecated in favor of the `reset_settings`
                 argument.
 
