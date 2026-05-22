@@ -1582,7 +1582,7 @@ class FourParam(RfuncBase):
     def get_tmax_approximation(
         self, p: ArrayLike, cutoff: float | None = None
     ) -> float:
-        """Approximate tmax using adaptive cumulative integration.
+        """Approximate tmax using adaptive cumulative integration in log-time.
 
         Parameters
         ----------
@@ -1597,68 +1597,91 @@ class FourParam(RfuncBase):
             Approximated tmax in days.
         """
         cutoff = self.cutoff if cutoff is None else cutoff
+        if not 0.0 < cutoff < 1.0:
+            raise ValueError("Cutoff must be between 0 and 1.")
 
         # Because Model.get_response_tmax() provides parameters for the stressmodel,
         # not only the response functions
         if len(p) > 4:
             p = p[:4]
 
-        impulse_integral = quad(self.impulse, 0, np.inf, args=p)[0]
+        return self._tmax_from_log_cdf(
+            p=p, cutoff=cutoff, n_grid=4000, conservative=True
+        )
+
+    @staticmethod
+    def _impulse_integral(p: ArrayLike) -> float:
+        """Analytical integral of FourParam impulse over [0, inf)."""
+        _, n, a, b = p
+        if a <= 0.0 or b <= 0.0:
+            return np.nan
+        scale = a * np.sqrt(b)
+        arg = 2.0 * np.sqrt(b)
+        integral = 2.0 * (scale**n) * kv(n, arg)
+        return float(integral)
+
+    @staticmethod
+    def _impulse_log_integrand(u: ArrayLike, p: ArrayLike) -> ArrayLike:
+        """Impulse integrand transformed to log-time (t = exp(u))."""
+        _, n, a, b = p
+        t = np.exp(u)
+        return np.exp(n * u - t / a - (a * b) / t)
+
+    def _tmax_from_log_cdf(
+        self,
+        p: ArrayLike,
+        cutoff: float,
+        n_grid: int,
+        conservative: bool = False,
+    ) -> float:
+        """Compute tmax by integrating cumulative mass on a log-time grid."""
+        impulse_integral = self._impulse_integral(p)
         if not np.isfinite(impulse_integral) or impulse_integral <= 0.0:
             logger.warning(
-                "Unable to compute FourParam tmax approximation due to invalid "
-                "normalization integral (value=%s). Returning 1.0 day.",
+                "Unable to compute FourParam tmax due to invalid normalization "
+                "integral (value=%s). Returning 1.0 day.",
                 impulse_integral,
             )
             return 1.0
 
-        t1 = -np.sqrt(3 / 5)
-        t2 = 0
-        t3 = np.sqrt(3 / 5)
-        w1 = 5 / 9
-        w2 = 8 / 9
-        w3 = 5 / 9
+        u_min = -40.0
+        u_max = 20.0
+        max_u = 40.0
+        frac_max = 0.0
 
-        # Start from a parameter-based scale and expand until cutoff is reached.
-        max_t_hard = 1_000_000
-        max_t = min(max(256, int(np.ceil(p[2] * p[3]))), max_t_hard)
+        while frac_max < cutoff and u_max <= max_u:
+            u = np.linspace(u_min, u_max, n_grid)
+            fu = self._impulse_log_integrand(u, p)
+            cum = np.zeros_like(u)
+            cum[1:] = np.cumsum(0.5 * (fu[1:] + fu[:-1]) * np.diff(u))
+            frac = cum / impulse_integral
+            frac_max = float(frac[-1])
+            if frac_max < cutoff:
+                u_max += 5.0
 
-        while True:
-            x = np.arange(1, max_t + 1, dtype=float)
-            y = np.zeros_like(x)
-
-            func = self.impulse(x, p)
-            func_half = self.impulse(x[:-1] + 0.5, p)
-
-            y[0] = 0.5 * (
-                w1 * self.impulse(0.5 * t1 + 0.5, p)
-                + w2 * self.impulse(0.5 * t2 + 0.5, p)
-                + w3 * self.impulse(0.5 * t3 + 0.5, p)
+        if frac_max < cutoff:
+            logger.warning(
+                "FourParam tmax search hit maximum limit (%s days) without "
+                "reaching cutoff=%s. Returning search limit.",
+                np.exp(max_u),
+                cutoff,
             )
-            if self.quad:
-                y[1:] = y[0] + np.cumsum(
-                    1.0 / 6.0 * (func[:-1] + 4.0 * func_half + func[1:])
-                )
-            else:
-                y[1:] = y[0] + np.cumsum(
-                    1.0 / 6.0 * (func[:-1] + 4.0 * func_half + func[1:])
-                )
+            return float(np.exp(max_u))
 
-            y /= impulse_integral
-            idx = np.searchsorted(y, cutoff)
-            if idx < len(x):
-                return float(x[idx])
+        frac = np.clip(frac, 0.0, 1.0)
+        if conservative:
+            # Conservative mode returns the first grid point where cutoff is reached.
+            # This intentionally overestimates tmax versus interpolation.
+            idx = int(np.searchsorted(frac, cutoff, side="left"))
+            idx = min(max(idx, 0), len(u) - 1)
+            return float(np.exp(u[idx]))
 
-            if max_t >= max_t_hard:
-                logger.warning(
-                    "FourParam tmax approximation hit maximum search limit (%s days) "
-                    "without reaching cutoff=%s. Returning search limit.",
-                    max_t_hard,
-                    cutoff,
-                )
-                return float(max_t)
-
-            max_t = min(max_t * 2, max_t_hard)
+        frac_unique, idx = np.unique(frac, return_index=True)
+        u_unique = u[idx]
+        if frac_unique.size < 2:
+            return float(np.exp(u_unique[-1]))
+        u_tmax = np.interp(cutoff, frac_unique, u_unique)
+        return float(np.exp(u_tmax))
 
     def _f_step(
         self,
@@ -1668,7 +1691,18 @@ class FourParam(RfuncBase):
         impulse_integral: float,
     ) -> float:
         """Objective function for exact tmax root finding."""
-        step_value = quad(self.impulse, 0, t, args=p)[0] / impulse_integral
+        if t <= 0.0:
+            return -cutoff
+
+        u_upper = np.log(t)
+        # Integrate in log-time for numerical stability at very small t.
+        if u_upper <= -80.0:
+            step_value = 0.0
+        else:
+            step_value = (
+                quad(self._impulse_log_integrand, -80.0, u_upper, args=(p,))[0]
+                / impulse_integral
+            )
         return step_value - cutoff
 
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
@@ -1697,7 +1731,7 @@ class FourParam(RfuncBase):
         if self.approximate_tmax:
             return t0
 
-        impulse_integral = quad(self.impulse, 0, np.inf, args=p)[0]
+        impulse_integral = self._impulse_integral(p)
         if not np.isfinite(impulse_integral) or impulse_integral <= 0.0:
             logger.warning(
                 "Unable to compute exact FourParam tmax due to invalid normalization "
@@ -1706,14 +1740,13 @@ class FourParam(RfuncBase):
             )
             return t0
 
-        tol = min(10.0 ** np.floor(np.log10(max(t0, 1.0))) / 1e2, 0.1)
         lower = 1e-30
-        upper = max(t0, 1.0)
+        upper = max(t0, lower * 10.0)
 
         f_upper = self._f_step(upper, p, cutoff, impulse_integral)
-        max_upper = 1e7
+        max_upper = float(np.exp(40.0))
         while f_upper < 0.0 and upper < max_upper:
-            upper *= 2.0
+            upper = min(upper * 2.0, max_upper)
             f_upper = self._f_step(upper, p, cutoff, impulse_integral)
 
         if f_upper < 0.0:
@@ -1725,13 +1758,16 @@ class FourParam(RfuncBase):
             )
             return t0
 
+        # Scale xtol with response timescale to keep absolute precision meaningful.
+        tol = min(max(upper * 1e-9, 1e-15), 1e-3)
+
         try:
             root, info = brentq(
                 f=self._f_step,
                 a=lower,
                 b=upper,
                 xtol=tol,
-                maxiter=100,
+                maxiter=200,
                 args=(p, cutoff, impulse_integral),
                 full_output=True,
                 disp=False,
@@ -1745,12 +1781,7 @@ class FourParam(RfuncBase):
             return t0
 
         if info.converged:
-            logger.debug(
-                "Root finding for FourParam tmax converged successfully. "
-                "Brentq RootResults: %s",
-                info,
-            )
-            return root
+            return float(root)
 
         logger.warning(
             "Root finding for FourParam tmax did not converge, returning "
@@ -1781,7 +1812,7 @@ class FourParam(RfuncBase):
             s[0] = quad(self.impulse, 0, dt, args=p)[0]
             for i in range(1, len(t)):
                 s[i] = s[i - 1] + quad(self.impulse, t[i - 1], t[i], args=p)[0]
-            s = s * (p[0] / (quad(self.impulse, 0, np.inf, args=p))[0])
+            s = s * (p[0] / self._impulse_integral(p))
             return s
 
         else:
@@ -1811,7 +1842,7 @@ class FourParam(RfuncBase):
                 s[1:] = s[0] + np.cumsum(
                     step / 6 * (func[:-1] + 4 * func_half + func[1:])
                 )
-                s = s * (p[0] / quad(self.impulse, 0, np.inf, args=p)[0])
+                s = s * (p[0] / self._impulse_integral(p))
                 return s[int(dt / step - 1) :: int(dt / step)]
             else:
                 t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
@@ -1830,7 +1861,7 @@ class FourParam(RfuncBase):
                 s[1:] = s[0] + np.cumsum(
                     dt / 6 * (func[:-1] + 4 * func_half + func[1:])
                 )
-                s = s * (self.gain(p) / quad(self.impulse, 0, np.inf, args=p)[0])
+                s = s * (self.gain(p) / self._impulse_integral(p))
                 return s
 
     def block_from_impulse(

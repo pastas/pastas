@@ -414,16 +414,56 @@ def test_fourparam_get_tmax_matches_normalized_step_cutoff() -> None:
     """Regression test for FourParam tmax clipping at hard-coded search limits."""
     cutoff = 0.999
     p = [2.0, 1.0, 50.0, 100.0]
-    rfunc = ps.FourParam(approximate_tmax=True)
+    rfunc_approx = ps.FourParam(approximate_tmax=True)
+    rfunc_exact = ps.FourParam(approximate_tmax=False)
 
-    tmax = rfunc.get_tmax(p, cutoff=cutoff)
-    total = quad(rfunc.impulse, 0, np.inf, args=p)[0]
-    reached = quad(rfunc.impulse, 0, tmax, args=p)[0] / total
+    tmax_approx = rfunc_approx.get_tmax(p, cutoff=cutoff)
+    tmax_exact = rfunc_exact.get_tmax(p, cutoff=cutoff)
 
-    assert reached >= cutoff, (
-        f"FourParam tmax ({tmax}) should reach at least the target cutoff ({cutoff}), "
-        f"got {reached:.6f}"
+    total = quad(rfunc_exact.impulse, 0, np.inf, args=p)[0]
+    reached_approx = quad(rfunc_exact.impulse, 0, tmax_approx, args=p)[0] / total
+    reached_exact = quad(rfunc_exact.impulse, 0, tmax_exact, args=p)[0] / total
+
+    assert reached_approx >= cutoff, (
+        f"Approximate FourParam tmax ({tmax_approx}) should be conservative for "
+        f"cutoff ({cutoff}), got {reached_approx:.6f}"
     )
+    assert abs(reached_exact - cutoff) < 1e-6, (
+        f"Exact FourParam tmax ({tmax_exact}) should satisfy cutoff equation. "
+        f"Expected {cutoff:.6f}, got {reached_exact:.6f}"
+    )
+
+
+def test_fourparam_tmax_negative_n_does_not_hit_hard_limit() -> None:
+    """Regression test for low-n FourParam cases that used to return huge tmax."""
+    p = [1.0, -10.0, 0.01, 1e-6]
+    cutoffs = [0.1, 0.5, 0.9, 0.99, 0.999]
+
+    rfunc_approx = ps.FourParam(approximate_tmax=True)
+    rfunc_exact = ps.FourParam(approximate_tmax=False)
+
+    previous_exact = 0.0
+    for cutoff in cutoffs:
+        tmax_approx = rfunc_approx.get_tmax(p, cutoff=cutoff)
+        tmax_exact = rfunc_exact.get_tmax(p, cutoff=cutoff)
+
+        assert tmax_approx < 1e5, (
+            f"Approximate tmax should not hit hard search limits, got {tmax_approx}"
+        )
+        assert tmax_exact < 1e5, (
+            f"Exact tmax should not hit hard search limits, got {tmax_exact}"
+        )
+
+        assert tmax_approx >= tmax_exact, (
+            f"Approximate tmax should be conservative (>= exact), "
+            f"approx={tmax_approx}, exact={tmax_exact}"
+        )
+
+        assert tmax_exact >= previous_exact, (
+            f"tmax should be non-decreasing with cutoff, got {tmax_exact} "
+            f"after {previous_exact}"
+        )
+        previous_exact = tmax_exact
 
 
 def test_fourparam_approximate_tmax_to_dict_roundtrip() -> None:
