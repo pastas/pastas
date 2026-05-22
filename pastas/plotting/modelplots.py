@@ -1069,7 +1069,7 @@ class Plotting:
         for sm_name, sm in self.ml.stressmodels.items():
             # Get the contributions for StressModels with multiple stresses
             contributions = {}
-            if (len(sm.stresses) > 0) and (sm._name == "WellModel"):
+            if sm.stresses and (sm._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
                         wnam: f"C{i + 1}" for i, wnam in enumerate(sm.stresses._fields)
