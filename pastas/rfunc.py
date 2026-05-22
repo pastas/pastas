@@ -1605,34 +1605,7 @@ class FourParam(RfuncBase):
         if len(p) > 4:
             p = p[:4]
 
-        return self._tmax_from_log_cdf(p=p, cutoff=cutoff, n_grid=4000)
-
-    @staticmethod
-    def _impulse_integral(p: ArrayLike) -> float:
-        """Analytical integral of FourParam impulse over [0, inf)."""
-        _, n, a, b = p
-        if a <= 0.0 or b <= 0.0:
-            return np.nan
-        scale = a * np.sqrt(b)
-        arg = 2.0 * np.sqrt(b)
-        integral = 2.0 * (scale**n) * kv(n, arg)
-        return float(integral)
-
-    @staticmethod
-    def _impulse_log_integrand(u: ArrayLike, p: ArrayLike) -> ArrayLike:
-        """Impulse integrand transformed to log-time (t = exp(u))."""
-        _, n, a, b = p
-        t = np.exp(u)
-        return np.exp(n * u - t / a - (a * b) / t)
-
-    def _tmax_from_log_cdf(
-        self,
-        p: ArrayLike,
-        cutoff: float,
-        n_grid: int,
-    ) -> float:
-        """Compute tmax by integrating cumulative mass on a log-time grid."""
-        impulse_integral = self._impulse_integral(p)
+        impulse_integral = self._impulse_integral_for_mode(p)
         if not np.isfinite(impulse_integral) or impulse_integral <= 0.0:
             logger.warning(
                 "Unable to compute FourParam tmax due to invalid normalization "
@@ -1647,8 +1620,8 @@ class FourParam(RfuncBase):
         frac_max = 0.0
 
         while frac_max < cutoff and u_max <= max_u:
-            u = np.linspace(u_min, u_max, n_grid)
-            fu = self._impulse_log_integrand(u, p)
+            u = np.linspace(u_min, u_max, 4000)
+            fu = self._integrand_fourparam(u, p)
             cum = np.zeros_like(u)
             cum[1:] = np.cumsum(0.5 * (fu[1:] + fu[:-1]) * np.diff(u))
             frac = cum / impulse_integral
@@ -1672,6 +1645,25 @@ class FourParam(RfuncBase):
         idx = min(max(idx, 0), len(u) - 1)
         return float(np.exp(u[idx]))
 
+    def _impulse_integral(self, p: ArrayLike) -> float:
+        """Integral of FourParam impulse over [0, inf)."""
+        if self.quad:
+            q = quad(self.impulse, 0, np.inf, args=p)[0]
+            return float(q)
+
+        _, n, a, b = p
+        scale = a * np.sqrt(b)
+        arg = 2.0 * np.sqrt(b)
+        integral = 2.0 * (scale**n) * kv(n, arg)
+        return float(integral)
+
+    @staticmethod
+    def _integrand_fourparam(u: ArrayLike, p: ArrayLike) -> ArrayLike:
+        """Impulse integrand transformed to log-time (t = exp(u))."""
+        _, n, a, b = p
+        t = np.exp(u)
+        return np.exp(n * u - t / a - (a * b) / t)
+
     def _f_step(
         self,
         t: float,
@@ -1683,13 +1675,17 @@ class FourParam(RfuncBase):
         if t <= 0.0:
             return -cutoff
 
+        if self.quad:
+            step_value = quad(self.impulse, 0, t, args=p)[0] / impulse_integral
+            return step_value - cutoff
+
         u_upper = np.log(t)
         # Integrate in log-time for numerical stability at very small t.
         if u_upper <= -80.0:
             step_value = 0.0
         else:
             step_value = (
-                quad(self._impulse_log_integrand, -80.0, u_upper, args=(p,))[0]
+                quad(self._integrand_fourparam, -80.0, u_upper, args=(p,))[0]
                 / impulse_integral
             )
         return step_value - cutoff
@@ -1795,13 +1791,15 @@ class FourParam(RfuncBase):
         if len(p) > 4:
             p = p[:4]
 
+        impulse_integral = self._impulse_integral(p)
+
         if self.quad:
             t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
             s = np.zeros_like(t)
             s[0] = quad(self.impulse, 0, dt, args=p)[0]
             for i in range(1, len(t)):
                 s[i] = s[i - 1] + quad(self.impulse, t[i - 1], t[i], args=p)[0]
-            s = s * (p[0] / self._impulse_integral(p))
+            s = s * (p[0] / impulse_integral)
             return s
 
         else:
@@ -1831,7 +1829,7 @@ class FourParam(RfuncBase):
                 s[1:] = s[0] + np.cumsum(
                     step / 6 * (func[:-1] + 4 * func_half + func[1:])
                 )
-                s = s * (p[0] / self._impulse_integral(p))
+                s = s * (p[0] / impulse_integral)
                 return s[int(dt / step - 1) :: int(dt / step)]
             else:
                 t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
@@ -1850,7 +1848,7 @@ class FourParam(RfuncBase):
                 s[1:] = s[0] + np.cumsum(
                     dt / 6 * (func[:-1] + 4 * func_half + func[1:])
                 )
-                s = s * (self.gain(p) / self._impulse_integral(p))
+                s = s * (self.gain(p) / impulse_integral)
                 return s
 
     def block_from_impulse(
