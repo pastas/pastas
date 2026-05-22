@@ -10,7 +10,7 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, OptimizeResult, least_squares
 
-from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cache
+from pastas.decorators import temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike, CallBack
 
@@ -525,7 +525,7 @@ class LeastSquaresBase(SolverBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        output: str | None = None,
+        all_options: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -541,8 +541,9 @@ class LeastSquaresBase(SolverBase):
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        output : str, optional (deprecated)
-            deprecated argument, use corr and stderr arguments instead.
+        all_options : bool, optional
+            If True, all options are shown in the fit report. This is a shortcut for
+            `corr=True`, `stderr=True`, and `warnings=True`.
         obj_func : float, optional
             Value of the found minimal loss function value from the
             optimization algorithm. Generally obtained from the result attribute
@@ -588,15 +589,10 @@ class LeastSquaresBase(SolverBase):
             "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
         }
 
-        if output is not None:
-            msg = "Use 'corr=True' instead."
-            deprecate_args_or_kwargs(
-                name="output",
-                version="2.0.0",
-                reason=msg,
-            )
-            if isinstance(output, str) and output == "full":
-                corr = True
+        if all_options:
+            corr = True
+            stderr = True
+            warnings = True
 
         parameters = self.ml._parameters.loc[:, ["optimal", "initial", "vary"]].copy()
 
@@ -1015,7 +1011,7 @@ class LeastSquares(LeastSquaresBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        output: str | None = None,
+        all_options: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -1031,8 +1027,9 @@ class LeastSquares(LeastSquaresBase):
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        output : str, optional (deprecated)
-            deprecated argument, use corr and stderr arguments instead.
+        all_options : bool, optional
+            If True, all options are shown in the fit report. This is a shortcut for
+            `corr=True`, `stderr=True`, and `warnings=True`.
 
         Returns
         -------
@@ -1058,7 +1055,7 @@ class LeastSquares(LeastSquaresBase):
             stderr=stderr,
             warnings=warnings,
             obj_func=obj_func,
-            output=output,
+            all_options=all_options,
         )
 
     def to_dict(self) -> dict:
@@ -1201,7 +1198,7 @@ class LmfitSolve(LeastSquaresBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        output: str | None = None,
+        all_options: bool = False,
     ) -> str:
         # nobs = self.result.ndata
         # aic = self.result.aic
@@ -1211,7 +1208,7 @@ class LmfitSolve(LeastSquaresBase):
             corr=corr,
             stderr=stderr,
             warnings=warnings,
-            output=output,
+            all_options=all_options,
             obj_func=obj_func,
         )
 

@@ -796,7 +796,7 @@ class Model:
         freq: str | None = None,
         warmup: float | None = None,
         solver: Solver | None = None,
-        report: bool | Literal["full"] = True,
+        report: bool | Literal["full"] | dict = True,
         initial: bool = True,
         weights: Series | None = None,
         fit_constant: bool = True,
@@ -828,13 +828,14 @@ class Model:
             Instance of a pastas Solver class used to solve the model. Options are:
             ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
             of Pastas 0.23, not a class!
-        report: bool | Literal["full"], optional
+        report: bool | Literal["full"] | dict, optional
             Print a report to the screen after optimization finished. Set to
             True (default) to print a standard report, "full" to print a
             report including the correlation matrix and standard errors of the
-            parameters, or False to suppress the report. This can also be
-            manually triggered after optimization by calling print(ml.fit_report(
-            )) on the Pastas model instance.
+            parameters, or False to suppress the report. To have full conrol over the
+            report, a dictionary with the arguments of ml.solve.fit_report() can be
+            provided. This can also be manually triggered after optimization by calling
+            print(ml.fit_report( )) on the Pastas model instance.
         initial: bool, optional
             Reset initial parameters from the individual stress models. Default is
             True. If False, the optimal values from an earlier optimization are used.
@@ -866,8 +867,14 @@ class Model:
             model is not initialized before solving. Note that the latter is an
             advanced option since some model settings can be missing. Default
             is False and deprecated since version 2.0.0.
+
+            .. Deprecated:: 2.0.0
+                The initialize argument is deprecated in favor of the `reset_settings`
+                argument.
+
         reset_settings: bool = False,
-            If True, the model settings are reset to their default values before solving.
+            If True, the model settings are reset to their default values before
+            solving.
             This calls the Model.set_settings() method with default values.
             Default is False.
         **kwargs: dict, optional
@@ -877,8 +884,7 @@ class Model:
         Notes
         -----
         - The solver instance including some results are stored as ml.solver. From here
-          one can access the covariance (ml.solver.pcov) and correlation matrix (
-          ml.solver.pcor).
+          one can access the specific attributes from the solver (i.e., the covariance matrix(ml.solver.pcov) for the LeastSquaresSolve).
         - Each solver returns a number of results after optimization. These solver
           specific results are stored in ml.solver.result and can be accessed from
           there.
@@ -989,7 +995,9 @@ class Model:
 
         if report:
             if isinstance(report, str) and report == "full":
-                print(self.fit_report(corr=True, stderr=True))
+                print(self.fit_report(all_options=True))
+            elif isinstance(report, dict):
+                print(self.fit_report(**report))
             else:
                 print(self.fit_report())
         else:
@@ -2100,9 +2108,44 @@ class Model:
 
     def fit_report(
         self,
+        all_options: bool = False,
         **kwargs,
     ) -> str:
-        return self.solver.fit_report(**kwargs)
+        """Fit report of the model solve.
+
+        Parameters
+        ----------
+        all_options: bool, optional
+            If True, a full fit report is generated with all the optional features from
+            the solvers' fit report set to True.
+        **kwargs:
+             any argument that is passed to the fit_report method of the solver. See
+             the documentation of the solver for more information.
+
+        Returns
+        -------
+        report: str
+
+        See Also
+        --------
+        ml.solver.fit_report
+
+        Examples
+        --------
+        >>> print(ml.fit_report())
+
+        """
+        if "output" in kwargs:
+            msg = "Use 'all_options=True' instead."
+            deprecate_args_or_kwargs(
+                name="output",
+                version="2.0.0",
+                reason=msg,
+            )
+            if isinstance(kwargs["output"], str) and kwargs["output"] == "full":
+                all_options = True
+
+        return self.solver.fit_report(all_options=all_options, **kwargs)
 
     def _check_response_tmax(self, cutoff: float | None = None) -> DataFrame:
         """Internal method to check if response tmax is smaller than calibration period.

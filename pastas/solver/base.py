@@ -124,7 +124,7 @@ class SolverBase(ABC):
         self.ml = ml
 
     @abstractmethod
-    def fit_report(self) -> str:
+    def fit_report(self, all_options: bool = False) -> str:
         """Abstract method that has to be implemented by all solvers."""
         pass
 

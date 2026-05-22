@@ -392,7 +392,7 @@ class EmceeSolve(SolverBase):
         self,
         warnings: bool = True,
         obj_func: float = np.nan,
-        output: str | None = None,
+        all_options: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -401,12 +401,13 @@ class EmceeSolve(SolverBase):
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        output : str, optional (deprecated)
-            deprecated argument, use corr and stderr arguments instead.
         obj_func : float, optional
             Value of the found minimal loss function value from the
             optimization algorithm. Generally obtained from the result attribute
             which is not present when loading the solver, thus by default nan.
+        all_options : bool, optional
+            If True, all options are shown in the fit report. This is a shortcut for
+            `warnings=True`.
 
         Returns
         -------
@@ -448,20 +449,20 @@ class EmceeSolve(SolverBase):
             "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
         }
 
-        if isinstance(output, str) and output == "full":
-            pass  # This can be used to put all options to true and produce the full report.
+        if all_options:
+            warnings = True
 
         parameters = self.ml._parameters.loc[
             :, ["optimal", "initial", "vary", "sigma", "dist"]
         ].copy()
 
         # determine width of the fit_report
-        len_fit = max([len(v) for v in fit.values()]) + max([
-            len(v) for v in fit.keys()
-        ])
-        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max([
-            len(v) for v in model.keys()
-        ])
+        len_fit = max([len(v) for v in fit.values()]) + max(
+            [len(v) for v in fit.keys()]
+        )
+        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
+            [len(v) for v in model.keys()]
+        )
         len_param = len(parameters.to_string().split("\n")[1])
         width = max((len_fit + len_model + 8), len_param)
         string = "{:{fill}{align}{width}}"
