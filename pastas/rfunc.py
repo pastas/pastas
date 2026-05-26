@@ -888,7 +888,9 @@ class Hantush(RfuncBase):
         b_over_tau = b / tau
 
         F = np.empty_like(tau)
-        mask = tau < (rho / 2.0)
+        # Use real parts for mask comparison: tau and rho may be complex during
+        # complex-step Jacobian evaluation
+        mask = np.real(tau) < (np.real(rho) / 2.0)
         inv_mask = ~mask
 
         tau1 = tau[mask]
@@ -1625,6 +1627,14 @@ class FourParam(RfuncBase):
         # not only the response functions
         if len(p) > 4:
             p = p[:4]
+
+        if np.iscomplexobj(p) and self.use_block:
+            raise NotImplementedError(
+                "FourParam does not support complex-step Jacobian evaluation "
+                "(jac='cs') when use_block=True. Set use_block=False on the "
+                "FourParam response function, or use a different Jacobian "
+                "method (e.g., jac='3-point' or jac='2-point')."
+            )
 
         if self.quad:
             t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)

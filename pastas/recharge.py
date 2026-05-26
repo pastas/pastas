@@ -35,6 +35,7 @@ After solving a model, the simulated recharge flux can be obtained::
 from abc import ABC, abstractmethod
 from logging import getLogger
 
+import numpy as np
 from numpy import add, exp, float64, multiply, nan_to_num, power, vstack, where, zeros
 from pandas import DataFrame
 
@@ -295,8 +296,8 @@ class FlexModel(RechargeBase):
         if abs(error) > 0.1:
             logger.info(
                 "Water balance error: %s %% of the total pe flux. Parameters: %s",
-                error.round(2),
-                p.astype(float).round(2),
+                error.real.round(2),
+                p.real.astype(float).round(2),
             )
 
         if self.gw_uptake:
@@ -314,19 +315,24 @@ class FlexModel(RechargeBase):
                 data += (si, ei, pi)
             if self.snow:
                 data += (ss, ps, m)
+            # Strip imaginary part when not doing complex-step Jacobian
+            if not np.iscomplexobj(p):
+                data = tuple(arr.real for arr in data)
             return data
         else:
-            return -r
+            result = -r
+            # Strip imaginary part when not doing complex-step Jacobian
+            return result if np.iscomplexobj(p) else result.real
 
     @staticmethod
     @njit
     def get_root_zone_balance(
         pe: ArrayLike,
         ep: ArrayLike,
-        srmax: float = 250.0,
-        lp: float = 0.25,
-        ks: float = 100.0,
-        gamma: float = 4.0,
+        srmax: complex = 250.0,
+        lp: complex = 0.25,
+        ks: complex = 100.0,
+        gamma: complex = 4.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Method to compute the water balance of the root zone reservoir.
@@ -365,29 +371,31 @@ class FlexModel(RechargeBase):
         """
         n = pe.size
         # Create empty arrays to store the fluxes and states
-        sr = zeros(n + 1, dtype=float64)  # Root Zone Storage State
+        sr = zeros(n + 1, dtype=np.complex128)  # Root Zone Storage State
         sr[0] = 0.5 * srmax  # Set the initial system state to half-full
-        ea = zeros(n, dtype=float64)  # Actual evaporation Flux
-        r = zeros(n, dtype=float64)  # Recharge Flux
-        q = zeros(n, dtype=float64)  # Surface runoff Flux
+        ea = zeros(n, dtype=np.complex128)  # Actual evaporation Flux
+        r = zeros(n, dtype=np.complex128)  # Recharge Flux
+        q = zeros(n, dtype=np.complex128)  # Surface runoff Flux
         lp = lp * srmax  # Do this here outside the for-loop for efficiency
 
         for t in range(n):
             # Make sure the solution is larger than 0.0 and smaller than sr
-            if sr[t] > srmax:
+            if sr[t].real > srmax.real:
                 q[t] = sr[t] - srmax  # Surface runoff
                 sr[t] = srmax
-            elif sr[t] < 0.0:
+            elif sr[t].real < 0.0:
                 sr[t] = 0.0
 
             # Calculate evaporation from the root zone reservoir
-            if sr[t] / lp < 1.0:
+            if (sr[t] / lp).real < 1.0:
                 ea[t] = ep[t] * sr[t] / lp
             else:
                 ea[t] = ep[t]
 
             # Calculate the recharge flux
-            r[t] = min(ks * (sr[t] / srmax) ** gamma, sr[t])
+            # Use .real for comparison to support complex-step differentiation
+            recharge = ks * (sr[t] / srmax) ** gamma
+            r[t] = recharge if recharge.real < sr[t].real else sr[t]
             # Update storage in the root zone
             sr[t + 1] = sr[t] + dt * (pe[t] - r[t] - ea[t])
 
@@ -396,8 +404,8 @@ class FlexModel(RechargeBase):
     @staticmethod
     @njit
     def get_interception_balance(
-        pr: ArrayLike, ep: ArrayLike, simax: float = 2.0, dt: float = 1.0
-    ) -> tuple[ArrayLike]:
+        pr: ArrayLike, ep: ArrayLike, simax: np.complex128 = 2.0, dt: float = 1.0
+    ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
         """Method to compute the water balance of the interception reservoir.
 
         Parameters
@@ -433,15 +441,23 @@ class FlexModel(RechargeBase):
         overflow from the interception reservoir.
         """
         n = pr.size
-        si = zeros(n + 1, dtype=float64)  # Interception Storage State
-        pe = zeros(n, dtype=float64)  # Effective precipitation Flux
-        ei = zeros(n, dtype=float64)  # Interception evaporation Flux
+        si = zeros(n + 1, dtype=np.complex128)  # Interception Storage State
+        pe = zeros(n, dtype=np.complex128)  # Effective precipitation Flux
+        ei = zeros(n, dtype=np.complex128)  # Interception evaporation Flux
 
         for t in range(n):
             # Interception bucket
-            ei[t] = min(ep[t], si[t])
+            # Use .real for comparisons to support complex-step differentiation
+            if ep[t].real < si[t].real:
+                ei[t] = ep[t]
+            else:
+                ei[t] = si[t]
             si[t + 1] = si[t] + dt * (pr[t] - ei[t])
-            pe[t] = max(si[t + 1] - simax, 0.0)
+            diff = si[t + 1] - simax
+            if diff.real > 0.0:
+                pe[t] = diff
+            else:
+                pe[t] = 0.0
             si[t + 1] = si[t + 1] - pe[t]
 
         pi = pr - pe  # Compute intercepted precipitation
@@ -451,7 +467,7 @@ class FlexModel(RechargeBase):
     @staticmethod
     @njit
     def get_snow_balance(
-        prec: ArrayLike, temp: ArrayLike, tt: float = 0.0, k: float = 2.0
+        prec: ArrayLike, temp: ArrayLike, tt: complex = 0.0, k: complex = 2.0
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
         """Method to compute the water balance of the snow reservoir.
 
@@ -486,15 +502,21 @@ class FlexModel(RechargeBase):
         """
         n = prec.size
         # Create empty arrays to store the fluxes and states
-        ss = zeros(n + 1, dtype=float64)  # Snow Storage
-        ps = where(temp <= tt, prec, 0.0)  # Snowfall
-        m = where(temp > tt, k * (temp - tt), 0.0)  # Potential Snow melt
+        ss = zeros(n + 1, dtype=np.complex128)  # Snow Storage
+        m = zeros(n, dtype=np.complex128)  # Potential Snow melt
+        ps = where(temp <= tt.real, prec, 0.0)  # Snowfall
 
         # Snow bucket
         for t in range(n):
-            if temp[t] > tt:
+            if temp[t] > tt.real:
+                m[t] = k * (temp[t] - tt)
                 smoothing_factor = 1.0 - exp(-(ss[t] / 1.5))
-                m[t] = min(m[t] * smoothing_factor, ss[t])
+                melt = m[t] * smoothing_factor
+                # Use .real for comparison to support complex-step differentiation
+                if melt.real < ss[t].real:
+                    m[t] = melt
+                else:
+                    m[t] = ss[t]
             ss[t + 1] = ss[t] + ps[t] - m[t]
 
         return ss[:-1], ps, -m
@@ -650,6 +672,11 @@ class Berendrecht(RechargeBase):
             Recharge flux calculated by the model is the argument full_output is
             False, otherwise a list with all fluxes and states.
         """
+        if np.iscomplexobj(p):
+            raise TypeError(
+                "Berendrecht does not support complex-step Jacobian evaluation. "
+                "Set jac='3-point' or jac='2-point'."
+            )
         r, s, ea, pe = self.get_recharge(
             prec,
             evap,
@@ -813,6 +840,11 @@ class Peterson(RechargeBase):
             False, otherwise a list with all fluxes and states.
 
         """
+        if np.iscomplexobj(p):
+            raise TypeError(
+                "Peterson does not support complex-step Jacobian evaluation. "
+                "Set jac='3-point' or jac='2-point'."
+            )
         r, s, ea, pe = self.get_recharge(
             prec, evap, scap=p[0], alpha=p[1], ksat=p[2], beta=p[3], gamma=p[4], dt=dt
         )
