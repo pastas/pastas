@@ -26,7 +26,7 @@ def compare(
     tmin: Timestamp | str | None = None,
     tmax: Timestamp | str | None = None,
     **kwargs,
-) -> dict:
+) -> dict[str, Axes]:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Notes
@@ -59,7 +59,7 @@ def compare(
 
     Returns
     -------
-    matplotlib.axes
+        dict[str, matplotlib.axes.Axes]
     """
     mc = CompareModels(models, names=names, tmin=tmin, tmax=tmax)
     mc.plot(adjust_height=adjust_height, **kwargs)
@@ -77,7 +77,7 @@ def series(
     tmax: Timestamp | str | None = None,
     colors_stresses: list[str] | None = None,
     labels: list[str] | None = None,
-    figsize: tuple = (10, 5),
+    figsize: tuple = (8.0, 4.0),
     **kwargs,
 ) -> Axes:
     """Plot all the input time Series in a single plot.
@@ -259,7 +259,7 @@ def acf(
     smooth_conf: bool = True,
     color: str = "k",
     ax: Axes | None = None,
-    figsize: tuple = (5, 2),
+    **kwargs,
 ) -> Axes:
     """Plot of the autocorrelation function of a time series.
 
@@ -281,9 +281,8 @@ def acf(
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to plot the ACF on. A new Figure and Axes is created
         when no value for ax is provided.
-    figsize: tuple, optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax is also
-        provided.
+    **kwargs: dict, optional
+        Optional keyword arguments, passed on to plt.subplots.
 
     Returns
     -------
@@ -301,7 +300,9 @@ def acf(
     will still run when dealing with many models.
 
     """
+    kwargs = {} or kwargs
     if ax is None:
+        figsize = kwargs.pop("figsize", (5.0, 3.0))
         _, ax = plt.subplots(1, 1, figsize=figsize)
 
     # Plot the autocorrelation
@@ -347,8 +348,6 @@ def diagnostics(
     alpha: float = 0.05,
     bins: int = 50,
     acf_options: dict | None = None,
-    figsize: tuple = (10, 5),
-    fig: Figure | None = None,
     heteroscedasicity: bool = True,
     **kwargs,
 ) -> Axes:
@@ -367,10 +366,6 @@ def diagnostics(
         Number of bins used for the histogram. 50 is default.
     acf_options: dict, optional
         Dictionary with keyword arguments passed on to pastas.stats.acf.
-    figsize: tuple, optional
-        Tuple with the height and width of the figure in inches.
-    fig: Matplotib.Figure instance, optional
-        Optionally provide a Matplotib.Figure instance to plot onto.
     heteroscedasicity: bool, optional
         Create two additional subplots to check for heteroscedasticity. If true,
         a simulated time series has to be provided with the sim argument.
@@ -399,76 +394,90 @@ def diagnostics(
     scipy.stats.probplot
         Method use to plot the probability plot.
     """
+    if heteroscedasicity and sim is None:
+        msg = (
+            "A simulated time series has to be provided to make plots to "
+            "diagnose heteroscedasticity. Provide 'sim' argument."
+        )
+        logger.error(msg=msg)
+        raise KeyError(msg)
+
     # Create the figure and axes
-    if fig is None:
-        fig = plt.figure(figsize=figsize, constrained_layout=True, **kwargs)
-
+    kwargs = {} or kwargs
+    figsize = kwargs.pop("figsize", (8.0, 4.0))
+    layout = kwargs.pop("layout", "constrained")
     if heteroscedasicity:
-        if sim is None:
-            msg = (
-                "A simulated time series has to be provided to make plots to "
-                "diagnose heteroscedasticity. Provide 'sim' argument."
-            )
-            logger.error(msg=msg)
-            raise KeyError(msg)
-
-        gs = fig.add_gridspec(ncols=3, nrows=2, width_ratios=[3, 1, 1])
-        ax4 = fig.add_subplot(gs[0, 2])
-        ax5 = fig.add_subplot(gs[1, 2])
+        mosaic = [["series", "hist", "het_res"], ["acf", "qq", "het_sqrt"]]
+        width_ratios = kwargs.pop("width_ratios", [3, 1, 1])
     else:
-        gs = fig.add_gridspec(ncols=2, nrows=2, width_ratios=[3, 1])
-    ax = fig.add_subplot(gs[0, 0])
-    ax2 = fig.add_subplot(gs[0, 1])
-    ax1 = fig.add_subplot(gs[1, 0])
-    ax3 = fig.add_subplot(gs[1, 1])
+        mosaic = [["series", "hist"], ["acf", "qq"]]
+        width_ratios = kwargs.pop("width_ratios", [3, 1])
+
+    fig = kwargs.pop("fig", None)
+    if fig is None:
+        fig, axd = plt.subplot_mosaic(
+            mosaic=mosaic,
+            figsize=figsize,
+            width_ratios=width_ratios,
+            layout=layout,
+            **kwargs,
+        )
+    else:
+        axd = fig.subplot_mosaic(
+            mosaic=mosaic,
+            width_ratios=width_ratios,
+            **kwargs,
+        )
 
     # Plot the residuals or noise series
-    ax.axhline(0, c="k")
-    ax = plot_series_with_gaps(series, ax=ax)
-    ax.set_ylabel(series.name)
-    ax.set_xlim(series.index.min(), series.index.max())
-    ax.set_title(f"{series.name} (n={series.size:.0f}, $\\mu$={series.mean():.2f})")
-    ax.grid()
-    ax.tick_params(axis="x", labelrotation=0)
-    for label in ax.get_xticklabels():
+    axd["series"].axhline(0, c="k")
+    axd["series"] = plot_series_with_gaps(series, ax=axd["series"])
+    axd["series"].set_ylabel(series.name)
+    axd["series"].set_xlim(series.index.min(), series.index.max())
+    axd["series"].set_title(
+        f"{series.name} (n={series.size:.0f}, $\\mu$={series.mean():.2f})"
+    )
+    axd["series"].grid(True)
+    axd["series"].tick_params(axis="x", labelrotation=0)
+    for label in axd["series"].get_xticklabels():
         label.set_horizontalalignment("center")
 
     # Plot the autocorrelation
-    acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
-    ax1.set_title(None)
+    acf(series, alpha=alpha, acf_options=acf_options, ax=axd["acf"])
+    axd["acf"].set_title(None)
 
     # Plot the histogram for normality and add a 'best fit' line
-    _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
+    _, bins, _ = axd["hist"].hist(series.values, bins=bins, density=True)
     y = norm.pdf(bins, series.mean(), series.std())
-    ax2.plot(bins, y, "k--")
-    ax2.set_ylabel("Probability density")
-    ax2.set_title("Histogram")
+    axd["hist"].plot(bins, y, "k--")
+    axd["hist"].set_ylabel("Probability density")
+    axd["hist"].set_title("Histogram")
 
     # Plot the probability plot
-    _, (_, _, r) = probplot(series, plot=ax3, dist="norm", rvalue=False)
-    c = ax.get_lines()[1].get_color()
-    ax3.get_lines()[0].set_color(c)
-    ax3.get_lines()[1].set_color("k")
+    _, (_, _, r) = probplot(series, plot=axd["qq"], dist="norm", rvalue=False)
+    c = axd["series"].get_lines()[1].get_color()
+    axd["qq"].get_lines()[0].set_color(c)
+    axd["qq"].get_lines()[1].set_color("k")
 
     # Plot R2 here because probplot has suboptimal positioning
-    ax3.text(0.5, 0.1, "$R^2={:.2f}$".format(r**2), transform=ax3.transAxes)
+    axd["qq"].text(0.5, 0.1, "$R^2={:.2f}$".format(r**2), transform=axd["qq"].transAxes)
 
     if heteroscedasicity and sim is not None:
         # Plot residuals vs. simulation
         # interpolate simulation to times of observations
         sim = sim.loc[series.index]
-        ax4.plot(sim, series, marker=".", linestyle=" ", color=c, alpha=0.7)
-        ax4.grid()
-        ax4.set_xlabel("Simulated values")
-        ax4.set_ylabel("Residuals")
+        axd["het_res"].plot(sim, series, marker=".", linestyle=" ", color=c, alpha=0.7)
+        axd["het_res"].grid(True)
+        axd["het_res"].set_xlabel("Simulated values")
+        axd["het_res"].set_ylabel("Residuals")
 
         # Plot residuals vs. simulation
-        ax5.plot(
+        axd["het_sqrt"].plot(
             sim, np.sqrt(series.abs()), marker=".", linestyle=" ", color=c, alpha=0.7
         )
-        ax5.set_xlabel("Simulated values")
-        ax5.set_ylabel("$\\sqrt{|Residuals|}$")
-        ax5.grid()
+        axd["het_sqrt"].set_xlabel("Simulated values")
+        axd["het_sqrt"].set_ylabel("$\\sqrt{|Residuals|}$")
+        axd["het_sqrt"].grid(True)
 
     return fig.axes
 
@@ -477,7 +486,7 @@ def cum_frequency(
     obs: Series,
     sim: Series | None = None,
     ax: Axes | None = None,
-    figsize: tuple = (5, 2),
+    **kwargs,
 ) -> Axes:
     """Plot of the cumulative frequency of a time Series.
 
@@ -490,9 +499,8 @@ def cum_frequency(
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to create the plot on. A new Figure and Axes is
         created when no value for ax is provided.
-    figsize: tuple, optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax is also
-        provided.
+    **kwargs: dict, optional
+        Optional keyword arguments, passed on to plt.subplots.
 
     Returns
     -------
@@ -504,8 +512,10 @@ def cum_frequency(
     >>>                 data=np.random.normal(0, 1, 1000))
     >>> ps.stats.plot_cum_frequency(obs)
     """
+    kwargs = {} or kwargs
     if ax is None:
-        _, ax = plt.subplots(1, 1, figsize=figsize)
+        figsize = kwargs.pop("figsize", (5.0, 3.0))
+        _, ax = plt.subplots(1, 1, figsize=figsize, **kwargs)
 
     ax.plot(
         obs.sort_values(),
