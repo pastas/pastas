@@ -1,5 +1,8 @@
+"""This module contains the EmceeSolve class, which is a solver based on the MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`."""
+
 import importlib
 from logging import getLogger
+from typing import Any
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -83,11 +86,11 @@ class EmceeSolve(SolverBase):
         | GaussianLikelihoodAr1
         | None = GaussianLikelihood(),
         nwalkers: int = 20,
-        backend: None = None,
-        moves: None = None,
+        backend: Any | None = None,
+        moves: Any | None = None,
         parallel: bool = False,
         progress_bar: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         self._assert_emcee_installation()
 
@@ -104,13 +107,17 @@ class EmceeSolve(SolverBase):
         super().__init__(name=name, **kwargs)
 
         # Set sampler properties
-        self.sampler = None
+        self.sampler: Any | None = None
         self.backend = backend
         self.moves = moves
         self.parallel = parallel
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
+        self.nsteps: int | None = None
         self.priors: list[DataFrame] = []
+        self.initial: np.ndarray
+        self.vary: np.ndarray
+        self.bounds: np.ndarray
 
         # Set objective function
         self.objfunction = objfunction
@@ -124,7 +131,7 @@ class EmceeSolve(SolverBase):
             msg = "emcee not installed. Please install emcee first."
             raise ImportError(msg) from None
 
-    def get_init_parameters(self, name):
+    def get_init_parameters(self, name: str) -> DataFrame:
         """Get the initial parameters for the solver.
 
         Parameters
@@ -141,17 +148,14 @@ class EmceeSolve(SolverBase):
         parameters = self.objfunction.get_init_parameters(name if name else self.name)
         return parameters
 
-    def fit_report(self) -> str:
-        return ""
-
     def solve(
         self,
         noise: bool = False,
         weights: Series | None = None,
         steps: int = 5000,
         callback: CallBack | None = None,
-        **kwargs,
-    ) -> tuple[bool, ArrayLike, ArrayLike]:
+        **kwargs: Any,
+    ) -> tuple[bool, DataFrame]:
         # Store initial parameters
         self.initial = self.ml.parameters.initial.to_numpy(dtype=float)
         self.vary = self.ml.parameters.vary.to_numpy(dtype=bool)
@@ -163,6 +167,8 @@ class EmceeSolve(SolverBase):
 
         # Set priors
         self._set_priors()
+
+        self.nsteps = steps
 
         # Set initial positions of the walkers
         pinit = self.initial[self.vary]
@@ -215,12 +221,17 @@ class EmceeSolve(SolverBase):
         # Set the optimal values for the objective function parameters
         self.parameters.loc[:, "optimal"] = optimal[-self.objfunction.nparam :]
 
-        # Don't estimate stderr for now
-        # optimal = optimal[: -self.objfunction.nparam]
-        stderr = np.zeros(len(optimal)) * np.nan
-
         success = True
-        return success, optimal, stderr
+        result = DataFrame(
+            {
+                "optimal": optimal,
+                # "Q025": TODO: compute credible intervals
+                # "Q975": TODO: compute credible intervals
+            },
+            index=self.ml.parameters.index,
+            dtype=float,
+        )
+        return success, result
 
     def log_probability(
         self,
@@ -351,7 +362,9 @@ class EmceeSolve(SolverBase):
             )
             self.priors.append(prior)
 
-    def _get_prior(self, dist: str, loc: float, scale: float, pmin: float, pmax: float):
+    def _get_prior(
+        self, dist: str, loc: float, scale: float, pmin: float, pmax: float
+    ) -> Any:
         """Set the prior for a parameter.
 
         Parameters
@@ -382,6 +395,125 @@ class EmceeSolve(SolverBase):
             raise ValueError(msg)
 
         return getattr(mod, dist)(loc=loc, scale=scale)
+
+    def fit_report(
+        self,
+        warnings: bool = True,
+        obj_func: float = np.nan,
+        all_options: bool = False,
+    ) -> str:
+        """Method that reports on the fit after a model is optimized.
+
+        Parameters
+        ----------
+        warnings : bool, optional
+            print warnings in case of optimization failure, parameters hitting
+            bounds, or length of responses exceeding calibration period.
+        obj_func : float, optional
+            Value of the found minimal loss function value from the
+            optimization algorithm. Generally obtained from the result attribute
+            which is not present when loading the solver, thus by default nan.
+        all_options : bool, optional
+            If True, all options are shown in the fit report. This is a shortcut for
+            `warnings=True`.
+
+        Returns
+        -------
+        report: str
+            String with the report.
+
+        Examples
+        --------
+        This method is called by the solve method if report=True, but can also be
+        called on its own::
+
+        >>> print(ml.fit_report)
+
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where possible.
+        If interpolation is used this means that the result may slightly differ
+        compared to using ml.simulate() and ml.observations().
+        """
+        model = {
+            "nwalkers": self.nwalkers,
+            "nsteps": self.nsteps,
+            "nobs": self.ml.observations().index.size,
+            "tmin": str(self.ml.settings["tmin"]),
+            "tmax": str(self.ml.settings["tmax"]),
+            "freq": self.ml.settings["freq"],
+            "freq_obs": str(self.ml.settings["freq_obs"]),
+            "warmup": str(self.ml.settings["warmup"]),
+            "solver": self._name,
+        }
+        fit = {
+            "EVP": f"{self.ml.stats.evp():.2f}",
+            "R2": f"{self.ml.stats.rsq():.2f}",
+            "RMSE": f"{self.ml.stats.rmse():.2f}",
+            "AICc": f"{self.ml.stats.aicc():.2f}",
+            "BIC": f"{self.ml.stats.bic():.2f}",
+            "Obj": f"{obj_func:.2f}",
+            "___": "",
+            "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
+        }
+
+        if all_options:
+            warnings = True
+
+        parameters = self.ml._parameters.loc[
+            :, ["optimal", "initial", "vary", "sigma", "dist"]
+        ].copy()
+
+        # determine width of the fit_report
+        len_fit = max([len(v) for v in fit.values()]) + max(
+            [len(v) for v in fit.keys()]
+        )
+        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
+            [len(v) for v in model.keys()]
+        )
+        len_param = len(parameters.to_string().split("\n")[1])
+        width = max((len_fit + len_model + 8), len_param)
+        string = "{:{fill}{align}{width}}"
+        string = "{:{fill}{align}{width}}"
+
+        # Create the first header with model information and stats
+        wspace = max(width - (11 + 14 + len(self.name)), 1)
+        mspace = width - wspace - (11 + 14)
+        header = (
+            f"Fit report {self.name:<{mspace}.{mspace}}"
+            f"{string.format('', fill=' ', align='>', width=wspace)}"
+            f"Fit Statistics\n"
+            f"{string.format('', fill='=', align='>', width=width)}\n"
+        )
+
+        basic = ""
+        len_val4 = max([len(v) for v in fit.values()])
+        wspace = width - (9 + 23 + 9 + len_val4)
+        for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
+            basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
+
+        # Create the parameters block
+        params = (
+            f"\nParameters ({parameters.vary.sum()} optimized)\n"
+            f"{string.format('', fill='=', align='>', width=width)}\n"
+            f"{parameters.to_string()}"
+        )
+
+        warnings_rep = ""
+        if warnings:
+            msg = self.ml._generate_warnings_report(log=False, solve_success=True)
+
+            # create message
+            if len(msg) > 0:
+                msg = [
+                    f"\n\nWarnings! ({len(msg)})\n"
+                    f"{string.format('', fill='=', align='>', width=width)}"
+                ] + msg
+                warnings_rep += "\n".join(msg)
+
+        report = f"{header}{basic}{params}{warnings_rep}"
+
+        return report
 
     def to_dict(self) -> dict:
         """This method is not supported for this solver.

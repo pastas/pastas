@@ -449,7 +449,6 @@ class TestModelSolving:
 
         assert ml_solved.solver is not None
         assert ml_solved.parameters["optimal"].notna().any()
-        assert ml_solved._solve_success
 
     def test_solve_with_weights(self, ml_solved: ps.Model) -> None:
         """Test solving with weights."""

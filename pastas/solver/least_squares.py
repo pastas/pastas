@@ -1,3 +1,5 @@
+"""This module contains the least squares based solvers for Pastas."""
+
 from abc import abstractmethod
 from collections.abc import Callable
 from functools import partial
@@ -10,7 +12,7 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, OptimizeResult, least_squares
 
-from pastas.decorators import deprecate_args_or_kwargs, temporarily_disable_cache
+from pastas.decorators import temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike, CallBack
 
@@ -218,13 +220,18 @@ class LeastSquaresBase(SolverBase):
         if n is None:
             # only use parameters that are varied.
             n = int(10 ** parameters.vary.sum())
+        elif isinstance(n, float):
+            n = int(n)
 
         samples = np.zeros((0, p.size))
 
         # Start truncated multivariate sampling
         it = 0
+        rng = np.random.default_rng()
         while samples.shape[0] < n:
-            s = np.random.multivariate_normal(p, pcov, size=(n,), check_valid="ignore")
+            s = rng.multivariate_normal(
+                mean=p, cov=pcov, size=(n,), check_valid="ignore"
+            )
             accept = s[
                 (np.min(s - pmin, axis=1) >= 0) & (np.max(s - pmax, axis=1) <= 0)
             ]
@@ -284,14 +291,13 @@ class LeastSquaresBase(SolverBase):
         """
 
         sigr = self.ml.residuals().std()
-
         data = self._get_realizations(
             func=self.ml.simulate, n=n, name=None, max_iter=max_iter, **kwargs
         )
-        data = data + sigr * np.random.randn(data.shape[0], data.shape[1])
-
+        rng = np.random.default_rng()
+        datan = data + rng.normal(loc=0, scale=sigr, size=data.shape)
         q = [alpha / 2, 1 - alpha / 2]
-        rv = data.quantile(q, axis=1).transpose()
+        rv = datan.quantile(q, axis=1).transpose()
         return rv
 
     def ci_simulation(
@@ -480,18 +486,19 @@ class LeastSquaresBase(SolverBase):
         )
 
     @abstractmethod
-    def solve(self) -> tuple[bool, ArrayLike, ArrayLike]:
+    def solve(self) -> tuple[bool, DataFrame]:
         """Abstract method that has to be implemented by
         all least squares solvers.
 
         Returns
         -------
+        tuple [bool, DataFrame]
         success: bool
             Boolean indicating whether the optimization was successful.
-        optimal: array_like
-            array_like object with the optimal parameter values as floats.
-        stderr: array_like
-            array_like object with the standard error of the parameters as floats.
+        result: pandas.DataFrame
+            DataFrame with the optimal parameter values and their standard error.
+            The index of the DataFrame corresponds to the parameter names, and it
+            contains at least the following columns: "optimal", "stderr"
 
         """
         pass
@@ -522,7 +529,7 @@ class LeastSquaresBase(SolverBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        output: str | None = None,
+        all_options: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -538,8 +545,9 @@ class LeastSquaresBase(SolverBase):
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        output : str, optional (deprecated)
-            deprecated argument, use corr and stderr arguments instead.
+        all_options : bool, optional
+            If True, all options are shown in the fit report. This is a shortcut for
+            `corr=True`, `stderr=True`, and `warnings=True`.
         obj_func : float, optional
             Value of the found minimal loss function value from the
             optimization algorithm. Generally obtained from the result attribute
@@ -585,15 +593,10 @@ class LeastSquaresBase(SolverBase):
             "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
         }
 
-        if output is not None:
-            msg = "Use 'corr=True' instead."
-            deprecate_args_or_kwargs(
-                name="output",
-                version="2.0.0",
-                reason=msg,
-            )
-            if isinstance(output, str) and output == "full":
-                corr = True
+        if all_options:
+            corr = True
+            stderr = True
+            warnings = True
 
         parameters = self.ml._parameters.loc[:, ["optimal", "initial", "vary"]].copy()
 
@@ -658,7 +661,14 @@ class LeastSquaresBase(SolverBase):
 
         warnings_rep = ""
         if warnings:
-            msg = self.ml._generate_warnings_report(log=False)
+            solve_success = (
+                self.result.success
+                if self.result is not None and hasattr(self.result, "success")
+                else None
+            )
+            msg = self.ml._generate_warnings_report(
+                log=False, solve_success=solve_success
+            )
 
             # create message
             if len(msg) > 0:
@@ -769,7 +779,7 @@ class LeastSquares(LeastSquaresBase):
         self,
         weights: Series | None = None,
         **kwargs,
-    ) -> tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, DataFrame]:
         """Solve method calling scipy.optimize.least_squares"""
 
         if self.ml is None:
@@ -857,7 +867,16 @@ class LeastSquares(LeastSquaresBase):
         stderr = np.zeros(len(optimal)) * np.nan
         stderr[vary] = self.get_stderr(self.pcov).to_numpy(dtype=float, copy=True)
 
-        return success, optimal, stderr
+        result = DataFrame(
+            {
+                "optimal": optimal,
+                "stderr": stderr,
+            },
+            index=self.ml.parameters.index,
+            dtype=float,
+        )
+
+        return success, result
 
     @staticmethod
     def get_stderr(pcov: DataFrame) -> Series:
@@ -996,7 +1015,7 @@ class LeastSquares(LeastSquaresBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        output: str | None = None,
+        all_options: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -1012,8 +1031,9 @@ class LeastSquares(LeastSquaresBase):
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        output : str, optional (deprecated)
-            deprecated argument, use corr and stderr arguments instead.
+        all_options : bool, optional
+            If True, all options are shown in the fit report. This is a shortcut for
+            `corr=True`, `stderr=True`, and `warnings=True`.
 
         Returns
         -------
@@ -1039,7 +1059,7 @@ class LeastSquares(LeastSquaresBase):
             stderr=stderr,
             warnings=warnings,
             obj_func=obj_func,
-            output=output,
+            all_options=all_options,
         )
 
     def to_dict(self) -> dict:
@@ -1096,7 +1116,7 @@ class LmfitSolve(LeastSquaresBase):
         noise: bool = True,
         weights: Series | None = None,
         **kwargs,
-    ) -> tuple[bool, ArrayLike, ArrayLike]:
+    ) -> tuple[bool, DataFrame]:
         """Solve method calling lmfit.Minimizer.minimize"""
 
         # Overwrite kwargs of init if parsed to solve
@@ -1152,7 +1172,16 @@ class LmfitSolve(LeastSquaresBase):
 
         idx = -1 if "is_weighted" in kwargs and not kwargs["is_weighted"] else None
 
-        return success, optimal[:idx], stderr[:idx]
+        result = DataFrame(
+            {
+                "optimal": optimal[:idx],
+                "stderr": stderr[:idx],
+            },
+            index=self.ml.parameters.index,
+            dtype=float,
+        )
+
+        return success, result
 
     def objfunction(
         self, parameters: DataFrame, noise: bool, weights: Series
@@ -1173,7 +1202,7 @@ class LmfitSolve(LeastSquaresBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        output: str | None = None,
+        all_options: bool = False,
     ) -> str:
         # nobs = self.result.ndata
         # aic = self.result.aic
@@ -1183,7 +1212,7 @@ class LmfitSolve(LeastSquaresBase):
             corr=corr,
             stderr=stderr,
             warnings=warnings,
-            output=output,
+            all_options=all_options,
             obj_func=obj_func,
         )
 

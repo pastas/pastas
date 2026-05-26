@@ -14,8 +14,6 @@ documentation of each recharge model.
 The classes defined here are designed to be used in conjunction with the stressmodel
 "RechargeModel", which requires an instance of one of the classes defined here.
 
-.. codeauthor:: R.A. Collenteur, University of Graz
-
 See Also
 --------
 pastas.stressmodels.RechargeModel
@@ -34,6 +32,7 @@ After solving a model, the simulated recharge flux can be obtained::
     rch_sim = ml.get_stress("rch")
 """
 
+from abc import ABC, abstractmethod
 from logging import getLogger
 
 import numpy as np
@@ -47,17 +46,28 @@ from .decorators import njit
 logger = getLogger(__name__)
 
 
-class RechargeBase:
+class RechargeBase(ABC):
     """Base class for classes that calculate the recharge."""
 
-    _name = "RechargeBase"
-
     def __init__(self) -> None:
-        self.snow = False
-        self.nparam = 0
-
-    def simulate(self, prec, evap, p, dt=1.0, return_full=False, **kwargs):
         pass
+
+    @property
+    def _name(self) -> str:
+        return self.__class__.__name__
+
+    @property
+    @abstractmethod
+    def nparam(self) -> int:
+        """Number of parameters of the recharge model."""
+
+    @abstractmethod
+    def get_init_parameters(self, name: str) -> DataFrame:
+        """Get initial parameters and bounds for the recharge model."""
+
+    @abstractmethod
+    def simulate(self, *args, **kwargs) -> ArrayLike | tuple[ArrayLike, ...]:
+        """Simulate recharge from precipitation and evaporation inputs."""
 
     def to_dict(self):
         """Method to export the recharge model object.
@@ -68,10 +78,7 @@ class RechargeBase:
             dictionary with all necessary information to reconstruct the StressModel
             object.
         """
-        data = {
-            "class": self._name,
-        }
-        return data
+        return {"class": self._name}
 
 
 class Linear(RechargeBase):
@@ -88,25 +95,14 @@ class Linear(RechargeBase):
 
     """
 
-    _name = "Linear"
-
     def __init__(self) -> None:
-        RechargeBase.__init__(self)
-        self.nparam = 1
+        super().__init__()
 
-    def get_init_parameters(self, name: str = "recharge") -> DataFrame:
-        """Method to obtain the initial parameters.
+    @property
+    def nparam(self) -> int:
+        return 1
 
-        Parameters
-        ----------
-        name: str, optional
-            String with the name that is used as prefix for the parameters.
-
-        Returns
-        -------
-        parameters: pandas.DataFrame
-            Pandas DataFrame with the parameters.
-        """
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             [(-1.0, -2.0, 0.0, True, name)],
             columns=["initial", "pmin", "pmax", "vary", "name"],
@@ -142,6 +138,9 @@ class Linear(RechargeBase):
         ea = multiply(evap, p)
         r = add(prec, multiply(evap, p))
         return DataFrame(data=vstack((prec, ea, -r)).T, columns=["P", "Ea", "R"])
+
+    def to_dict(self):
+        return super().to_dict()
 
 
 class FlexModel(RechargeBase):
@@ -191,36 +190,26 @@ class FlexModel(RechargeBase):
 
     """
 
-    _name = "FlexModel"
-
     def __init__(
         self, interception: bool = True, snow: bool = False, gw_uptake: bool = False
     ):
-        RechargeBase.__init__(self)
+        super().__init__()
         self.snow = snow
         self.interception = interception
         self.gw_uptake = gw_uptake
-        self.nparam = 5
+
+    @property
+    def nparam(self) -> int:
+        _nparam = 5
         if self.interception:
-            self.nparam += 1
+            _nparam += 1
         if self.gw_uptake:
-            self.nparam += 1
+            _nparam += 1
         if self.snow:
-            self.nparam += 2
+            _nparam += 2
+        return _nparam
 
-    def get_init_parameters(self, name: str = "recharge") -> DataFrame:
-        """Method to obtain the initial parameters.
-
-        Parameters
-        ----------
-        name: str, optional
-            String with the name that is used as prefix for the parameters.
-
-        Returns
-        -------
-        parameters: pandas.DataFrame
-            Pandas DataFrame with the parameters.
-        """
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             [
                 (250.0, 1e-5, 1e3, True, name),  # srmax
@@ -256,7 +245,7 @@ class FlexModel(RechargeBase):
         dt: float = 1.0,
         return_full: bool = False,
         **kwargs,
-    ) -> ArrayLike:
+    ) -> ArrayLike | tuple[ArrayLike, ...]:
         """Simulate the soil water balance model.
 
         Parameters
@@ -589,16 +578,7 @@ class FlexModel(RechargeBase):
         return error
 
     def to_dict(self):
-        """Method to export the recharge model object.
-
-        Returns
-        -------
-        data: dict
-            dictionary with all necessary information to reconstruct the recharge
-            object.
-        """
-        data = {
-            "class": self._name,
+        data = super().to_dict() | {
             "interception": self.interception,
             "snow": self.snow,
             "gw_uptake": self.gw_uptake,
@@ -630,25 +610,14 @@ class Berendrecht(RechargeBase):
 
     """
 
-    _name = "Berendrecht"
-
     def __init__(self) -> None:
-        RechargeBase.__init__(self)
-        self.nparam = 7
+        super().__init__()
 
-    def get_init_parameters(self, name: str = "recharge") -> DataFrame:
-        """Method to obtain the initial parameters.
+    @property
+    def nparam(self) -> int:
+        return 7
 
-        Parameters
-        ----------
-        name: str, optional
-            String with the name that is used as prefix for the parameters.
-
-        Returns
-        -------
-        parameters: pandas.DataFrame
-            Pandas DataFrame with the parameters.
-        """
+    def get_init_parameters(self, name: str) -> DataFrame:
         parameters = DataFrame(
             [
                 (0.9, 0.7, 1.3, False, name),  # fi
@@ -680,7 +649,7 @@ class Berendrecht(RechargeBase):
         dt: ArrayLike = 1.0,
         return_full: bool = False,
         **kwargs,
-    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
+    ) -> ArrayLike | tuple[ArrayLike, ...]:
         """Simulate the recharge flux.
 
         Parameters
@@ -811,25 +780,15 @@ class Peterson(RechargeBase):
 
     """
 
-    _name = "Peterson"
-
     def __init__(self) -> None:
-        RechargeBase.__init__(self)
-        self.nparam = 5
+        super().__init__()
 
-    def get_init_parameters(self, name: str = "recharge") -> DataFrame:
-        """Method to obtain the initial parameters.
+    @property
+    def nparam(self) -> int:
+        return 5
 
-        Parameters
-        ----------
-        name: str, optional
-            String with the name that is used as prefix for the parameters.
+    def get_init_parameters(self, name: str) -> DataFrame:
 
-        Returns
-        -------
-        parameters: pandas.DataFrame
-            Pandas DataFrame with the parameters.
-        """
         parameters = DataFrame(
             [
                 (1.5, 0.5, 3.0, True, name),  # scap
@@ -857,7 +816,7 @@ class Peterson(RechargeBase):
         dt: float = 1.0,
         return_full: bool = False,
         **kwargs,
-    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
+    ) -> ArrayLike | tuple[ArrayLike, ...]:
         """Simulate the recharge flux.
 
         Parameters
