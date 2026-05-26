@@ -1,7 +1,7 @@
 """Plotting methods for Pastas Models, including time series and diagnostics plots."""
 
 import logging
-from typing import Any, Literal
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -57,7 +57,6 @@ class Plotting:
         oseries: bool = True,
         simulation: bool = True,
         ax: Axes | None = None,
-        figsize: tuple[float, float] | None = None,
         legend: bool = True,
         **kwargs,
     ) -> Axes:
@@ -79,8 +78,6 @@ class Plotting:
             True to plot the simulated time series.
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
-        figsize: tuple, optional
-            Tuple with the height and width of the figure in inches.
         legend: bool, optional
             Boolean to determine to show the legend (True) or not (False).
 
@@ -93,8 +90,12 @@ class Plotting:
         --------
         >>> ml.plot()
         """
+
+        kwargs = {} or kwargs
         if ax is None:
-            _, ax = plt.subplots(figsize=figsize, **kwargs)
+            layout = kwargs.pop("layout", "tight")
+            figsize = kwargs.pop("figsize", (8.0, 4.0))
+            _, ax = plt.subplots(figsize=figsize, layout=layout, **kwargs)
 
         if oseries:
             o = self.ml.observations(tmin=tmin, tmax=tmax)
@@ -123,7 +124,7 @@ class Plotting:
 
         if legend:
             ax.legend(ncol=2, numpoints=3)
-        plt.tight_layout()
+
         return ax
 
     @model_tmin_tmax
@@ -131,233 +132,16 @@ class Plotting:
         self,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
-        figsize: tuple = (10, 8),
         split_contributions: bool = False,
         all_responses: bool = False,
         adjust_height: bool = True,
         return_warmup: bool = False,
+        add_ylabels: bool = False,
         block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
-        fig: Figure | None = None,
+        return_dict: bool = False,
         **kwargs,
-    ) -> Axes:
-        """Plot different results in one window to get a quick overview.
-
-        Parameters
-        ----------
-        tmin: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the start date for the period
-            (E.g. '1980-01-01 00:00:00'). Strings are converted to
-            pandas.Timestamp internally.
-        tmax: pandas.Timestamp or str, optional
-            A string or pandas.Timestamp with the end date for the period
-            (E.g. '2020-01-01 00:00:00'). Strings are converted to
-            pandas.Timestamp internally.
-        figsize: tuple, optional
-            tuple of size 2 to determine the figure size in inches.
-        split_contributions: bool, optional
-            Split the contributions in multiple stresses when possible. Default is
-            False.
-        all_responses: bool, optional
-            Plot all responses if True. If False, only the first response per
-            contribution is plotted. Default is False.
-        adjust_height: bool, optional
-            Adjust the height of the graphs, so that the vertical scale of all the
-            subplots on the left is equal. Default is True.
-        return_warmup: bool, optional
-            Show the warmup-period. Default is false.
-        block_or_step: {"block", "step"}, optional
-            Plot the block- or step-response on the right. Default is 'step'.
-        stderr : bool, optional
-            If True the standard error of the parameter values are shown. Please be
-            aware of the conditions for reliable uncertainty estimates, more
-            information here:
-            https://pastas.readthedocs.io/stable/examples/diagnostic_checking.html
-        fig: matplotib.Figure instance, optional
-            Optionally provide a matplotib.Figure instance to plot onto.
-        **kwargs: dict, optional
-            Optional arguments, passed on to the matplotlib.pyplot.figure method.
-
-        Returns
-        -------
-        list of matplotlib.axes.Axes
-
-        Examples
-        --------
-        >>> ml.plots.results()
-        """
-        if "split" in kwargs:
-            deprecate_args_or_kwargs(
-                name="split",
-                version="3.0.0",
-                reason="Use `split_contributions` instead.",
-            )
-            split_contributions = kwargs.pop("split")
-
-        # Number of rows to make the figure with
-        o = self.ml.observations(tmin=tmin, tmax=tmax)
-        o_nu = self.ml.oseries.series_original.drop(o.index)
-        if return_warmup:
-            o_nu = o_nu[tmin - self.ml.settings["warmup"] : tmax]
-        else:
-            o_nu = o_nu[tmin:tmax]
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax, return_warmup=return_warmup)
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        contribs = self.ml.get_contributions(
-            split=split_contributions,
-            tmin=tmin,
-            tmax=tmax,
-            return_warmup=return_warmup,
-        )
-
-        ylims = [
-            (
-                min([sim.min(), o[tmin:tmax].min()]),
-                max([sim.max(), o[tmin:tmax].max()]),
-            ),
-            (res.min(), res.max()),
-        ]  # residuals are bigger than noise
-
-        if adjust_height:
-            for contrib in contribs:
-                hs = contrib.loc[tmin:tmax]
-                if hs.empty:
-                    if contrib.empty:
-                        ylims.append((0.0, 0.0))
-                    else:
-                        ylims.append((contrib.min(), hs.max()))
-                else:
-                    ylims.append((hs.min(), hs.max()))
-            hrs = _get_height_ratios(ylims)
-        else:
-            hrs = [2] + [1] * (len(contribs) + 1)
-
-        # Make main Figure
-        if fig is None:
-            fig = plt.figure(figsize=figsize, **kwargs)
-
-        gs = fig.add_gridspec(
-            ncols=2, nrows=len(contribs) + 2, width_ratios=[2, 1], height_ratios=hrs
-        )
-
-        # Main frame
-        ax1 = fig.add_subplot(gs[0, 0])
-        o.plot(ax=ax1, linestyle="", marker=".", color="k", x_compat=True)
-        if not o_nu.empty:
-            # plot parts of the oseries that are not used in grey
-            o_nu.plot(
-                ax=ax1,
-                linestyle="",
-                marker=".",
-                color="0.5",
-                label="",
-                x_compat=True,
-                zorder=-1,
-            )
-
-        # add rsq to simulation
-        r2 = self.ml.stats.rsq(tmin=tmin, tmax=tmax)
-        sim.plot(ax=ax1, x_compat=True, label=f"{sim.name} ($R^2$={r2:.2%})")
-        ax1.legend(loc=(0, 1), ncol=3, frameon=False, numpoints=3)
-        ax1.set_ylim(ylims[0])
-        ax1.set_ylabel("Head")
-
-        # Residuals and noise
-        ax2 = fig.add_subplot(gs[1, 0], sharex=ax1)
-        ax2 = plot_series_with_gaps(res, ax=ax2, color="k")
-        if self.ml.noisemodel is not None:
-            noise = self.ml.noise(tmin=tmin, tmax=tmax)
-            ax2 = plot_series_with_gaps(noise, ax=ax2, color="C0")
-        ax2.axhline(0.0, color="k", linestyle="--", zorder=0)
-        ax2.legend(loc=(0, 1), ncol=3, frameon=False)
-
-        # Add a row for each stressmodel
-        rmax = 0.0  # tmax of the response
-        ax_response = None
-        i = 0
-        for sm in self.ml.stressmodels.values():
-            # plot the contribution
-            nsplit = sm.nsplit if split_contributions else 1
-            for istress in range(nsplit):
-                ax_contrib = fig.add_subplot(gs[i + 2, 0], sharex=ax1)
-                contribs[i].plot(ax=ax_contrib, x_compat=True)
-                ax_contrib.legend(loc=(0, 1), ncol=3, frameon=False)
-                ax_contrib.set_ylabel("Rise")
-                if adjust_height:
-                    ax_contrib.set_ylim(ylims[i + 2])
-                if not split_contributions:
-                    title = [stress.name for stress in sm.stresses]
-                    if len(title) > 3:
-                        title = title[:3] + ["..."]
-                    ax_contrib.set_title(
-                        f"Stresses: {title}",
-                        loc="right",
-                        fontsize=plt.rcParams["legend.fontsize"],
-                    )
-
-                ax_response = gs.figure.add_subplot(gs[i + 2, 1], sharex=ax_response)
-                ax_response = self._plot_response_in_results(
-                    sm=sm,
-                    block_or_step=block_or_step,
-                    ax=ax_response,
-                    istress=(
-                        istress
-                        if split_contributions
-                        else (None if all_responses else 0)
-                    ),
-                )
-                ax_response_xlim = ax_response.get_xlim()
-                rmax = max(rmax, ax_response_xlim[1])
-                ax_response.set_xlim(left=ax_response_xlim[0], right=rmax)
-                ax_response.legend(loc=(0, 1), ncol=2, frameon=False)
-                i += 1
-
-        # xlim sets minorticks back after plots:
-        ax1.minorticks_off()
-
-        # temporary fix, as set_xlim currently does not work with strings mpl=3.6.1
-        if tmin is not None:
-            tmin = Timestamp(tmin)
-        if tmax is not None:
-            tmax = Timestamp(tmax)
-
-        if return_warmup:
-            ax1.set_xlim(tmin - self.ml.settings["warmup"], tmax)
-        else:
-            ax1.set_xlim(tmin, tmax)
-
-        # sometimes, ticks suddenly appear on top plot, turn off just in case
-        plt.setp(ax1.get_xticklabels(), visible=False)
-
-        for ax in fig.axes:
-            ax.grid(True)
-
-        if isinstance(fig, plt.Figure):
-            fig.tight_layout(pad=0.0)  # before making the table
-
-        # plot parameters table
-        ax3 = fig.add_subplot(gs[0:2, 1])
-        _ = self._plot_parameters_table(ax=ax3, stderr=stderr)
-
-        return fig.axes
-
-    @model_tmin_tmax
-    def results_mosaic(
-        self,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        split_contributions: bool = False,
-        all_responses: bool = False,
-        stderr: bool = False,
-        block_or_step: Literal["block", "step"] = "step",
-        return_warmup: bool = False,
-        adjust_height: bool = True,
-        figsize: tuple[float, float] | None = None,
-        layout: (
-            Literal["constrained", "tight", "compressed", "none"] | None
-        ) = "constrained",
-        fig_kwargs: dict[str, Any] | None = None,
-    ) -> dict[str, Axes]:
+    ) -> dict[str, Axes] | list[Axes]:
         """Plot the results of the model in a mosaic plot.
 
         Parameters
@@ -376,18 +160,20 @@ class Plotting:
         all_responses: bool, optional
             Plot all responses if True. If False, only the first response per
             contribution is plotted. Default is False.
-        stderr : bool, optional
-            If True the standard error of the parameter values are shown.
-        block_or_step: {"block", "step"}, optional
-            Plot the block- or step-response on the right. Default is 'step'.
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all the
             subplots on the left is equal. Default is True.
         return_warmup: bool, optional
-            Show the warmup-period. Default is False.
-        figsize: tuple, optional
-            tuple of size 2 to determine the figure size in inches.
-
+            Show, not return, the warmup-period. Default is False.
+        add_ylabels: bool, optional
+            Add ylabels to the subplots. Default is False.
+        block_or_step: {"block", "step"}, optional
+            Plot the block- or step-response on the right. Default is 'step'.
+        stderr : bool, optional
+            If True the standard error of the parameter values are shown.
+        return_dict: bool, optional
+            If True, a dictionary with the axes is returned. If False, a list of
+            axes is returned. Default is False.
         **kwargs: dict, optional
             Optional arguments, passed on to the matplotlib.pyplot.figure method.
 
@@ -399,6 +185,13 @@ class Plotting:
         --------
         >>> ml.plots.results_mosaic()
         """
+        if "split" in kwargs:
+            deprecate_args_or_kwargs(
+                name="split",
+                version="2.2.0",
+                reason="Use `split_contributions` instead.",
+            )
+            split_contributions = kwargs.pop("split")
 
         tmin = Timestamp(tmin) if tmin is not None else None
         tmax = Timestamp(tmax) if tmax is not None else None
@@ -466,23 +259,32 @@ class Plotting:
             elif mos[0] in ("sim", "res"):
                 mos.append("tab")
 
-        fig_kwargs = {} if fig_kwargs is None else fig_kwargs
-        if "width_ratios" not in fig_kwargs:
-            fig_kwargs["width_ratios"] = [2.0, 1.0]
+        kwargs = {} or kwargs
+        width_ratios = kwargs.pop("width_ratios", [2.0, 1.0])
         height_ratios = (
             _get_height_ratios(list(ylims.values()))
             if adjust_height
-            else fig_kwargs.pop("height_ratios", None)
+            else kwargs.pop("height_ratios", None)
         )
-
-        figsize = (10, 4 + 2 * len(contribs)) if figsize is None else figsize
-        _, axd = plt.subplot_mosaic(
-            mosaic,
-            height_ratios=height_ratios,
-            layout=layout,
-            figsize=figsize,
-            **fig_kwargs,
-        )
+        figsize = kwargs.pop("figsize", (8.0, 4.0 + 2 * len(contribs)))
+        layout = kwargs.pop("layout", "constrained")
+        fig = kwargs.pop("fig", None)
+        if fig is None:
+            fig, axd = plt.subplot_mosaic(
+                mosaic=mosaic,
+                figsize=figsize,
+                layout=layout,
+                height_ratios=height_ratios,
+                width_ratios=width_ratios,
+                **kwargs,
+            )
+        else:
+            axd = fig.subplot_mosaic(
+                mosaic=mosaic,
+                height_ratios=height_ratios,
+                width_ratios=width_ratios,
+                **kwargs,
+            )
 
         # plot observations and simulation
         axd["sim"].plot(
@@ -545,11 +347,10 @@ class Plotting:
 
         # share x-axes of simulation, residuals and contributions
         share_xaxes([axd[k] for k in [x[0] for x in mosaic]])
-        (
+        if return_warmup:
             axd["sim"].set_xlim(tmin - self.ml.settings["warmup"], tmax)
-            if return_warmup
-            else axd["sim"].set_xlim(tmin, tmax)
-        )
+        else:
+            axd["sim"].set_xlim(tmin, tmax)
 
         # add legend to the upper response axes and share x-axes of responses
         response_axes = [axd[k] for k in [x[1] for x in mosaic] if k.startswith("rf_")]
@@ -564,15 +365,36 @@ class Plotting:
 
         for k in axd:
             axd[k].grid(True)
-            (
+            if k.startswith("rf_"):
                 axd[k].yaxis.tick_right()
-                if k.startswith("rf_")
-                else axd[k].yaxis.tick_left()
-            )
+                axd[k].yaxis.set_label_position("right")
+            if add_ylabels:
+                if k == "sim":
+                    axd[k].set_ylabel("Head")
+                elif k == "res":
+                    axd[k].set_ylabel("Error")
+                elif k.startswith("con_"):
+                    axd[k].set_ylabel("Rise")
+                elif k.startswith("rf_"):
+                    axd[k].set_ylabel("[unit head]/[unit stress]")
 
         _ = self._plot_parameters_table(ax=axd["tab"], stderr=stderr)
 
-        return axd
+        fig.align_ylabels()
+
+        return axd if return_dict else list(axd.values())
+
+    @PastasDeprecationWarning(
+        version="2.2.0", reason="Use `results` instead with the return_dict argument."
+    )
+    def results_mosaic(self, *args, **kwargs) -> dict[str, Axes]:
+        """Deprecated method to plot the results of the model in a mosaic plot.
+        Use `results` instead with the return_dict argument to specify the layout
+        of the mosaic plot.
+        """
+        kwargs = {} or kwargs
+        kwargs["return_dict"] = True
+        return self.results(*args, **kwargs)
 
     def _plot_response_in_results(
         self,
@@ -621,7 +443,7 @@ class Plotting:
     def _plot_parameters_table(self, ax: Axes, stderr: bool) -> None:
         """Internal method to plot the parameters table in the results-plot"""
         ax.set_title(
-            f"Model parameters ($n_c$={self.ml.parameters.vary.sum()})",
+            f"Model parameters ($N_c$={self.ml.parameters.vary.sum()})",
             loc="left",
             fontsize=plt.rcParams["legend.fontsize"],
         )
@@ -661,13 +483,12 @@ class Plotting:
         tmax: Timestamp | str | None = None,
         ytick_base: bool = True,
         split_contributions: bool = True,
-        figsize: tuple = (10, 8),
         axes: Axes | None = None,
         name: str | None = None,
         return_warmup: bool = False,
         min_ylim_diff: float | None = None,
         **kwargs,
-    ) -> Axes:
+    ) -> list[Axes]:
         """Plot the decomposition of a time-series in the different stresses.
 
         Parameters
@@ -686,8 +507,6 @@ class Plotting:
             Split the stresses in multiple stresses when possible. Default is True.
         axes: matplotlib.axes.Axes instance, optional
             Matplotlib Axes instance to plot the figure on to.
-        figsize: tuple, optional
-            tuple of size 2 to determine the figure size in inches.
         name: str, optional
             Name to give the simulated time series in the legend.
         return_warmup: bool, optional
@@ -701,6 +520,7 @@ class Plotting:
         -------
         axes: list of matplotlib.axes.Axes
         """
+        kwargs = {} or kwargs
         if "split" in kwargs:
             deprecate_args_or_kwargs(
                 name="split",
@@ -757,8 +577,15 @@ class Plotting:
         if axes is None:
             # open a new figure
             gridspec_kw = {"height_ratios": height_ratios}
+            layout = kwargs.pop("layout", "tight")
+            figsize = kwargs.pop("figsize", (8.0, 2.0 + 1.5 * len(contribs)))
             fig, axes = plt.subplots(
-                nrows, sharex=True, figsize=figsize, gridspec_kw=gridspec_kw, **kwargs
+                nrows=nrows,
+                sharex=True,
+                figsize=figsize,
+                gridspec_kw=gridspec_kw,
+                layout=layout,
+                **kwargs,
             )
             axes = np.atleast_1d(axes)
             o_label = o.name
@@ -833,16 +660,14 @@ class Plotting:
             if tmax is not None:
                 tmax = Timestamp(tmax)
             axes[0].set_xlim(tmin, tmax)
-        fig.tight_layout(pad=0.0)
 
-        return axes
+        return fig.axes
 
     @model_tmin_tmax
     def diagnostics(
         self,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
-        figsize: tuple = (10, 5),
         bins: int = 50,
         acf_options: dict | None = None,
         fig: Figure | None = None,
@@ -857,8 +682,6 @@ class Plotting:
             start time for which to calculate the residuals.
         tmax: pandas.Timestamp or str, optional
             end time for which to calculate the residuals.
-        figsize: tuple, optional
-            Tuple with the height and width of the figure in inches.
         bins: int optional
             number of bins used for the histogram. 50 is default.
         acf_options: dict, optional
@@ -907,7 +730,6 @@ class Plotting:
         return diagnostics(
             series=res,
             sim=sim,
-            figsize=figsize,
             bins=bins,
             fig=fig,
             acf_options=acf_options,
@@ -921,7 +743,6 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         ax: Axes | None = None,
-        figsize: tuple = (5, 2),
         **kwargs,
     ) -> Axes:
         """Plot the cumulative frequency for the observations and simulation.
@@ -940,8 +761,6 @@ class Plotting:
             pandas.Timestamp internally.
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
-        figsize: tuple, optional
-            Tuple with the height and width of the figure in inches.
         **kwargs:
             Passed on to plot_cum_frequency.
 
@@ -955,13 +774,12 @@ class Plotting:
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return cum_frequency(obs, sim, ax=ax, figsize=figsize, **kwargs)
+        return cum_frequency(obs=obs, sim=sim, ax=ax, **kwargs)
 
     def block_response(
         self,
         stressmodels: list[str] | None = None,
         ax: Axes | None = None,
-        figsize: tuple[float, float] | None = None,
         legend: bool = True,
         **kwargs,
     ) -> Axes:
@@ -983,7 +801,9 @@ class Plotting:
         matplotlib.axes.Axes
             matplotlib axes instance.
         """
+        kwargs = {} or kwargs
         if ax is None:
+            figsize = kwargs.pop("figsize", (5.0, 3.0))
             _, ax = plt.subplots(figsize=figsize, **kwargs)
 
         if not stressmodels:
@@ -1061,7 +881,7 @@ class Plotting:
         sharex: bool = True,
         figsize: tuple = (10, 8),
         **kwargs,
-    ) -> Axes:
+    ) -> list[Axes]:
         """This method creates a graph with all the stresses used in the model.
 
         Parameters
@@ -1085,8 +905,8 @@ class Plotting:
 
         Returns
         -------
-        axes: matplotlib.axes.Axes
-            matplotlib axes instance.
+        axes: list[matplotlib.axes.Axes]
+            List of matplotlib axes instances.
         """
         stresses = _get_stress_series(self.ml, split=split)
 
@@ -1103,11 +923,9 @@ class Plotting:
         for ax, stress in zip(axes, stresses):
             stress.plot(ax=ax)
             ax.legend([stress.name], loc=2)
+            ax.set_xlim(tmin, tmax)
 
-        plt.xlim(tmin, tmax)
-        fig.tight_layout(pad=0.0)
-
-        return axes
+        return fig.axes
 
     @PastasDeprecationWarning(
         version="1.6.0",
@@ -1209,12 +1027,11 @@ class Plotting:
         self,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
-        figsize: tuple = (10, 8),
         stackcolors: dict[str, str] | list[str] | None = None,
         stacklegend: bool = False,
         stacklegend_kws: dict | None = None,
         **kwargs,
-    ) -> Axes:
+    ) -> list[Axes]:
         """Create a results plot, similar to `ml.plots.results()`, in which the
         individual contributions of stresses (in stressmodels with multiple stresses)
         are stacked.
@@ -1229,7 +1046,6 @@ class Plotting:
             A string or pandas.Timestamp with the end date for the period
             (E.g. '2020-01-01 00:00:00'). Strings are converted to
             pandas.Timestamp internally.
-        figsize : tuple, optional
         stackcolors : dict or list, optional
             Either dictionary with stress names as keys and colors as values, or a
             list of colors. By default None which applies colors according to the
@@ -1246,70 +1062,62 @@ class Plotting:
         axes: list of axes objects
         """
 
-        # Contribution per stress on model results plot
-        def custom_sort(t):
-            """Sort by mean contribution."""
-            return t[1].mean()
-
         # Create standard results plot
-        axes = self.ml.plots.results(tmin=tmin, tmax=tmax, figsize=figsize, **kwargs)
-
-        nsm = len(self.ml.stressmodels)
-
+        kwargs["return_dict"] = True
+        axd = self.ml.plots.results(tmin=tmin, tmax=tmax, **kwargs)
         # loop over axes showing stressmodel contributions
-        for i, sm in zip(range(3, 3 + 2 * nsm, 2), self.ml.stressmodels.keys()):
+        for sm_name, sm in self.ml.stressmodels.items():
             # Get the contributions for StressModels with multiple stresses
-            contributions = []
-            sml = self.ml.stressmodels[sm]
-            if (len(sml.stresses) > 0) and (sml._name == "WellModel"):
+            contributions = {}
+            if sm.stresses and (sm._name == "WellModel"):
                 if stackcolors is None:
                     stackcolors = {
-                        wnam: f"C{iw + 1}"
-                        for iw, wnam in enumerate(sml.distances.index)
+                        wnam: f"C{i + 1}" for i, wnam in enumerate(sm.stresses._fields)
                     }
-                    stackcolors[sm] = "C0"  # add backup for single-stress WellModels
-                elif isinstance(stackcolors, list):
-                    stackcolors = {
-                        name: icolor
-                        for name, icolor in zip(sml.distances.index, stackcolors)
-                    }
+                    stackcolors[sm_name] = (
+                        "C0"  # add backup for single-stress WellModels
+                    )
+                elif isinstance(stackcolors, (list, tuple)):
+                    stackcolors = dict(zip(sm.stresses._fields, stackcolors))
                 elif not isinstance(stackcolors, dict):
                     raise TypeError("stackcolors must be None, list, or dict.")
-                nsplit = sml.nsplit
-                if nsplit > 1:
-                    ax_step = axes[i]  # step response axis
-                    ax_step.lines[0].remove()  # remove step response for r=1 m
-                    for istress in range(len(sml.stresses)):
+                if sm.nsplit > 1:
+                    axd[f"rf_{sm_name}"].lines[
+                        0
+                    ].remove()  # remove step response for r=1 m
+                    for istress in range(len(sm.stresses)):
                         h = self.ml.get_contribution(
-                            sm, istress=istress, tmin=tmin, tmax=tmax
+                            sm_name, istress=istress, tmin=tmin, tmax=tmax
                         )
-                        name = sml.stresses[istress].name
-                        if name is None:
-                            name = sm
-                        contributions.append((name, h))
+                        name = sm.stresses[istress].name
+                        name = sm if name is None else name
+                        contributions[name] = h
 
                         # plot step responses for each well, scaled with distance
-                        p = sml.get_parameters(model=self.ml, istress=istress)
-                        step = self.ml.get_step_response(sm, p=p)
-                        ax_step.plot(step.index, step, c=stackcolors[name], label=name)
-                        # recalculate y-limits step response axes
-                        ax_step.relim()
+                        p = sm.get_parameters(model=self.ml, istress=istress)
+                        step = self.ml.get_step_response(sm_name, p=p)
+                        axd[f"rf_{sm_name}"].plot(
+                            step.index, step, c=stackcolors[name], label=name
+                        )
+                        axd[f"rf_{sm_name}"].relim()
                 else:
-                    h = self.ml.get_contribution(sm, tmin=tmin, tmax=tmax)
-                    name = sm
-                    contributions.append((name, h))
-
-                contributions.sort(key=custom_sort)
+                    contributions[sm_name] = self.ml.get_contribution(
+                        sm_name, tmin=tmin, tmax=tmax
+                    )
+                contributions_df = concat(contributions, axis=1, sort=False)
+                order = contributions_df.mean(axis=0).sort_values(ascending=False).index
+                contributions_df = contributions_df[order]
 
                 # add stacked plot to correct axes
-                ax = axes[i - 1]
-                ax.lines[0].remove()  # delete existing line
+                axd[f"con_{sm_name}"].lines[0].remove()  # delete existing line
 
-                names = [c[0] for c in contributions]  # get names
-                contrib = [c[1] for c in contributions]  # get time series
-                vstack = concat(contrib, axis=1, sort=False)
-                colors = [stackcolors[name] for name in names]
-                ax.stackplot(vstack.index, vstack.values.T, colors=colors, labels=names)
+                colors = [stackcolors[name] for name in contributions_df.columns]
+                axd[f"con_{sm_name}"].stackplot(
+                    contributions_df.index,
+                    contributions_df.values.T,
+                    colors=colors,
+                    labels=contributions_df.columns,
+                )
                 if stacklegend:
                     if stacklegend_kws is None:
                         stacklegend_kws = {}
@@ -1317,16 +1125,18 @@ class Plotting:
                     fontsize = stacklegend_kws.pop("fontsize", 6)
                     loc = stacklegend_kws.pop("loc", "best")
 
-                    ax.legend(loc=loc, ncol=ncol, fontsize=fontsize, **stacklegend_kws)
+                    axd[f"con_{sm_name}"].legend(
+                        loc=loc, ncol=ncol, fontsize=fontsize, **stacklegend_kws
+                    )
 
                 # y-scale does not show 0
-                ylower, yupper = ax.get_ylim()
+                ylower, yupper = axd[f"con_{sm_name}"].get_ylim()
                 if (ylower < 0) and (yupper < 0):
-                    ax.set_ylim(top=0)
+                    axd[f"con_{sm_name}"].set_ylim(top=0)
                 elif (ylower > 0) and (yupper > 0):
-                    ax.set_ylim(bottom=0)
+                    axd[f"con_{sm_name}"].set_ylim(bottom=0)
 
-        return axes
+        return list(axd.values())
 
     @model_tmin_tmax
     def series(
@@ -1363,8 +1173,8 @@ class Plotting:
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         stresses = _get_stress_series(self.ml, split=split)
-        axes = series(obs, stresses=stresses, **kwargs)
-        return axes
+        ax = series(obs, stresses=stresses, **kwargs)
+        return ax
 
     @model_tmin_tmax
     def summary(
@@ -1400,24 +1210,15 @@ class Plotting:
         fig: matplotlib.pyplot.Figure instance
         """
 
-        if results_kwargs is None:
-            results_kwargs = {}
+        fig = plt.figure(figsize=(8.27, 11.69), dpi=50, layout="constrained")
+        fig1, fig2 = fig.subfigures(2, 1, height_ratios=[2, 1], hspace=0.08)
 
-        if diagnostics_kwargs is None:
-            diagnostics_kwargs = {}
-
-        fig = plt.figure(figsize=(8.27, 11.69), dpi=50)
-
-        fig1, fig2 = fig.subfigures(2, 1, height_ratios=[1.25, 1.0])
-
-        self.results(fig=fig1, tmin=tmin, tmax=tmax, **results_kwargs)
-        self.diagnostics(fig=fig2, tmin=tmin, tmax=tmax, **diagnostics_kwargs)
-        fig2.subplots_adjust(wspace=0.2)
+        self.results(fig=fig1, tmin=tmin, tmax=tmax, **results_kwargs or {})
+        self.diagnostics(fig=fig2, tmin=tmin, tmax=tmax, **diagnostics_kwargs or {})
 
         fig1.suptitle("Model Results", fontweight="bold")
         fig2.suptitle("Model Diagnostics", fontweight="bold")
 
-        plt.subplots_adjust(left=0.1, top=0.9, right=0.95, bottom=0.1)
         return fig
 
     @model_tmin_tmax
@@ -1456,15 +1257,14 @@ class Plotting:
         fig: matplotlib.pyplot.Figure instance
         """
         fname = "{}.pdf".format(self.ml.name) if fname is None else fname
-        pdf = PdfPages(fname)
         fig = self.summary(
             tmin=tmin,
             tmax=tmax,
             results_kwargs=results_kwargs,
             diagnostics_kwargs=diagnostics_kwargs,
         )
-        pdf.savefig(fig, orientation="portrait", dpi=dpi)
-        pdf.close()
+        with PdfPages(fname) as pdf:
+            pdf.savefig(fig, orientation="portrait", dpi=dpi)
         return fig
 
     @model_tmin_tmax
@@ -1510,7 +1310,7 @@ class Plotting:
         istress: int | None = None,
         ax: Axes | None = None,
         **kwargs,
-    ):
+    ) -> dict[str, Axes]:
         """Plot the contribution of a stressmodel and optionally the stress and the response.
 
         Parameters
@@ -1554,23 +1354,26 @@ class Plotting:
 
         if ax is None:
             if plot_response:
-                _, axes = plt.subplot_mosaic(
-                    [["con", "con", "con", "con", "rf"]],
+                _, axd = plt.subplot_mosaic(
+                    [["con", "rf"]],
+                    width_ratios=[4, 1],
                     constrained_layout=True,
-                    figsize=(10, 2),
+                    figsize=(8.0, 2.0),
                 )
 
             else:
-                _, axes = plt.subplot_mosaic(
+                _, axd = plt.subplot_mosaic(
                     [["con"]],
                     constrained_layout=True,
-                    figsize=(10, 2),
+                    figsize=(8.0, 2.0),
                 )
         else:
             if not isinstance(ax, dict):
-                axes = {"con": ax}
+                axd = {"con": ax}
+            else:
+                axd = ax
 
-        axes["con"].plot(c.index, c, label=f"contribution {c.name}")
+        axd["con"].plot(c.index, c, label=f"contribution {c.name}")
 
         if plot_stress:
             sm = self.ml.stressmodels[name]
@@ -1595,10 +1398,10 @@ class Plotting:
             up = 1.0 if sm.rfunc.up in [True, None] else -1.0
 
             # add second axes for stress
-            axes["stress"] = axes["con"].twinx()
+            axd["stress"] = axd["con"].twinx()
             if "c" not in kwargs:
                 color = kwargs.pop("color", (0.4, 0.4, 0.4))
-            axes["stress"].plot(
+            axd["stress"].plot(
                 s.index,
                 up * s,
                 color=color,
@@ -1606,43 +1409,43 @@ class Plotting:
                 label="stress",
                 **kwargs,
             )
-            axes["stress"].set_ylabel(f"stress '{stress_name}'")
+            axd["stress"].set_ylabel(f"stress '{stress_name}'")
             # flip order of stress and contributions axes (contributions on top)
-            axes["con"].patch.set_visible(False)
-            axes["stress"].patch.set_visible(True)
-            axes["con"].set_zorder(axes["stress"].get_zorder() + 1)
+            axd["con"].patch.set_visible(False)
+            axd["stress"].patch.set_visible(True)
+            axd["con"].set_zorder(axd["stress"].get_zorder() + 1)
             # add both lines to legend
-            h1, l1 = axes["con"].get_legend_handles_labels()
-            h2, l2 = axes["stress"].get_legend_handles_labels()
-            axes["con"].legend(
+            h1, l1 = axd["con"].get_legend_handles_labels()
+            h2, l2 = axd["stress"].get_legend_handles_labels()
+            axd["con"].legend(
                 h1 + h2, l1 + l2, loc=(0, 1), frameon=False, ncol=2, fontsize="small"
             )
         else:
-            axes["con"].legend(loc=(0, 1), frameon=False, ncol=1, fontsize="small")
+            axd["con"].legend(loc=(0, 1), frameon=False, ncol=1, fontsize="small")
 
         if plot_response:
-            if "rf" not in axes:
+            if "rf" not in axd:
                 raise ValueError(
                     "No axes defined for response. "
                     "Provide a dictionary containing axes with 'con' and 'rf' as keys."
                 )
             if block_or_step == "step":
-                self.step_response(stressmodels=[name], ax=axes["rf"], legend=False)
+                self.step_response(stressmodels=[name], ax=axd["rf"], legend=False)
             else:
-                self.block_response(stressmodels=[name], ax=axes["rf"], legend=False)
-            axes["rf"].yaxis.set_label_position("right")
-            axes["rf"].yaxis.tick_right()
-            h3, _ = axes["rf"].get_legend_handles_labels()
+                self.block_response(stressmodels=[name], ax=axd["rf"], legend=False)
+            axd["rf"].yaxis.set_label_position("right")
+            axd["rf"].yaxis.tick_right()
+            h3, _ = axd["rf"].get_legend_handles_labels()
             if len(h3) == 1:
-                axes["rf"].legend(
+                axd["rf"].legend(
                     h3,
                     [f"{block_or_step} response"],
                     loc=(0, 1),
                     frameon=False,
                     fontsize="small",
                 )
-            axes["rf"].grid(True)
+            axd["rf"].grid(True)
 
-        axes["con"].grid(True)
-        axes["con"].set_ylabel("rise")
-        return axes
+        axd["con"].grid(True)
+        axd["con"].set_ylabel("rise")
+        return axd
