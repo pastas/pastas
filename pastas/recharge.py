@@ -89,7 +89,6 @@ class Linear(RechargeBase):
     """
 
     _name = "Linear"
-    _supports_complex_step: bool = True
 
     def __init__(self) -> None:
         RechargeBase.__init__(self)
@@ -193,7 +192,6 @@ class FlexModel(RechargeBase):
     """
 
     _name = "FlexModel"
-    _supports_complex_step: bool = True
 
     def __init__(
         self, interception: bool = True, snow: bool = False, gw_uptake: bool = False
