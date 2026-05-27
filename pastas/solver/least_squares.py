@@ -503,26 +503,6 @@ class LeastSquaresBase(SolverBase):
         """
         pass
 
-    def misfit(
-        self,
-        p: ArrayLike,
-        noise: bool,
-        weights: Series | None = None,
-        callback: CallBack | None = None,
-        returnseparate: bool = False,
-    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
-        """
-        Wrapper for the shared `objfunction` to calculate residuals or noise.
-        """
-        return misfit(
-            ml=self.ml,
-            p=p,
-            noise=noise,
-            weights=weights,
-            callback=callback,
-            returnseparate=returnseparate,
-        )
-
     def fit_report(
         self,
         corr: bool = False,
