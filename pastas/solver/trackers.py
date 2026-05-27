@@ -1,4 +1,4 @@
-"""Place to put TrackSolve"""
+"""Callback methods to track solver progress and visualize it interactively."""
 
 import logging
 
@@ -30,6 +30,8 @@ class TrackSolve:
     update_iter : int, optional
         if visualizing optimization progress, update plot every update_iter
         iterations, by default nparam
+    pause : float, optional
+        pause time for plot update, set to 0 for no pause, by default 1e-10
 
     Notes
     -----
