@@ -81,7 +81,7 @@ class ThresholdTransform:
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
-        self.parameters.loc[self.name + "_1"] = (
+        self.parameters.loc[self.name + "_d"] = (
             self.value,
             self.vmin,
             self.vmax,
@@ -89,7 +89,7 @@ class ThresholdTransform:
             self.name,
         )
         if self.nparam == 2:
-            self.parameters.loc[self.name + "_2"] = (0.5, 0.0, 1.0, True, self.name)
+            self.parameters.loc[self.name + "_f"] = (0.5, 0.0, 1.0, True, self.name)
 
     @set_parameter
     def _set_initial(self, name: str, value: float) -> None:
