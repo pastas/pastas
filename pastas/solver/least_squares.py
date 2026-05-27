@@ -1074,8 +1074,8 @@ class LeastSquares(LeastSquaresBase):
 class LmfitSolve(LeastSquaresBase):
     """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
-    This is basically a wrapper around the scipy solvers, adding some cool
-    functionality for boundary conditions.
+    This is basically a wrapper around the SciPy Levenberg Marquardt solver ("leastsq").
+    Lmfit adds some functionality for gracefully handling boundary conditions.
 
     Notes
     -----
