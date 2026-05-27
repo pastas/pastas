@@ -1138,7 +1138,7 @@ class Model:
         optimal: float, optional
             optimal value for the parameter.
         move_bounds: bool, optional
-            Reset pmin/pmax based on new initial value. Of move_bounds=True,
+            Reset pmin/pmax based on new initial value. If move_bounds=True,
             pmin and pmax must be None.
         kwargs: dict, optional
             These keyword arguments can be used to change any other parameter
