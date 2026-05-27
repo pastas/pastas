@@ -1672,12 +1672,12 @@ class RechargeModel(StressModelBase):
         self.set_init_parameters()
 
         # Check if precipitation is likely in mm/d and not m/d. If the maximum
-        # value of the annual sums is smaller than 12 (m/d), the highest annual
+        # value of the annual sums is smaller than 12 (m), the highest annual
         # precipitation in the world, then the precipitation is very likely in m/d
         # and not in mm/d. In this case a warning is given for nonlinear models.
         if self.prec.series.resample("YE").sum().max() < 12:
             msg = (
-                "The maximum annual precipitation is smaller than 12 m/d. Please "
+                "The maximum annual precipitation is smaller than 12 m. Please "
                 "double-check if the stresses are in mm/d and not in m/d."
             )
             logger.warning(msg)

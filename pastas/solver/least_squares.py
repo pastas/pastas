@@ -14,7 +14,7 @@ from scipy.optimize import Bounds, OptimizeResult, least_squares
 
 from pastas.decorators import temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
-from pastas.typing import ArrayLike, CallBack
+from pastas.typing import ArrayLike
 
 from .base import SolverBase
 from .objective_function import misfit
@@ -265,16 +265,19 @@ class LeastSquaresBase(SolverBase):
         Parameters
         ----------
         n: int, optional
-            Number of random samples drawn from the bivariate normal distribution to compute the prediction interval. Default is 1000.
+            Number of random samples drawn from the bivariate normal distribution to
+            compute the prediction interval. Default is 1000.
         alpha: float, optional
-            Significance level for the prediction interval. Default is 0.05, which corresponds to a 95% prediction interval.
+            Significance level for the prediction interval. Default is 0.05, which
+            corresponds to a 95% prediction interval.
         max_iter: int, optional
-            maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
-
+            maximum number of iterations for truncated multivariate sampling, default
+            is 10. Increase this value if number of accepted parameter samples is
+            lower than n.
         **kwargs
             Additional keyword arguments are passed to the `ml.simulate()` method.
-            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
-            the prediction interval for a specific period.
+            For example, `tmin` and `tmax` can be passed as keyword arguments to
+            compute the prediction interval for a specific period.
 
         Returns
         -------
@@ -308,11 +311,15 @@ class LeastSquaresBase(SolverBase):
         Parameters
         ----------
         n: int, optional
-            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+            Number of random samples drawn from the bivariate normal distribution to
+            compute the confidence interval. Default is 1000.
         alpha: float, optional
-            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+            Significance level for the confidence interval. Default is 0.05, which
+            corresponds to a 95% confidence interval.
         max_iter: int, optional
-            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+            Maximum number of iterations for truncated multivariate sampling, default
+            is 10. Increase this value if number of accepted parameter samples is
+            lower than n.
         **kwargs
             Additional keyword arguments are passed to the `ml.simulate()` method.
             For example, `tmin` and `tmax` can be passed as keyword arguments to compute
@@ -351,11 +358,15 @@ class LeastSquaresBase(SolverBase):
         name: str
             Name of the block response for which to calculate the confidence interval.
         n: int, optional
-            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+            Number of random samples drawn from the bivariate normal distribution to
+            compute the confidence interval. Default is 1000.
         alpha: float, optional
-            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+            Significance level for the confidence interval. Default is 0.05, which
+            corresponds to a 95% confidence interval.
         max_iter: int, optional
-            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+            Maximum number of iterations for truncated multivariate sampling, default
+            is 10. Increase this value if number of accepted parameter samples is
+            lower than n.
         **kwargs
             Additional keyword arguments are passed to the `ml.get_block_response()` method.
 
@@ -503,38 +514,21 @@ class LeastSquaresBase(SolverBase):
         """
         pass
 
-    def misfit(
-        self,
-        p: ArrayLike,
-        noise: bool,
-        weights: Series | None = None,
-        callback: CallBack | None = None,
-        returnseparate: bool = False,
-    ) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
-        """
-        Wrapper for the shared `objfunction` to calculate residuals or noise.
-        """
-        return misfit(
-            ml=self.ml,
-            p=p,
-            noise=noise,
-            weights=weights,
-            callback=callback,
-            returnseparate=returnseparate,
-        )
-
     def fit_report(
         self,
+        full_output: bool = False,
         corr: bool = False,
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        all_options: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
         Parameters
         ----------
+        full_output : bool, optional
+            If True, all options are shown in the fit report. This is a shortcut for
+            `corr=True`, `stderr=True`, and `warnings=True`.
         corr : bool, optional
             If True the parameter correlations are shown.
         stderr : bool, optional
@@ -545,9 +539,6 @@ class LeastSquaresBase(SolverBase):
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        all_options : bool, optional
-            If True, all options are shown in the fit report. This is a shortcut for
-            `corr=True`, `stderr=True`, and `warnings=True`.
         obj_func : float, optional
             Value of the found minimal loss function value from the
             optimization algorithm. Generally obtained from the result attribute
@@ -593,7 +584,7 @@ class LeastSquaresBase(SolverBase):
             "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
         }
 
-        if all_options:
+        if full_output:
             corr = True
             stderr = True
             warnings = True
@@ -922,9 +913,7 @@ class LeastSquares(LeastSquaresBase):
 
         Notes
         -----
-        This method is copied from Scipy (version 1.14.1):
-        https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py
-        Please refer to the SciPy optimization module::
+        This method is copied from Scipy. Please refer to the SciPy optimization module::
         https://docs.scipy.org/doc/scipy/reference/optimize.html
 
         This method uses SVD (for trf/dogbox) or QR decomposition (for lm) to
@@ -944,7 +933,7 @@ class LeastSquares(LeastSquaresBase):
         s_sq = cost / (nobs - npar)  # variance of the residuals
 
         if method == "lm":
-            # https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py#L480C9-L499C38
+            # https://github.com/scipy/scipy/blob/939e3891a3aea61bf84a50d3da520ca7adf93ecc/scipy/optimize/_minpack_py.py#L481-L501
             # fjac A permutation of the R matrix of a QR factorization of the
             # final approximate Jacobian matrix.
             _, fjac = np.linalg.qr(jacobian)
@@ -980,7 +969,7 @@ class LeastSquares(LeastSquaresBase):
             except (LinAlgError, ValueError):
                 pcov = None
         else:
-            # https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py#L1029-L1055
+            # https://github.com/scipy/scipy/blob/939e3891a3aea61bf84a50d3da520ca7adf93ecc/scipy/optimize/_minpack_py.py#L1045-L1068
             # Do Moore-Penrose inverse discarding zero singular values.
             _, s, VT = svd(jacobian, full_matrices=False)
             threshold = np.finfo(float).eps * max(jacobian.shape) * s[0]
@@ -1015,7 +1004,7 @@ class LeastSquares(LeastSquaresBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        all_options: bool = False,
+        full_output: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -1031,7 +1020,7 @@ class LeastSquares(LeastSquaresBase):
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        all_options : bool, optional
+        full_output : bool, optional
             If True, all options are shown in the fit report. This is a shortcut for
             `corr=True`, `stderr=True`, and `warnings=True`.
 
@@ -1059,7 +1048,7 @@ class LeastSquares(LeastSquaresBase):
             stderr=stderr,
             warnings=warnings,
             obj_func=obj_func,
-            all_options=all_options,
+            full_output=full_output,
         )
 
     def to_dict(self) -> dict:
@@ -1083,8 +1072,8 @@ class LeastSquares(LeastSquaresBase):
 class LmfitSolve(LeastSquaresBase):
     """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
-    This is basically a wrapper around the scipy solvers, adding some cool
-    functionality for boundary conditions.
+    This is basically a wrapper around the SciPy Levenberg Marquardt solver ("leastsq").
+    Lmfit adds some functionality for gracefully handling boundary conditions.
 
     Notes
     -----
@@ -1202,7 +1191,7 @@ class LmfitSolve(LeastSquaresBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        all_options: bool = False,
+        full_output: bool = False,
     ) -> str:
         # nobs = self.result.ndata
         # aic = self.result.aic
@@ -1212,7 +1201,7 @@ class LmfitSolve(LeastSquaresBase):
             corr=corr,
             stderr=stderr,
             warnings=warnings,
-            all_options=all_options,
+            full_output=full_output,
             obj_func=obj_func,
         )
 
