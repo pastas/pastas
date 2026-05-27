@@ -130,11 +130,10 @@ def _load_model(data: dict) -> Model:
     # Add noisemodel if present
     if "noisemodel" in data.keys():
         # fixes to read pas-files from before pastas version 1.5
-        # TODO: uncomment in pastas 2.0.0
-        # if data["noisemodel"]["class"] == "NoiseModel":
-        #     data["noisemodel"]["class"] = "ArNoiseModel"
-        # if data["noisemodel"]["class"] == "ArmaModel":
-        #     data["noisemodel"]["class"] = "ArmaNoiseModel"
+        if data["noisemodel"]["class"] == "NoiseModel":
+            data["noisemodel"]["class"] = "ArNoiseModel"
+        elif data["noisemodel"]["class"] == "ArmaModel":
+            data["noisemodel"]["class"] = "ArmaNoiseModel"
         n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
         ml.add_noisemodel(n)
 
@@ -143,6 +142,7 @@ def _load_model(data: dict) -> Model:
         if solver_key not in data:
             continue
         if solver_key == "fit":
+            # TODO: Deprecate if pas-files < 1.3 are no longer supported
             logger.warning(
                 "The solver object is stored in the model.solver attribute since Pastas "
                 "1.3. Please update your pas-file to the new format by loading and saving "
@@ -156,6 +156,7 @@ def _load_model(data: dict) -> Model:
     file_parameters = data["parameters"].copy()
 
     # Fix old parameter names for One response functions to match the naming convention from Pastas 2.0
+    # TODO: Deprecate if pas-files < 2.0 are no longer supported
     for rfunc_one_sm_name in rfunc_one_sm_names:
         if f"{rfunc_one_sm_name}_d" in file_parameters.index:
             logger.warning(
