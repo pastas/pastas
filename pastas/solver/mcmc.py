@@ -22,7 +22,7 @@ class EmceeSolve(SolverBase):
 
     Parameters
     ----------
-    objfunction: func, optional
+    objfunction: pastas.solver.likelihood function, optional
         An objective function to be minimized. See the pastas.likelihood_functions module for more information.
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
@@ -75,7 +75,7 @@ class EmceeSolve(SolverBase):
     emcee.EnsembleSampler
     emcee.moves
     emcee.backend
-    pastas.objective_functions
+    pastas.solver.objective_function
 
     """
 
