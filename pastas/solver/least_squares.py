@@ -265,16 +265,19 @@ class LeastSquaresBase(SolverBase):
         Parameters
         ----------
         n: int, optional
-            Number of random samples drawn from the bivariate normal distribution to compute the prediction interval. Default is 1000.
+            Number of random samples drawn from the bivariate normal distribution to
+            compute the prediction interval. Default is 1000.
         alpha: float, optional
-            Significance level for the prediction interval. Default is 0.05, which corresponds to a 95% prediction interval.
+            Significance level for the prediction interval. Default is 0.05, which
+            corresponds to a 95% prediction interval.
         max_iter: int, optional
-            maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
-
+            maximum number of iterations for truncated multivariate sampling, default
+            is 10. Increase this value if number of accepted parameter samples is
+            lower than n.
         **kwargs
             Additional keyword arguments are passed to the `ml.simulate()` method.
-            For example, `tmin` and `tmax` can be passed as keyword arguments to compute
-            the prediction interval for a specific period.
+            For example, `tmin` and `tmax` can be passed as keyword arguments to
+            compute the prediction interval for a specific period.
 
         Returns
         -------
@@ -308,11 +311,15 @@ class LeastSquaresBase(SolverBase):
         Parameters
         ----------
         n: int, optional
-            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+            Number of random samples drawn from the bivariate normal distribution to
+            compute the confidence interval. Default is 1000.
         alpha: float, optional
-            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+            Significance level for the confidence interval. Default is 0.05, which
+            corresponds to a 95% confidence interval.
         max_iter: int, optional
-            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+            Maximum number of iterations for truncated multivariate sampling, default
+            is 10. Increase this value if number of accepted parameter samples is
+            lower than n.
         **kwargs
             Additional keyword arguments are passed to the `ml.simulate()` method.
             For example, `tmin` and `tmax` can be passed as keyword arguments to compute
@@ -351,11 +358,15 @@ class LeastSquaresBase(SolverBase):
         name: str
             Name of the block response for which to calculate the confidence interval.
         n: int, optional
-            Number of random samples drawn from the bivariate normal distribution to compute the confidence interval. Default is 1000.
+            Number of random samples drawn from the bivariate normal distribution to
+            compute the confidence interval. Default is 1000.
         alpha: float, optional
-            Significance level for the confidence interval. Default is 0.05, which corresponds to a 95% confidence interval.
+            Significance level for the confidence interval. Default is 0.05, which
+            corresponds to a 95% confidence interval.
         max_iter: int, optional
-            Maximum number of iterations for truncated multivariate sampling, default is 10. Increase this value if number of accepted parameter samples is lower than n.
+            Maximum number of iterations for truncated multivariate sampling, default
+            is 10. Increase this value if number of accepted parameter samples is
+            lower than n.
         **kwargs
             Additional keyword arguments are passed to the `ml.get_block_response()` method.
 
