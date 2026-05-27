@@ -996,7 +996,7 @@ class Model:
 
         if report:
             if isinstance(report, str) and report == "full":
-                print(self.fit_report(all_options=True))
+                print(self.fit_report(full_output=True))
             elif isinstance(report, dict):
                 print(self.fit_report(**report))
             else:
@@ -2110,14 +2110,14 @@ class Model:
 
     def fit_report(
         self,
-        all_options: bool = False,
+        full_output: bool = False,
         **kwargs,
     ) -> str:
         """Fit report of the model solve.
 
         Parameters
         ----------
-        all_options: bool, optional
+        full_output: bool, optional
             If True, a full fit report is generated with all the optional features from
             the solvers' fit report set to True.
         **kwargs:
@@ -2138,16 +2138,16 @@ class Model:
 
         """
         if "output" in kwargs:
-            msg = "Use 'all_options=True' instead."
+            msg = "Use 'full_output=True' instead."
             deprecate_args_or_kwargs(
                 name="output",
                 version="2.0.0",
                 reason=msg,
             )
             if isinstance(kwargs["output"], str) and kwargs["output"] == "full":
-                all_options = True
+                full_output = True
 
-        return self.solver.fit_report(all_options=all_options, **kwargs)
+        return self.solver.fit_report(full_output=full_output, **kwargs)
 
     def _check_response_tmax(self, cutoff: float | None = None) -> DataFrame:
         """Internal method to check if response tmax is smaller than calibration period.

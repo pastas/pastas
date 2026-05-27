@@ -14,7 +14,7 @@ from scipy.optimize import Bounds, OptimizeResult, least_squares
 
 from pastas.decorators import temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
-from pastas.typing import ArrayLike, CallBack
+from pastas.typing import ArrayLike
 
 from .base import SolverBase
 from .objective_function import misfit
@@ -516,16 +516,19 @@ class LeastSquaresBase(SolverBase):
 
     def fit_report(
         self,
+        full_output: bool = False,
         corr: bool = False,
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        all_options: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
         Parameters
         ----------
+        full_output : bool, optional
+            If True, all options are shown in the fit report. This is a shortcut for
+            `corr=True`, `stderr=True`, and `warnings=True`.
         corr : bool, optional
             If True the parameter correlations are shown.
         stderr : bool, optional
@@ -536,9 +539,6 @@ class LeastSquaresBase(SolverBase):
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        all_options : bool, optional
-            If True, all options are shown in the fit report. This is a shortcut for
-            `corr=True`, `stderr=True`, and `warnings=True`.
         obj_func : float, optional
             Value of the found minimal loss function value from the
             optimization algorithm. Generally obtained from the result attribute
@@ -584,7 +584,7 @@ class LeastSquaresBase(SolverBase):
             "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
         }
 
-        if all_options:
+        if full_output:
             corr = True
             stderr = True
             warnings = True
@@ -1006,7 +1006,7 @@ class LeastSquares(LeastSquaresBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        all_options: bool = False,
+        full_output: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
@@ -1022,7 +1022,7 @@ class LeastSquares(LeastSquaresBase):
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
-        all_options : bool, optional
+        full_output : bool, optional
             If True, all options are shown in the fit report. This is a shortcut for
             `corr=True`, `stderr=True`, and `warnings=True`.
 
@@ -1050,7 +1050,7 @@ class LeastSquares(LeastSquaresBase):
             stderr=stderr,
             warnings=warnings,
             obj_func=obj_func,
-            all_options=all_options,
+            full_output=full_output,
         )
 
     def to_dict(self) -> dict:
@@ -1193,7 +1193,7 @@ class LmfitSolve(LeastSquaresBase):
         stderr: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        all_options: bool = False,
+        full_output: bool = False,
     ) -> str:
         # nobs = self.result.ndata
         # aic = self.result.aic
@@ -1203,7 +1203,7 @@ class LmfitSolve(LeastSquaresBase):
             corr=corr,
             stderr=stderr,
             warnings=warnings,
-            all_options=all_options,
+            full_output=full_output,
             obj_func=obj_func,
         )
 

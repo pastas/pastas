@@ -398,14 +398,17 @@ class EmceeSolve(SolverBase):
 
     def fit_report(
         self,
+        full_output: bool = False,
         warnings: bool = True,
         obj_func: float = np.nan,
-        all_options: bool = False,
     ) -> str:
         """Method that reports on the fit after a model is optimized.
 
         Parameters
         ----------
+        full_output : bool, optional
+            If True, all options are shown in the fit report. This is a shortcut for
+            `warnings=True`.
         warnings : bool, optional
             print warnings in case of optimization failure, parameters hitting
             bounds, or length of responses exceeding calibration period.
@@ -413,9 +416,6 @@ class EmceeSolve(SolverBase):
             Value of the found minimal loss function value from the
             optimization algorithm. Generally obtained from the result attribute
             which is not present when loading the solver, thus by default nan.
-        all_options : bool, optional
-            If True, all options are shown in the fit report. This is a shortcut for
-            `warnings=True`.
 
         Returns
         -------
@@ -457,7 +457,7 @@ class EmceeSolve(SolverBase):
             "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
         }
 
-        if all_options:
+        if full_output:
             warnings = True
 
         parameters = self.ml._parameters.loc[
