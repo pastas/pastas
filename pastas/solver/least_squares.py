@@ -913,9 +913,7 @@ class LeastSquares(LeastSquaresBase):
 
         Notes
         -----
-        This method is copied from Scipy (version 1.14.1):
-        https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py
-        Please refer to the SciPy optimization module::
+        This method is copied from Scipy. Please refer to the SciPy optimization module::
         https://docs.scipy.org/doc/scipy/reference/optimize.html
 
         This method uses SVD (for trf/dogbox) or QR decomposition (for lm) to
@@ -935,7 +933,7 @@ class LeastSquares(LeastSquaresBase):
         s_sq = cost / (nobs - npar)  # variance of the residuals
 
         if method == "lm":
-            # https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py#L480C9-L499C38
+            # https://github.com/scipy/scipy/blob/939e3891a3aea61bf84a50d3da520ca7adf93ecc/scipy/optimize/_minpack_py.py#L481-L501
             # fjac A permutation of the R matrix of a QR factorization of the
             # final approximate Jacobian matrix.
             _, fjac = np.linalg.qr(jacobian)
@@ -971,7 +969,7 @@ class LeastSquares(LeastSquaresBase):
             except (LinAlgError, ValueError):
                 pcov = None
         else:
-            # https://github.com/scipy/scipy/blob/92d2a8592782ee19a1161d0bf3fc2241ba78bb63/scipy/optimize/_minpack_py.py#L1029-L1055
+            # https://github.com/scipy/scipy/blob/939e3891a3aea61bf84a50d3da520ca7adf93ecc/scipy/optimize/_minpack_py.py#L1045-L1068
             # Do Moore-Penrose inverse discarding zero singular values.
             _, s, VT = svd(jacobian, full_matrices=False)
             threshold = np.finfo(float).eps * max(jacobian.shape) * s[0]
