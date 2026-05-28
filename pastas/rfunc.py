@@ -1598,13 +1598,8 @@ class FourParam(RfuncBase):
         """
         cutoff = self.cutoff if cutoff is None else cutoff
 
-        # Because Model.get_response_tmax() provides parameters for the stressmodel,
-        # not only the response functions
-        if len(p) > 4:
-            p = p[:4]
-
         impulse_integral = self._impulse_integral(p)
-        if not np.isfinite(impulse_integral) or impulse_integral <= 0.0:
+        if np.isinf(impulse_integral) or impulse_integral <= 0.0:
             logger.warning(
                 "Unable to compute FourParam tmax due to invalid normalization "
                 "integral (value=%s). Returning 1.0 day.",
@@ -1705,11 +1700,6 @@ class FourParam(RfuncBase):
         """
         cutoff = self.cutoff if cutoff is None else cutoff
 
-        # Because Model.get_response_tmax() provides parameters for the stressmodel,
-        # not only the response functions
-        if len(p) > 4:
-            p = p[:4]
-
         t0 = self.get_tmax_approximation(p, cutoff)
         if self.approximate_tmax:
             return t0
@@ -1784,10 +1774,6 @@ class FourParam(RfuncBase):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
-        # Because Model.get_response_tmax() provides parameters for the stressmodel,
-        # not only the response functions
-        if len(p) > 4:
-            p = p[:4]
 
         impulse_integral = self._impulse_integral(p)
 
