@@ -682,11 +682,6 @@ class Berendrecht(RechargeBase):
             Recharge flux calculated by the model is the argument full_output is
             False, otherwise a list with all fluxes and states.
         """
-        if np.iscomplexobj(p):
-            raise TypeError(
-                "Berendrecht does not support complex-step Jacobian evaluation. "
-                "Set jac='3-point' or jac='2-point'."
-            )
         r, s, ea, pe = self.get_recharge(
             prec,
             evap,
