@@ -12,7 +12,7 @@ from pastas.decorators import PastasDeprecationWarning
 from pastas.plotting.modelcompare import CompareModels
 from pastas.plotting.plotutil import plot_series_with_gaps, share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
-from pastas.typing import Axes, Figure, Model
+from pastas.typing import Axes, Model
 
 logger = logging.getLogger(__name__)
 
