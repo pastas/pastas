@@ -121,6 +121,9 @@ def _load_model(data: dict) -> Model:
         if sm.rfunc is not None and sm.rfunc._name == "One":
             rfunc_one_sm_names.append(name)
 
+    # Copy parameters from file to avoid modifying the original data when renaming parameters
+    file_parameters = data["parameters"].copy()
+
     # Add transform
     if "transform" in data.keys():
         if data["transform"]["class"] == "ThresholdTransform":
@@ -129,8 +132,8 @@ def _load_model(data: dict) -> Model:
             # TODO: remove this check if pas files < 2.0 are no longer supported
             transform_name = data["transform"]["name"]
             if (
-                f"{transform_name}_1" in data["parameters"].index
-                or f"{transform_name}_2" in data["parameters"].index
+                f"{transform_name}_1" in file_parameters.index
+                or f"{transform_name}_2" in file_parameters.index
             ):
                 rename_map = {
                     f"{transform_name}_1": f"{transform_name}_d",
@@ -143,14 +146,15 @@ def _load_model(data: dict) -> Model:
                         for old_name, new_name in rename_map.items()
                     ),
                 )
-                data["parameters"] = data["parameters"].rename(index=rename_map)
+                file_parameters = file_parameters.rename(index=rename_map)
         transform = getattr(ps.transform, data["transform"].pop("class"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
-        # fixes to read pas-files from before pastas version 1.5
+        # Fixes to read pas-files from before pastas version 1.5
+        # TODO: Deprecate if pas-files < 2.0 are no longer supported
         if data["noisemodel"]["class"] == "NoiseModel":
             data["noisemodel"]["class"] = "ArNoiseModel"
         elif data["noisemodel"]["class"] == "ArmaModel":
@@ -173,16 +177,13 @@ def _load_model(data: dict) -> Model:
         solver = getattr(ps.solver, solver_name)
         ml.add_solver(solver(**data[solver_key]))
 
-    # Merge defaults with file parameters: file values win, defaults fill gaps.
-    file_parameters = data["parameters"].copy()
-
     # Fix old parameter names for One response functions to match the naming convention from Pastas 2.0
     # TODO: Deprecate if pas-files < 2.0 are no longer supported
     for rfunc_one_sm_name in rfunc_one_sm_names:
         if f"{rfunc_one_sm_name}_d" in file_parameters.index:
             logger.warning(
-                f"Renaming parameter {rfunc_one_sm_name}_d to {rfunc_one_sm_name}_A"
-                " to match the naming convention of the ps.One() response function."
+                f"Renaming parameter {rfunc_one_sm_name}_d to {rfunc_one_sm_name}_A to match"
+                " the naming convention of the ps.One() response function in Pastas 2.0."
             )
             file_parameters = file_parameters.rename(
                 index={f"{rfunc_one_sm_name}_d": f"{rfunc_one_sm_name}_A"}
@@ -201,6 +202,7 @@ def _load_model(data: dict) -> Model:
         )
         file_parameters = file_parameters.drop(columns=["stderr"])
 
+    # Merge defaults with file parameters: file values win, defaults fill gaps.
     # Populate the model parameters with the file parameters, keeping defaults for missing parameters
     init_parameters = ml.get_init_parameters()
     ml._parameters = init_parameters.reindex(
