@@ -202,10 +202,10 @@ def ccf(
         deprecate_args_or_kwargs(
             name="x",
             version="2.3.0",
-            reason="Please use `series` instead of `x`.",
+            reason="Please use `series_x` instead of `x`.",
         )
-        if series is None:
-            series = kwargs.pop("x")
+        if series_x is None:
+            series_x = kwargs.pop("x")
         else:
             kwargs.pop("x")
     if "y" in kwargs:
