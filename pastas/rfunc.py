@@ -469,6 +469,13 @@ class Gamma(RfuncBase):
         as uniform during a time interval dt. When False, the impulse response
         is used which means that the the entire stress occurs midway the time
         interval dt. The impulse response is generally quicker to compute.
+    complex_step: bool, optional
+        If False (default) uses the (fast) scipy implementation of the Gamma.step
+        function, which does not support complex-step Jacobian evaluation when
+        `use_block=True`. If True the (slow) mpmath implementation is used, which does
+        support complex-step differentiation, but incurs a significant performance
+        penalty. Note that the scipy implementation does support complex inputs when
+        using the impulse response (`use_block=False`).
 
     Attributes
     ----------
@@ -484,9 +491,11 @@ class Gamma(RfuncBase):
         self,
         cutoff: float = 0.999,
         use_block: bool = True,
+        complex_step: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
+        self.complex_step = complex_step
 
     @property
     def nparam(self) -> int:
@@ -535,8 +544,52 @@ class Gamma(RfuncBase):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
+        if not self.complex_step:
+            return self._scipy_step(
+                p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
+            )
+        else:
+            return self._mp_step(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
+
+    def _scipy_step(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+        **kwargs,
+    ) -> ArrayLike:
+        if np.iscomplexobj(p) and self.use_block:
+            raise NotImplementedError(
+                "Gamma.step does not support complex-step Jacobian evaluation "
+                "(jac='cs') by default. Set use_block=False on the "
+                "Gamma response function, set complex_gamma=True or use a "
+                "different Jacobian method (e.g., jac='3-point' or jac='2-point')."
+            )
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         s = p[0] * gammainc(p[1], t / p[2])
+        return s
+
+    def _mp_step(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+        **kwargs,
+    ) -> ArrayLike:
+        try:
+            import mpmath.fp as mpfp
+        except ImportError:
+            raise ImportError(
+                "mpmath not installed: `pip install mpmath` or "
+                "`pip install pastas[mpmath]`."
+            ) from None
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
+        s = p[0] * np.array(
+            [mpfp.gammainc(p[1], 0, ti / p[2], regularized=True) for ti in t],
+            dtype=float,
+        )
         return s
 
     def moment(
