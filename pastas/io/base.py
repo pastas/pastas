@@ -118,8 +118,35 @@ def _load_model(data: dict) -> Model:
         sm = _load_stressmodel(smdata, data)
         ml.add_stressmodel(sm)
 
+    file_parameters = data["parameters"]
     # Add transform
     if "transform" in data.keys():
+        if data["transform"]["class"] == "ThresholdTransform":
+            # the parameters of ThresholdTransform were renamed from 1 and 2 to d and f in pastas 2.0.0,
+            # so we need to check if the old parameter names are present and rename them to the new ones
+            old_param_name = f"{data['transform']['name']}_1"
+            if old_param_name in file_parameters.index:
+                new_param_name = f"{data['transform']['name']}_d"
+                logger.warning(
+                    "Renaming parameter %s to %s to match the naming convention of ThresholdTransform.",
+                    old_param_name,
+                    new_param_name,
+                )
+
+                file_parameters.rename(
+                    index={old_param_name: new_param_name}, inplace=True
+                )
+            old_param_name = f"{data['transform']['name']}_2"
+            if old_param_name in file_parameters.index:
+                new_param_name = f"{data['transform']['name']}_f"
+                logger.warning(
+                    "Renaming parameter %s to %s to match the naming convention of ThresholdTransform.",
+                    old_param_name,
+                    new_param_name,
+                )
+                file_parameters.rename(
+                    index={old_param_name: new_param_name}, inplace=True
+                )
         transform = getattr(ps.transform, data["transform"].pop("class"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
