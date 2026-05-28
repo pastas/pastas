@@ -1800,7 +1800,7 @@ class Model:
         else:
             block_or_step = getattr(rfunc, block_or_step)
 
-        p = self.get_parameters(name)[:rfunc.nparam] if p is None else p
+        p = self.get_parameters(name)[: rfunc.nparam] if p is None else p
 
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
