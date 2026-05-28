@@ -690,9 +690,13 @@ class Berendrecht(RechargeBase):
             dt=dt,
         )
         if return_full:
+            # Strip imaginary part when not doing complex-step Jacobian
+            if not np.iscomplexobj(p):
+                return r.real, s.real, ea.real, pe.real
             return r, s, ea, pe
         else:
-            return nan_to_num(r)
+            result = nan_to_num(r)
+            return result if np.iscomplexobj(p) else result.real
 
     @staticmethod
     @njit
@@ -713,16 +717,16 @@ class Berendrecht(RechargeBase):
         # Create an empty arrays to store the fluxes and states
         pe = fi * prec  # Effective precipitation flux
         ep = fc * evap  # Potential evaporation flux
-        s = zeros(n, dtype=float64)  # Root zone storage state
+        s = zeros(n, dtype=complex128)  # Root zone storage state
         s[0] = 0.5  # Set the initial system state
-        r = zeros(n, dtype=float64)  # Recharge flux
-        ea = zeros(n, dtype=float64)  # Actual evaporation flux
+        r = zeros(n, dtype=complex128)  # Recharge flux
+        ea = zeros(n, dtype=complex128)  # Actual evaporation flux
 
         for t in range(n - 1):
             # Make sure the reservoir is not too full or empty.
-            if s[t] < 0.05:
+            if s[t].real < 0.05:
                 s[t] = 0.05 * exp(20.0 * s[t] - 1.0)
-            elif s[t] > 0.95:
+            elif s[t].real > 0.95:
                 s[t] = 1 - (0.05 * exp(19.0 - 20.0 * s[t]))
 
             # Calculate the actual evaporation
