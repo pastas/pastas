@@ -36,7 +36,17 @@ from abc import ABC, abstractmethod
 from logging import getLogger
 
 import numpy as np
-from numpy import add, exp, float64, multiply, nan_to_num, power, vstack, where, zeros
+from numpy import (
+    add,
+    exp,
+    complex128,
+    multiply,
+    nan_to_num,
+    power,
+    vstack,
+    where,
+    zeros,
+)
 from pandas import DataFrame
 
 from pastas.typing import ArrayLike
