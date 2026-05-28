@@ -799,7 +799,7 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             noise = ml.residuals() if ml.noisemodel is None else ml.noise()
-            r = acf(x=noise, full_output=True)
+            r = acf(series=noise, full_output=True)
             conf = r.conf.rolling(10, min_periods=1).mean().values
 
             axs[axn].fill_between(
