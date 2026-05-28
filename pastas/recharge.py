@@ -339,10 +339,10 @@ class FlexModel(RechargeBase):
     def get_root_zone_balance(
         pe: ArrayLike,
         ep: ArrayLike,
-        srmax: complex = 250.0,
-        lp: complex = 0.25,
-        ks: complex = 100.0,
-        gamma: complex = 4.0,
+        srmax: complex | float = 250.0,
+        lp: complex | float = 0.25,
+        ks: complex | float = 100.0,
+        gamma: complex | float = 4.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Method to compute the water balance of the root zone reservoir.
@@ -353,13 +353,13 @@ class FlexModel(RechargeBase):
             Effective precipitation flux in mm/d.
         ep: array_like
             Potential evaporation flux in mm/d.
-        srmax: float, optional
+        srmax: complex or float, optional
             Maximum storage capacity of the root zone.
-        lp: float, optional
+        lp: complex or float, optional
             Parameter determining when actual evaporation equals potential.
-        ks: float, optional
+        ks: complex or float, optional
             Saturated hydraulic conductivity in mm/d.
-        gamma: float, optional
+        gamma: complex or float, optional
             Parameter determining the nonlinearity of outflow / recharge.
         dt: float, optional
             time step for the calculation of the recharge. Only dt=1 is possible now.
@@ -477,7 +477,10 @@ class FlexModel(RechargeBase):
     @staticmethod
     @njit
     def get_snow_balance(
-        prec: ArrayLike, temp: ArrayLike, tt: complex = 0.0, k: complex = 2.0
+        prec: ArrayLike,
+        temp: ArrayLike,
+        tt: complex | float = 0.0,
+        k: complex | float = 2.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
         """Method to compute the water balance of the snow reservoir.
 
@@ -487,8 +490,8 @@ class FlexModel(RechargeBase):
             NumPy Array with precipitation in mm/day.
         temp: array_like
             NumPy Array with the mean daily temperature in degree Celsius.
-        tt: float, optional
-        k: float, optional
+        tt: complex or float, optional
+        k: complex or  float, optional
 
         Returns
         -------
@@ -708,13 +711,13 @@ class Berendrecht(RechargeBase):
     def get_recharge(
         prec: ArrayLike,
         evap: ArrayLike,
-        fi: float = 1.0,
-        fc: float = 1.0,
-        sr: float = 0.5,
-        de: float = 250.0,
-        l: float = -2.0,  # noqa: E741
-        m: float = 0.5,
-        ks: float = 50.0,
+        fi: complex | float = 1.0,
+        fc: complex | float = 1.0,
+        sr: complex | float = 0.5,
+        de: complex | float = 250.0,
+        l: complex | float = -2.0,  # noqa: E741
+        m: complex | float = 0.5,
+        ks: complex | float = 50.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Internal method used for the recharge calculation."""
@@ -866,11 +869,11 @@ class Peterson(RechargeBase):
     def get_recharge(
         prec: ArrayLike,
         evap: ArrayLike,
-        scap: float = 1.0,
-        alpha: float = 1.0,
-        ksat: float = 1.0,
-        beta: float = 0.5,
-        gamma: float = 1.0,
+        scap: complex | float = 1.0,
+        alpha: complex | float = 1.0,
+        ksat: complex | float = 1.0,
+        beta: complex | float = 0.5,
+        gamma: complex | float = 1.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Internal method used for the recharge calculation."""

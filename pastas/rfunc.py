@@ -560,11 +560,10 @@ class Gamma(RfuncBase):
         **kwargs,
     ) -> ArrayLike:
         if np.iscomplexobj(p) and self.use_block:
-            raise NotImplementedError(
+            raise TypeError(
                 "Gamma.step does not support complex-step Jacobian evaluation "
-                "(jac='cs') by default. Set use_block=False on the "
-                "Gamma response function, set complex_gamma=True or use a "
-                "different Jacobian method (e.g., jac='3-point' or jac='2-point')."
+                "(jac='cs') by default. Set use_block=False, set complex_step=True or"
+                "use a different Jacobian method (e.g. jac='3-point' or jac='2-point')."
             )
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         s = p[0] * gammainc(p[1], t / p[2])
@@ -579,7 +578,7 @@ class Gamma(RfuncBase):
         **kwargs,
     ) -> ArrayLike:
         try:
-            import mpmath.fp as mpfp
+            from mpmath import fp as mpfp
         except ImportError:
             raise ImportError(
                 "mpmath not installed: `pip install mpmath` or "
@@ -613,6 +612,12 @@ class Gamma(RfuncBase):
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, n, a = p
         return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
+
+    def to_dict(self):
+        settings = super().to_dict() | {
+            "complex_step": self.complex_step,
+        }
+        return settings
 
 
 class Exponential(RfuncBase):
