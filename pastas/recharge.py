@@ -844,18 +844,17 @@ class Peterson(RechargeBase):
             False, otherwise a list with all fluxes and states.
 
         """
-        if np.iscomplexobj(p):
-            raise TypeError(
-                "Peterson does not support complex-step Jacobian evaluation. "
-                "Set jac='3-point' or jac='2-point'."
-            )
         r, s, ea, pe = self.get_recharge(
             prec, evap, scap=p[0], alpha=p[1], ksat=p[2], beta=p[3], gamma=p[4], dt=dt
         )
         if return_full:
+            # Strip imaginary part when not doing complex-step Jacobian
+            if not np.iscomplexobj(p):
+                return r.real, s.real, ea.real, pe.real
             return r, s, ea, pe
         else:
-            return nan_to_num(r)
+            result = nan_to_num(r)
+            return result if np.iscomplexobj(p) else result.real
 
     @staticmethod
     @njit
@@ -872,10 +871,10 @@ class Peterson(RechargeBase):
         """Internal method used for the recharge calculation."""
         n = len(prec)
         # Create an empty arrays to store the fluxes and states
-        pe = zeros(n, dtype=float64)  # Effective precipitation flux
-        sm = zeros(n + 1, dtype=float64)  # Root zone storage state
-        r = zeros(n, dtype=float64)  # Recharge flux
-        ea = zeros(n, dtype=float64)  # Actual evaporation flux
+        pe = zeros(n, dtype=complex128)  # Effective precipitation flux
+        sm = zeros(n + 1, dtype=complex128)  # Root zone storage state
+        r = zeros(n, dtype=complex128)  # Recharge flux
+        ea = zeros(n, dtype=complex128)  # Actual evaporation flux
         # Update params
         smsc = power(10, scap)
         ksat = power(10, ksat)
@@ -886,9 +885,18 @@ class Peterson(RechargeBase):
         for t in range(n):
             sm_frac = sm[t] / smsc
             pe[t] = prec[t] * power(1 - sm_frac, alpha)
-            ea[t] = max(sm[t + 1], evap[t] * power(sm_frac, gamma))
-            r[t] = max(sm[t + 1], ksat * power(sm_frac, beta))
-            sm[t + 1] = min(smsc, max(0.0, sm[t] + (pe[t] - ea[t] - r[t]) * dt))
+            # Use .real for comparisons to support complex-step differentiation
+            ea_val = evap[t] * power(sm_frac, gamma)
+            ea[t] = ea_val if ea_val.real > sm[t + 1].real else sm[t + 1]
+            r_val = ksat * power(sm_frac, beta)
+            r[t] = r_val if r_val.real > sm[t + 1].real else sm[t + 1]
+            sm_new = sm[t] + (pe[t] - ea[t] - r[t]) * dt
+            if sm_new.real < 0.0:
+                sm[t + 1] = complex(0.0)
+            elif sm_new.real > smsc.real:
+                sm[t + 1] = smsc
+            else:
+                sm[t + 1] = sm_new
         return r, sm[1:], ea, pe
 
     def get_water_balance(
