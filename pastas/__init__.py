@@ -8,7 +8,7 @@ from pandas.plotting import register_matplotlib_converters
 
 import pastas.recharge as rch
 import pastas.timeseries_utils as ts
-from pastas import check, extensions, forecast, stats
+from pastas import check, extensions, forecast, solver, stats
 from pastas.dataset import list_datasets, load_dataset
 from pastas.decorators import (
     get_use_cache,

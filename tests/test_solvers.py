@@ -43,7 +43,7 @@ def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
     weights = pd.Series(1.0, index=residuals.index)
     weights.iloc[::5] = 0.25
 
-    misfit = ml_recharge.solver.misfit(p=p, noise=False, weights=weights)
+    misfit = ps.solver.misfit(ml=ml_recharge, p=p, noise=False, weights=weights)
     expected = (residuals * weights).values
 
     np.testing.assert_allclose(misfit, expected)
