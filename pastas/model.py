@@ -2219,7 +2219,7 @@ class Model:
             basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
 
         # Create the parameters block
-        params = (
+        p = (
             f"\nParameters ({parameters.vary.sum()} optimized)\n"
             f"{string.format('', fill='=', align='>', width=width)}\n"
             f"{parameters.to_string()}"
@@ -2252,7 +2252,7 @@ class Model:
                 ] + msg
                 warnings_rep += "\n".join(msg)
 
-        report = f"{header}{basic}{params}{warnings_rep}{corr_rep}"
+        report = f"{header}{basic}{p}{warnings_rep}{corr_rep}"
 
         return report
 
