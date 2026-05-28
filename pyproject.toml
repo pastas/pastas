@@ -55,6 +55,7 @@ formatting = ["pastas[ruffing]"]
 linting = ["pastas[ruffing]"]
 caching = ["cachetools"]
 codespelling = ["codespell[toml]"]
+mpmath = ["mpmath"]
 full = ["pastas[solvers,interactive,datasets,caching]"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
@@ -153,33 +154,12 @@ commands = [["pytest", "tests", "-m", "bnotebooks"]]
 [tool.tox.env.ruff]
 description = "run ruff checks"
 extras = ["ruffing"]
-commands = [
-    [
-        "ruff",
-        "check",
-        "--extend-select",
-        "I",
-    ],
-    [
-        "ruff",
-        "format",
-        "--check",
-    ],
-]
+commands = [["ruff", "check", "--extend-select", "I"], ["ruff", "format", "--check"]]
 
 [tool.tox.env.ruff_preview]
 description = "run ruff checks preview mode"
 extras = ["ruffing"]
-commands = [
-    [
-        "ruff",
-        "check",
-        "--extend-select",
-        "I",
-        "--preview",
-        "--exit-zero",
-    ],
-]
+commands = [["ruff", "check", "--extend-select", "I", "--preview", "--exit-zero"]]
 
 [tool.tox.env.codespell]
 description = "run spelling checks"
