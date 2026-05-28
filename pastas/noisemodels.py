@@ -25,7 +25,12 @@ from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 
 from pastas.typing import ArrayLike
 
-from .decorators import PastasDeprecationWarning, njit, set_parameter
+from .decorators import (
+    PastasDeprecationWarning,
+    deprecate_args_or_kwargs,
+    njit,
+    set_parameter,
+)
 
 logger = getLogger(__name__)
 
@@ -52,7 +57,7 @@ class NoiseModelBase(ABC):
         """Number of parameters of the noise model."""
 
     @abstractmethod
-    def simulate(self, res: Series, p: ArrayLike) -> Series:
+    def simulate(self, series: Series, p: ArrayLike) -> Series:
         """Simulate noise from the residual series."""
 
     @abstractmethod
@@ -113,7 +118,8 @@ class NoiseModelBase(ABC):
         """Method to return a dict to store the noise model"""
         return {"class": self._name, "norm": self.norm}
 
-    def weights(self, res: Series, p: ArrayLike) -> Series | int:
+    def weights(self, series: Series, p: ArrayLike) -> Series | int:
+        _, _ = series, p
         return 1
 
 
@@ -171,12 +177,14 @@ class ArNoiseModel(NoiseModelBase):
     def nparam(self) -> int:
         return 1
 
-    def simulate(self, res: Series, p: ArrayLike) -> Series:
+    def simulate(
+        self, series: Series | None = None, p: ArrayLike | None = None, **kwargs
+    ) -> Series:
         """Simulate noise from the residuals.
 
         Parameters
         ----------
-        res: pandas.Series
+        series: pandas.Series
             The residual series.
         p: array_like
             array_like object with the values as floats representing the model
@@ -187,18 +195,39 @@ class ArNoiseModel(NoiseModelBase):
         noise: pandas.Series
             Series of the noise.
         """
-        alpha = p[0]
-        odelt = np.diff(res.index.to_numpy(copy=True)) / Timedelta("1D")
-        resv = res.to_numpy(copy=True)
-        v = np.append(resv[0], resv[1:] - np.exp(-odelt / alpha) * resv[:-1])
-        return Series(data=v, index=res.index, name="Noise")
+        if "res" in kwargs:
+            deprecate_args_or_kwargs(
+                name="res",
+                version="2.3.0",
+                reason="Please use `series` instead of `res`.",
+            )
+            if series is None:
+                series = kwargs.pop("res")
+            else:
+                kwargs.pop("res")
+        if kwargs:
+            raise TypeError(
+                f"simulate() got unexpected keyword argument '{next(iter(kwargs))}'"
+            )
+        if series is None:
+            raise TypeError("simulate() missing required argument: 'series'")
+        if p is None:
+            raise TypeError("simulate() missing required argument: 'p'")
 
-    def weights(self, res: Series, p: ArrayLike) -> Series:
+        alpha = p[0]
+        odelt = np.diff(series.index.to_numpy(copy=True)) / Timedelta("1D")
+        resv = series.to_numpy(copy=True)
+        v = np.append(resv[0], resv[1:] - np.exp(-odelt / alpha) * resv[:-1])
+        return Series(data=v, index=series.index, name="Noise")
+
+    def weights(
+        self, series: Series | None = None, p: ArrayLike | None = None, **kwargs
+    ) -> Series:
         """Method to calculate the weights for the noise.
 
         Parameters
         ----------
-        res: pandas.Series
+        series: pandas.Series
             Pandas Series with the residuals to compute the weights for. The Series
             index must be a DatetimeIndex.
         p: array_like
@@ -219,23 +248,46 @@ class ArNoiseModel(NoiseModelBase):
 
         which are then normalized so that sum(w) = len(res).
         """
+        if "res" in kwargs:
+            deprecate_args_or_kwargs(
+                name="res",
+                version="2.3.0",
+                reason="Please use `series` instead of `res`.",
+            )
+            if series is None:
+                series = kwargs.pop("res")
+            else:
+                kwargs.pop("res")
+        if kwargs:
+            raise TypeError(
+                f"weights() got unexpected keyword argument '{next(iter(kwargs))}'"
+            )
+        if series is None:
+            raise TypeError("weights() missing required argument: 'series'")
+        if p is None:
+            raise TypeError("weights() missing required argument: 'p'")
+
         alpha = p[0]
         # large for first measurement
-        odelt = np.append(1e12, np.diff(res.index.to_numpy()) / Timedelta("1D"))
+        odelt = np.append(1e12, np.diff(series.index.to_numpy()) / Timedelta("1D"))
         exp = np.exp(-2.0 / alpha * odelt)  # Twice as fast as 2*odelt/alpha
         w = 1 / np.sqrt(1.0 - exp)  # weights of noise, not noise^2
         if self.norm:
             w *= np.exp(1.0 / (2.0 * odelt.size) * np.sum(np.log(1.0 - exp)))
-        return Series(data=w, index=res.index, name="noise_weights")
+        return Series(data=w, index=series.index, name="noise_weights")
 
     def get_correction(
-        self, res: Series, p: ArrayLike, tindex: DatetimeIndex
+        self,
+        series: Series | None = None,
+        p: ArrayLike | None = None,
+        tindex: DatetimeIndex | None = None,
+        **kwargs,
     ) -> Series:
         """Get the correction for a forecast using the noise model.
 
         Parameters
         ----------
-        res : Series
+        series : Series
             The residual series.
         p : ArrayLike
             The parameters of the noise model.
@@ -259,9 +311,31 @@ class ArNoiseModel(NoiseModelBase):
         and the forecast, and :math:`\\alpha` is the noise parameter.
 
         """
+        if "res" in kwargs:
+            deprecate_args_or_kwargs(
+                name="res",
+                version="2.3.0",
+                reason="Please use `series` instead of `res`.",
+            )
+            if series is None:
+                series = kwargs.pop("res")
+            else:
+                kwargs.pop("res")
+        if kwargs:
+            raise TypeError(
+                "get_correction() got unexpected keyword argument "
+                f"'{next(iter(kwargs))}'"
+            )
+        if series is None:
+            raise TypeError("get_correction() missing required argument: 'series'")
+        if p is None:
+            raise TypeError("get_correction() missing required argument: 'p'")
+        if tindex is None:
+            raise TypeError("get_correction() missing required argument: 'tindex'")
+
         alpha = p[0]
-        last_residual = res.iat[-1]
-        last_date = res.index[-1]
+        last_residual = series.iat[-1]
+        last_date = series.index[-1]
         dt = (tindex - last_date).days
         correction = Series(
             index=tindex,
@@ -337,14 +411,35 @@ class ArmaNoiseModel(NoiseModelBase):
             "uniform",
         )
 
-    def simulate(self, res: Series, p: ArrayLike) -> Series:
+    def simulate(
+        self, series: Series | None = None, p: ArrayLike | None = None, **kwargs
+    ) -> Series:
+        if "res" in kwargs:
+            deprecate_args_or_kwargs(
+                name="res",
+                version="2.3.0",
+                reason="Please use `series` instead of `res`.",
+            )
+            if series is None:
+                series = kwargs.pop("res")
+            else:
+                kwargs.pop("res")
+        if kwargs:
+            raise TypeError(
+                f"simulate() got unexpected keyword argument '{next(iter(kwargs))}'"
+            )
+        if series is None:
+            raise TypeError("simulate() missing required argument: 'series'")
+        if p is None:
+            raise TypeError("simulate() missing required argument: 'p'")
+
         alpha = p[0]
         beta = p[1]
 
         # Calculate the time steps
-        odelt = np.diff(res.index.to_numpy()) / Timedelta("1D")
-        a = self.calculate_noise(res.values, odelt, alpha, beta)
-        return Series(index=res.index, data=a, name="Noise")
+        odelt = np.diff(series.index.to_numpy()) / Timedelta("1D")
+        a = self.calculate_noise(series.values, odelt, alpha, beta)
+        return Series(index=series.index, data=a, name="Noise")
 
     @staticmethod
     @njit

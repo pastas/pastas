@@ -19,7 +19,7 @@ from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
 from pandas import DataFrame, Series
 
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = [
@@ -41,16 +41,44 @@ __all__ = [
 
 logger = getLogger(__name__)
 
+
+def _handle_observation_kwarg(
+    oseries: Series | None,
+    kwargs: dict,
+    func_name: str,
+    required: bool,
+) -> Series | None:
+    if "obs" in kwargs:
+        deprecate_args_or_kwargs(
+            name="obs",
+            version="2.3.0",
+            reason="Please use `oseries` instead of `obs`.",
+        )
+        if oseries is None:
+            oseries = kwargs.pop("obs")
+        else:
+            kwargs.pop("obs")
+
+    if kwargs:
+        raise TypeError(
+            f"{func_name}() got unexpected keyword argument '{next(iter(kwargs))}'"
+        )
+    if required and oseries is None:
+        raise TypeError(f"{func_name}() missing required argument: 'oseries'")
+    return oseries
+
+
 # Absolute Error Metrics
 
 
 def mae(
-    obs: Series | None = None,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     """Compute the (weighted) Mean Absolute Error (MAE).
 
@@ -83,7 +111,8 @@ def mae(
 
     where :math:`N` is the number of observations in the observed time series.
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "mae", required=False)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
     if err.index.size == 0:
@@ -95,12 +124,13 @@ def mae(
 
 
 def me(
-    obs: Series | None = None,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     """Compute the (weighted) Mean Error (ME).
 
@@ -133,7 +163,8 @@ def me(
 
     where :math:`N` is the number of observations in the observed time series.
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "me", required=False)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
     if err.index.size == 0:
@@ -144,12 +175,13 @@ def me(
 
 
 def rmse(
-    obs: Series | None = None,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     """Compute the (weighted) Root Mean Squared Error (RMSE).
 
@@ -181,7 +213,8 @@ def rmse(
 
     where :math:`N` is the number of error :math:`\\epsilon`.
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "rmse", required=False)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
     if err.index.size == 0:
@@ -193,10 +226,11 @@ def rmse(
 
 
 def sse(
-    obs: Series | None = None,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
+    **kwargs,
 ) -> float:
     """Compute the Sum of the Squared Errors (SSE).
 
@@ -221,7 +255,8 @@ def sse(
 
     where :math:`\\epsilon` are the errors.
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "sse", required=False)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
     if err.index.size == 0:
@@ -235,11 +270,12 @@ def sse(
 
 
 def pearsonr(
-    obs: Series,
-    sim: Series,
+    oseries: Series | None = None,
+    sim: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     """Compute the (weighted) Pearson correlation (r).
 
@@ -271,11 +307,15 @@ def pearsonr(
     Where :math:`y_o` is observed time series, :math:`y_s` the simulated time series,
     and :math:`N` the number of observations in the observed time series.
     """
-    if missing == "drop":
-        obs = obs.dropna()
+    oseries = _handle_observation_kwarg(oseries, kwargs, "pearsonr", required=True)
+    if sim is None:
+        raise TypeError("pearsonr() missing required argument: 'sim'")
 
-    w = _get_weights(obs, weighted=weighted, max_gap=max_gap)
-    sim = sim.reindex(obs.index).dropna().to_numpy()
+    if missing == "drop":
+        oseries = oseries.dropna()
+
+    w = _get_weights(oseries, weighted=weighted, max_gap=max_gap)
+    sim = sim.reindex(oseries.index).dropna().to_numpy()
 
     # Return nan if the time indices of the sim and obs don't match
     if sim.size == 0:
@@ -283,7 +323,7 @@ def pearsonr(
         return nan
 
     sim = sim - average(sim, weights=w)
-    obs = obs.to_numpy() - average(obs.to_numpy(), weights=w)
+    obs = oseries.to_numpy() - average(oseries.to_numpy(), weights=w)
 
     r = (w * sim * obs).sum() / sqrt((w * sim**2).sum() * (w * obs**2).sum())
 
@@ -291,12 +331,13 @@ def pearsonr(
 
 
 def evp(
-    obs: Series,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     """Compute the (weighted) Explained Variance Percentage (EVP).
 
@@ -332,7 +373,8 @@ def evp(
     :math:`\\sigma_r^2` is the variance of the errors. The returned value is
     bounded between 0% and 100%.
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "evp", required=True)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
     if err.index.size == 0:
@@ -340,7 +382,7 @@ def evp(
         return nan
 
     # Check both standard and weighted variance
-    if obs.var() == 0.0:
+    if oseries.var() == 0.0:
         return 100.0
     else:
         return (
@@ -349,7 +391,7 @@ def evp(
                 (
                     1
                     - var(err, weighted=weighted, max_gap=max_gap)
-                    / var(obs, weighted=weighted, max_gap=max_gap)
+                    / var(oseries, weighted=weighted, max_gap=max_gap)
                 ),
             )
             * 100
@@ -357,12 +399,13 @@ def evp(
 
 
 def nse(
-    obs: Series,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     """Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
 
@@ -392,7 +435,8 @@ def nse(
 
     .. math:: \\text{NSE} = 1 - \\frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "nse", required=True)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
     if err.index.size == 0:
@@ -400,18 +444,21 @@ def nse(
         return nan
 
     w = _get_weights(err, weighted=weighted, max_gap=max_gap)
-    mu = average(obs.to_numpy(), weights=w)
+    mu = average(oseries.to_numpy(), weights=w)
 
-    return 1 - (w * err.to_numpy() ** 2).sum() / (w * (obs.to_numpy() - mu) ** 2).sum()
+    return (
+        1 - (w * err.to_numpy() ** 2).sum() / (w * (oseries.to_numpy() - mu) ** 2).sum()
+    )
 
 
 def nnse(
-    obs: Series,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     """Compute the (weighted) Normalized Nash-Sutcliffe Efficiency (NNSE).
 
@@ -448,25 +495,27 @@ def nnse(
     nnse = 1 / (
         2
         - nse(
-            obs=obs,
+            oseries=oseries,
             sim=sim,
             res=res,
             missing=missing,
             weighted=weighted,
             max_gap=max_gap,
+            **kwargs,
         )
     )
     return nnse
 
 
 def rsq(
-    obs: Series,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
     nparam: int | None = None,
+    **kwargs,
 ) -> float:
     """Compute R-squared, possibly adjusted for the number of free parameters.
 
@@ -503,7 +552,8 @@ def rsq(
     When nparam is provided, the :math:`\\rho` is adjusted for the number of
     calibration parameters.
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "rsq", required=True)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
     if err.index.size == 0:
@@ -511,27 +561,28 @@ def rsq(
         return nan
 
     w = _get_weights(err, weighted=weighted, max_gap=max_gap)
-    if len(w) != obs.index.size:
+    if len(w) != oseries.index.size:
         raise ValueError(
             "Weights and observations time series have different lengths! "
             "Check observation and simulation time series."
         )
-    mu = average(obs.to_numpy(), weights=w)
+    mu = average(oseries.to_numpy(), weights=w)
     rss = (w * err.to_numpy() ** 2.0).sum()
-    tss = (w * (obs.to_numpy() - mu) ** 2.0).sum()
+    tss = (w * (oseries.to_numpy() - mu) ** 2.0).sum()
 
     if nparam:
-        return 1.0 - (obs.size - 1.0) / (obs.size - nparam) * rss / tss
+        return 1.0 - (oseries.size - 1.0) / (oseries.size - nparam) * rss / tss
     else:
         return 1.0 - rss / tss
 
 
 def bic(
-    obs: Series | None = None,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     nparam: int = 1,
+    **kwargs,
 ) -> float:
     """Compute the Bayesian Information Criterium (BIC).
 
@@ -559,7 +610,8 @@ def bic(
 
     where :math:`n_{param}` is the number of calibration parameters.
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "bic", required=False)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
     if err.index.size == 0:
@@ -572,11 +624,12 @@ def bic(
 
 
 def aic(
-    obs: Series | None = None,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     nparam: int = 1,
+    **kwargs,
 ) -> float:
     """Compute the Akaike Information Criterium (AIC).
 
@@ -612,7 +665,8 @@ def aic(
     where RSS denotes the residual sum of squares and nobs the number of
     observations.
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "aic", required=False)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
     if err.index.size == 0:
@@ -625,11 +679,12 @@ def aic(
 
 
 def aicc(
-    obs: Series | None = None,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     nparam: int = 1,
+    **kwargs,
 ) -> float:
     """Compute the Akaike Information Criterium with second order
     bias correction for the number of observations (AICc)
@@ -666,7 +721,8 @@ def aicc(
 
     where RSS denotes the residual sum of squares.
     """
-    err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "aicc", required=False)
+    err = _compute_err(oseries=oseries, sim=sim, res=res, missing=missing)
 
     n = err.index.size
 
@@ -678,12 +734,13 @@ def aicc(
 
 
 def kge(
-    obs: Series,
-    sim: Series,
+    oseries: Series | None = None,
+    sim: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
     modified: bool = False,
+    **kwargs,
 ) -> float:
     """Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
@@ -722,29 +779,33 @@ def kge(
     \\bar{y}}`. If weighted equals True, the weighted mean, variance and
     pearson correlation are used.
     """
-    if missing == "drop":
-        obs = obs.dropna()
+    oseries = _handle_observation_kwarg(oseries, kwargs, "kge", required=True)
+    if sim is None:
+        raise TypeError("kge() missing required argument: 'sim'")
 
-    sim = sim.reindex(obs.index).dropna()
+    if missing == "drop":
+        oseries = oseries.dropna()
+
+    sim = sim.reindex(oseries.index).dropna()
 
     # Return nan if the time indices of the sim and obs don't match
     if sim.index.size == 0:
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    r = pearsonr(obs=obs, sim=sim, weighted=weighted, max_gap=max_gap)
+    r = pearsonr(oseries=oseries, sim=sim, weighted=weighted, max_gap=max_gap)
 
     mu_sim = mean(sim, weighted=weighted, max_gap=max_gap)
-    mu_obs = mean(obs, weighted=weighted, max_gap=max_gap)
+    mu_obs = mean(oseries, weighted=weighted, max_gap=max_gap)
 
     beta = mu_sim / mu_obs
     if modified:
         gamma = (std(sim, weighted=weighted, max_gap=max_gap) / mu_sim) / (
-            std(obs, weighted=weighted, max_gap=max_gap) / mu_obs
+            std(oseries, weighted=weighted, max_gap=max_gap) / mu_obs
         )
     else:
         gamma = std(sim, weighted=weighted, max_gap=max_gap) / std(
-            obs, weighted=weighted, max_gap=max_gap
+            oseries, weighted=weighted, max_gap=max_gap
         )
 
     kge = 1 - sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
@@ -757,11 +818,12 @@ def kge(
     use `pastas.stats.kge(modified=True)` to get the same outcome.""",
 )
 def kge_2012(
-    obs: Series,
-    sim: Series,
+    oseries: Series | None = None,
+    sim: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     """Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
@@ -795,32 +857,34 @@ def kge_2012(
     correlation are used.
     """
     return kge(
-        obs=obs,
+        oseries=oseries,
         sim=sim,
         missing=missing,
         weighted=weighted,
         max_gap=max_gap,
         modified=True,
+        **kwargs,
     )
 
 
 def _compute_err(
-    obs: Series | None = None,
+    oseries: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
+    **kwargs,
 ):
     """
     Parameters
     ----------
     sim: pandas.Series, optional
         Series with the simulated values.
-    obs: pandas.Series, optional
+    oseries: pandas.Series, optional
         The Series with the observed values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and obs arguments are ignored. Note that the residuals
-        must be computed as `obs - sim` here.
+        provided, the sim and oseries arguments are ignored. Note that the residuals
+        must be computed as `oseries - sim` here.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is supported now.
 
@@ -830,8 +894,10 @@ def _compute_err(
         The pandas.Series with the errors, computed as
 
     """
-    if (obs is not None) and (sim is not None):
-        err = sim.subtract(obs)
+    oseries = _handle_observation_kwarg(oseries, kwargs, "_compute_err", required=False)
+
+    if (oseries is not None) and (sim is not None):
+        err = sim.subtract(oseries)
     elif res is not None:
         err = -res
     else:
@@ -851,12 +917,12 @@ def _compute_err(
 # Prediction Interval Metrics
 
 
-def picp(obs: Series, bounds: DataFrame):
+def picp(oseries: Series | None = None, bounds: DataFrame | None = None, **kwargs):
     """Compute the prediction interval coverage probability (PICP).
 
     Parameters
     ----------
-    obs : pandas.Series
+    oseries : pandas.Series
         Pandas Series with the measured time series and a DateTimeIndex.
     bounds : DataFrame
         DataFrame with the lower (first column) and upper (second columns) bounds of the
@@ -878,21 +944,25 @@ def picp(obs: Series, bounds: DataFrame):
     >>> import pandas as pd
     >>> import numpy as np
     >>> from pastas.stats import picp
-    >>> obs = pd.Series(np.random.rand(100),
-                        index=pd.date_range("2000-01-01", periods=100))
-    >>> bounds = pd.DataFrame(np.random.rand(100, 2), index=obs.index)
-    >>> picp(obs, bounds)
+    >>> oseries = pd.Series(np.random.rand(100),
+    ...                     index=pd.date_range("2000-01-01", periods=100))
+    >>> bounds = pd.DataFrame(np.random.rand(100, 2), index=oseries.index)
+    >>> picp(oseries, bounds)
 
     """
+    oseries = _handle_observation_kwarg(oseries, kwargs, "picp", required=True)
+    if bounds is None:
+        raise TypeError("picp() missing required argument: 'bounds'")
+
     # Check if the DateTimeIndex of the observations and the bounds match
-    if not obs.index.isin(bounds.index).all():
+    if not oseries.index.isin(bounds.index).all():
         msg = "The DateTimeIndex of the observations and the bounds do not match."
         logger.error(msg)
         raise ValueError(msg)
 
-    if not obs.index.equals(bounds.index):
-        bounds = bounds.loc[obs.index, :]
+    if not oseries.index.equals(bounds.index):
+        bounds = bounds.loc[oseries.index, :]
 
     # Determine if the observations are within the prediction intervals
-    a = (obs >= bounds.iloc[:, 0]) & (obs <= bounds.iloc[:, 1])
+    a = (oseries >= bounds.iloc[:, 0]) & (oseries <= bounds.iloc[:, 1])
     return a.mean()

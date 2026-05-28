@@ -111,7 +111,7 @@ class Model:
         freq: str = "D",
     ) -> None:
         # Construct the different model components
-        self.set_oseries(s=oseries, metadata=metadata)  # sets self.oseries
+        self.set_oseries(oseries=oseries, metadata=metadata)  # sets self.oseries
         self.name = validate_name(
             name or (self.oseries.name if self.oseries.name else "Observations")
         )
@@ -1248,12 +1248,17 @@ class Model:
 
         return
 
-    def set_oseries(self, s: Series, metadata: dict[str, Any] | None = None) -> None:
+    def set_oseries(
+        self,
+        oseries: Series | None = None,
+        metadata: dict[str, Any] | None = None,
+        **kwargs,
+    ) -> None:
         """Set a new oseries for an existing Model.
 
         Parameters
         ----------
-        s : pandas.Series
+        oseries : pandas.Series
             The time series to be set as the oseries.
         metadata : dict, optional
             Dictionary containing metadata about the time series. If None, the metadata
@@ -1264,10 +1269,27 @@ class Model:
         This method replaces the existing oseries with a new TimeSeries object while
         preserving the original metadata if no new metadata is provided.
         """
+        if "s" in kwargs:
+            deprecate_args_or_kwargs(
+                name="s",
+                version="2.3.0",
+                reason="Please use `oseries` instead of `s`.",
+            )
+            if oseries is None:
+                oseries = kwargs.pop("s")
+
+        if kwargs:
+            raise TypeError(
+                f"set_oseries() got unexpected keyword argument '{next(iter(kwargs))}'"
+            )
+
+        if oseries is None:
+            raise TypeError("set_oseries() missing required argument: 'oseries'")
+
         metadata = metadata or (
             self.oseries.metadata if hasattr(self, "oseries") else None
         )
-        self.oseries = ObservationSeries(s, metadata=metadata)
+        self.oseries = ObservationSeries(series=oseries, metadata=metadata)
 
     @property
     def time_offset(self) -> Timedelta:
@@ -1713,7 +1735,7 @@ class Model:
         if "split" in kwargs:
             deprecate_args_or_kwargs(
                 name="split",
-                version="3.0.0",
+                version="2.3.0",
                 reason="Use `split_contributions` instead.",
             )
             split_contributions = kwargs.pop("split")
