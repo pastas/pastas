@@ -123,29 +123,24 @@ def _load_model(data: dict) -> Model:
         if data["transform"]["class"] == "ThresholdTransform":
             # the parameters of ThresholdTransform were renamed from 1 and 2 to d and f in pastas 2.0.0,
             # so we need to check if the old parameter names are present and rename them to the new ones
-            old_param_name = f"{data['transform']['name']}_1"
-            if old_param_name in data["parameters"].index:
-                new_param_name = f"{data['transform']['name']}_d"
+            # TODO: remove this check if pas files < 2.0 are no longer supported
+            transform_name = data["transform"]["name"]
+            if (
+                f"{transform_name}_1" in data["parameters"].index
+                or f"{transform_name}_2" in data["parameters"].index
+            ):
+                rename_map = {
+                    f"{transform_name}_1": f"{transform_name}_d",
+                    f"{transform_name}_2": f"{transform_name}_f",
+                }
                 logger.warning(
-                    "Renaming parameter %s to %s to match the naming convention of ThresholdTransform.",
-                    old_param_name,
-                    new_param_name,
+                    "Renaming ThresholdTransform parameters to Pastas 2.0 naming convention: %s",
+                    ", ".join(
+                        f"{old_name} -> {new_name}"
+                        for old_name, new_name in rename_map.items()
+                    ),
                 )
-
-                data["parameters"].rename(
-                    index={old_param_name: new_param_name}, inplace=True
-                )
-            old_param_name = f"{data['transform']['name']}_2"
-            if old_param_name in data["parameters"].index:
-                new_param_name = f"{data['transform']['name']}_f"
-                logger.warning(
-                    "Renaming parameter %s to %s to match the naming convention of ThresholdTransform.",
-                    old_param_name,
-                    new_param_name,
-                )
-                data["parameters"].rename(
-                    index={old_param_name: new_param_name}, inplace=True
-                )
+                data["parameters"] = data["parameters"].rename(index=rename_map)
         transform = getattr(ps.transform, data["transform"].pop("class"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
