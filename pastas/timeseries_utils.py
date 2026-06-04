@@ -417,7 +417,7 @@ def timestep_weighted_resample(
 
     Returns
     -------
-    series_new : pandas.Series
+    pandas.Series
         The resampled series
     """
     if "s" in kwargs:
