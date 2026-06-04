@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 from pandas import DataFrame, Series
 
-from pastas.decorators import deprecate_args_or_kwargs
+from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 from pastas.typing import ArrayLike, CallBack
 
 from .base import SolverBase
@@ -17,7 +17,15 @@ from .objective_function import misfit
 logger = getLogger(__name__)
 
 
-class EmceeSolve(SolverBase):
+@PastasDeprecationWarning(
+    version="2.3.0", reason="The EmceeSolve class is renamed to Emcee."
+)
+def EmceeSolve(*args, **kwargs):
+    """Alias for EmceeSolve."""
+    return Emcee(*args, **kwargs)
+
+
+class Emcee(SolverBase):
     """Solver based on MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`.
 
     Parameters
