@@ -95,7 +95,6 @@ def _check_forecast_data(
             if fc.empty:
                 msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}' for stress '{stress_name}'"
                 logger.error(msg)
-                continue
 
             # Check if the number of columns is the same for all DataFrames
             if n is None:

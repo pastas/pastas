@@ -839,7 +839,7 @@ class Model:
             parameters, or set to False to suppress the report.
 
             .. versionchanged:: 2.0.0
-             To have full conrol over the report, a dictionary with the arguments of
+             To have full control over the report, a dictionary with the arguments of
              ml.solve.fit_report() can be provided:
              (i.e., ml.solve(report=dict(stderr=True, corr=False))).
 
