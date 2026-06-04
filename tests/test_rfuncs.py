@@ -536,7 +536,7 @@ def test_hantush_well_model_variance_gain(log_b: bool) -> None:
 # Test for Gamma complex_step
 @pytest.mark.parametrize("complex_step", [True, False])
 def test_gamma_complex_step(complex_step: bool) -> None:
-    """Test HantushWellModel parameters log_b and approximate_tmax."""
+    """Test Gamma with complex step."""
     rfunc = ps.Gamma(complex_step=complex_step)
     p = rfunc.get_init_parameters("test").initial.to_numpy()
 
