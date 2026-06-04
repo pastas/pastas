@@ -174,6 +174,8 @@ def _load_model(data: dict) -> Model:
                 "the file with Pastas 1.3."
             )
         solver_name = data[solver_key].pop("class")
+        solver_name = "Lmfit" if solver_name == "LmfitSolve" else solver_name
+        solver_name = "Emcee" if solver_name == "EmceeSolve" else solver_name
         solver = getattr(ps.solver, solver_name)
         ml.add_solver(solver(**data[solver_key]))
 
