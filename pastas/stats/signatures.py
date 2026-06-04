@@ -1,5 +1,7 @@
-"""Module containing methods to compute the groundwater signatures. Part of the
-signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`.
+"""Module containing methods to compute the groundwater signatures.
+
+Part of the signatures selection is based on the
+work of :cite:t:`heudorfer_index-based_2019`.
 
 Examples
 --------
@@ -140,8 +142,9 @@ def cv_period_mean(
 
 
 def _cv_date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
-    """Compute the coefficient of variation of the date of annual
-    minimum or maximum head using circular statistics.
+    """Compute the coefficient of variation for dates.
+
+    The date of annual minimum or maximum head using circular statistics.
 
     Parameters
     ----------
@@ -439,8 +442,9 @@ def _colwell_components(
     method: Literal["mean"] = "mean",
     normalize: bool = True,
 ) -> tuple[float, float, float]:
-    """Colwell's predictability, constant, and contingency
-    :cite:t:`colwell_predictability_1974`.
+    """Colwell's predictability, constant, and contingency.
+
+    After :cite:t:`colwell_predictability_1974`.
 
     Parameters
     ----------
@@ -947,8 +951,10 @@ def cv_fall_rate(
 
 
 def magnitude(series: Series) -> float:
-    """Difference between the minimum and maximum heads, divided by the minimum head
-    adapted after :cite:t:`hannah_approach_2000`.
+    """Calculate the magnitude of head variability.
+
+    Difference between the minimum and maximum heads, divided by the
+    minimum head. Adapted after :cite:t:`hannah_approach_2000`.
 
     Parameters
     ----------
@@ -1373,8 +1379,10 @@ def duration_curve_slope(
     u: float = 0.9,
     normalize: bool = False,
 ) -> float:
-    """Slope of the head duration curve between percentile l and u after
-    :cite:t:`oudin_are_2010`.
+    """Slope of the head duration curve.
+
+    Computed between percentile l and u.
+    After :cite:t:`oudin_are_2010`.
 
     Parameters
     ----------
@@ -1423,8 +1431,10 @@ def duration_curve_ratio(
     u: float = 0.9,
     normalize: bool = True,
 ) -> float:
-    """Ratio of the head duration curve between the percentile l and u after
-    :cite:t:`richards_measures_1990`.
+    """Ratio of the head duration curve.
+
+    Computed between the percentile l and u.
+    After :cite:t:`richards_measures_1990`.
 
     Parameters
     ----------
@@ -1455,8 +1465,9 @@ def duration_curve_ratio(
 
 
 def richards_pathlength(series: Series, normalize: bool = True) -> float:
-    """Path length of the time series, standardized by time series length after
-    :cite:t:`baker_new_2004`.
+    """Compute the path length of the time series, standardized by time series length.
+
+    After :cite:t:`baker_new_2004`.
 
     Parameters
     ----------
@@ -1541,7 +1552,9 @@ def _baselevel(
 def baselevel_index(
     series: Series, normalize: bool = True, period: str = "30D"
 ) -> float:
-    """Base level index (BLI) adapted after :cite:t:`organization_manual_2008`.
+    """Compute Base level index (BLI).
+
+    Adapted after :cite:t:`organization_manual_2008`.
 
     Parameters
     ----------

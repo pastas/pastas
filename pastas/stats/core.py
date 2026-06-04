@@ -358,7 +358,7 @@ def _compute_ccf_regular(
 
 
 def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
-    """Compute the (weighted) mean of a time series.
+    r"""Compute the (weighted) mean of a time series.
 
     Parameters
     ----------
@@ -388,7 +388,7 @@ def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
 
 
 def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
-    """Compute the (weighted) variance of a time series.
+    r"""Compute the (weighted) variance of a time series.
 
     Parameters
     ----------
@@ -472,7 +472,7 @@ def moment(x: Series, order: int) -> float:
 
 
 def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
-    """Helper method that compute the weights as the time step between obs.
+    """Compute the weights as the time step between observations.
 
     Parameters
     ----------

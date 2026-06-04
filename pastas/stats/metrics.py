@@ -51,7 +51,7 @@ def mae(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Mean Absolute Error (MAE).
+    r"""Compute the (weighted) Mean Absolute Error (MAE).
 
     Parameters
     ----------
@@ -101,7 +101,7 @@ def me(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Mean Error (ME).
+    r"""Compute the (weighted) Mean Error (ME).
 
     Parameters
     ----------
@@ -150,7 +150,7 @@ def rmse(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Root Mean Squared Error (RMSE).
+    r"""Compute the (weighted) Root Mean Squared Error (RMSE).
 
     Parameters
     ----------
@@ -197,7 +197,7 @@ def sse(
     res: Series | None = None,
     missing: str = "drop",
 ) -> float:
-    """Compute the Sum of the Squared Errors (SSE).
+    r"""Compute the Sum of the Squared Errors (SSE).
 
     Parameters
     ----------
@@ -240,7 +240,7 @@ def pearsonr(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Pearson correlation (r).
+    r"""Compute the (weighted) Pearson correlation (r).
 
     Parameters
     ----------
@@ -297,7 +297,7 @@ def evp(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Explained Variance Percentage (EVP).
+    r"""Compute the (weighted) Explained Variance Percentage (EVP).
 
     Parameters
     ----------
@@ -363,7 +363,7 @@ def nse(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
+    r"""Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
 
     Parameters
     ----------
@@ -412,7 +412,7 @@ def nnse(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Normalized Nash-Sutcliffe Efficiency (NNSE).
+    r"""Compute the (weighted) Normalized Nash-Sutcliffe Efficiency (NNSE).
 
     Parameters
     ----------

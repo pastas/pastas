@@ -787,6 +787,10 @@ class Model:
         reason="The initialize method is not needed anymore in favor of the `set_settings` method.",
     )
     def initialize(**kwargs) -> None:
+        """Initialize the model.
+
+        Deprecated: This method is no longer needed. Use `set_settings` instead.
+        """
         pass
 
     def solve(
@@ -1014,6 +1018,10 @@ class Model:
         version="2.0.0", reason="Use 'ml.observations()' instead."
     )
     def oseries_calib(self):
+        """Deprecated property for calibration observations.
+
+        Use `ml.observations()` instead.
+        """
         return self.oseries.series
 
     def reset_settings(self) -> None:
@@ -1315,6 +1323,7 @@ class Model:
     @property
     def sim_index(self) -> DatetimeIndex:
         """Property that returns the simulation index, including the warmup.
+
         Using the tmin, tmax, freq, and warmup from the model
         settings, a DatetimeIndex is created that includes the warmup period.
         This index is used for simulating the model and calculating the residuals.
@@ -2307,8 +2316,9 @@ class Model:
         return ml
 
     def _check_stressmodel_compatibility(self) -> None:
-        """Check if the stressmodels are compatible with the
-        model.
+        """Check if the stressmodels are compatible with the model.
+
+        This is an internal method to verify stressmodel compatibility.
         """
         for sm in self.stressmodels.values():
             if hasattr(sm, "_check_stressmodel_compatibility"):

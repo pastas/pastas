@@ -13,8 +13,9 @@ from scipy.stats import norm
 
 
 def sgi(series: Series, timescale_months: int = 1) -> Series:
-    """Compute the Standardized Groundwater Index (SGI)
-    :cite:t:`bloomfield_analysis_2013`.
+    """Compute the Standardized Groundwater Index (SGI).
+
+    After :cite:t:`bloomfield_analysis_2013`.
 
     Parameters
     ----------

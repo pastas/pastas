@@ -1,5 +1,7 @@
-"""Module containing the likelihood functions for Pastas to be used in solvers using
-Bayesian approaches.
+"""Module containing the likelihood functions.
+
+Used in Pastas for solvers using Bayesian approaches (e.g., MCMC)
+to compute the likelihood of the model given the data.
 """
 
 import numpy as np
@@ -9,7 +11,7 @@ from pastas.typing import ArrayLike
 
 
 class GaussianLikelihood:
-    """Gaussian likelihood function for homoscedastic, uncorrelated errors.
+    r"""Gaussian likelihood function for homoscedastic, uncorrelated errors.
 
     Notes
     -----
@@ -83,15 +85,17 @@ class GaussianLikelihood:
 
     @property
     def _name(self) -> str:
+        """Get the name of the log-likelihood function."""
         return self.__class__.__name__
 
     @property
     def nparam(self) -> int:
+        """Number of parameters in the log-likelihood function."""
         return 1
 
 
 class GaussianLikelihoodAr1:
-    """Gaussian likelihood function for homoscedastic, autocorrelated residuals.
+    r"""Gaussian likelihood function for homoscedastic, autocorrelated residuals.
 
     Notes
     -----
@@ -174,8 +178,10 @@ class GaussianLikelihoodAr1:
 
     @property
     def _name(self) -> str:
+        """Get the name of the log-likelihood function."""
         return self.__class__.__name__
 
     @property
     def nparam(self) -> int:
+        """Number of parameters in the log-likelihood function."""
         return 2

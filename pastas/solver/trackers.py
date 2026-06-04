@@ -130,8 +130,10 @@ class TrackSolve:
         self.evp = np.array([evp(obs=self.obs, res=res)])
 
     def track_solve(self, params: ArrayLike) -> None:
-        """Append parameters to self.parameters DataFrame and update itercount,
-        rmse values and evp.
+        """Track solve progress for an iteration.
+
+        Append parameters to self.parameters DataFrame, update
+        itercount, rmse values and evp.
 
         Parameters
         ----------

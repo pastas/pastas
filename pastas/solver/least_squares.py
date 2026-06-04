@@ -31,7 +31,7 @@ class LeastSquaresBase(SolverBase):
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
-        """Base class for least squares solvers.
+        """Initialize base class for least squares solvers.
 
         Parameters
         ----------
@@ -153,8 +153,7 @@ class LeastSquaresBase(SolverBase):
 
     @staticmethod
     def _get_correlations(pcov: DataFrame) -> DataFrame:
-        """Obtain the parameter correlations from the
-        covariance matrix.
+        """Obtain the parameter correlations from the covariance matrix.
 
         Parameters
         ----------
@@ -497,8 +496,9 @@ class LeastSquaresBase(SolverBase):
 
     @abstractmethod
     def solve(self) -> tuple[bool, DataFrame]:
-        """Abstract method that has to be implemented by
-        all least squares solvers.
+        """Solve the optimization problem.
+
+        Abstract method that has to be implemented by all least squares solvers.
 
         Returns
         -------
@@ -673,6 +673,13 @@ class LeastSquaresBase(SolverBase):
         return report
 
     def to_dict(self) -> dict:
+        """Convert solver to a dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary containing the solver's state including the covariance matrix.
+        """
         return super().to_dict() | {"pcov": self.pcov}
 
 
@@ -768,7 +775,7 @@ class LeastSquares(LeastSquaresBase):
         weights: Series | None = None,
         **kwargs,
     ) -> tuple[bool, DataFrame]:
-        """Solve method calling scipy.optimize.least_squares"""
+        """Solve method calling scipy.optimize.least_squares."""
         if self.ml is None:
             raise RuntimeError("Solver is not attached to a Pastas model.")
 
@@ -867,6 +874,18 @@ class LeastSquares(LeastSquaresBase):
 
     @staticmethod
     def get_stderr(pcov: DataFrame) -> Series:
+        """Calculate the standard error of the parameters from the covariance matrix.
+
+        Parameters
+        ----------
+        pcov : pandas.DataFrame
+            The covariance matrix of the parameters.
+
+        Returns
+        -------
+        pandas.Series
+            Series with the standard errors for each parameter.
+        """
         if pcov is None:
             raise RuntimeError("Covariance matrix `pcov` is not available.")
         return Series(np.sqrt(np.diag(pcov)), index=pcov.index)
@@ -878,8 +897,7 @@ class LeastSquares(LeastSquaresBase):
         method: Literal["trf", "dogbox", "lm"] = "trf",
         absolute_sigma: bool = False,
     ) -> ArrayLike:
-        """
-        Method to get the covariance matrix from the jacobian.
+        r"""Calculate the covariance matrix from the jacobian.
 
         Parameters
         ----------
@@ -1046,6 +1064,7 @@ class LeastSquares(LeastSquaresBase):
         )
 
     def to_dict(self) -> dict:
+        """Convert the solver settings to a dictionary."""
         settings = super().to_dict() | {
             "jac": self.jac,
             "method": self.method,
@@ -1067,6 +1086,7 @@ class LeastSquares(LeastSquaresBase):
     version="2.3.0", reason="The LmfitSolve class is renamed to Lmfit."
 )
 def LmfitSolve(*args, **kwargs):
+    """Alias for Lmfit."""
     return Lmfit(*args, **kwargs)
 
 
@@ -1107,7 +1127,7 @@ class Lmfit(LeastSquaresBase):
         weights: Series | None = None,
         **kwargs,
     ) -> tuple[bool, DataFrame]:
-        """Solve method calling lmfit.Minimizer.minimize"""
+        """Call lmfit.Minimizer.minimize to solve the model."""
         # Overwrite kwargs of init if parsed to solve
         init_kwargs = [k for k in kwargs if hasattr(self, k)]
         for k in init_kwargs:
@@ -1175,6 +1195,7 @@ class Lmfit(LeastSquaresBase):
     def objfunction(
         self, parameters: DataFrame, noise: bool, weights: Series
     ) -> ArrayLike:
+        """Objective function that is minimized by the Lmfit solver."""
         p = np.array([p.value for p in parameters.values()])
         return misfit(
             ml=self.ml,
@@ -1193,6 +1214,7 @@ class Lmfit(LeastSquaresBase):
         obj_func: float = np.nan,
         full_output: bool = False,
     ) -> str:
+        """Report on the fit after a model is optimized."""
         # nobs = self.result.ndata
         # aic = self.result.aic
         # bic = self.result.bic
@@ -1206,4 +1228,5 @@ class Lmfit(LeastSquaresBase):
         )
 
     def to_dict(self) -> dict:
+        """Return a dictionary representation of the Lmfit object."""
         return super().to_dict() | {"method": self.method}

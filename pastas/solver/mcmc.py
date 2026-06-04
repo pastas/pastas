@@ -21,6 +21,7 @@ logger = getLogger(__name__)
     version="2.3.0", reason="The EmceeSolve class is renamed to Emcee."
 )
 def EmceeSolve(*args, **kwargs):
+    """Alias for Emcee class."""
     return Emcee(*args, **kwargs)
 
 
@@ -164,6 +165,7 @@ class Emcee(SolverBase):
         callback: CallBack | None = None,
         **kwargs: Any,
     ) -> tuple[bool, DataFrame]:
+        """Solve the model using MCMC."""
         # Store initial parameters
         self.initial = self.ml.parameters.initial.to_numpy(dtype=float)
         self.vary = self.ml.parameters.vary.to_numpy(dtype=bool)

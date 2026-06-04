@@ -251,6 +251,21 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
 
 
 def njit(function: Callable | None = None, **kwargs) -> Callable:
+    """Apply numba's njit to a function if numba is available.
+
+    Parameters
+    ----------
+    function : callable, optional
+        The function to decorate.
+    **kwargs
+        Additional keyword arguments passed to numba.njit.
+
+    Returns
+    -------
+    callable
+        The decorated function, or the original function if numba is not available.
+    """
+
     def njit_decorator(f: Callable) -> Callable:
         try:
             if not USE_NUMBA:
@@ -274,6 +289,10 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
     reason="latexify was archived and is no longer maintained. This decorator will be removed in a future release.",
 )
 def latexfun(**kwargs) -> None:
+    """Use deprecated latexify functionality.
+
+    This decorator is deprecated and will be removed in a future release.
+    """
     pass
 
 

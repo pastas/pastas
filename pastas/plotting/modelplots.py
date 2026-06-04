@@ -44,6 +44,7 @@ class Plotting:
         self.ml = ml  # Store a reference to the model class
 
     def __repr__(self) -> str:
+        """Return a string representation of the ModelPlots class."""
         msg = (
             "This module contains all the built-in plotting options that are available."
         )
@@ -387,8 +388,9 @@ class Plotting:
         version="2.2.0", reason="Use `results` instead with the return_dict argument."
     )
     def results_mosaic(self, *args, **kwargs) -> dict[str, Axes]:
-        """Deprecated: Plot the results of the model in a mosaic plot.
-        Use `results` instead with the return_dict argument to specify the layout
+        """Plot the results of the model in a mosaic plot (deprecated).
+
+        Deprecated: Use `results` instead with the return_dict argument to specify the layout
         of the mosaic plot.
         """
         kwargs = {} or kwargs
@@ -753,9 +755,6 @@ class Plotting:
 
         Parameters
         ----------
-
-        Parameters
-        ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
             (E.g. '1980-01-01 00:00:00'). Strings are converted to
@@ -953,8 +952,9 @@ class Plotting:
         autopct: str = "%1.1f%%",
         **kwargs,
     ) -> Axes:
-        """Make a pie chart of the contributions. This plot is based on the TNO
-        Groundwatertoolbox.
+        """Make a pie chart of the contributions.
+
+        This plot is based on the TNO Groundwatertoolbox.
 
         Parameters
         ----------
@@ -1037,9 +1037,10 @@ class Plotting:
         stacklegend_kws: dict | None = None,
         **kwargs,
     ) -> list[Axes]:
-        """Create a results plot, similar to `ml.plots.results()`, in which the
-        individual contributions of stresses (in stressmodels with multiple stresses)
-        are stacked.
+        """Create a results plot, similar to `ml.plots.results()`.
+
+        In this plot, the individual contributions of stresses (in stressmodels with
+        multiple stresses) are stacked.
 
         Parameters
         ----------
@@ -1278,8 +1279,7 @@ class Plotting:
         bins: int | None = None,
         split: bool = True,
     ) -> dict[str, Axes]:
-        """Plot the correlation between all the time series going
-        into a Pastas Model.
+        """Plot the correlation between all the time series going into a Pastas Model.
 
         Parameters
         ----------

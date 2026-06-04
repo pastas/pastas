@@ -1,6 +1,4 @@
-"""Provides accessor registration for extending Pastas model classes with custom
-properties.
-"""
+"""Module for accessor registration for extending Pastas model classes."""
 
 # copied and adapted from pandas/core/accessor.py
 import logging
@@ -107,6 +105,18 @@ def _register_accessor(name: str, cls):
 
 
 def register_model_accessor(name: str):
+    """Register a custom accessor for Pastas Model classes.
+
+    Parameters
+    ----------
+    name : str
+        The name of the accessor to register.
+
+    Returns
+    -------
+    decorator : callable
+        A decorator to apply to the accessor class.
+    """
     from pastas import Model
 
     return _register_accessor(name, Model)
