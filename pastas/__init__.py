@@ -77,3 +77,12 @@ def LmfitSolve(*args, **kwargs):  # noqa: F811
 def EmceeSolve(*args, **kwargs):  # noqa: F811
     """Alias for EmceeSolve."""
     return EmceeSolve(*args, **kwargs)
+
+
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The LeastSquares class will be removed from the pastas module namespace. Please use ps.solver.LeastSquares instead.",
+)
+def LeastSquares(*args, **kwargs):  # noqa: F811
+    """Alias for LeastSquares."""
+    return LeastSquares(*args, **kwargs)

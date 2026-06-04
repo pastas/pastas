@@ -15,11 +15,11 @@ from pastas.solver.objective_function import misfit
 
 # Existing integration tests with real models
 def test_least_squares(ml_recharge: ps.Model) -> None:
-    ml_recharge.solve(solver=ps.LeastSquares())
+    ml_recharge.solve(solver=ps.solver.LeastSquares())
 
 
 def test_least_squares_lm(ml_recharge: ps.Model) -> None:
-    ml_recharge.solve(solver=ps.LeastSquares(), method="lm")
+    ml_recharge.solve(solver=ps.solver.LeastSquares(), method="lm")
     assert ml_recharge.parameters.loc[ml_recharge.parameters.vary, "pmin"].isna().all()
 
 
@@ -35,7 +35,7 @@ def test_no_noise(ml_recharge: ps.Model) -> None:
 def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
     """Verify weighted least-squares uses weights on residual terms."""
     ml_recharge.del_noisemodel()
-    ml_recharge.solve(solver=ps.LeastSquares(), report=False)
+    ml_recharge.solve(solver=ps.solver.LeastSquares(), report=False)
 
     p = ml_recharge.get_parameters()
     residuals = ml_recharge.residuals(p)
@@ -84,7 +84,7 @@ def test_ci_contribution(ml_solved: ps.Model) -> None:
 # Test the EmceeSolver
 def test_emcee(ml_recharge: ps.Model) -> None:
     try:
-        ml_recharge.solve(solver=ps.LeastSquares())
+        ml_recharge.solve(solver=ps.solver.LeastSquares())
         ml_recharge.del_noisemodel()
 
         s = ps.solver.Emcee(nwalkers=10)

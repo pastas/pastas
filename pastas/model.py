@@ -365,7 +365,7 @@ class Model:
         ----------
         solver: pastas.solver.Solver
             Instance of a pastas Solver class used to solve the model. Options are:
-            ps.LeastSquares(), ps.solver.Lmfit() or ps.solver.Emcee().
+            ps.solver.LeastSquares(), ps.solver.Lmfit() or ps.solver.Emcee().
 
         See Also
         --------
@@ -830,7 +830,7 @@ class Model:
             Instance of a pastas Solver class used to solve the model. See pastas.
             solver for the options. The solver is stored in the `ml.solver` attribute.
             If None, the solver from `ml.solver` is used. If `solver` and `ml.solver`
-            are both None, the default ps.LeastSquares() is used.
+            are both None, the default ps.solver.LeastSquares() is used.
         report: bool | Literal["full"] | dict, optional
             Print a report to the screen after optimization finished. Set to
             True (default) to print a standard report, set to "full" to print a
