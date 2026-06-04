@@ -868,13 +868,13 @@ def _compute_err(
 # Prediction Interval Metrics
 
 
-def picp(sim: Series, bounds: DataFrame, **kwargs):
+def picp(obs: Series, bounds: DataFrame):
     """Compute the prediction interval coverage probability (PICP).
 
     Parameters
     ----------
-    sim : pandas.Series
-        Pandas Series with the simulated time series and a DateTimeIndex.
+    obs : pandas.Series
+        Pandas Series with the observed time series and a DateTimeIndex.
     bounds : DataFrame
         DataFrame with the lower (first column) and upper (second columns) bounds of the
         prediction intervals.
@@ -905,14 +905,14 @@ def picp(sim: Series, bounds: DataFrame, **kwargs):
         raise TypeError("picp() missing required argument: 'bounds'")
 
     # Check if the DateTimeIndex of the observations and the bounds match
-    if not sim.index.isin(bounds.index).all():
+    if not obs.index.isin(bounds.index).all():
         msg = "The DateTimeIndex of the observations and the bounds do not match."
         logger.error(msg)
         raise ValueError(msg)
 
-    if not sim.index.equals(bounds.index):
-        bounds = bounds.loc[sim.index, :]
+    if not obs.index.equals(bounds.index):
+        bounds = bounds.loc[obs.index, :]
 
     # Determine if the observations are within the prediction intervals
-    a = (sim >= bounds.iloc[:, 0]) & (sim <= bounds.iloc[:, 1])
+    a = (obs >= bounds.iloc[:, 0]) & (obs <= bounds.iloc[:, 1])
     return a.mean()
