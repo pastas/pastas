@@ -8,7 +8,7 @@ import numpy as np
 from pandas import DataFrame, Series, Timestamp, concat
 from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 from pastas.plotting.modelcompare import CompareModels
 from pastas.plotting.plotutil import plot_series_with_gaps, share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
