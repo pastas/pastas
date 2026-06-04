@@ -87,7 +87,6 @@ version = { attr = "pastas.version.__version__" }
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
-lint.extend-select = ["I"]
 show-fixes = true
 fix = true
 
@@ -166,6 +165,15 @@ commands = [
         "--check",
     ],
 ]
+
+[tool.ruff.lint]
+extend-select = ["I", "D"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.tox.env.ruff_preview]
 description = "run ruff checks preview mode"
