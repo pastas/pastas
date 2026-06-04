@@ -23,7 +23,6 @@ and their real-world applications.
 
     history
     team
-    support
     related
     citing
     courses
