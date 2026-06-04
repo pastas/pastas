@@ -30,7 +30,6 @@ from scipy.special import (
     gammaincinv,
     k0,
     k0e,
-    k1,
     kv,
     wrightomega,
 )
@@ -318,7 +317,7 @@ class RfuncBase(ABC):
         if np.ndim(dt) > 0:
             return np.asarray(dt, dtype=float)
 
-        tmax = self._resolve_tmax(p=p, cutoff=cutoff, **kwargs)
+        tmax = self._resolve_tmax(p=np.asarray(p).real, cutoff=cutoff, **kwargs)
         # make sure tmax is at least 3*dt such that len(t) is at least 2
         # make sure tmax does not exceed maxtmax if provided
         tmax = max(min(tmax, maxtmax) if maxtmax is not None else tmax, 3 * dt)
@@ -470,6 +469,13 @@ class Gamma(RfuncBase):
         as uniform during a time interval dt. When False, the impulse response
         is used which means that the the entire stress occurs midway the time
         interval dt. The impulse response is generally quicker to compute.
+    complex_step: bool, optional
+        If False (default) uses the (fast) scipy implementation of the Gamma.step
+        function, which does not support complex-step Jacobian evaluation when
+        `use_block=True`. If True the (slow) mpmath implementation is used, which does
+        support complex-step differentiation, but incurs a significant performance
+        penalty. Note that the scipy implementation does support complex inputs when
+        using the impulse response (`use_block=False`).
 
     Attributes
     ----------
@@ -485,9 +491,11 @@ class Gamma(RfuncBase):
         self,
         cutoff: float = 0.999,
         use_block: bool = True,
+        complex_step: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(cutoff=cutoff, use_block=use_block, **kwargs)
+        self.complex_step = complex_step
 
     @property
     def nparam(self) -> int:
@@ -536,8 +544,51 @@ class Gamma(RfuncBase):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
+        if not self.complex_step:
+            return self._scipy_step(
+                p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
+            )
+        else:
+            return self._mp_step(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
+
+    def _scipy_step(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+        **kwargs,
+    ) -> ArrayLike:
+        if np.iscomplexobj(p) and self.use_block:
+            raise TypeError(
+                "Gamma.step does not support complex-step Jacobian evaluation "
+                "(jac='cs') by default. Set use_block=False, set complex_step=True or"
+                "use a different Jacobian method (e.g. jac='3-point' or jac='2-point')."
+            )
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
         s = p[0] * gammainc(p[1], t / p[2])
+        return s
+
+    def _mp_step(
+        self,
+        p: ArrayLike,
+        dt: float = 1.0,
+        cutoff: float | None = None,
+        maxtmax: float | None = None,
+        **kwargs,
+    ) -> ArrayLike:
+        try:
+            from mpmath import fp as mpfp
+        except ImportError:
+            raise ImportError(
+                "mpmath not installed: `pip install mpmath` or "
+                "`pip install pastas[mpmath]`."
+            ) from None
+        t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
+        s = p[0] * np.array(
+            [mpfp.gammainc(p[1], 0, ti / p[2], regularized=True) for ti in t],
+            dtype=float,
+        )
         return s
 
     def moment(
@@ -561,6 +612,12 @@ class Gamma(RfuncBase):
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, n, a = p
         return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
+
+    def to_dict(self):
+        settings = super().to_dict() | {
+            "complex_step": self.complex_step,
+        }
+        return settings
 
 
 class Exponential(RfuncBase):
@@ -874,7 +931,7 @@ class Hantush(RfuncBase):
     @staticmethod
     def numpy_step(A: float, a: float, b: float, t: ArrayLike) -> ArrayLike:
         rho = 2.0 * np.sqrt(b)
-        k0rho = k0(rho)
+        k0rho = kv(0, rho)
         if k0rho == 0.0:
             logger.warning(
                 f"K_0(rho) is underflowing to 0.0 for b: {b:.4e}, rho = {rho:.4e}. "
@@ -889,7 +946,9 @@ class Hantush(RfuncBase):
         b_over_tau = b / tau
 
         F = np.empty_like(tau)
-        mask = tau < (rho / 2.0)
+        # Use real parts for mask comparison: tau and rho may be complex during
+        # complex-step Jacobian evaluation
+        mask = np.real(tau) < (np.real(rho) / 2.0)
         inv_mask = ~mask
 
         tau1 = tau[mask]
@@ -913,7 +972,7 @@ class Hantush(RfuncBase):
         u = a * b / t
         for i in range(0, len(t)):
             F[i] = quad(Hantush._integrand_hantush, u[i], np.inf, args=(b,))[0]
-        return F * A / (2 * k0(2 * np.sqrt(b)))
+        return F * A / (2 * kv(0, 2 * np.sqrt(b)))
 
     def step(
         self,
@@ -957,7 +1016,7 @@ class Hantush(RfuncBase):
     @staticmethod
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
         A, a, b = p
-        return A / (2 * t * k0(2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
+        return A / (2 * t * kv(0, 2 * np.sqrt(b))) * np.exp(-t / a - a * b / t)
 
     def to_dict(self):
         settings = super().to_dict() | {
@@ -1106,7 +1165,7 @@ class HantushWellModel(RfuncBase):
         A, a, b = p[:3]
         b_scaled = 10 ** (b / 2.0) if self.log_b else np.sqrt(b)
         rho = 2.0 * r * b_scaled
-        A_h = A * k0(rho)
+        A_h = A * kv(0, rho)
         b_h = (r * b_scaled) ** 2
         return np.array([A_h, a, b_h])
 
@@ -1140,7 +1199,7 @@ class HantushWellModel(RfuncBase):
             r = self._get_distance_from_params(p)
         b_scaled = 10 ** (p[2] / 2.0) if self.log_b else np.sqrt(p[2])
         rho = 2.0 * r * b_scaled
-        return p[0] * k0(rho)
+        return p[0] * kv(0, rho)
 
     def step(
         self,
@@ -1257,8 +1316,8 @@ class HantushWellModel(RfuncBase):
         rho = 2.0 * r * b_scaled
         drho_db = 2.0 * r * db_scaled
 
-        dg_dA = k0(rho)
-        dg_db = -A * k1(rho) * drho_db
+        dg_dA = kv(0, rho)
+        dg_db = -A * kv(1, rho) * drho_db
 
         var_gain = dg_dA**2 * var_A + dg_db**2 * var_b + 2 * dg_dA * dg_db * cov_Ab
         return var_gain
@@ -1470,9 +1529,9 @@ class One(RfuncBase):
         **kwargs,
     ) -> ArrayLike:
         if isinstance(dt, np.ndarray):
-            return np.full(len(dt), p[0], dtype=float)
+            return np.full(len(dt), p[0], dtype=np.asarray(p).dtype)
         else:
-            return np.full(1, p[0], dtype=float)
+            return np.full(1, p[0], dtype=np.asarray(p).dtype)
 
     def moment(
         self,
@@ -1774,6 +1833,14 @@ class FourParam(RfuncBase):
     ) -> ArrayLike:
 
         impulse_integral = self._impulse_integral(p)
+
+        if np.iscomplexobj(p) and self.use_block:
+            raise NotImplementedError(
+                "FourParam does not support complex-step Jacobian evaluation "
+                "(jac='cs') when use_block=True. Set use_block=False on the "
+                "FourParam response function, or use a different Jacobian "
+                "method (e.g., jac='3-point' or jac='2-point')."
+            )
 
         if self.quad:
             t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)

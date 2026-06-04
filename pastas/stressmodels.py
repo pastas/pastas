@@ -606,6 +606,7 @@ class StressModel(StressModelBase):
             data=fftconvolve(stress, b, "full")[:npoints],
             index=stress.index,
             name=self.name,
+            dtype=np.asarray(p).dtype,
         )
         return h
 
@@ -1277,7 +1278,12 @@ class WellModel(StressModelBase):
         stress_df = self.get_stress(
             p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress, squeeze=False
         )
-        h = Series(data=0, index=self.stresses[0].series.index, name=self.name)
+        h = Series(
+            data=0,
+            index=self.stresses[0].series.index,
+            name=self.name,
+            dtype=np.asarray(p).dtype,
+        )
         for name, r in distances.items():
             stress = stress_df.loc[:, name]
             npoints = stress.index.size
@@ -1891,6 +1897,7 @@ class RechargeModel(StressModelBase):
             data=fftconvolve(stress, b, "full")[: stress.size],
             index=self.prec.series.index,
             name=name,
+            dtype=p.dtype,
         )
 
     def get_stress(
@@ -2260,6 +2267,9 @@ class TarsoModel(RechargeModel):
         _ = istress  # istress is not used for TarsoModel
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
         h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(copy=True), dt)
+        # Strip imaginary part when not doing complex-step Jacobian
+        if not np.iscomplexobj(p):
+            h = h.real
         sim = Series(h, name=self.name, index=stress.index)
         return sim
 
@@ -2299,11 +2309,12 @@ class TarsoModel(RechargeModel):
         d_e = (c1 / (c0 + c1)) * d0 + (c0 / (c0 + c1)) * d1
         a_e = S1 * c_e
 
-        h = np.full(len(r), np.nan)
+        h = np.empty(len(r), dtype=np.complex128)
         for i in range(len(r)):
             if i == 0:
                 h0 = (d0 + d1) / 2
-                high = h0 > d1
+                # Use .real for comparison to support complex-step differentiation
+                high = h0.real > d1.real
                 if high:
                     S, a, c, d = S1, a_e, c_e, d_e
                 else:
@@ -2312,11 +2323,12 @@ class TarsoModel(RechargeModel):
                 h0 = h[i - 1]
             exp_a = np.exp(-dt / a)
             h[i] = (h0 - d) * exp_a + r[i] * c * (1 - exp_a) + d
-            newhigh = h[i] > d1
+            # Use .real for comparison to support complex-step differentiation
+            newhigh = h[i].real > d1.real
             if high != newhigh:
                 # calculate time until d1 is reached
                 dtdr = -S * c * np.log((d1 - d - r[i] * c) / (h0 - d - r[i] * c))
-                if dtdr > dt:
+                if dtdr.real > dt:
                     raise ValueError("TarsoModel: dtdr > dt")
                 # change parameters
                 high = newhigh

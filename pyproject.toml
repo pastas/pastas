@@ -55,10 +55,11 @@ formatting = ["pastas[ruffing]"]
 linting = ["pastas[ruffing]"]
 caching = ["cachetools"]
 codespelling = ["codespell[toml]"]
-full = ["pastas[solvers,interactive,datasets,caching]"]
+mpmath = ["mpmath"]
+full = ["pastas[solvers,interactive,datasets,caching,mpmath]"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
-    "pastas[pytesting,solvers,interactive,caching]",
+    "pastas[pytesting,solvers,interactive,caching,mpmath]",
     "jupyter",
     "coverage",
     "corner",
