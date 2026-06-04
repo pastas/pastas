@@ -93,7 +93,13 @@ html_theme_options = {
             "type": "fontawesome",  # Default is fontawesome
         }
     ],
-    "announcement": "",  # You can put an announcement (HTML) here
+    "announcement": (
+        'Support Pastas: '
+        '<a href="https://opencollective.com/pastas" '
+        'target="_blank" rel="noopener noreferrer">'
+        "Become a sustaining member"
+        "</a>"
+    ),
     "show_nav_level": 2,
 }
 
