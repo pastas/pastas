@@ -11,6 +11,7 @@ import pastas.timeseries_utils as ts
 from pastas import check, extensions, forecast, solver, stats
 from pastas.dataset import list_datasets, load_dataset
 from pastas.decorators import (
+    PastasDeprecationWarning,
     get_use_cache,
     get_use_numba,
     set_use_cache,
@@ -58,3 +59,21 @@ logger = logging.getLogger(__name__)
 # https://github.com/pastas/pastas/issues/92
 
 register_matplotlib_converters()
+
+
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The LmfitSolve class will be removed from the pastas module namespace. Please use ps.solver.Lmfit instead.",
+)
+def LmfitSolve(*args, **kwargs):  # noqa: F811
+    """Alias for LmfitSolve."""
+    return LmfitSolve(*args, **kwargs)
+
+
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The EmceeSolve class will be removed from the pastas module namespace. Please use ps.solver.Emcee instead.",
+)
+def EmceeSolve(*args, **kwargs):  # noqa: F811
+    """Alias for EmceeSolve."""
+    return EmceeSolve(*args, **kwargs)
