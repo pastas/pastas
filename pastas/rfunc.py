@@ -589,6 +589,7 @@ class Gamma(RfuncBase):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
+        """Return the step function for the Gamma response function."""
         if not self.complex_step:
             return self._scipy_step(
                 p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs
@@ -690,7 +691,14 @@ class Gamma(RfuncBase):
         A, n, a = p
         return A * t ** (n - 1) * np.exp(-t / a) / (a**n * gamma(n))
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
+        """Export the Gamma response function object as a dictionary.
+
+        Returns
+        -------
+        settings : dict
+            Dictionary containing the Gamma settings.
+        """
         settings = super().to_dict() | {
             "complex_step": self.complex_step,
         }
@@ -2593,8 +2601,7 @@ class FourParam(RfuncBase):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
-        """Return the step function for FourParam response.
-
+        """Return the step function for FourParam response."""
         impulse_integral = self._impulse_integral(p)
 
         if np.iscomplexobj(p) and self.use_block:
@@ -3558,6 +3565,6 @@ class Spline(RfuncBase):
     ),
 )
 class Edelman(RfuncBase):
-    """Moved to pastas-plugins: `pastas_plugins.responses.Edelman`."""
+    """Moved to pastas-plugins: pastas_plugins.responses.Edelman."""
 
     pass
