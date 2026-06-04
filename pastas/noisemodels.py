@@ -163,7 +163,7 @@ class ArNoiseModel(NoiseModelBase):
     def nparam(self) -> int:
         return 1
 
-    def simulate(self, res: Series, p: ArrayLike, **kwargs) -> Series:
+    def simulate(self, res: Series, p: ArrayLike) -> Series:
         """Simulate noise from the residuals.
 
         Parameters
@@ -186,7 +186,7 @@ class ArNoiseModel(NoiseModelBase):
         v = np.append(resv[0], resv[1:] - np.exp(-odelt / alpha) * resv[:-1])
         return Series(data=v, index=res.index, name="Noise")
 
-    def weights(self, res: Series, p: ArrayLike, **kwargs) -> Series:
+    def weights(self, res: Series, p: ArrayLike) -> Series:
         """Method to calculate the weights for the noise.
 
         Parameters
@@ -227,13 +227,12 @@ class ArNoiseModel(NoiseModelBase):
         res: Series,
         p: ArrayLike,
         tindex: DatetimeIndex,
-        **kwargs,
     ) -> Series:
         """Get the correction for a forecast using the noise model.
 
         Parameters
         ----------
-        rff  : Series
+        res : Series
             The residual series.
         p : ArrayLike
             The parameters of the noise model.
@@ -334,7 +333,7 @@ class ArmaNoiseModel(NoiseModelBase):
             self.name,
         )
 
-    def simulate(self, res: Series, p: ArrayLike, **kwargs) -> Series:
+    def simulate(self, res: Series, p: ArrayLike) -> Series:
 
         alpha = p[0]
         beta = p[1]
