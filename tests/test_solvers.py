@@ -111,7 +111,7 @@ class TestOptionalSolvers:
         """Test LmfitSolve initialization."""
         try:
             solver = LmfitSolve()
-            assert solver._name == "LmfitSolve"
+            assert solver._name == "Lmfit"
         except ImportError:
             pytest.skip("lmfit not installed")
 
@@ -119,7 +119,7 @@ class TestOptionalSolvers:
         """Test EmceeSolve initialization."""
         try:
             solver = EmceeSolve()
-            assert solver._name == "EmceeSolve"
+            assert solver._name == "Emcee"
             assert solver.nwalkers == 20
             assert solver.progress_bar is True
         except ImportError:
