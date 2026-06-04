@@ -828,16 +828,20 @@ class Model:
             used (defaults to 3650 days).
         solver: Class pastas.solver.Solver, optional
             Instance of a pastas Solver class used to solve the model. See pastas.
-            solver for the options. If None, the solver from ml.solver is used, and if
-            that is also None, the default ps.LeastSquares() is used.
+            solver for the options. The solver is stored in the `ml.solver` attribute.
+            If None, the solver from `ml.solver` is used. If `solver` and `ml.solver`
+            are both None, the default ps.LeastSquares() is used.
         report: bool | Literal["full"] | dict, optional
             Print a report to the screen after optimization finished. Set to
-            True (default) to print a standard report, "full" to print a
+            True (default) to print a standard report, set to "full" to print a
             report including the correlation matrix and standard errors of the
-            parameters, or False to suppress the report. To have full conrol over the
-            report, a dictionary with the arguments of ml.solve.fit_report() can be
-            provided. This can also be manually triggered after optimization by calling
-            print(ml.fit_report( )) on the Pastas model instance.
+            parameters, or set to False to suppress the report.
+
+            .. versionchanged:: 2.0.0
+             To have full conrol over the report, a dictionary with the arguments of
+             ml.solve.fit_report() can be provided:
+             (i.e., ml.solve(report=dict(stderr=True, corr=False))).
+
         initial: bool, optional
             Reset initial parameters from the individual stress models. Default is
             True. If False, the optimal values from an earlier optimization are used.
@@ -877,7 +881,8 @@ class Model:
         reset_settings: bool = False,
             If True, the model settings are reset to their default values before
             solving. This calls the Model.set_settings() method with default values.
-            Default is False.
+            Default is False. To reset the original parameters of the model, use
+            `initial=True` instead.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.

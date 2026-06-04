@@ -23,7 +23,8 @@ class EmceeSolve(SolverBase):
     Parameters
     ----------
     objfunction: pastas.solver.likelihood function, optional
-        An objective function to be minimized. See the pastas.likelihood_functions module for more information.
+        An objective function to be minimized. See the pastas.likelihood module for
+        more information.
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
     backend: emcee.backend, optional
@@ -282,9 +283,15 @@ class EmceeSolve(SolverBase):
         p: numpy.Array
             Numpy array with the parameters.
         noise: bool
-
-        weights
-        callback
+            If True, the noise model is applied to the residuals. This is passed on to
+            the misfit function, which will apply the noise model if True.
+        weights: pandas.Series, optional
+            Series with weights for the residuals. This is passed on to the misfit
+            function, which will apply the weights if provided.
+        callback: callable, optional
+            Callback function that will be called after each iteration of the solver.
+            This is passed on to the misfit function, which will call the callback if
+            provided.
 
         Returns
         -------

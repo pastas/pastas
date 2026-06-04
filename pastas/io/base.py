@@ -168,7 +168,7 @@ def _load_model(data: dict) -> Model:
             continue
         if solver_key == "fit":
             # TODO: Deprecate if pas-files < 1.3 are no longer supported
-            logger.warning(
+            logger.error(
                 "The solver object is stored in the model.solver attribute since Pastas "
                 "1.3. Please update your pas-file to the new format by loading and saving "
                 "the file with Pastas 1.3."
