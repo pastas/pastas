@@ -43,7 +43,11 @@ def get_versions(optional: bool = False) -> dict[str, str]:
         "numba",
     )
     for module in required_dependencies:
-        version_dict[module] = metadata.version(module)
+        try:
+            import_module(module)
+            version_dict[module] = metadata.version(module)
+        except ImportError:
+            version_dict[module] = "Not Installed"
 
     if optional:
         optional_dependencies = (

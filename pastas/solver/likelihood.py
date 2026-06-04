@@ -1,9 +1,10 @@
-"""This module contains the objective functions that can be used with the pastas
-``EmceeSolve`` solver.
-"""
+"""This module contains the likelihood functions for Pastas to be used in solvers using
+Bayesian approaches."""
 
-from numpy import log, pi
+import numpy as np
 from pandas import DataFrame
+
+from pastas.typing import ArrayLike
 
 
 class GaussianLikelihood:
@@ -26,10 +27,8 @@ class GaussianLikelihood:
 
     """
 
-    _name = "GaussianLikelihood"
-
-    def __init__(self):
-        self.nparam = 1
+    def __init__(self) -> None:
+        pass
 
     def get_init_parameters(self, name: str) -> DataFrame:
         """Get the initial parameters for the log-likelihood function.
@@ -46,13 +45,21 @@ class GaussianLikelihood:
 
         """
         parameters = DataFrame(
-            [(0.05, 1e-10, 1.0, True, 0.01, name, "uniform")],
-            columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"],
+            [(0.05, 1e-10, 1.0, True, name, 1.0, "norm")],
+            columns=[
+                "initial",
+                "pmin",
+                "pmax",
+                "vary",
+                "name",
+                "sigma",
+                "dist",
+            ],
             index=[name + "_var"],
         )
         return parameters
 
-    def compute(self, rv, p):
+    def compute(self, rv: ArrayLike, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
@@ -70,8 +77,16 @@ class GaussianLikelihood:
         """
         var = p[-1]
         N = rv.size
-        ln = -0.5 * N * log(2 * pi * var) + sum(-(rv**2) / (2 * var))
+        ln = -0.5 * N * np.log(2 * np.pi * var) + sum(-(rv**2) / (2 * var))
         return ln
+
+    @property
+    def _name(self) -> str:
+        return self.__class__.__name__
+
+    @property
+    def nparam(self) -> int:
+        return 1
 
 
 class GaussianLikelihoodAr1:
@@ -98,10 +113,8 @@ class GaussianLikelihoodAr1:
 
     """
 
-    _name = "GaussianLikelihoodAr1"
-
-    def __init__(self):
-        self.nparam = 2
+    def __init__(self) -> None:
+        pass
 
     def get_init_parameters(self, name: str) -> DataFrame:
         """Get the initial parameters for the log-likelihood function.
@@ -119,14 +132,22 @@ class GaussianLikelihoodAr1:
         """
         return DataFrame(
             [
-                (0.05, 1e-10, 1.0, True, 0.01, name, "uniform"),
-                (0.5, 1e-10, 0.99999, True, 0.2, name, "uniform"),
+                (0.05, 1e-10, 1.0, True, name, 1.0, "norm"),
+                (0.5, 1e-10, 0.99999, True, name, 1.0, "norm"),
             ],
-            columns=["initial", "pmin", "pmax", "vary", "stderr", "name", "dist"],
+            columns=[
+                "initial",
+                "pmin",
+                "pmax",
+                "vary",
+                "name",
+                "sigma",
+                "dist",
+            ],
             index=[name + "_var", name + "_phi"],
         )
 
-    def compute(self, rv, p):
+    def compute(self, rv: ArrayLike, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
@@ -145,7 +166,15 @@ class GaussianLikelihoodAr1:
         var = p[-2]
         phi = p[-1]
         N = rv.size
-        ln = -(N - 1) / 2 * log(2 * pi * var) + sum(
+        ln = -(N - 1) / 2 * np.log(2 * np.pi * var) + sum(
             -((rv[1:] - phi * rv[0:-1]) ** 2) / (2 * var)
         )
         return ln
+
+    @property
+    def _name(self) -> str:
+        return self.__class__.__name__
+
+    @property
+    def nparam(self) -> int:
+        return 2
