@@ -779,7 +779,7 @@ class Plotting:
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return cum_frequency(oseries=obs, sim=sim, ax=ax, **kwargs)
+        return cum_frequency(obs=obs, sim=sim, ax=ax, **kwargs)
 
     def block_response(
         self,

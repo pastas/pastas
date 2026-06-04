@@ -254,7 +254,7 @@ class Statistics:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.nse(oseries=obs, res=res, weighted=weighted, **kwargs)
+        return metrics.nse(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def nnse(
@@ -287,7 +287,7 @@ class Statistics:
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
 
-        return metrics.nnse(oseries=obs, res=res, weighted=weighted, **kwargs)
+        return metrics.nnse(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def pearsonr(
@@ -319,7 +319,7 @@ class Statistics:
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        return metrics.pearsonr(oseries=obs, sim=sim, weighted=weighted, **kwargs)
+        return metrics.pearsonr(obs=obs, sim=sim, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def evp(
@@ -351,7 +351,7 @@ class Statistics:
         """
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.evp(oseries=obs, res=res, weighted=weighted, **kwargs)
+        return metrics.evp(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def rsq(
@@ -383,7 +383,7 @@ class Statistics:
         """
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
         res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        return metrics.rsq(oseries=obs, res=res, weighted=weighted, **kwargs)
+        return metrics.rsq(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def kge(
@@ -435,7 +435,7 @@ class Statistics:
             sim_interpolated = sim.reindex(obs.index)
 
         return metrics.kge(
-            oseries=obs,
+            obs=obs,
             sim=sim_interpolated,
             weighted=weighted,
             modified=modified,
@@ -472,7 +472,7 @@ class Statistics:
         """
         sim = self.ml.simulate(tmin=tmin, tmax=tmax)
         obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        return metrics.kge_2012(oseries=obs, sim=sim, weighted=weighted, **kwargs)
+        return metrics.kge_2012(obs=obs, sim=sim, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
     def bic(

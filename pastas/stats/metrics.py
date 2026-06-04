@@ -746,7 +746,7 @@ def kge(
         logger.warning("Time indices of the sim and obs don't match.")
         return nan
 
-    r = pearsonr(oseries=obs, sim=sim, weighted=weighted, max_gap=max_gap)
+    r = pearsonr(obs=obs, sim=sim, weighted=weighted, max_gap=max_gap)
 
     mu_sim = mean(sim, weighted=weighted, max_gap=max_gap)
     mu_obs = mean(obs, weighted=weighted, max_gap=max_gap)
