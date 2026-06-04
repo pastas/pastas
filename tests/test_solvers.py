@@ -87,7 +87,7 @@ def test_emcee(ml_recharge: ps.Model) -> None:
         ml_recharge.solve(solver=ps.LeastSquares())
         ml_recharge.del_noisemodel()
 
-        s = ps.EmceeSolve(nwalkers=10)
+        s = ps.solver.Emcee(nwalkers=10)
         ml_recharge.add_solver(s)
 
         ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)

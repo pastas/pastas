@@ -55,7 +55,7 @@ class Emcee(SolverBase):
     (MCMC) approach to find the optimal parameter values. The solver can be used as
     follows::
 
-        solver = ps.EmceeSolve(nwalkers=20, progress_bar=True)
+        solver = ps.solver.Emcee(nwalkers=20, progress_bar=True)
         ml.solve(solver=solver)
 
     The arguments provided are mostly passed on to the `emcee.EnsembleSampler`
@@ -63,13 +63,13 @@ class Emcee(SolverBase):
     `run_mcmc` (and indirectly the `sample` method), can be passed on to
     `Model.solve`, like::
 
-        ml.solve(solver=ps.EmceeSolve(), thin_by=2)
+        ml.solve(solver=ps.solver.Emcee(), thin_by=2)
 
     Examples
     --------
     Example usage::
 
-        ml.solve(solver=ps.EmceeSolve(), steps=5000)
+        ml.solve(solver=ps.solver.Emcee(), steps=5000)
 
     To obtain the MCMC chains, use::
 

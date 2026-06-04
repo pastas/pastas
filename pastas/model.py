@@ -365,7 +365,7 @@ class Model:
         ----------
         solver: pastas.solver.Solver
             Instance of a pastas Solver class used to solve the model. Options are:
-            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve().
+            ps.LeastSquares(), ps.solver.Lmfit() or ps.solver.Emcee().
 
         See Also
         --------
