@@ -303,7 +303,7 @@ class TimeSeries:
         return update
 
     def _validate_series(self):
-        """Method to validate the time series"""
+        """Method to validate the time series."""
         if self.settings["fill_nan"] == "drop":
             raise UserWarning(
                 "The fill_nan setting 'drop' for a stress is not allowed "
@@ -732,7 +732,7 @@ class ObservationSeries(TimeSeries):
             self._series = series
 
     def _validate_series(self):
-        """Method to validate the time series"""
+        """Method to validate the time series."""
         return validate_oseries(self.series_original)
 
 

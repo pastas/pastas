@@ -171,6 +171,7 @@ extend-select = ["I", "D"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["D"]
+"**/*.ipynb" = ["D"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

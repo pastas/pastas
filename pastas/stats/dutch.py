@@ -126,7 +126,7 @@ def ghg(
     year_offset: str = year_offset + "-MAR",
 ) -> Series | float:
     """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
-    Groundwater Level)
+    Groundwater Level).
 
     Parameters
     ----------

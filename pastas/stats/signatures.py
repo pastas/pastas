@@ -557,7 +557,7 @@ def colwell_contingency(
     method: Literal["mean"] = "mean",
     normalize: bool = True,
 ) -> tuple[float, float, float]:
-    """Colwell's contingency :cite:t:`colwell_predictability_1974`
+    """Colwell's contingency :cite:t:`colwell_predictability_1974`.
 
     Parameters
     ----------

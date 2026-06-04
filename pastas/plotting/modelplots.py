@@ -402,7 +402,7 @@ class Plotting:
         ax: Axes,
         istress: int | None = None,
     ):
-        """Internal method to plot the response of a Stressmodel in the results-plot"""
+        """Internal method to plot the response of a Stressmodel in the results-plot."""
         responses = sm._get_responses(
             self.ml, block_or_step=block_or_step, istress=istress
         )
@@ -440,7 +440,7 @@ class Plotting:
         return ax
 
     def _plot_parameters_table(self, ax: Axes, stderr: bool) -> None:
-        """Internal method to plot the parameters table in the results-plot"""
+        """Internal method to plot the parameters table in the results-plot."""
         ax.set_title(
             f"Model parameters ($N_c$={self.ml.parameters.vary.sum()})",
             loc="left",

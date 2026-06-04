@@ -241,7 +241,7 @@ def _infer_fixed_freq(tindex: Index) -> str:
 def _get_sim_index(
     tmin: Timestamp, tmax: Timestamp, freq: str, time_offset: Timedelta
 ) -> DatetimeIndex:
-    """Internal method to determine the simulation index
+    """Internal method to determine the simulation index.
 
     Parameters
     ----------

@@ -142,7 +142,7 @@ class Statistics:
     def sse(
         self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> float:
-        """Sum of the squares of the error (SSE)
+        """Sum of the squares of the error (SSE).
 
         Parameters
         ----------
