@@ -1,8 +1,8 @@
-"""The following methods may be used to calculate statistics, the crosscorrelation and
-autocorrelation for time series.
+"""Module containing methods to calculate statistics.
 
-These methods are 'special' in the sense that they are able to deal with irregular
-time steps often observed in hydrological time series.
+Compute core statistics such as variance, mean, standard deviation, moment, cross-
+and autocorrelation for time series. These methods are 'special' in the sense that
+they are able to deal with irregular time steps often observed in hydrological time series.
 """
 
 from logging import getLogger

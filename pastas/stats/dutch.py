@@ -1,7 +1,8 @@
-"""The following methods are descriptive statistics commonly used to describe
+"""Descriptive statistics commonly used to describe
 groundwater time series in the Netherlands.
 
-.. codeauthor:: R. Calje, T. van Steijn and R. Collenteur
+Code authors: R. Calje, T. van Steijn and R. Collenteur.
+
 """
 
 from collections.abc import Callable
@@ -21,7 +22,9 @@ def q_ghg(
     q: float = 0.94,
     by_year: bool = True,
 ) -> Series:
-    """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High GW Level).
+    """Quantiles for the Gemiddeld Hoogste Grondwaterstand.
+
+    GHG is also called MHGL (Mean High Groundwater Level).
 
     Parameters
     ----------
@@ -51,8 +54,9 @@ def q_glg(
     q: float = 0.06,
     by_year: bool = True,
 ) -> Series:
-    """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
-    Groundwater Level).
+    """Quantiles for the Gemiddeld Laagste Grondwaterstand (GLG)
+
+    GLG is also called MLGL (Mean Low Groundwater Level).
 
     Parameters
     ----------
@@ -81,7 +85,9 @@ def q_gvg(
     tmax: Timestamp | str | None = None,
     by_year: bool = True,
 ) -> Series:
-    """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring GW Level).
+    """Quantiles for the Gemiddeld Voorjaarsgrondwaterstand (GVG)
+
+    GVG is also called MSGL (Mean Spring Groundwater Level).
 
     Parameters
     ----------
@@ -125,8 +131,9 @@ def ghg(
     min_n_years: int = 8,
     year_offset: str = year_offset + "-MAR",
 ) -> Series | float:
-    """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
-    Groundwater Level).
+    """Calculate the Gemiddelde Hoogste Grondwaterstand
+
+    GHG is also called MHGL (Mean High Groundwater Level).
 
     Parameters
     ----------
@@ -215,7 +222,9 @@ def glg(
     min_n_years: int = 8,
     year_offset: str = year_offset + "-MAR",
 ) -> Series | float:
-    """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low GW Level).
+    """Calculate the Gemiddelde Laagste Grondwaterstand
+
+    GLG is also called MLGL (Mean Low Groundwater Level).
 
     Parameters
     ----------
@@ -304,7 +313,9 @@ def gvg(
     min_n_years: int = 8,
     year_offset: str = year_offset,
 ) -> Series | float:
-    """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring GW Level).
+    """Calculate the Gemiddelde Voorjaars Grondwaterstand
+
+    GVG is also called MSGL (Mean Spring Groundwater Level).
 
     Parameters
     ----------
@@ -381,7 +392,9 @@ def gg(
     min_n_years: int = 8,
     year_offset: str = year_offset + "-MAR",
 ) -> Series | float:
-    """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level).
+    """Calculate the Gemiddelde Grondwaterstand.
+
+    GG is also called MGL (Mean Groundwater Level).
 
     Parameters
     ----------
@@ -442,8 +455,6 @@ def gg(
 
 
 # Helper functions
-
-
 def _get_spring(series: Series, min_n_meas: int) -> float:
     """Get values of time series values in spring.
 
@@ -467,7 +478,9 @@ def _get_spring(series: Series, min_n_meas: int) -> float:
 
 
 def _in_spring(series: Series) -> Series:
-    """Test if time series index is between 14 March and 15 April.
+    """Test if time series index is in spring.
+
+    Spring defined between 14 March and 15 April.
 
     Parameters
     ----------
@@ -498,8 +511,10 @@ def _gxg(
     min_n_years: int,
     year_offset: str,
 ) -> Series | float:
-    """Internal method for classic GXG statistics. Resampling the series to every
-    14th and 28th of the month. Taking the mean of aggregated values per year.
+    """Computation for classic GXG statistics.
+
+    Resampling the series to every 14th and 28th of the month.
+    Taking the mean of aggregated values per year.
 
     Parameters
     ----------
@@ -650,10 +665,11 @@ def _q_gxg(
     tmax: Timestamp | str | None = None,
     by_year: bool = True,
 ) -> Series:
-    """Dutch groundwater statistics GHG and GLG approximated by taking quantiles of
-    the time series values per year and taking the mean of the quantiles.
+    """Dutch groundwater statistics GHG and GLG
 
-    The series is first resampled to daily values.
+    Approximated by taking quantiles of the time series values
+    per year and taking the mean of the quantiles. The series
+    is first resampled to daily values.
 
     Parameters
     ----------

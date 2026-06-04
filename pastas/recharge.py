@@ -34,6 +34,7 @@ After solving a model, the simulated recharge flux can be obtained::
 
 from abc import ABC, abstractmethod
 from logging import getLogger
+from typing import Any
 
 from numpy import add, exp, float64, multiply, nan_to_num, power, vstack, where, zeros
 from pandas import DataFrame
@@ -68,21 +69,15 @@ class RechargeBase(ABC):
     def simulate(self, *args, **kwargs) -> ArrayLike | tuple[ArrayLike, ...]:
         """Simulate recharge from precipitation and evaporation inputs."""
 
-    def to_dict(self):
-        """Export the recharge model object.
-
-        Returns
-        -------
-        data: dict
-            dictionary with all necessary information to reconstruct the StressModel
-            object.
-        """
+    def to_dict(self) -> dict[str, Any]:
+        """Export the recharge model object as a dictionary."""
         return {"class": self._name}
 
 
 class Linear(RechargeBase):
-    """Linear model for precipitation excess according to
-    :cite:t:`von_asmuth_transfer_2002`.
+    """Linear recharge model using scaled precipitation excess.
+
+    Implemented according to :cite:t:`von_asmuth_transfer_2002`.
 
     Notes
     -----
@@ -99,9 +94,11 @@ class Linear(RechargeBase):
 
     @property
     def nparam(self) -> int:
+        """Number of parameters for the Linear recharge model."""
         return 1
 
     def get_init_parameters(self, name: str) -> DataFrame:
+        """Get initial parameters and bounds for the Linear recharge model."""
         parameters = DataFrame(
             [(-1.0, -2.0, 0.0, True, name)],
             columns=["initial", "pmin", "pmax", "vary", "name"],
@@ -134,17 +131,20 @@ class Linear(RechargeBase):
     def get_water_balance(
         self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, **kwargs
     ) -> DataFrame:
+        """Get the water balance of the Linear recharge model."""
         ea = multiply(evap, p)
         r = add(prec, multiply(evap, p))
         return DataFrame(data=vstack((prec, ea, -r)).T, columns=["P", "Ea", "R"])
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
+        """Export the recharge model object as a dictionary."""
         return super().to_dict()
 
 
 class FlexModel(RechargeBase):
-    """Recharge to the groundwater calculated according to
-    :cite:t:`collenteur_estimation_2021`.
+    r"""Nonlinear recharge to the groundwater.
+
+    Calculated according to :cite:t:`collenteur_estimation_2021`.
 
     Parameters
     ----------
@@ -199,6 +199,11 @@ class FlexModel(RechargeBase):
 
     @property
     def nparam(self) -> int:
+        """Return the number of parameters for the FlexModel recharge model.
+
+        The number of parameters depends on the options chosen for the model. The
+        base model has 5 parameters, and each option adds additional parameters.
+        """
         _nparam = 5
         if self.interception:
             _nparam += 1
@@ -209,6 +214,7 @@ class FlexModel(RechargeBase):
         return _nparam
 
     def get_init_parameters(self, name: str) -> DataFrame:
+        """Get initial parameters and bounds for the FlexModel recharge model."""
         parameters = DataFrame(
             [
                 (250.0, 1e-5, 1e3, True, name),  # srmax
@@ -398,7 +404,7 @@ class FlexModel(RechargeBase):
     def get_interception_balance(
         pr: ArrayLike, ep: ArrayLike, simax: float = 2.0, dt: float = 1.0
     ) -> tuple[ArrayLike]:
-        """Compute the water balance of the interception reservoir.
+        r"""Compute the water balance of the interception reservoir.
 
         Parameters
         ----------
@@ -453,7 +459,7 @@ class FlexModel(RechargeBase):
     def get_snow_balance(
         prec: ArrayLike, temp: ArrayLike, tt: float = 0.0, k: float = 2.0
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
-        """Compute the water balance of the snow reservoir.
+        r"""Compute the water balance of the snow reservoir.
 
         Parameters
         ----------
@@ -462,7 +468,9 @@ class FlexModel(RechargeBase):
         temp: array_like
             NumPy Array with the mean daily temperature in degree Celsius.
         tt: float, optional
+            Temperature threshold for snowfall and snowmelt in degree Celsius.
         k: float, optional
+            Degree-day factor for snowmelt in mm/d/°C.
 
         Returns
         -------
@@ -508,6 +516,7 @@ class FlexModel(RechargeBase):
         dt: float = 1.0,
         **kwargs,
     ) -> DataFrame:
+        """Get the water balance of the FlexModel recharge model."""
         data = self.simulate(
             prec=prec, evap=evap, temp=temp, p=p, dt=dt, return_full=True, **kwargs
         )
@@ -537,6 +546,7 @@ class FlexModel(RechargeBase):
         return DataFrame(data=vstack(data).T, columns=columns)
 
     def check_snow_balance(self, prec: ArrayLike, temp: ArrayLike, **kwargs) -> float:
+        """Check the water balance of the snow reservoir."""
         ss, ps, m = self.get_snow_balance(prec, temp)
         error = ss[0] - ss[-1] + (ps + m).sum()
         return error
@@ -544,6 +554,7 @@ class FlexModel(RechargeBase):
     def check_interception_balance(
         self, prec: ArrayLike, evap: ArrayLike, **kwargs
     ) -> float:
+        """Check the water balance of the interception reservoir."""
         si, ei, pi = self.get_interception_balance(prec, evap)
         error = si[0] - si[-1] + (pi + ei).sum()
         return error
@@ -551,11 +562,13 @@ class FlexModel(RechargeBase):
     def check_root_zone_balance(
         self, prec: ArrayLike, evap: ArrayLike, **kwargs
     ) -> float:
+        """Check the water balance of the root zone reservoir."""
         sr, r, ea, q, pe = self.get_root_zone_balance(prec, evap)
         error = sr[0] - sr[-1] + (r + ea + q + pe).sum()
         return error
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
+        """Export the recharge model object as a dictionary."""
         data = super().to_dict() | {
             "interception": self.interception,
             "snow": self.snow,
@@ -565,8 +578,9 @@ class FlexModel(RechargeBase):
 
 
 class Berendrecht(RechargeBase):
-    """Recharge to the groundwater calculated according to
-    :cite:t:`berendrecht_non-linear_2006`.
+    r"""Nonlinear recharge to the groundwater.
+
+    Implemented according to :cite:t:`berendrecht_non-linear_2006`.
 
     Notes
     -----
@@ -593,9 +607,11 @@ class Berendrecht(RechargeBase):
 
     @property
     def nparam(self) -> int:
+        """Return the number of parameters for the Berendrecht recharge model."""
         return 7
 
     def get_init_parameters(self, name: str) -> DataFrame:
+        """Get initial parameters and bounds for the Berendrecht recharge model."""
         parameters = DataFrame(
             [
                 (0.9, 0.7, 1.3, False, name),  # fi
@@ -681,7 +697,7 @@ class Berendrecht(RechargeBase):
         ks: float = 50.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Internal method for the recharge calculation."""
+        """Compute the recharge flux sped up with Numba."""
         n = prec.size
         # Create an empty arrays to store the fluxes and states
         pe = fi * prec  # Effective precipitation flux
@@ -711,6 +727,7 @@ class Berendrecht(RechargeBase):
     def get_water_balance(
         self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, dt: float = 1.0, **kwargs
     ) -> DataFrame:
+        """Get the water balance of the Berendrecht recharge model."""
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
         s = s * p[3]  # Because S is computed dimensionless in this model
         data = DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
@@ -718,10 +735,10 @@ class Berendrecht(RechargeBase):
 
 
 class Peterson(RechargeBase):
-    """Recharge to the groundwater calculated based on
-    :cite:t:`peterson_nonlinear_2014`.
+    r"""Nonlinear recharge to the groundwater calculated.
 
-    The water balance for the unsaturated zone reservoir is written as:
+    Based on :cite:t:`peterson_nonlinear_2014` where the water
+    balance for the unsaturated zone reservoir is written as:
 
     .. math::
 
@@ -758,10 +775,11 @@ class Peterson(RechargeBase):
 
     @property
     def nparam(self) -> int:
+        """Return the number of parameters for the Peterson recharge model."""
         return 5
 
     def get_init_parameters(self, name: str) -> DataFrame:
-
+        """Get initial parameters and bounds for the Peterson recharge model."""
         parameters = DataFrame(
             [
                 (1.5, 0.5, 3.0, True, name),  # scap
@@ -833,7 +851,7 @@ class Peterson(RechargeBase):
         gamma: float = 1.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Internal method for the recharge calculation."""
+        """Compute the recharge flux sped up with Numba."""
         n = len(prec)
         # Create an empty arrays to store the fluxes and states
         pe = zeros(n, dtype=float64)  # Effective precipitation flux
@@ -858,6 +876,7 @@ class Peterson(RechargeBase):
     def get_water_balance(
         self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, dt: float = 1.0, **kwargs
     ) -> DataFrame:
+        """Get the water balance for the recharge model."""
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
         data = DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
         return data
