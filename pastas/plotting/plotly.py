@@ -1,4 +1,4 @@
-"""This module contains interactive Plotly plots for Pastas models.
+"""Module containing interactive Plotly plots for Pastas models.
 
 Examples
 --------
@@ -48,7 +48,7 @@ class Plotly:
         self._model = model
 
     def plot(self, tmin=None, tmax=None):
-        """Plotly version of pastas.Model.plot().
+        """Create Plotly version of pastas.Model.plot().
 
         Parameters
         ----------
@@ -134,7 +134,7 @@ class Plotly:
         return go.Figure(data=traces, layout=go.Layout(layout))
 
     def results(self, tmin=None, tmax=None, stderr=False):
-        """Plotly version of pastas.Model.plots.results().
+        """Create Plotly version of pastas.Model.plots.results().
 
         Parameters
         ----------
@@ -510,7 +510,7 @@ class Plotly:
         return fig
 
     def diagnostics(self):
-        """Plotly version of pastas.Model.plots.diagnostics().
+        """Create Plotly version of pastas.Model.plots.diagnostics().
 
         Parameters
         ----------

@@ -1,4 +1,4 @@
-"""This module contains the classes for recharge models.
+"""Module containing the classes for recharge models.
 
 This module contains the different classes that can be used to simulate the effect of
 precipitation and evapotranspiration on groundwater levels. Depending on the
@@ -69,7 +69,7 @@ class RechargeBase(ABC):
         """Simulate recharge from precipitation and evaporation inputs."""
 
     def to_dict(self):
-        """Method to export the recharge model object.
+        """Export the recharge model object.
 
         Returns
         -------
@@ -329,7 +329,7 @@ class FlexModel(RechargeBase):
         gamma: float = 4.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Method to compute the water balance of the root zone reservoir.
+        """Compute the water balance of the root zone reservoir.
 
         Parameters
         ----------
@@ -398,7 +398,7 @@ class FlexModel(RechargeBase):
     def get_interception_balance(
         pr: ArrayLike, ep: ArrayLike, simax: float = 2.0, dt: float = 1.0
     ) -> tuple[ArrayLike]:
-        """Method to compute the water balance of the interception reservoir.
+        """Compute the water balance of the interception reservoir.
 
         Parameters
         ----------
@@ -453,7 +453,7 @@ class FlexModel(RechargeBase):
     def get_snow_balance(
         prec: ArrayLike, temp: ArrayLike, tt: float = 0.0, k: float = 2.0
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
-        """Method to compute the water balance of the snow reservoir.
+        """Compute the water balance of the snow reservoir.
 
         Parameters
         ----------
@@ -681,7 +681,7 @@ class Berendrecht(RechargeBase):
         ks: float = 50.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Internal method used for the recharge calculation."""
+        """Internal method for the recharge calculation."""
         n = prec.size
         # Create an empty arrays to store the fluxes and states
         pe = fi * prec  # Effective precipitation flux
@@ -833,7 +833,7 @@ class Peterson(RechargeBase):
         gamma: float = 1.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Internal method used for the recharge calculation."""
+        """Internal method for the recharge calculation."""
         n = len(prec)
         # Create an empty arrays to store the fluxes and states
         pe = zeros(n, dtype=float64)  # Effective precipitation flux

@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class CachedAccessor:
-    """
-    Custom property-like object.
+    """Custom property-like object.
 
     A descriptor for caching accessors.
 
@@ -27,6 +26,11 @@ class CachedAccessor:
         self._accessor = accessor
 
     def __get__(self, obj, cls):
+        """Get the accessor object for the instance.
+
+        Returns the accessor class if accessed from the class, or creates and caches
+        an instance of the accessor if accessed from an instance.
+        """
         if obj is None:
             # we're accessing the attribute of the class, i.e., Dataset.geo
             return self._accessor

@@ -186,7 +186,7 @@ class TimeSeries:
         self.update_series(force_update=True, **self.settings)
 
     def __repr__(self) -> str:
-        """Prints a simple string representation of the time series."""
+        """Print a simple string representation of the time series."""
         return (
             f"{self.__class__.__name__}"
             f"(name={self.name}, "
@@ -198,11 +198,12 @@ class TimeSeries:
 
     @property
     def series_original(self) -> Series:
+        """Return the original series."""
         return self._series_original
 
     @series_original.setter
     def series_original(self, series: Series) -> None:
-        """Sets a new freq_original for the TimeSeries."""
+        """Set a new freq_original for the TimeSeries."""
         validate_stress(series)
         self._series_original = series.copy()
         self.freq_original = pd.infer_freq(self._series_original.index)
@@ -212,6 +213,7 @@ class TimeSeries:
 
     @property
     def series(self) -> Series:
+        """Series with the applied settings."""
         return self._series
 
     @series.setter
@@ -222,7 +224,7 @@ class TimeSeries:
         )
 
     def update_series(self, force_update: bool = False, **kwargs):
-        """Method to update the series with new options.
+        """Update the series with new options.
 
         Parameters
         ----------
@@ -285,11 +287,11 @@ class TimeSeries:
             self._series = series
 
     def _update_settings(self, **kwargs) -> bool:
-        """Internal method that check if an update is actually necessary.
+        """Check if an update is actually necessary.
 
         Returns
         -------
-        update: bool
+        bool
             True if settings are changed and series need to be updated.
         """
         update = False
@@ -303,7 +305,7 @@ class TimeSeries:
         return update
 
     def _validate_series(self):
-        """Method to validate the time series."""
+        """Validate the time series."""
         if self.settings["fill_nan"] == "drop":
             raise UserWarning(
                 "The fill_nan setting 'drop' for a stress is not allowed "
@@ -313,7 +315,7 @@ class TimeSeries:
         return validate_stress(self.series_original)
 
     def _change_frequency(self, series: Series) -> Series:
-        """Method to change the frequency of the time series."""
+        """Change the frequency of the time series."""
         freq = self.settings["freq"]
 
         # 1. If no freq string is present or is provided (e.g. Oseries)
@@ -340,8 +342,10 @@ class TimeSeries:
             return series
 
     def _sample_up(self, series: Series) -> Series:
-        """Resample the time series when the frequency increases (e.g. from weekly to
-        daily values).
+        """Resample the time series when the frequency increases.
+
+        For example from 14 days to daily frequency.
+
         """
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
@@ -385,14 +389,16 @@ class TimeSeries:
         return series
 
     def _sample_down(self, series: Series) -> Series:
-        """Resample the time series when the frequency decreases (e.g. from daily to
-        weekly values).
+        """Resample the time series when the frequency decreases.
+
+        For example from daily to 14 daily values.
 
         Notes
         -----
-        make sure the labels are still at the end of each period, and data at the
+        Make sure the labels are still at the end of each period, and data at the
         right-side of the bucket is included (see
-        http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
+        http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html).
+
         """
         method = self.settings["sample_down"]
         freq = self.settings["freq"]
@@ -478,7 +484,7 @@ class TimeSeries:
         return series
 
     def _fill_before(self, series: Series) -> Series:
-        """Method to add a period in front of the available time series."""
+        """Add a period in front of the available time series."""
         freq = self.settings["freq"]
         method = self.settings["fill_before"]
         tmin = self.settings["tmin"]
@@ -548,7 +554,7 @@ class TimeSeries:
         return series
 
     def _fill_after(self, series: Series) -> Series:
-        """Method to add a period in front of the available time series."""
+        """Add a period in front of the available time series."""
         freq = self.settings["freq"]
         method = self.settings["fill_after"]
         tmax = self.settings["tmax"]
@@ -618,7 +624,7 @@ class TimeSeries:
         return series
 
     def to_dict(self, series: bool | None = True) -> dict:
-        """Method to export the Time Series to a json format.
+        """Export the Time Series to a json format.
 
         Parameters
         ----------
@@ -646,7 +652,7 @@ class TimeSeries:
         return data
 
     def copy(self, name: str | None = None) -> Self:
-        """Method to copy a TimeSeries.
+        """Copy a TimeSeries.
 
         Parameters
         ----------
@@ -671,6 +677,8 @@ class TimeSeries:
 
 
 class ObservationSeries(TimeSeries):
+    """TimeSeries class that deals with observation data."""
+
     def __init__(
         self,
         series: Series,
@@ -681,7 +689,7 @@ class ObservationSeries(TimeSeries):
         super().__init__(series=series, name=name, settings=settings, metadata=metadata)
 
     def update_series(self, force_update: bool = False, **kwargs) -> None:
-        """Method to update the series with new options.
+        """Update the series with new options.
 
         Parameters
         ----------
@@ -732,12 +740,12 @@ class ObservationSeries(TimeSeries):
             self._series = series
 
     def _validate_series(self):
-        """Method to validate the time series."""
+        """Validate the time series."""
         return validate_oseries(self.series_original)
 
 
 def validate_stress(series: Series, verbose: bool = False) -> bool:
-    """Method to validate user-provided stress input time series.
+    """Validate user-provided stress input time series.
 
     Parameters
     ----------
@@ -776,7 +784,7 @@ def validate_stress(series: Series, verbose: bool = False) -> bool:
 
 
 def validate_oseries(series: Series, verbose: bool = False) -> bool:
-    """Method to validate user-provided oseries input time series.
+    """Validate user-provided oseries input time series.
 
     Parameters
     ----------
@@ -816,7 +824,7 @@ def validate_oseries(series: Series, verbose: bool = False) -> bool:
 def _validate_series(
     series: Series, verbose: bool = False, equidistant: bool = True
 ) -> bool:
-    """Internal method to validate user-provided input time series.
+    """Validate user-provided input time series.
 
     Parameters
     ----------

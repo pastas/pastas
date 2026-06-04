@@ -26,7 +26,7 @@ from .stats import diagnostics, metrics
 
 
 class Statistics:
-    """This class provides statistics to pastas Model class.
+    """Class providing statistics to pastas Model class.
 
     Parameters
     ----------
@@ -571,7 +571,7 @@ class Statistics:
         tmax: Timestamp | str | None = None,
         stats: list[str] | None = None,
     ) -> DataFrame:
-        """Returns a Pandas DataFrame with goodness-of-fit metrics.
+        """Return a Pandas DataFrame with goodness-of-fit metrics.
 
         Parameters
         ----------

@@ -1,4 +1,4 @@
-"""This module contains interactive Bokeh plots for Pastas models.
+"""Module containing interactive Bokeh plots for Pastas models.
 
 Examples
 --------

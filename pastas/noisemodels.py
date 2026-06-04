@@ -59,7 +59,7 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def _set_initial(self, name: str, value: float) -> None:
-        """Internal method to set the initial parameter value.
+        """Set the initial parameter value.
 
         Notes
         -----
@@ -69,7 +69,7 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def _set_pmin(self, name: str, value: float) -> None:
-        """Internal method to set the minimum value of the noisemodel.
+        """Set the minimum value of the noisemodel.
 
         Notes
         -----
@@ -79,7 +79,7 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def _set_pmax(self, name: str, value: float) -> None:
-        """Internal method to set the maximum parameter values.
+        """Set the maximum parameter values.
 
         Notes
         -----
@@ -89,7 +89,7 @@ class NoiseModelBase(ABC):
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
-        """Internal method to set if the parameter is varied.
+        """Set if the parameter is varied.
 
         Notes
         -----
@@ -98,7 +98,7 @@ class NoiseModelBase(ABC):
         self.parameters.at[name, "vary"] = value
 
     def to_dict(self) -> dict:
-        """Method to return a dict to store the noise model"""
+        """Return a dict to store the noise model"""
         return {"class": self._name, "norm": self.norm}
 
     def weights(self, res: Series, p: ArrayLike) -> Series | int:
@@ -181,7 +181,7 @@ class ArNoiseModel(NoiseModelBase):
         return Series(data=v, index=res.index, name="Noise")
 
     def weights(self, res: Series, p: ArrayLike) -> Series:
-        """Method to calculate the weights for the noise.
+        """Calculate the weights for the noise.
 
         Parameters
         ----------
@@ -218,7 +218,7 @@ class ArNoiseModel(NoiseModelBase):
     def get_correction(
         self, res: Series, p: ArrayLike, tindex: DatetimeIndex
     ) -> Series:
-        """Get the correction for a forecast using the noise model.
+        """Get correction for a forecast using the noise model.
 
         Parameters
         ----------
@@ -259,7 +259,7 @@ class ArNoiseModel(NoiseModelBase):
         return correction
 
     def to_dict(self) -> dict:
-        """Method to return a dict to store the noise model"""
+        """Return a dict to store the noise model"""
         return super().to_dict()
 
 
@@ -355,7 +355,7 @@ class ArmaNoiseModel(NoiseModelBase):
         return a
 
     def to_dict(self) -> dict:
-        """Method to return a dict to store the noise model"""
+        """Return a dict to store the noise model"""
         return super().to_dict()
 
 

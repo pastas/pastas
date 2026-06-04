@@ -387,7 +387,7 @@ class Plotting:
         version="2.2.0", reason="Use `results` instead with the return_dict argument."
     )
     def results_mosaic(self, *args, **kwargs) -> dict[str, Axes]:
-        """Deprecated method to plot the results of the model in a mosaic plot.
+        """Deprecated: Plot the results of the model in a mosaic plot.
         Use `results` instead with the return_dict argument to specify the layout
         of the mosaic plot.
         """
@@ -402,7 +402,7 @@ class Plotting:
         ax: Axes,
         istress: int | None = None,
     ):
-        """Internal method to plot the response of a Stressmodel in the results-plot."""
+        """Plot the response of a Stressmodel in the results-plot."""
         responses = sm._get_responses(
             self.ml, block_or_step=block_or_step, istress=istress
         )
@@ -440,7 +440,7 @@ class Plotting:
         return ax
 
     def _plot_parameters_table(self, ax: Axes, stderr: bool) -> None:
-        """Internal method to plot the parameters table in the results-plot."""
+        """Plot the parameters table in the results-plot."""
         ax.set_title(
             f"Model parameters ($N_c$={self.ml.parameters.vary.sum()})",
             loc="left",
@@ -887,7 +887,7 @@ class Plotting:
         figsize: tuple = (10, 8),
         **kwargs,
     ) -> list[Axes]:
-        """This method creates a graph with all the stresses used in the model.
+        """Create a graph with all the stresses used in the model.
 
         Parameters
         ----------
@@ -1150,7 +1150,7 @@ class Plotting:
         split: bool = True,
         **kwargs,
     ) -> Axes:
-        """Method to plot all the time series going into a Pastas Model.
+        """Plot all the time series going into a Pastas Model.
 
         Parameters
         ----------
@@ -1278,7 +1278,7 @@ class Plotting:
         bins: int | None = None,
         split: bool = True,
     ) -> dict[str, Axes]:
-        """Method to plot the correlation between all the time series going
+        """Plot the correlation between all the time series going
         into a Pastas Model.
 
         Parameters

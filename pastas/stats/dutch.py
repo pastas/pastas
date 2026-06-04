@@ -445,7 +445,7 @@ def gg(
 
 
 def _get_spring(series: Series, min_n_meas: int) -> float:
-    """Internal method to get values of time series values in spring.
+    """Get values of time series values in spring.
 
     Part of year aggregator function for gvg method.
 
@@ -467,7 +467,7 @@ def _get_spring(series: Series, min_n_meas: int) -> float:
 
 
 def _in_spring(series: Series) -> Series:
-    """Internal method to test if time series index is between 14 March and 15 April.
+    """Test if time series index is between 14 March and 15 April.
 
     Parameters
     ----------

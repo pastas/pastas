@@ -1,5 +1,6 @@
-"""This module contains the likelihood functions for Pastas to be used in solvers using
-Bayesian approaches."""
+"""Module containing the likelihood functions for Pastas to be used in solvers using
+Bayesian approaches.
+"""
 
 import numpy as np
 from pandas import DataFrame
@@ -31,7 +32,7 @@ class GaussianLikelihood:
         pass
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        """Get the initial parameters for the log-likelihood function.
+        """Get initial parameters for the log-likelihood function.
 
         Parameters
         ----------
@@ -117,7 +118,7 @@ class GaussianLikelihoodAr1:
         pass
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        """Get the initial parameters for the log-likelihood function.
+        """Get initial parameters for the log-likelihood function.
 
         Parameters
         ----------

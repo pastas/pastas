@@ -1,4 +1,4 @@
-"""This module contains methods to compute the groundwater signatures. Part of the
+"""Module containing methods to compute the groundwater signatures. Part of the
 signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`.
 
 Examples
@@ -140,7 +140,7 @@ def cv_period_mean(
 
 
 def _cv_date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
-    """Method to compute the coefficient of variation of the date of annual
+    """Compute the coefficient of variation of the date of annual
     minimum or maximum head using circular statistics.
 
     Parameters
@@ -325,7 +325,7 @@ def _parde_coefficients(series: Series, normalize: bool = True) -> Series:
 
 
 def _martens(series: Series, normalize: bool = False) -> tuple[Series, Series]:
-    """Function for the average seasonal fluctuation and interannual fluctuation.
+    """Compute average seasonal fluctuation and interannual fluctuation.
 
     Parameters
     ----------
@@ -776,7 +776,7 @@ def high_pulse_duration(
 
 
 def _get_differences(series: Series, normalize: bool = False) -> Series:
-    """Get the changes in the time series.
+    """Get changes in the time series.
 
     Parameters
     ----------
@@ -1143,7 +1143,7 @@ def _get_events_binned(
     min_event_length: int = 10,
     min_n_events: int = 2,
 ) -> Series:
-    """Get the recession or recovery events and bin them.
+    """Get recession or recovery events and bin them.
 
     Parameters
     ----------
@@ -1455,7 +1455,7 @@ def duration_curve_ratio(
 
 
 def richards_pathlength(series: Series, normalize: bool = True) -> float:
-    """The path length of the time series, standardized by time series length after
+    """Path length of the time series, standardized by time series length after
     :cite:t:`baker_new_2004`.
 
     Parameters
@@ -1749,7 +1749,7 @@ def summary(
     data: DataFrame | Series,
     signatures: list[str] | None = None,
 ) -> DataFrame:
-    """Method to get many signatures for a time series.
+    """Get many signatures for a time series.
 
     Parameters
     ----------

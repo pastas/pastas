@@ -99,7 +99,7 @@ def durbin_watson(series: Series) -> float:
 def ljung_box(
     series: Series, lags: int = 15, nparam: int = 0, full_output: bool = False
 ) -> tuple[float, float]:
-    r"""Ljung-box test for autocorrelation.
+    r"""Test for autocorrelation using the Ljung-Box test.
 
     Parameters
     ----------
@@ -194,7 +194,7 @@ def ljung_box(
 
 
 def runs_test(series: Series, cutoff: str = "median") -> tuple[float, float]:
-    r"""Runs test for autocorrelation.
+    r"""Test for autocorrelation using the runs test.
 
     Parameters
     ----------

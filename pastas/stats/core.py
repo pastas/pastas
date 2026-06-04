@@ -127,7 +127,7 @@ def ccf(
     alpha: float = 0.05,
     fallback_bin_method: str = "gaussian",
 ) -> Series | DataFrame:
-    """Method to compute the cross-correlation for irregular time series.
+    """Compute the cross-correlation for irregular time series.
 
     Parameters
     ----------
@@ -249,7 +249,7 @@ def ccf(
 
 
 def _preprocess(x: Series, max_gap: float) -> tuple[ArrayLike, ArrayLike, float]:
-    """Internal method to preprocess the time series."""
+    """Preprocess the time series."""
     x_idx = x.index.to_series().diff().dropna().to_numpy(copy=True)
     dt = x_idx / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
@@ -272,7 +272,7 @@ def _compute_ccf_rectangle(
     y: ArrayLike,
     bin_width: float = 0.5,
 ) -> tuple[ArrayLike, ArrayLike]:
-    """Internal numba-optimized method to compute the ccf."""
+    """Compute the ccf."""
     c = np.empty_like(lags)
     b = np.empty_like(lags)
     n = len(t_x)
@@ -308,7 +308,7 @@ def _compute_ccf_gaussian(
     y: ArrayLike,
     bin_width: float = 0.5,
 ) -> tuple[ArrayLike, ArrayLike]:
-    """Internal numba-optimized method to compute the ccf."""
+    """Compute the ccf."""
     c = np.empty_like(lags)
     b = np.empty_like(lags)
     n = len(t_x)
@@ -358,7 +358,7 @@ def _compute_ccf_regular(
 
 
 def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
-    """Method to compute the (weighted) mean of a time series.
+    """Compute the (weighted) mean of a time series.
 
     Parameters
     ----------
@@ -388,7 +388,7 @@ def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
 
 
 def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
-    """Method to compute the (weighted) variance of a time series.
+    """Compute the (weighted) variance of a time series.
 
     Parameters
     ----------
@@ -422,7 +422,7 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
 
 
 def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
-    """Method to compute the (weighted) variance of a time series.
+    """Compute the (weighted) variance of a time series.
 
     Parameters
     ----------
@@ -472,7 +472,7 @@ def moment(x: Series, order: int) -> float:
 
 
 def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
-    """Helper method to compute the weights as the time step between obs.
+    """Helper method that compute the weights as the time step between obs.
 
     Parameters
     ----------

@@ -1,4 +1,4 @@
-"""This module contains decorators and utility functions for Pastas models.
+"""Module containing decorators and utility functions for Pastas models.
 
 Includes decorators for caching, configuring global settings, deprecation warnings,
 and other convenient methods for handling time, numba compiled code, etc.
@@ -66,6 +66,22 @@ def get_use_cache() -> bool:
 
 
 def set_parameter(function: Callable) -> Callable:
+    """Validate and set parameter values.
+
+    This decorator checks if the parameter name exists in the parameters DataFrame
+    before calling the wrapped function.
+
+    Parameters
+    ----------
+    function : Callable
+        The function to wrap.
+
+    Returns
+    -------
+    Callable
+        The wrapped function with parameter validation.
+    """
+
     @wraps(function)
     def _set_parameter(self, name: str, value: float, **kwargs):
         if name not in self.parameters.index:
@@ -79,6 +95,21 @@ def set_parameter(function: Callable) -> Callable:
 
 
 def get_stressmodel(function: Callable) -> Callable:
+    """Validate and retrieve stressmodel by name.
+
+    This decorator checks if the stressmodel name exists before calling the wrapped function.
+
+    Parameters
+    ----------
+    function : Callable
+        The function to wrap.
+
+    Returns
+    -------
+    Callable
+        The wrapped function with stressmodel validation.
+    """
+
     @wraps(function)
     def _get_stressmodel(self, name: str, **kwargs):
         if name not in self.stressmodels.keys():
@@ -95,6 +126,21 @@ def get_stressmodel(function: Callable) -> Callable:
 
 
 def model_tmin_tmax(function: Callable) -> Callable:
+    """Use model tmin and tmax settings as default values.
+
+    This decorator uses the model's tmin and tmax settings if they are not provided.
+
+    Parameters
+    ----------
+    function : Callable
+        The function to wrap.
+
+    Returns
+    -------
+    Callable
+        The wrapped function with default tmin/tmax from model settings.
+    """
+
     @wraps(function)
     def _model_tmin_tmax(
         self,
@@ -232,7 +278,7 @@ def latexfun(**kwargs) -> None:
 
 
 def conditional_cachedmethod(cache_getter):
-    """Decorator to conditionally cache a method using cachetools.cachedmethod.
+    """Conditionally cache a method using cachetools.cachedmethod.
 
     This decorator checks the global USE_CACHE flag and only applies caching when
     both cachetools is available and caching is enabled.

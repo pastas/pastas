@@ -1,4 +1,4 @@
-"""This module contains all the response functions available in Pastas.
+"""Module containing all the response functions available in Pastas.
 
 Examples
 --------
@@ -128,7 +128,7 @@ class RfuncBase(ABC):
 
     @abstractmethod
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
-        """Method to get the response time for a certain cutoff.
+        """Get response time for a certain cutoff.
 
         For instance, a cutoff of 0.99 returns the time when the step
         response has reached 99% of its upper limit, i.e. the gain.
@@ -152,7 +152,7 @@ class RfuncBase(ABC):
         cutoff: float | None = None,
         **kwargs,
     ) -> float:
-        """Internal hook to determine `tmax` from :meth:`get_tmax`.
+        """Determine `tmax` from :meth:`get_tmax`.
 
         Subclasses can override this method to support extra keyword arguments.
         """
@@ -167,7 +167,7 @@ class RfuncBase(ABC):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
-        """Method to return the step function.
+        """Return the step function.
 
         Parameters
         ----------
@@ -193,7 +193,7 @@ class RfuncBase(ABC):
 
     @abstractmethod
     def gain(self, p: ArrayLike) -> float:
-        """Method to return the gain for the response function."""
+        """Return the gain for the response function."""
 
     @abstractmethod
     def moment(
@@ -222,7 +222,7 @@ class RfuncBase(ABC):
     @staticmethod
     @abstractmethod
     def impulse(t: ArrayLike, p: ArrayLike) -> ArrayLike:
-        """Method to return the impulse response function.
+        """Return the impulse response function.
 
         Parameters
         ----------
@@ -249,7 +249,7 @@ class RfuncBase(ABC):
         gain_scale_factor: float | None = None,
         cutoff: float | None = None,
     ) -> None:
-        """Internal method to set the settings of the response function.
+        """Set the settings of the response function.
 
         Parameters
         ----------
@@ -290,7 +290,7 @@ class RfuncBase(ABC):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
-        """Internal method to determine the times at which to evaluate the step
+        """Determine the times at which to evaluate the step
         response, from t=0.
 
         Parameters
@@ -333,7 +333,7 @@ class RfuncBase(ABC):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
-        """Method to return the block function.
+        """Return the block function.
 
         Parameters
         ----------
@@ -374,7 +374,7 @@ class RfuncBase(ABC):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
-        """Method to return the block function from the impulse response.
+        """Return the block function from the impulse response.
 
         Parameters
         ----------
@@ -407,7 +407,7 @@ class RfuncBase(ABC):
         maxtmax: float | None = None,
         **kwargs,
     ) -> ArrayLike:
-        """Method to return the block function from the step response.
+        """Return the block function from the step response.
 
         Parameters
         ----------
@@ -434,7 +434,7 @@ class RfuncBase(ABC):
         return b
 
     def to_dict(self):
-        """Method to export the response function to a dictionary.
+        """Export the response function to a dictionary.
 
         Returns
         -------
@@ -672,7 +672,7 @@ class Exponential(RfuncBase):
 
 
 class Hantush(RfuncBase):
-    """The Hantush well function, using the standard A, a, b parameters.
+    """Hantush well function, using the standard A, a, b parameters.
 
     Parameters
     ----------
@@ -1034,7 +1034,7 @@ class HantushWellModel(RfuncBase):
         return 3
 
     def set_distances(self, distances: float | ArrayLike) -> None:
-        """Method to set the distances from the pumping well(s) to the observation well."""
+        """Set the distances from the pumping well(s) to the observation well."""
         self.distances: float | ArrayLike = distances
 
     def get_init_parameters(self, name: str) -> DataFrame:
@@ -1088,7 +1088,7 @@ class HantushWellModel(RfuncBase):
 
     @staticmethod
     def _get_distance_from_params(p: ArrayLike, warn: bool = True) -> float:
-        """Internal method to get the distance from the parameters. If the distance is not
+        """Get distance from the parameters. If the distance is not
         provided, it assumes a distance of 1.0 and raises a warning if warn is True.
         """
         if len(p) == 3:
@@ -1100,7 +1100,7 @@ class HantushWellModel(RfuncBase):
         return r
 
     def _get_hantush_params(self, p: ArrayLike, warn: bool = True) -> np.ndarray:
-        """Internal method to convert the HantushWellModel to the Hantush parameters"""
+        """Convert the HantushWellModel to the Hantush parameters"""
         r = self._get_distance_from_params(p, warn=warn)
         A, a, b = p[:3]
         b_scaled = 10 ** (b / 2.0) if self.log_b else np.sqrt(b)
@@ -1127,7 +1127,7 @@ class HantushWellModel(RfuncBase):
         cutoff: float | None = None,
         **kwargs,
     ) -> float:
-        """Internal hook to determine `tmax` from :meth:`get_tmax`,
+        """Determine `tmax` from :meth:`get_tmax`,
         with support for extra keyword arguments which is needed for
         the warn argument used in the _get_distance_from_params method.
         """
@@ -1272,7 +1272,7 @@ class HantushWellModel(RfuncBase):
 
 
 class Polder(RfuncBase):
-    """The Polder function, using the standard A, a, b parameters.
+    """Polder function, using the standard A, a, b parameters.
 
     Parameters
     ----------
@@ -1999,7 +1999,7 @@ class DoubleExponential(RfuncBase):
 
 
 class Kraijenhoff(RfuncBase):
-    """The response function of :cite:t:`van_de_leur_study_1958`.
+    """response function of :cite:t:`van_de_leur_study_1958`.
 
     Parameters
     ----------

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def _table_formatter_params(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting parameters in tables in Pastas plots.
+    """Format parameters in tables in Pastas plots.
 
     Parameters
     ----------
@@ -37,7 +37,7 @@ def _table_formatter_params(s: float, na_rep: str = "") -> str:
 
 
 def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting stderrs in tables in Pastas plots.
+    """Format stderrs in tables in Pastas plots.
 
     Parameters
     ----------

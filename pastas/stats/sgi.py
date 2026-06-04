@@ -1,4 +1,4 @@
-"""This module contains methods to compute the Standardized Groundwater Index.
+"""Module containing methods to compute the Standardized Groundwater Index.
 
 Examples
 --------
@@ -13,7 +13,7 @@ from scipy.stats import norm
 
 
 def sgi(series: Series, timescale_months: int = 1) -> Series:
-    """Method to compute the Standardized Groundwater Index (SGI)
+    """Compute the Standardized Groundwater Index (SGI)
     :cite:t:`bloomfield_analysis_2013`.
 
     Parameters

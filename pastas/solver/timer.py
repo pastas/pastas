@@ -1,4 +1,4 @@
-"""This module contains a timer for model optimization.
+"""Module containing a timer for model optimization.
 
 The timer prints the time elapsed and number of iterations. Optionally, a maximum solve
 time can be specified, to abort long optimizations. This class is not automatically
@@ -81,7 +81,7 @@ class SolveTimer(tqdm):
         super().__init__(*args, **kwargs)
 
     def timer(self, _, n: int = 1):
-        """Callback method for ps.Model.solve()."""
+        """Callback for ps.Model.solve()."""
         displayed = super().update(n)
         if self.max_time is not None:
             if self.format_dict["elapsed"] > self.max_time:
@@ -126,7 +126,7 @@ class StatTimer(SolveTimer):
         super().__init__(*args, **kwargs)
 
     def timer(self, p: ArrayLike, n: int = 1):
-        """Callback method that updates RMSE in the progress bar."""
+        """Update RMSE in the progress bar."""
         # extra overhead to compute residuals again, though with caching
         # this will be faster
         if (self.n % self.update_interval) == 0:
