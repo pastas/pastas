@@ -148,6 +148,7 @@ class Model:
         # some _attributes simulation and solving
         self._interpolate_simulation: bool | None = None
         self._solve_success: bool | None = None
+        self._fit_constant = None  # Internal variable used during solving
 
         # Load modules for statistics and plotting
         self.stats = Statistics(self)
@@ -621,7 +622,7 @@ class Model:
             res = res.dropna()
             logger.warning("Nan-values were removed from the residuals.")
 
-        if not self.settings["fit_constant"]:
+        if self._fit_constant is False:
             res = res.subtract(np.mean(res))
 
         res.name = "Residuals"
@@ -942,7 +943,6 @@ class Model:
             fit_constant=fit_constant,
             freq_obs=freq_obs,
         )
-
         # Initialize parameters
         self._parameters = self.get_init_parameters(initial=initial)
 
@@ -953,8 +953,8 @@ class Model:
                 msg = "fit_constant needs to be True (for now) when a transform is used"
                 logger.error(msg)
                 raise ValueError(msg)
-            self._parameters.at["constant_d", "vary"] = False
-            self._parameters.at["constant_d", "initial"] = 0.0
+            self.set_parameter(f"{self.constant.name}_d", initial=0.0, vary=False)
+            self._fit_constant = False
 
         # make sure to update self.oseries.series by running self.observations
         # get tmin, tmax, freq, and freq_obs from self.settings
@@ -982,22 +982,18 @@ class Model:
 
         # Solve model
         solve_success, result = self.solver.solve(weights=weights, **kwargs)
-
         # Update the parameters with the results from the optimization
         for column in result.columns:
             self._parameters.loc[result.index, column] = result[column].values
 
         if self.settings["fit_constant"] is False:
             # Determine the residuals and set the constant to their mean.
-            # Temporarily set fit_constant=True to compute non-centered residuals:
-            # constant_d was fixed at 0 during optimization, so (obs - sim) gives
-            # (obs - other_contributions), whose mean is the optimal constant.
-            self._settings["fit_constant"] = True
+            # Temporarily set self._fit_constant=None to compute non-centered
+            # residuals: constant_d was fixed at 0 during optimization, so (obs - sim)
+            # gives (obs - other_contributions), whose mean is the estimated constant.
+            self._fit_constant = None
             residual_mean = np.mean(self.residuals())
-            self._settings["fit_constant"] = False
-            self._parameters.loc[
-                self._parameters.name == self.constant.name, "optimal"
-            ] = residual_mean
+            self._parameters.loc[f"{self.constant.name}_d", "optimal"] = residual_mean
 
         if report:
             if isinstance(report, str) and report == "full":
