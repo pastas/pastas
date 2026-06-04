@@ -14,7 +14,6 @@ Create a new Pastas model::
 
 # Python Dependencies
 from collections import OrderedDict
-from itertools import combinations
 from logging import getLogger
 from os import getlogin
 from pathlib import Path
@@ -44,7 +43,7 @@ from pastas.decorators import (
 )
 from pastas.io.base import _load_model, dump
 from pastas.modelstats import Statistics
-from pastas.plotting.modelplots import Plotting, _table_formatter_stderr
+from pastas.plotting.modelplots import Plotting
 from pastas.rfunc import HantushWellModel
 from pastas.solver import LeastSquares
 from pastas.stressmodels import Constant
@@ -117,16 +116,7 @@ class Model:
         )
 
         self._parameters = DataFrame(
-            columns=[
-                "initial",
-                "name",
-                "optimal",
-                "pmin",
-                "pmax",
-                "vary",
-                "stderr",
-                "dist",
-            ]
+            columns=["initial", "pmin", "pmax", "vary", "name", "optimal"]
         )
 
         # Define the model components
@@ -365,6 +355,26 @@ class Model:
         noise_alpha = self.noisemodel.parameters.initial.iat[0]
         if freq_in_days > noise_alpha:
             self.noisemodel._set_initial("noise_alpha", freq_in_days)
+
+        self._parameters = self.get_init_parameters(initial=False)
+
+    def add_solver(self, solver: Solver) -> None:
+        """Method to add a solver to the model.
+
+        Parameters
+        ----------
+        solver: pastas.solver.Solver
+            Instance of a pastas Solver class used to solve the model. Options are:
+            ps.solver.LeastSquares(), ps.solver.Lmfit() or ps.solver.Emcee().
+
+        See Also
+        --------
+        pastas.solver
+            Different solver objects are available to estimate parameters.
+        """
+        self.solver = solver
+        if not hasattr(self.solver, "ml") or self.solver.ml is None:
+            self.solver.set_model(self)
 
         self._parameters = self.get_init_parameters(initial=False)
 
@@ -779,24 +789,6 @@ class Model:
     def initialize(**kwargs) -> None:
         pass
 
-    def add_solver(self, solver: Solver) -> None:
-        """Method to add a solver to the model.
-
-        Parameters
-        ----------
-        solver: pastas.solver.Solver
-            Instance of a pastas Solver class used to solve the model. Options are:
-            ps.LeastSquares(), ps.LmfitSolve() or ps.EmceeSolve().
-
-        See Also
-        --------
-        pastas.solver
-            Different solver objects are available to estimate parameters.
-        """
-        self.solver = solver
-        if not hasattr(self.solver, "ml") or self.solver.ml is None:
-            self.solver.set_model(self)
-
     def solve(
         self,
         tmin: Timestamp | str | None = None,
@@ -804,7 +796,7 @@ class Model:
         freq: str | None = None,
         warmup: float | None = None,
         solver: Solver | None = None,
-        report: bool | Literal["full"] = True,
+        report: bool | Literal["full"] | dict = True,
         initial: bool = True,
         weights: Series | None = None,
         fit_constant: bool = True,
@@ -828,21 +820,28 @@ class Model:
             internally. If none is provided, the tmax from the oseries is used.
         freq: str, optional
             String with the frequency the stressmodels are simulated. Must be one of
-            the following (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+            the following (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D". If
+            None, the frequency from ml.settings is used (defaults to "D").
         warmup: float, optional
             Warmup period (in Days) for which the simulation is calculated, but not
-            used for the calibration period.
+            used for the calibration period. If None, the warmup from ml.settings is
+            used (defaults to 3650 days).
         solver: Class pastas.solver.Solver, optional
-            Instance of a pastas Solver class used to solve the model. Options are:
-            ps.LeastSquares() (default) or ps.LmfitSolve(). An instance is needed as
-            of Pastas 0.23, not a class!
-        report: bool | Literal["full"], optional
+            Instance of a pastas Solver class used to solve the model. See pastas.
+            solver for the options. The solver is stored in the `ml.solver` attribute.
+            If None, the solver from `ml.solver` is used. If `solver` and `ml.solver`
+            are both None, the default ps.solver.LeastSquares() is used.
+        report: bool | Literal["full"] | dict, optional
             Print a report to the screen after optimization finished. Set to
-            True (default) to print a standard report, "full" to print a
+            True (default) to print a standard report, set to "full" to print a
             report including the correlation matrix and standard errors of the
-            parameters, or False to suppress the report. This can also be
-            manually triggered after optimization by calling print(ml.fit_report(
-            )) on the Pastas model instance.
+            parameters, or set to False to suppress the report.
+
+            .. versionchanged:: 2.0.0
+             To have full conrol over the report, a dictionary with the arguments of
+             ml.solve.fit_report() can be provided:
+             (i.e., ml.solve(report=dict(stderr=True, corr=False))).
+
         initial: bool, optional
             Reset initial parameters from the individual stress models. Default is
             True. If False, the optimal values from an earlier optimization are used.
@@ -874,10 +873,16 @@ class Model:
             model is not initialized before solving. Note that the latter is an
             advanced option since some model settings can be missing. Default
             is False and deprecated since version 2.0.0.
+
+            .. deprecated:: 2.0.0
+                The initialize argument is deprecated in favor of the `reset_settings`
+                argument.
+
         reset_settings: bool = False,
-            If True, the model settings are reset to their default values before solving.
-            This calls the Model.set_settings() method with default values.
-            Default is False.
+            If True, the model settings are reset to their default values before
+            solving. This calls the Model.set_settings() method with default values.
+            Default is False. To reset the original parameters of the model, use
+            `initial=True` instead.
         **kwargs: dict, optional
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
@@ -885,8 +890,7 @@ class Model:
         Notes
         -----
         - The solver instance including some results are stored as ml.solver. From here
-          one can access the covariance (ml.solver.pcov) and correlation matrix (
-          ml.solver.pcor).
+          one can access the specific attributes from the solver (i.e., the covariance matrix(ml.solver.pcov) for the LeastSquaresSolve).
         - Each solver returns a number of results after optimization. These solver
           specific results are stored in ml.solver.result and can be accessed from
           there.
@@ -977,12 +981,11 @@ class Model:
             self.add_solver(solver=LeastSquares())
 
         # Solve model
-        noise = True if self.noisemodel else False
-        success, optimal, stderr = self.solver.solve(
-            noise=noise, weights=weights, **kwargs
-        )
-        if not success:
-            logger.warning("Model parameters could not be estimated well.")
+        solve_success, result = self.solver.solve(weights=weights, **kwargs)
+
+        # Update the parameters with the results from the optimization
+        for column in result.columns:
+            self._parameters.loc[result.index, column] = result[column].values
 
         if self.settings["fit_constant"] is False:
             # Determine the residuals and set the constant to their mean.
@@ -990,21 +993,22 @@ class Model:
             # constant_d was fixed at 0 during optimization, so (obs - sim) gives
             # (obs - other_contributions), whose mean is the optimal constant.
             self._settings["fit_constant"] = True
-            res = self.residuals(optimal).mean()
+            residual_mean = np.mean(self.residuals())
             self._settings["fit_constant"] = False
-            optimal[self._parameters.name == self.constant.name] = res
-
-        self._parameters.loc[:, "optimal"] = optimal
-        self._parameters.loc[:, "stderr"] = stderr
-        self._solve_success = success  # store for fit_report
+            self._parameters.loc[
+                self._parameters.name == self.constant.name, "optimal"
+            ] = residual_mean
 
         if report:
             if isinstance(report, str) and report == "full":
-                print(self.fit_report(corr=True, stderr=True))
+                print(self.fit_report(full_output=True))
+            elif isinstance(report, dict):
+                print(self.fit_report(**report))
             else:
                 print(self.fit_report())
         else:
-            self._generate_warnings_report()  # log warnings even if no report
+            # log warnings even if no report
+            self._generate_warnings_report(log=True, solve_success=solve_success)
 
     @property
     @PastasDeprecationWarning(
@@ -1119,8 +1123,8 @@ class Model:
         pmin: float | None = None,
         pmax: float | None = None,
         optimal: float | None = None,
-        dist: str | None = None,
         move_bounds: bool = False,
+        **kwargs,
     ) -> None:
         """Method to change the parameter properties.
 
@@ -1138,11 +1142,13 @@ class Model:
             maximum value for the parameter.
         optimal: float, optional
             optimal value for the parameter.
-        dist: str, optional
-            Distribution of the parameters.
         move_bounds: bool, optional
-            Reset pmin/pmax based on new initial value. Of move_bounds=True, pmin and
-            pmax must be None.
+            Reset pmin/pmax based on new initial value. If move_bounds=True,
+            pmin and pmax must be None.
+        kwargs: dict, optional
+            These keyword arguments can be used to change any other parameter
+            properties that are present in the parameters DataFrame, such as "dist".
+
 
         Examples
         --------
@@ -1164,6 +1170,7 @@ class Model:
         noisemodel = self.noisemodel.name if self.noisemodel else "NotPresent"
         constant = self.constant.name if self.constant else "NotPresent"
         transform = self.transform.name if self.transform else "NotPresent"
+        solver = self.solver.name if self.solver else "NotPresent"
 
         # Get the model component for the parameter
         cat = self._parameters.at[name, "name"]
@@ -1176,6 +1183,12 @@ class Model:
             obj = self.constant
         elif cat == transform:
             obj = self.transform
+        elif cat == solver:
+            obj = self.solver
+        else:
+            msg = f"Parameter {name} is not associated with a model component."
+            logger.error(msg)
+            raise KeyError(msg)
 
         # Move pmin and pmax based on the initial
         if move_bounds and initial:
@@ -1220,11 +1233,19 @@ class Model:
         if pmax is not None:
             obj._set_pmax(name, pmax)
             self._parameters.at[name, "pmax"] = pmax
-        if dist is not None:
-            obj._set_dist(name, dist)
-            self._parameters.at[name, "dist"] = dist
         if optimal is not None:
             self._parameters.at[name, "optimal"] = optimal
+        for key, value in kwargs.items():
+            if key in self._parameters.columns:
+                self._parameters.at[name, key] = value
+                obj.parameters.at[name, key] = value
+            else:
+                msg = (
+                    f"Parameter column '{key}' is not recognized in model parameters."
+                    f"Available columns are: {self._parameters.columns.tolist()}."
+                    f"Value {value} for parameter '{name}' was not set."
+                )
+                logger.error(msg)
 
         # Check if bounds are consistent
         curr_pmin = self._parameters.at[name, "pmin"]
@@ -1488,20 +1509,25 @@ class Model:
             frames.append(self.transform.parameters)
         if self.noisemodel is not None:
             frames.append(self.noisemodel.parameters)
+        if self.solver is not None:
+            frames.append(self.solver.parameters)
+
+        frames = [frame for frame in frames if frame is not None and not frame.empty]
 
         if not frames:
             parameters = DataFrame(columns=self._parameters.columns)
         else:
             parameters = concat(frames)
             parameters = parameters.infer_objects()
-            parameters["stderr"] = np.nan
+            # parameters["stderr"] = np.nan
             parameters["optimal"] = np.nan
 
         # Set initial parameters to optimal parameters from model
         if not initial:
             parameters.update({"initial": self._parameters.loc[:, "optimal"]})
             parameters.update({"optimal": self._parameters.loc[:, "optimal"]})
-            parameters.update({"stderr": self._parameters.loc[:, "stderr"]})
+            if "stderr" in self._parameters.columns:
+                parameters.update({"stderr": self._parameters.loc[:, "stderr"]})
 
         return parameters
 
@@ -1801,7 +1827,7 @@ class Model:
         else:
             block_or_step = getattr(rfunc, block_or_step)
 
-        p = self.get_parameters(name) if p is None else p
+        p = self.get_parameters(name)[: rfunc.nparam] if p is None else p
 
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
@@ -2042,13 +2068,17 @@ class Model:
 
         return file_info
 
-    def _generate_warnings_report(self, log: bool = True) -> list[str]:
+    def _generate_warnings_report(
+        self, log: bool = True, solve_success: bool = True
+    ) -> list[str]:
         """Internal method to generate warnings after model optimization.
 
         Parameters
         ----------
         log: bool, optional
             If True, the warnings are logged using the logging module. Default is True.
+        solve_success: bool, optional
+            If True, the solve was successful and no warnings are generated. Default is True.
 
         Returns
         -------
@@ -2058,7 +2088,7 @@ class Model:
 
         msg = []
         # model optimization unsuccessful
-        if not self._solve_success:
+        if solve_success is False:
             msg.append("Model parameters could not be estimated well.")
 
         def _append_warning(warning: str) -> None:
@@ -2107,154 +2137,44 @@ class Model:
 
     def fit_report(
         self,
-        corr: bool = False,
-        stderr: bool = False,
-        warnings: bool = True,
-        output: str = None,
+        full_output: bool = False,
+        **kwargs,
     ) -> str:
-        """Method that reports on the fit after a model is optimized.
+        """Fit report of the model solve.
 
         Parameters
         ----------
-        corr : bool, optional
-            If True the parameter correlations are shown.
-        stderr : bool, optional
-            If True the standard error of the parameter values are shown. Please be
-            aware of the conditions for reliable uncertainty estimates, more information
-            here:
-            https://pastas.readthedocs.io/stable/examples/diagnostic_checking.html
-        warnings : bool, optional
-            print warnings in case of optimization failure, parameters hitting
-            bounds, or length of responses exceeding calibration period.
-        output : str, optional (deprecated)
-            deprecated argument, use corr and stderr arguments instead.
+        full_output: bool, optional
+            If True, a full fit report is generated with all the optional features from
+            the solvers' fit report set to True.
+        **kwargs:
+             any argument that is passed to the fit_report method of the solver. See
+             the documentation of the solver for more information.
 
         Returns
         -------
         report: str
-            String with the report.
+
+        See Also
+        --------
+        ml.solver.fit_report
 
         Examples
         --------
-        This method is called by the solve method if report=True, but can also be
-        called on its own::
+        >>> print(ml.fit_report())
 
-        >>> print(ml.fit_report)
-
-        Notes
-        -----
-        The reported values for the fit use the residuals time series where possible.
-        If interpolation is used this means that the result may slightly differ
-        compared to using ml.simulate() and ml.observations().
         """
-        model = {
-            "nfev": self.solver.nfev,
-            "nobs": self.observations().index.size,
-            "noise": str(True if self.noisemodel else False),
-            "tmin": str(self.settings["tmin"]),
-            "tmax": str(self.settings["tmax"]),
-            "freq": self.settings["freq"],
-            "freq_obs": str(self.settings["freq_obs"]),
-            "warmup": str(self.settings["warmup"]),
-            "solver": self.solver._name,
-        }
-
-        fit = {
-            "EVP": f"{self.stats.evp():.2f}",
-            "R2": f"{self.stats.rsq():.2f}",
-            "RMSE": f"{self.stats.rmse():.2f}",
-            "AICc": f"{self.stats.aicc():.2f}",
-            "BIC": f"{self.stats.bic():.2f}",
-            "Obj": f"{self.solver.obj_func:.2f}",
-            "___": "",
-            "Interp.": "Yes" if self._interpolate_simulation else "No",
-        }
-
-        if output is not None:
-            msg = "Use 'corr=True' instead."
+        if "output" in kwargs:
+            msg = "Use 'full_output=True' instead."
             deprecate_args_or_kwargs(
                 name="output",
                 version="2.0.0",
                 reason=msg,
             )
-            if isinstance(output, str) and output == "full":
-                corr = True
+            if isinstance(kwargs["output"], str) and kwargs["output"] == "full":
+                full_output = True
 
-        parameters = self._parameters.loc[:, ["optimal", "initial", "vary"]].copy()
-
-        if stderr:
-            stderr = (
-                self._parameters.loc[:, "stderr"] / self._parameters.loc[:, "optimal"]
-            )
-            parameters.loc[:, "stderr"] = stderr.abs().apply(
-                _table_formatter_stderr, na_rep="nan"
-            )
-
-        # determine width of the fit_report
-        len_fit = max([len(v) for v in fit.values()]) + max(
-            [len(v) for v in fit.keys()]
-        )
-        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
-            [len(v) for v in model.keys()]
-        )
-        len_param = len(parameters.to_string().split("\n")[1])
-        width = max((len_fit + len_model + 8), len_param)
-        string = "{:{fill}{align}{width}}"
-        string = "{:{fill}{align}{width}}"
-
-        # Create the first header with model information and stats
-        wspace = max(width - (11 + 14 + len(self.name)), 1)
-        mspace = width - wspace - (11 + 14)
-        header = (
-            f"Fit report {self.name:<{mspace}.{mspace}}"
-            f"{string.format('', fill=' ', align='>', width=wspace)}"
-            f"Fit Statistics\n"
-            f"{string.format('', fill='=', align='>', width=width)}\n"
-        )
-
-        basic = ""
-        len_val4 = max([len(v) for v in fit.values()])
-        wspace = width - (9 + 23 + 9 + len_val4)
-        for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
-            basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
-
-        # Create the parameters block
-        p = (
-            f"\nParameters ({parameters.vary.sum()} optimized)\n"
-            f"{string.format('', fill='=', align='>', width=width)}\n"
-            f"{parameters.to_string()}"
-        )
-
-        if corr:
-            cor = DataFrame(columns=["value"])
-            pcor = self.solver.pcor
-            for idx, col in combinations(pcor, 2):
-                if np.abs(pcor.loc[idx, col]) > 0.5:
-                    cor.loc[f"{idx} {col}"] = pcor.loc[idx, col]
-
-            corr_rep = (
-                f"\n\nParameter correlations |rho| > 0.5\n"
-                f"{string.format('', fill='=', align='>', width=width)}"
-                f"\n{cor.to_string(float_format='%.2f', header=False)}"
-            )
-        else:
-            corr_rep = ""
-
-        warnings_rep = ""
-        if warnings:
-            msg = self._generate_warnings_report(log=False)
-
-            # create message
-            if len(msg) > 0:
-                msg = [
-                    f"\n\nWarnings! ({len(msg)})\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
-                ] + msg
-                warnings_rep += "\n".join(msg)
-
-        report = f"{header}{basic}{p}{warnings_rep}{corr_rep}"
-
-        return report
+        return self.solver.fit_report(full_output=full_output, **kwargs)
 
     def _check_response_tmax(self, cutoff: float | None = None) -> DataFrame:
         """Internal method to check if response tmax is smaller than calibration period.

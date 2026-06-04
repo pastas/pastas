@@ -139,7 +139,7 @@ class ThresholdTransform:
         -----
         The preferred method for parameter setting is through the model.
         """
-        self.parameters.at[name, "dist"] = str(value)
+        self.parameters.at[name] = str(value)
 
     def simulate(
         self, series: Series | None = None, p: ArrayLike | None = None, **kwargs
