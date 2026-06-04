@@ -197,11 +197,6 @@ def _load_model(data: dict) -> Model:
 
     # Remove stderr column if it is empty, as this column is no longer used by default in the parameters table since 2.0
     if "stderr" in file_parameters.columns and file_parameters["stderr"].isnull().all():
-        logger.warning(
-            "The 'stderr' column in the parameters table is longer used if "
-            "empty and will be dropped. Please update your pas-file by"
-            "loading and saving the file with Pastas 1.5."
-        )
         file_parameters = file_parameters.drop(columns=["stderr"])
 
     # Merge defaults with file parameters: file values win, defaults fill gaps.
