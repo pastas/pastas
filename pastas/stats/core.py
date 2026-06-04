@@ -8,13 +8,17 @@ time steps often observed in hydrological time series.
 from logging import getLogger
 
 import numpy as np
-from numba import prange
 from pandas import DataFrame, DatetimeIndex, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
 from pastas.typing import ArrayLike
 
 from ..decorators import njit
+
+try:
+    from numba import prange
+except ImportError:
+    prange = range
 
 logger = getLogger(__name__)
 
