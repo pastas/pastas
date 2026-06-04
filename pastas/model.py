@@ -953,6 +953,10 @@ class Model:
                 msg = "fit_constant needs to be True (for now) when a transform is used"
                 logger.error(msg)
                 raise ValueError(msg)
+            if self.constant is None:
+                msg = "fit_constant needs a Constant to be set in the model"
+                logger.error(msg)
+                raise ValueError(msg)
             self.set_parameter(f"{self.constant.name}_d", initial=0.0, vary=False)
             self._fit_constant = False
 
