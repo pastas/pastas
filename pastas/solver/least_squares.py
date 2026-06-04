@@ -12,7 +12,7 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, OptimizeResult, least_squares
 
-from pastas.decorators import temporarily_disable_cache
+from pastas.decorators import PastasDeprecationWarning, temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike
 
@@ -690,7 +690,7 @@ class LeastSquares(LeastSquaresBase):
     Examples
     --------
 
-    >>> ml.solve(solver=ps.LeastSquares())
+    >>> ml.solve(solver=ps.solver.LeastSquares())
 
     References
     ----------
@@ -760,7 +760,7 @@ class LeastSquares(LeastSquaresBase):
             function that is called after each iteration. the parameters are
             provided to the func.
         """
-        par = initial.astype(p.dtype)  # copy + match dtype (real or complex for cs jac)
+        par = initial
         par[vary] = p
         return misfit(
             ml=self.ml, p=par, noise=noise, weights=weights, callback=self.callback
@@ -1069,7 +1069,14 @@ class LeastSquares(LeastSquaresBase):
         return settings
 
 
-class LmfitSolve(LeastSquaresBase):
+@PastasDeprecationWarning(
+    version="2.3.0", reason="The LmfitSolve class is renamed to Lmfit."
+)
+def LmfitSolve(*args, **kwargs):
+    return Lmfit(*args, **kwargs)
+
+
+class Lmfit(LeastSquaresBase):
     """Solving the model using the LmFit :cite:p:`newville_lmfitlmfit-py_2019`.
 
     This is basically a wrapper around the SciPy Levenberg Marquardt solver ("leastsq").

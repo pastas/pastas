@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 from pandas import DataFrame, Series
 
-from pastas.decorators import deprecate_args_or_kwargs
+from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 from pastas.typing import ArrayLike, CallBack
 
 from .base import SolverBase
@@ -17,13 +17,21 @@ from .objective_function import misfit
 logger = getLogger(__name__)
 
 
-class EmceeSolve(SolverBase):
+@PastasDeprecationWarning(
+    version="2.3.0", reason="The EmceeSolve class is renamed to Emcee."
+)
+def EmceeSolve(*args, **kwargs):
+    return Emcee(*args, **kwargs)
+
+
+class Emcee(SolverBase):
     """Solver based on MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`.
 
     Parameters
     ----------
     objfunction: pastas.solver.likelihood function, optional
-        An objective function to be minimized. See the pastas.likelihood_functions module for more information.
+        An objective function to be minimized. See the pastas.likelihood module for
+        more information.
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
     backend: emcee.backend, optional
@@ -46,7 +54,7 @@ class EmceeSolve(SolverBase):
     (MCMC) approach to find the optimal parameter values. The solver can be used as
     follows::
 
-        solver = ps.EmceeSolve(nwalkers=20, progress_bar=True)
+        solver = ps.solver.Emcee(nwalkers=20, progress_bar=True)
         ml.solve(solver=solver)
 
     The arguments provided are mostly passed on to the `emcee.EnsembleSampler`
@@ -54,13 +62,13 @@ class EmceeSolve(SolverBase):
     `run_mcmc` (and indirectly the `sample` method), can be passed on to
     `Model.solve`, like::
 
-        ml.solve(solver=ps.EmceeSolve(), thin_by=2)
+        ml.solve(solver=ps.solver.Emcee(), thin_by=2)
 
     Examples
     --------
     Example usage::
 
-        ml.solve(solver=ps.EmceeSolve(), steps=5000)
+        ml.solve(solver=ps.solver.Emcee(), steps=5000)
 
     To obtain the MCMC chains, use::
 
@@ -282,9 +290,15 @@ class EmceeSolve(SolverBase):
         p: numpy.Array
             Numpy array with the parameters.
         noise: bool
-
-        weights
-        callback
+            If True, the noise model is applied to the residuals. This is passed on to
+            the misfit function, which will apply the noise model if True.
+        weights: pandas.Series, optional
+            Series with weights for the residuals. This is passed on to the misfit
+            function, which will apply the weights if provided.
+        callback: callable, optional
+            Callback function that will be called after each iteration of the solver.
+            This is passed on to the misfit function, which will call the callback if
+            provided.
 
         Returns
         -------

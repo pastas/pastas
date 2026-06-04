@@ -121,15 +121,40 @@ def _load_model(data: dict) -> Model:
         if sm.rfunc is not None and sm.rfunc._name == "One":
             rfunc_one_sm_names.append(name)
 
+    # Copy parameters from file to avoid modifying the original data when renaming parameters
+    file_parameters = data["parameters"].copy()
+
     # Add transform
     if "transform" in data.keys():
+        if data["transform"]["class"] == "ThresholdTransform":
+            # the parameters of ThresholdTransform were renamed from 1 and 2 to d and f in pastas 2.0.0,
+            # so we need to check if the old parameter names are present and rename them to the new ones
+            # TODO: remove this check if pas files < 2.0 are no longer supported
+            transform_name = data["transform"]["name"]
+            if (
+                f"{transform_name}_1" in file_parameters.index
+                or f"{transform_name}_2" in file_parameters.index
+            ):
+                rename_map = {
+                    f"{transform_name}_1": f"{transform_name}_d",
+                    f"{transform_name}_2": f"{transform_name}_f",
+                }
+                logger.warning(
+                    "Renaming ThresholdTransform parameters to Pastas 2.0 naming convention: %s",
+                    ", ".join(
+                        f"{old_name} -> {new_name}"
+                        for old_name, new_name in rename_map.items()
+                    ),
+                )
+                file_parameters = file_parameters.rename(index=rename_map)
         transform = getattr(ps.transform, data["transform"].pop("class"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
-        # fixes to read pas-files from before pastas version 1.5
+        # Fixes to read pas-files from before pastas version 1.5
+        # TODO: Deprecate if pas-files < 2.0 are no longer supported
         if data["noisemodel"]["class"] == "NoiseModel":
             data["noisemodel"]["class"] = "ArNoiseModel"
         elif data["noisemodel"]["class"] == "ArmaModel":
@@ -143,25 +168,24 @@ def _load_model(data: dict) -> Model:
             continue
         if solver_key == "fit":
             # TODO: Deprecate if pas-files < 1.3 are no longer supported
-            logger.warning(
+            logger.error(
                 "The solver object is stored in the model.solver attribute since Pastas "
                 "1.3. Please update your pas-file to the new format by loading and saving "
                 "the file with Pastas 1.3."
             )
         solver_name = data[solver_key].pop("class")
+        solver_name = "Lmfit" if solver_name == "LmfitSolve" else solver_name
+        solver_name = "Emcee" if solver_name == "EmceeSolve" else solver_name
         solver = getattr(ps.solver, solver_name)
         ml.add_solver(solver(**data[solver_key]))
-
-    # Merge defaults with file parameters: file values win, defaults fill gaps.
-    file_parameters = data["parameters"].copy()
 
     # Fix old parameter names for One response functions to match the naming convention from Pastas 2.0
     # TODO: Deprecate if pas-files < 2.0 are no longer supported
     for rfunc_one_sm_name in rfunc_one_sm_names:
         if f"{rfunc_one_sm_name}_d" in file_parameters.index:
             logger.warning(
-                f"Renaming parameter {rfunc_one_sm_name}_d to {rfunc_one_sm_name}_A"
-                " to match the naming convention of the ps.One() response function."
+                f"Renaming parameter {rfunc_one_sm_name}_d to {rfunc_one_sm_name}_A to match"
+                " the naming convention of the ps.One() response function in Pastas 2.0."
             )
             file_parameters = file_parameters.rename(
                 index={f"{rfunc_one_sm_name}_d": f"{rfunc_one_sm_name}_A"}
@@ -173,13 +197,9 @@ def _load_model(data: dict) -> Model:
 
     # Remove stderr column if it is empty, as this column is no longer used by default in the parameters table since 2.0
     if "stderr" in file_parameters.columns and file_parameters["stderr"].isnull().all():
-        logger.warning(
-            "The 'stderr' column in the parameters table is longer used if "
-            "empty and will be dropped. Please update your pas-file by"
-            "loading and saving the file with Pastas 1.5."
-        )
         file_parameters = file_parameters.drop(columns=["stderr"])
 
+    # Merge defaults with file parameters: file values win, defaults fill gaps.
     # Populate the model parameters with the file parameters, keeping defaults for missing parameters
     init_parameters = ml.get_init_parameters()
     ml._parameters = init_parameters.reindex(
