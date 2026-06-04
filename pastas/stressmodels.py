@@ -360,7 +360,7 @@ class StressModelBase(ABC):
         ]
         return responses
 
-    def to_dict(self, series) -> dict[str, Any]:
+    def to_dict(self, series: bool = False) -> dict[str, Any]:
         """Export the stress model to a dictionary.
 
         Parameters
