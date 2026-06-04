@@ -21,7 +21,6 @@ logger = getLogger(__name__)
     version="2.3.0", reason="The EmceeSolve class is renamed to Emcee."
 )
 def EmceeSolve(*args, **kwargs):
-    """Alias for EmceeSolve."""
     return Emcee(*args, **kwargs)
 
 

@@ -1070,10 +1070,9 @@ class LeastSquares(LeastSquaresBase):
 
 
 @PastasDeprecationWarning(
-    version="2.3.0", reason="The EmceeSolve class is renamed to Emcee."
+    version="2.3.0", reason="The LmfitSolve class is renamed to Lmfit."
 )
 def LmfitSolve(*args, **kwargs):
-    """Alias for LmfitSolve."""
     return Lmfit(*args, **kwargs)
 
 
