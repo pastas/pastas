@@ -8,6 +8,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from pandas import DataFrame, Series, Timestamp
 
+from pastas.decorators import deprecate_args_or_kwargs
 from pastas.stats import evp, rmse
 from pastas.typing import ArrayLike, Model
 
@@ -129,15 +130,23 @@ class TrackSolve:
         # calculate EVP
         self.evp = np.array([evp(obs=self.obs, res=res)])
 
-    def track_solve(self, params: ArrayLike) -> None:
+    def track_solve(self, p: ArrayLike | None = None, **kwargs) -> None:
         """Append parameters to self.parameters DataFrame and update itercount,
         rmse values and evp.
 
         Parameters
         ----------
-        params : array_like
+        p : array_like
             array containing parameters.
         """
+        if "params" in kwargs:
+            deprecate_args_or_kwargs(
+                "params",
+                version="2.3.0",
+                reason="Params is renamed to p and will be removed in a future version.",
+            )
+            p = kwargs.pop("params")
+
         # update tmin/tmax and freq once after starting solve
         if self.itercount == 0:
             self._update_settings()
@@ -146,14 +155,14 @@ class TrackSolve:
         self.itercount += 1
 
         # add parameters to DataFrame
-        self.parameters.loc[self.itercount, self.ml.parameters.index] = params.copy()
+        self.parameters.loc[self.itercount, self.ml.parameters.index] = p.copy()
 
         # calculate new RMSE values
-        r_res = self._residuals(params)
+        r_res = self._residuals(p)
         self.rmse_res = np.r_[self.rmse_res, rmse(res=r_res)]
 
         if self.ml.noisemodel is not None:
-            n_res = self._noise(params)
+            n_res = self._noise(p)
             self.rmse_noise = np.r_[self.rmse_noise, rmse(res=n_res)]
 
         # recalculate EVP
@@ -170,12 +179,12 @@ class TrackSolve:
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    def _noise(self, params: ArrayLike) -> ArrayLike:
+    def _noise(self, p: ArrayLike | None = None, **kwargs) -> ArrayLike:
         """get noise.
 
         Parameters
         ----------
-        params: array_like
+        p: array_like
             array containing parameters.
 
         Returns
@@ -183,15 +192,22 @@ class TrackSolve:
         noise: array_like
             array containing noise.
         """
-        noise = self.ml.noise(p=params, tmin=self.tmin, tmax=self.tmax)
+        if "params" in kwargs:
+            deprecate_args_or_kwargs(
+                "params",
+                version="2.3.0",
+                reason="Params is renamed to p and will be removed in a future version.",
+            )
+            p = kwargs.pop("params")
+        noise = self.ml.noise(p=p, tmin=self.tmin, tmax=self.tmax)
         return noise
 
-    def _residuals(self, params: ArrayLike) -> ArrayLike:
+    def _residuals(self, p: ArrayLike | None = None, **kwargs) -> ArrayLike:
         """calculate residuals.
 
         Parameters
         ----------
-        params: np.array
+        p: array_like
             array containing parameters.
 
         Returns
@@ -199,7 +215,14 @@ class TrackSolve:
         res: array_like
             array containing residuals.
         """
-        res = self.ml.residuals(p=params, tmin=self.tmin, tmax=self.tmax)
+        if "params" in kwargs:
+            deprecate_args_or_kwargs(
+                "params",
+                version="2.3.0",
+                reason="Params is renamed to p and will be removed in a future version.",
+            )
+            p = kwargs.pop("params")
+        res = self.ml.residuals(p=p, tmin=self.tmin, tmax=self.tmax)
         return res
 
     def _simulate(self) -> Series:
@@ -331,12 +354,12 @@ class TrackSolve:
         self.fig.tight_layout()
         return self.fig
 
-    def plot_track_solve(self, params: ArrayLike) -> None:
+    def plot_track_solve(self, p: ArrayLike | None = None, **kwargs) -> None:
         """Method to plot model simulation while model is being solved.
 
         Parameters
         ----------
-        params : array_like
+        p : array_like
             array containing parameters
 
         Examples
@@ -348,11 +371,19 @@ class TrackSolve:
         >>> ml.solve(callback=track.plot_track_solve)
 
         """
+        if "params" in kwargs:
+            deprecate_args_or_kwargs(
+                "params",
+                version="2.3.0",
+                reason="Params is renamed to p and will be removed in a future version.",
+            )
+            p = kwargs.pop("params")
+
         if not hasattr(self, "fig"):
             self.initialize_figure()
 
         # update parameters
-        self.track_solve(params)
+        self.track_solve(p)
 
         # check if figure should be updated
         if self.itercount % self.update_iter != 0:
