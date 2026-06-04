@@ -90,6 +90,16 @@ extend-include = ["*.ipynb"]
 show-fixes = true
 fix = true
 
+[tool.ruff.lint]
+extend-select = ["I", "D"]
+pydocstyle.convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D"]
+"doc/**/*.ipynb" = ["D"]
+"doc/**/*.py" = ["D"]
+
+
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
 markers = [
@@ -165,16 +175,6 @@ commands = [
         "--check",
     ],
 ]
-
-[tool.ruff.lint]
-extend-select = ["I", "D"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["D"]
-"**/*.ipynb" = ["D"]
-
-[tool.ruff.lint.pydocstyle]
-convention = "numpy"
 
 [tool.tox.env.ruff_preview]
 description = "run ruff checks preview mode"
