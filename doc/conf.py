@@ -94,7 +94,7 @@ html_theme_options = {
         }
     ],
     "announcement": (
-        'Support Pastas: '
+        "Support Pastas: "
         '<a href="https://opencollective.com/pastas" '
         'target="_blank" rel="noopener noreferrer">'
         "Become a sustaining member"
