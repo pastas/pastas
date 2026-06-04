@@ -511,12 +511,12 @@ class Gamma(RfuncBase):
 
         parameters = DataFrame(
             [
-                (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (1.0, 0.1, 5.0, True, name, "uniform"),
-                (10.0, 1e-2, 1e4, True, name, "uniform"),
+                (initial_A, pmin_A, pmax_A, True, name),
+                (1.0, 0.1, 5.0, True, name),
+                (10.0, 1e-2, 1e4, True, name),
             ],
             index=[name + "_A", name + "_n", name + "_a"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
 
@@ -620,11 +620,11 @@ class Exponential(RfuncBase):
 
         parameters = DataFrame(
             [
-                (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (10.0, 1e-2, 1e4, True, name, "uniform"),
+                (initial_A, pmin_A, pmax_A, True, name),
+                (10.0, 1e-2, 1e4, True, name),
             ],
             index=[name + "_A", name + "_a"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
 
@@ -747,12 +747,12 @@ class Hantush(RfuncBase):
 
         parameters = DataFrame(
             [
-                (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (1e2, 1e-3, 1e4, True, name, "uniform"),
-                (1.0, 1e-6, 25.0, True, name, "uniform"),
+                (initial_A, pmin_A, pmax_A, True, name),
+                (1e2, 1e-3, 1e4, True, name),
+                (1.0, 1e-6, 25.0, True, name),
             ],
             index=[name + "_A", name + "_a", name + "_b"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
 
@@ -1076,14 +1076,14 @@ class HantushWellModel(RfuncBase):
 
         parameters = DataFrame(
             [
-                (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (1e2, 1e-3, 1e4, True, name, "uniform"),
+                (initial_A, pmin_A, pmax_A, True, name),
+                (1e2, 1e-3, 1e4, True, name),
                 # set initial and bounds for b taking into account distances
                 # note log transform to avoid tiny values for b
-                (initial_b, pmin_b, pmax_b, True, name, "uniform"),
+                (initial_b, pmin_b, pmax_b, True, name),
             ],
             index=[name + "_A", name + "_a", name + "_b"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
 
@@ -1323,13 +1323,12 @@ class Polder(RfuncBase):
                     2.0 if self.up else 0.0 if self.up is False else 2.0,
                     True,
                     name,
-                    "uniform",
                 ),
-                (10.0, 1e-2, 1e3, True, name, "uniform"),
-                (1.0, 1e-6, 25.0, True, name, "uniform"),
+                (10.0, 1e-2, 1e3, True, name),
+                (1.0, 1e-6, 25.0, True, name),
             ],
             index=[name + "_A", name + "_a", name + "_b"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
 
@@ -1449,11 +1448,10 @@ class One(RfuncBase):
                     np.nan if self.up else 0.0 if self.up is False else np.nan,
                     True,
                     name,
-                    "uniform",
                 )
             ],
             index=[name + "_A"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
 
@@ -1569,13 +1567,13 @@ class FourParam(RfuncBase):
 
         parameters = DataFrame(
             [
-                (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (1.0, -10.0, 10.0, True, name, "uniform"),
-                (10.0, 1e-2, 5e3, True, name, "uniform"),
-                (10.0, 1e-6, 25.0, True, name, "uniform"),
+                (initial_A, pmin_A, pmax_A, True, name),
+                (1.0, -10.0, 10.0, True, name),
+                (10.0, 1e-2, 5e3, True, name),
+                (10.0, 1e-6, 25.0, True, name),
             ],
             index=[name + "_A", name + "_n", name + "_a", name + "_b"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
 
@@ -1943,14 +1941,13 @@ class DoubleExponential(RfuncBase):
                     else np.nan,
                     True,
                     name,
-                    "uniform",
                 ),
-                (0.1, 1e-2, 0.99, True, name, "uniform"),
-                (10.0, 1e-2, 5e3, True, name, "uniform"),
-                (10.0, 1e-2, 5e3, True, name, "uniform"),
+                (0.1, 1e-2, 0.99, True, name),
+                (10.0, 1e-2, 5e3, True, name),
+                (10.0, 1e-2, 5e3, True, name),
             ],
             index=[name + "_A", name + "_alpha", name + "_a1", name + "_a2"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
 
@@ -2080,12 +2077,12 @@ class Kraijenhoff(RfuncBase):
 
         parameters = DataFrame(
             [
-                (initial_A, pmin_A, pmax_A, True, name, "uniform"),
-                (1e2, 1e-2, 1e4, True, name, "uniform"),
-                (0.0, 0.0, 0.499999, True, name, "uniform"),
+                (initial_A, pmin_A, pmax_A, True, name),
+                (1e2, 1e-2, 1e4, True, name),
+                (0.0, 0.0, 0.499999, True, name),
             ],
             index=[name + "_A", name + "_a", name + "_b"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
 
@@ -2243,9 +2240,9 @@ class Spline(RfuncBase):
         else:
             initial_A, pmin_A, pmax_A = 1 / self.gain_scale_factor, np.nan, np.nan
         parameters = DataFrame(
-            ([initial_A, pmin_A, pmax_A, True, name, "uniform"],),
+            ([initial_A, pmin_A, pmax_A, True, name],),
             index=[name + "_A"],
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         initial = np.linspace(0.0, 1.0, len(self.t) + 1)[1:]
         for i in range(len(self.t)):
@@ -2254,7 +2251,7 @@ class Spline(RfuncBase):
             # fix the value of the factor at the last timestep to 1.0
             if i == len(self.t) - 1:
                 vary = False
-            parameters.loc[index] = (initial[i], 0.0, 1.0, vary, name, "uniform")
+            parameters.loc[index] = (initial[i], 0.0, 1.0, vary, name)
 
         return parameters
 

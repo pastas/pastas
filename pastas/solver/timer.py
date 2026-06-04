@@ -19,11 +19,11 @@ This will print the following to the console::
 
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pastas.decorators import PastasDeprecationWarning
 from pastas.stats import metrics
-from pastas.typing import Model
+from pastas.typing import ArrayLike, Model
 
 
 @PastasDeprecationWarning(
@@ -62,7 +62,9 @@ class SolveTimer(tqdm):
     updated quite as nicely.
     """
 
-    def __init__(self, *args, max_time: float | None = None, **kwargs) -> None:
+    def __init__(
+        self, *args: Any, max_time: float | None = None, **kwargs: Any
+    ) -> None:
         """Initialize SolveTimer.
 
         Parameters
@@ -95,12 +97,12 @@ class StatTimer(SolveTimer):
     def __init__(
         self,
         ml: Model,
-        *args,
+        *args: Any,
         statistic: Literal[
             "rmse", "sse", "mae", "rsq", "evp", "nse", "nnse", "aic", "aicc", "bic"
         ] = "rmse",
         update_interval: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """
         Parameters
@@ -123,7 +125,7 @@ class StatTimer(SolveTimer):
         self.func = getattr(metrics, self.statistic)
         super().__init__(*args, **kwargs)
 
-    def timer(self, p, n: int = 1):
+    def timer(self, p: ArrayLike, n: int = 1):
         """Callback method that updates RMSE in the progress bar."""
         # extra overhead to compute residuals again, though with caching
         # this will be faster

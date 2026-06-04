@@ -114,9 +114,15 @@ def _load_model(data: dict) -> Model:
         ml.file_info.update(data["file_info"])
 
     # Add stressmodels
+    rfunc_one_sm_names = []
     for name, smdata in data["stressmodels"].items():
         sm = _load_stressmodel(smdata, data)
         ml.add_stressmodel(sm)
+        if sm.rfunc is not None and sm.rfunc._name == "One":
+            rfunc_one_sm_names.append(name)
+
+    # Copy parameters from file to avoid modifying the original data when renaming parameters
+    file_parameters = data["parameters"].copy()
 
     # Add transform
     if "transform" in data.keys():
@@ -126,8 +132,8 @@ def _load_model(data: dict) -> Model:
             # TODO: remove this check if pas files < 2.0 are no longer supported
             transform_name = data["transform"]["name"]
             if (
-                f"{transform_name}_1" in data["parameters"].index
-                or f"{transform_name}_2" in data["parameters"].index
+                f"{transform_name}_1" in file_parameters.index
+                or f"{transform_name}_2" in file_parameters.index
             ):
                 rename_map = {
                     f"{transform_name}_1": f"{transform_name}_d",
@@ -140,45 +146,73 @@ def _load_model(data: dict) -> Model:
                         for old_name, new_name in rename_map.items()
                     ),
                 )
-                data["parameters"] = data["parameters"].rename(index=rename_map)
+                file_parameters = file_parameters.rename(index=rename_map)
         transform = getattr(ps.transform, data["transform"].pop("class"))
         transform = transform(**data["transform"])
         ml.add_transform(transform)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
-        # fixes to read pas-files from before pastas version 1.5
-        # TODO: uncomment in pastas 2.0.0
-        # if data["noisemodel"]["class"] == "NoiseModel":
-        #     data["noisemodel"]["class"] = "ArNoiseModel"
-        # if data["noisemodel"]["class"] == "ArmaModel":
-        #     data["noisemodel"]["class"] = "ArmaNoiseModel"
+        # Fixes to read pas-files from before pastas version 1.5
+        # TODO: Deprecate if pas-files < 2.0 are no longer supported
+        if data["noisemodel"]["class"] == "NoiseModel":
+            data["noisemodel"]["class"] = "ArNoiseModel"
+        elif data["noisemodel"]["class"] == "ArmaModel":
+            data["noisemodel"]["class"] = "ArmaNoiseModel"
         n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
         ml.add_noisemodel(n)
 
-    # Add solver object to the model from pas-files < 1.3.0  TODO Deprecate
-    if "fit" in data.keys():
-        logger.warning(
-            "The solver object is stored in the model.solver attribute since Pastas "
-            "1.3. Please update your pas-file to the new format by loading and saving "
-            "the file with Pastas 1.3."
-        )
-        solver = getattr(ps.solver, data["fit"].pop("class"))
-        ml.add_solver(solver(**data["fit"]))
+    solver_name = None
+    for solver_key in ("fit", "solver"):
+        if solver_key not in data:
+            continue
+        if solver_key == "fit":
+            # TODO: Deprecate if pas-files < 1.3 are no longer supported
+            logger.error(
+                "The solver object is stored in the model.solver attribute since Pastas "
+                "1.3. Please update your pas-file to the new format by loading and saving "
+                "the file with Pastas 1.3."
+            )
+        solver_name = data[solver_key].pop("class")
+        solver_name = "Lmfit" if solver_name == "LmfitSolve" else solver_name
+        solver_name = "Emcee" if solver_name == "EmceeSolve" else solver_name
+        solver = getattr(ps.solver, solver_name)
+        ml.add_solver(solver(**data[solver_key]))
 
-    # Add solver object to the model
-    if "solver" in data.keys():
-        solver = getattr(ps.solver, data["solver"].pop("class"))
-        ml.add_solver(solver(**data["solver"]))
+    # Fix old parameter names for One response functions to match the naming convention from Pastas 2.0
+    # TODO: Deprecate if pas-files < 2.0 are no longer supported
+    for rfunc_one_sm_name in rfunc_one_sm_names:
+        if f"{rfunc_one_sm_name}_d" in file_parameters.index:
+            logger.warning(
+                f"Renaming parameter {rfunc_one_sm_name}_d to {rfunc_one_sm_name}_A to match"
+                " the naming convention of the ps.One() response function in Pastas 2.0."
+            )
+            file_parameters = file_parameters.rename(
+                index={f"{rfunc_one_sm_name}_d": f"{rfunc_one_sm_name}_A"}
+            )
 
-    # Add parameters, use update to maintain correct order
-    ml._parameters = ml.get_init_parameters()
-    ml._parameters.update(data["parameters"])
+    # Remove columns that are no longer used by default in the parameters table since 2.0
+    if "dist" in file_parameters.columns and solver_name != "EmceeSolve":
+        file_parameters = file_parameters.drop(columns=["dist"])
+
+    # Remove stderr column if it is empty, as this column is no longer used by default in the parameters table since 2.0
+    if "stderr" in file_parameters.columns and file_parameters["stderr"].isnull().all():
+        file_parameters = file_parameters.drop(columns=["stderr"])
+
+    # Merge defaults with file parameters: file values win, defaults fill gaps.
+    # Populate the model parameters with the file parameters, keeping defaults for missing parameters
+    init_parameters = ml.get_init_parameters()
+    ml._parameters = init_parameters.reindex(
+        columns=init_parameters.columns.union(file_parameters.columns, sort=False)
+    )
+    ml._parameters.loc[file_parameters.index, file_parameters.columns] = file_parameters
 
     # Convert parameters to numeric
     ml._parameters = ml._parameters.infer_objects()
 
     # When parameter initial values and bounds changed
+    # set it as well in the stressmodel, noisemodel
+    # and solver instances
     for pname, pdata in ml.parameters.iterrows():
         ml.set_parameter(
             name=pname,
