@@ -594,14 +594,12 @@ class Statistics:
 
         Examples
         --------
-
         >>> ml.stats.summary()
 
         or
 
         >>> ml.stats.summary(stats=["mae", "rmse"])
         """
-
         if stats is None:
             stats_to_compute = self.ops
         else:

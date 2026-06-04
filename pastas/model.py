@@ -896,7 +896,6 @@ class Model:
         pastas.solver
             Different solver objects are available to estimate parameters.
         """
-
         if noise is not None:
             if noise is True:
                 msg = (
@@ -2033,7 +2032,6 @@ class Model:
         msg: list of str
             List of warning messages.
         """
-
         msg = []
         # model optimization unsuccessful
         if not self._solve_success:
@@ -2249,7 +2247,6 @@ class Model:
             dataframe containing length calibration period, response tmax for each
             stressmodel, and check result.
         """
-
         len_oseries = (self.settings["tmax"] - self.settings["tmin"]).days
 
         # only check stressmodels with a response function
@@ -2303,7 +2300,6 @@ class Model:
         compatibility most attributes are stored in dictionaries that can be updated
         when a model is created.
         """
-
         # Create a dictionary to store all data
         data = {
             "name": self.name,
@@ -2392,7 +2388,8 @@ class Model:
 
     def _check_stressmodel_compatibility(self) -> None:
         """Internal method to check if the stressmodels are compatible with the
-        model."""
+        model.
+        """
         for sm in self.stressmodels.values():
             if hasattr(sm, "_check_stressmodel_compatibility"):
                 sm._check_stressmodel_compatibility(self)

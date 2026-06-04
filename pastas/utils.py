@@ -80,7 +80,6 @@ def set_log_level(level: int | str) -> None:
 
     Examples
     --------
-
     >>> import pandas as ps
     >>> ps.set_log_level("ERROR")
     """

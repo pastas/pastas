@@ -645,7 +645,6 @@ def get_equidistant_series_nearest(
     time series. Values are filled as close as possible to their original timestamp
     in the new equidistant time series.
     """
-
     # build new equidistant index
     t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
     # use t_offset to pick time that will keep the most data without shifting in time
@@ -852,5 +851,4 @@ def resample(
         https://pandas.pydata.org/docs/reference/resampling.html
 
     """
-
     return series.resample(freq, closed=closed, label=label, **kwargs)

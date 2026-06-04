@@ -68,7 +68,6 @@ class Plotly:
         fig : plotly.Figure
             plotly Figure showing oseries and model simulation
         """
-
         traces = []
 
         o = self._model.observations()

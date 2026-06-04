@@ -679,7 +679,7 @@ class TrackSolve:
         self.evp = np.r_[self.evp, evp(obs=self.obs, res=r_res)]
 
     def _update_axes(self) -> None:
-        """extend xlim if number of iterations exceeds current window."""
+        """Extend xlim if number of iterations exceeds current window."""
         for iax in self.axes[1:]:
             iax.set_xlim(right=self.viewlim)
             self.fig.canvas.draw()
@@ -690,7 +690,7 @@ class TrackSolve:
         self.freq = self.ml.settings["freq"]
 
     def _noise(self, params: ArrayLike) -> ArrayLike:
-        """get noise.
+        """Get noise.
 
         Parameters
         ----------
@@ -706,7 +706,7 @@ class TrackSolve:
         return noise
 
     def _residuals(self, params: ArrayLike) -> ArrayLike:
-        """calculate residuals.
+        """Calculate residuals.
 
         Parameters
         ----------
@@ -722,7 +722,7 @@ class TrackSolve:
         return res
 
     def _simulate(self) -> Series:
-        """simulate model with last entry in self.parameters.
+        """Simulate model with last entry in self.parameters.
 
         Returns
         -------
@@ -933,7 +933,6 @@ class TrackSolve:
         axes : list of matplotlib.pyplot.Axes
             list of axes handles in figure.
         """
-
         if fig is None:
             fig = self.initialize_figure()
         self.plot_track_solve(self.ml.parameters.optimal.values)

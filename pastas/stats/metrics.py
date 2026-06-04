@@ -652,7 +652,6 @@ def aicc(
 
     Notes
     -----
-
     The corrected Akaike Information Criterium (AICc)
     :cite:p:`sugiura_further_1978` is computed as follows:
 

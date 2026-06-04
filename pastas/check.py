@@ -779,7 +779,6 @@ def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
     df: pandas.DataFrame
         DataFrame with the results of the checks.
     """
-
     results = []
     for check in checks:
         if isinstance(check, str):
@@ -826,7 +825,6 @@ def print_check_report(df: DataFrame):
 
     def boolean_row_styler(row, column):
         """Styler function to color rows based on the value in column."""
-
         colors = [""] * row.size
 
         # make result based on std deviation check yellow, because we cannot

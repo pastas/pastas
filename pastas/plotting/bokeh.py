@@ -29,7 +29,6 @@ class Bokeh:
 
     Examples
     --------
-
     Register extension::
         ps.extensions.register_bokeh()
 
@@ -87,7 +86,6 @@ class Bokeh:
         >>> fig = ml.bokeh.plot()
 
         """
-
         data = self._model.get_output_series(
             tmin=tmin, tmax=tmax, split_contributions=False
         )

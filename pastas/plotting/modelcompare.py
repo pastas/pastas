@@ -141,7 +141,7 @@ class CompareModels:
         return_ax: bool = False,
         **fig_kwargs,
     ) -> None:
-        """initialize a custom figure based on a mosaic.
+        """Initialize a custom figure based on a mosaic.
 
         Parameters
         ----------
@@ -172,7 +172,7 @@ class CompareModels:
         smdict: dict[int, list[str]] | None = None,
         **fig_kwargs,
     ) -> None:
-        """initialize subplots based on a mosaic with equal vertical scales.
+        """Initialize subplots based on a mosaic with equal vertical scales.
 
         The height of each subplot is calculated based on the y-data limits in each
         subplot. This is calculation is performed on the first column of axes in the
@@ -329,7 +329,7 @@ class CompareModels:
         return mosaic
 
     def get_tmin_tmax(self, models: list[Model] = None) -> DataFrame:
-        """get tmin and tmax of all models.
+        """Get tmin and tmax of all models.
 
         Parameters
         ----------
@@ -353,7 +353,7 @@ class CompareModels:
         models: list[Model] | None = None,
         metric_selection: list[str] | None = None,
     ) -> DataFrame:
-        """get metrics of all models in a DataFrame.
+        """Get metrics of all models in a DataFrame.
 
         Parameters
         ----------
@@ -391,7 +391,7 @@ class CompareModels:
         param_col: str = "optimal",
         param_selection: list[str] | None = None,
     ) -> DataFrame:
-        """get parameter values of all models in a DataFrame.
+        """Get parameter values of all models in a DataFrame.
 
         Parameters
         ----------
@@ -496,7 +496,7 @@ class CompareModels:
         return axs[axn]
 
     def plot_simulation(self, axn: str = "sim") -> None:
-        """plot model simulation.
+        """Plot model simulation.
 
         Parameters
         ----------
@@ -527,7 +527,7 @@ class CompareModels:
         return axs[axn]
 
     def plot_residuals(self, axn: str = "res") -> None:
-        """plot residuals.
+        """Plot residuals.
 
         Parameters
         ----------
@@ -552,7 +552,7 @@ class CompareModels:
         return axs[axn]
 
     def plot_noise(self, axn: str = "res") -> None:
-        """plot noise.
+        """Plot noise.
 
         Parameters
         ----------
@@ -584,7 +584,7 @@ class CompareModels:
         axn: str = "rf{i}",
         response: str = "step",
     ) -> None:
-        """plot step or block responses.
+        """Plot step or block responses.
 
         Parameters
         ----------
@@ -680,7 +680,7 @@ class CompareModels:
         axn: str = "con{i}",
         normalized: bool = False,
     ) -> None:
-        """plot stressmodel contributions.
+        """Plot stressmodel contributions.
 
         Parameters
         ----------
@@ -751,7 +751,7 @@ class CompareModels:
             return axs[axn.format(i=0)]
 
     def plot_stress(self, axn: str = "stress", names: list[str] | None = None) -> None:
-        """plot stresses time series.
+        """Plot stresses time series.
 
         Parameters
         ----------
@@ -783,7 +783,7 @@ class CompareModels:
         return axs[axn]
 
     def plot_acf(self, axn: str = "acf") -> None:
-        """plot autocorrelation plot.
+        """Plot autocorrelation plot.
 
         Parameters
         ----------
@@ -853,7 +853,7 @@ class CompareModels:
         param_col: str = "optimal",
         param_selection: list[str] | None = None,
     ) -> None:
-        """plot model parameters table.
+        """Plot model parameters table.
 
         Parameters
         ----------
@@ -879,7 +879,7 @@ class CompareModels:
     def plot_table_metrics(
         self, axn: str = "met", metric_selection: list[str] | None = None
     ) -> None:
-        """plot metrics table.
+        """Plot metrics table.
 
         Parameters
         ----------
@@ -911,7 +911,7 @@ class CompareModels:
     def plot_table_diagnostics(
         self, axn: str = "diag", diag_col: str = "P-value"
     ) -> None:
-        """plot diagnostics table.
+        """Plot diagnostics table.
 
         Parameters
         ----------
@@ -927,7 +927,7 @@ class CompareModels:
         return self.plot_table(axn=axn, df=diags[cols])
 
     def share_xaxes(self, axes: list[Axes]) -> None:
-        """share x-axes.
+        """Share x-axes.
 
         Parameters
         ----------
@@ -937,7 +937,7 @@ class CompareModels:
         share_xaxes(axes)
 
     def share_yaxes(self, axes: list[Axes]) -> None:
-        """share y-axes.
+        """Share y-axes.
 
         Parameters
         ----------
@@ -977,7 +977,7 @@ class CompareModels:
         legend_kwargs: dict[str, Any] | None = None,
         **fig_kwargs,
     ) -> None:
-        """plot the models in a comparison plot.
+        """Plot the models in a comparison plot.
 
         The resulting plot is similar to `ml.plots.results()`.
 

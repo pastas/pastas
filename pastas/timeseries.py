@@ -61,7 +61,6 @@ class TimeSeries:
 
     Other Parameters
     ----------------
-
     Time series settings
 
     fill_nan : {"drop", "mean", "interpolate"} or float
@@ -342,7 +341,8 @@ class TimeSeries:
 
     def _sample_up(self, series: Series) -> Series:
         """Resample the time series when the frequency increases (e.g. from weekly to
-        daily values)."""
+        daily values).
+        """
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
@@ -446,7 +446,6 @@ class TimeSeries:
 
     def _fill_nan(self, series: Series) -> Series:
         """Fill up the nan-values when present."""
-
         method = self.settings["fill_nan"]
         n = series.isnull().values.sum()
 
@@ -771,7 +770,6 @@ def validate_stress(series: Series, verbose: bool = False) -> bool:
 
     Examples
     --------
-
     >>> ps.validate_stress(series)
     """
     return _validate_series(series, verbose=verbose, equidistant=True)
@@ -810,7 +808,6 @@ def validate_oseries(series: Series, verbose: bool = False) -> bool:
 
     Examples
     --------
-
     >>> ps.validate_oseries(series)
     """
     return _validate_series(series, verbose=verbose, equidistant=False)

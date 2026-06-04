@@ -173,7 +173,6 @@ class BaseSolver:
         Add residuals assuming a Normal distribution with standard deviation
         equal to the standard deviation of the residuals.
         """
-
         sigr = self.ml.residuals().std()
 
         data = self._get_realizations(
@@ -502,7 +501,6 @@ class LeastSquares(BaseSolver):
 
     Examples
     --------
-
     >>> ml.solve(solver=ps.LeastSquares())
 
     References
@@ -649,7 +647,6 @@ class LeastSquares(BaseSolver):
         - r is the vector of residuals.
         - W is the diagonal matrix of weights.
         """
-
         nobs, npar = jacobian.shape
         cost = 2 * cost  # res.cost is half sum of squares!
         s_sq = cost / (nobs - npar)  # variance of the residuals

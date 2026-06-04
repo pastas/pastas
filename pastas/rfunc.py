@@ -831,7 +831,6 @@ class Hantush(RfuncBase):
         float
             Response time in days corresponding to the selected cutoff.
         """
-
         cutoff = self.cutoff if cutoff is None else cutoff
 
         t0 = self.get_tmax_approximation(p, cutoff)

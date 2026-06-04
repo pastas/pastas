@@ -486,7 +486,6 @@ def diagnostics(
     In this example, the Null-hypothesis is not rejected and the data may be assumed
     to be white noise.
     """
-
     cols = ["Checks", "Statistic", "P-value"]
     df = DataFrame(index=stats, columns=cols)
 

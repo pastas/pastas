@@ -90,7 +90,6 @@ class Plotting:
         --------
         >>> ml.plot()
         """
-
         kwargs = {} or kwargs
         if ax is None:
             layout = kwargs.pop("layout", "tight")
@@ -749,6 +748,7 @@ class Plotting:
 
         Parameters
         ----------
+
         Parameters
         ----------
         tmin: pandas.Timestamp or str, optional
@@ -1061,7 +1061,6 @@ class Plotting:
         -------
         axes: list of axes objects
         """
-
         # Create standard results plot
         kwargs["return_dict"] = True
         axd = self.ml.plots.results(tmin=tmin, tmax=tmax, **kwargs)
@@ -1209,7 +1208,6 @@ class Plotting:
         -------
         fig: matplotlib.pyplot.Figure instance
         """
-
         fig = plt.figure(figsize=(8.27, 11.69), dpi=50, layout="constrained")
         fig1, fig2 = fig.subfigures(2, 1, height_ratios=[2, 1], hspace=0.08)
 

@@ -392,7 +392,6 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
     positive, not as depth below the surface!
 
     """
-
     hl, hw = _martens(series, normalize=normalize)
     return (hw - hl).mean()
 
@@ -429,7 +428,6 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
     positive, not as depth below the surface!
 
     """
-
     hl, hw = _martens(series, normalize=normalize)
     return ((hw.max() - hw.min()) + (hl.max() - hl.min())) / 2
 
@@ -972,7 +970,6 @@ def magnitude(series: Series) -> float:
     The higher the magnitude, the more variable the head is, and vice versa.
 
     """
-
     return (series.max() - series.min()) / series.min()
 
 
@@ -1570,7 +1567,6 @@ def baselevel_index(
     heads by interpolation for consistency.
 
     """
-
     series, ht = _baselevel(series, normalize=normalize, period=period)
     return ht.sum() / series.sum()
 
@@ -1604,7 +1600,6 @@ def baselevel_stability(
     base level.
 
     """
-
     _, ht = _baselevel(series, normalize=normalize, period=period)
 
     return ht.resample(year_offset).mean().max() - ht.resample(year_offset).mean().min()
