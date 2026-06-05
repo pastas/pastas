@@ -147,8 +147,6 @@ class Model:
 
         # some _attributes simulation and solving
         self._interpolate_simulation: bool | None = None
-        self._solve_success: bool | None = None
-        self._fit_constant = None  # Internal variable used during solving
 
         # Load modules for statistics and plotting
         self.stats = Statistics(self)
@@ -552,6 +550,7 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
+        subtract_mean: bool = False,
     ) -> Series:
         """Method to calculate the residual series.
 
@@ -573,6 +572,9 @@ class Model:
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
         warmup: float, optional
             Warmup period (in Days).
+        subtract_mean: bool, optional
+            Subtract the mean from the residuals before returning. Default is False.
+            This is useful for when `fit_constant` is used.
 
         Returns
         -------
@@ -622,11 +624,10 @@ class Model:
             res = res.dropna()
             logger.warning("Nan-values were removed from the residuals.")
 
-        if self._fit_constant is False:
-            res = res.subtract(np.mean(res))
+        if subtract_mean:
+            res = res - np.mean(res)
 
-        res.name = "Residuals"
-        return res
+        return res.rename("Residuals")
 
     def noise(
         self,
@@ -635,6 +636,7 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
+        subtract_mean: bool = False,
     ) -> Series:
         """Method to simulate the noise when a noisemodel is present.
 
@@ -656,6 +658,9 @@ class Model:
             the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
         warmup: float or int, optional
             Warmup period (in Days).
+        subtract_mean: bool, optional
+            Subtract the mean from the residuals before returning. Default is False.
+            This can be useful when a noisemodel is present.
 
         Returns
         -------
@@ -685,7 +690,14 @@ class Model:
             p = self.get_parameters()
 
         # Calculate the residuals
-        res = self.residuals(p, tmin, tmax, freq, warmup)
+        res = self.residuals(
+            p=p,
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            warmup=warmup,
+            subtract_mean=subtract_mean,
+        )
         p = p[-self.noisemodel.nparam :]
 
         # Calculate the noise
@@ -699,6 +711,7 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
+        subtract_mean: bool = False,
     ) -> ArrayLike:
         """Internal method to calculate the noise weights."""
         # Get parameters if none are provided
@@ -706,7 +719,14 @@ class Model:
             p = self.get_parameters()
 
         # Calculate the residuals
-        res = self.residuals(p, tmin, tmax, freq, warmup)
+        res = self.residuals(
+            p=p,
+            tmin=tmin,
+            tmax=tmax,
+            freq=freq,
+            warmup=warmup,
+            subtract_mean=subtract_mean,
+        )
 
         # Calculate the weights
         weights = self.noisemodel.weights(res, p[-self.noisemodel.nparam :])
@@ -958,7 +978,6 @@ class Model:
                 logger.error(msg)
                 raise ValueError(msg)
             self.set_parameter(f"{self.constant.name}_d", initial=0.0, vary=False)
-            self._fit_constant = False
 
         # make sure to update self.oseries.series by running self.observations
         # get tmin, tmax, freq, and freq_obs from self.settings
@@ -995,7 +1014,6 @@ class Model:
             # Temporarily set self._fit_constant=None to compute non-centered
             # residuals: constant_d was fixed at 0 during optimization, so (obs - sim)
             # gives (obs - other_contributions), whose mean is the estimated constant.
-            self._fit_constant = None
             residual_mean = np.mean(self.residuals())
             self._parameters.loc[f"{self.constant.name}_d", "optimal"] = residual_mean
 
