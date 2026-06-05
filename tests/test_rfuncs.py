@@ -531,3 +531,31 @@ def test_hantush_well_model_variance_gain(log_b: bool) -> None:
     )
     assert np.isfinite(vg)
     assert vg >= 0.0
+
+
+# Test for Gamma complex_step
+@pytest.mark.parametrize("complex_step", [True, False])
+def test_gamma_complex_step(complex_step: bool) -> None:
+    """Test Gamma with complex step."""
+    rfunc = ps.Gamma(complex_step=complex_step)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Step response works (real)
+    step = rfunc.step(p)
+    assert len(step) > 0
+    assert step.dtype == np.float64
+
+    # Step response works when complex_step is True (complex) and raises when False
+    if complex_step:
+        step = rfunc.step(p + 1e10j)
+        assert len(step) > 0
+        assert step.dtype == np.complex128
+    else:
+        with pytest.raises(
+            TypeError, match="Gamma.step does not support complex-step "
+        ):
+            rfunc.step(p + 1e10j)
+
+    # to_dict works
+    data = rfunc.to_dict()
+    assert data["complex_step"] is complex_step

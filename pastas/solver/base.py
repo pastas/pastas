@@ -1,4 +1,4 @@
-"""This module contains the base solver that used available for Pastas.
+"""Module containing the base solver that used available for Pastas.
 
 All solvers inherit from the SolverBase class, which contains general method for
 selecting the correct time series to misfit and options to weight the residuals or
@@ -39,7 +39,7 @@ class SolverBase(ABC):
         self.set_init_parameters()  # adds self.Parameters DataFrame
 
     def get_init_parameters(self, name: str) -> pd.DataFrame:
-        """Get the initial parameters of the solver.
+        """Get initial parameters of the solver.
 
         Returns
         -------
@@ -60,7 +60,7 @@ class SolverBase(ABC):
 
     @set_parameter
     def _set_initial(self, name: str, value: float) -> None:
-        """Internal method to set the initial parameter value.
+        """Set the initial parameter value.
 
         Notes
         -----
@@ -70,7 +70,7 @@ class SolverBase(ABC):
 
     @set_parameter
     def _set_pmin(self, name: str, value: float) -> None:
-        """Internal method to set the lower bound of the parameter value.
+        """Set the lower bound of the parameter value.
 
         Notes
         -----
@@ -80,7 +80,7 @@ class SolverBase(ABC):
 
     @set_parameter
     def _set_pmax(self, name: str, value: float) -> None:
-        """Internal method to set the upper bound of the parameter value.
+        """Set the upper bound of the parameter value.
 
         Notes
         -----
@@ -90,7 +90,7 @@ class SolverBase(ABC):
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
-        """Internal method to set if the parameter is varied during optimization.
+        """Set if the parameter is varied during optimization.
 
         Notes
         -----
@@ -100,7 +100,7 @@ class SolverBase(ABC):
 
     @set_parameter
     def _set_dist(self, name: str, value: str) -> None:
-        """Internal method to set distribution of prior of the parameter.
+        """Set distribution of prior of the parameter.
 
         Notes
         -----
@@ -109,7 +109,7 @@ class SolverBase(ABC):
         self.parameters.at[name, "dist"] = str(value)
 
     def set_model(self, ml: Model) -> None:
-        """Method to set the Pastas Model instance.
+        """Set the Pastas Model instance.
 
         Parameters
         ----------

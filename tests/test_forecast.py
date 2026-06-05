@@ -37,7 +37,7 @@ class TestCheckForecastData:
         empty_df = pd.DataFrame()
         forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": empty_df}}
         with pytest.raises(
-            ValueError, match="No valid forecast data found in any of the stressmodels"
+            ValueError, match="Empty DataFrame in forecasts for stressmodel"
         ):
             _check_forecast_data(forecasts)
 
@@ -170,8 +170,6 @@ class TestForecast:
         self, ml_noisemodel: Model, forecast_data: dict[str, dict[str, DataFrame]]
     ) -> None:
         """Test forecast with valid input and post-processing enabled."""
-        # Ensure noise model is present
-        print(ml_noisemodel.oseries)
         result = forecast(ml_noisemodel, forecast_data, post_process=True)
         assert isinstance(result, pd.DataFrame)
         assert not result.empty

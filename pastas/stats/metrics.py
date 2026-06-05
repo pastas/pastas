@@ -1,5 +1,4 @@
-"""The following methods may be used to describe the fit between the model simulation
-and the observations.
+"""Methods to describe the fit between the model simulation and the observations.
 
 Examples
 --------
@@ -52,7 +51,7 @@ def mae(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Mean Absolute Error (MAE).
+    r"""Compute the (weighted) Mean Absolute Error (MAE).
 
     Parameters
     ----------
@@ -102,7 +101,7 @@ def me(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Mean Error (ME).
+    r"""Compute the (weighted) Mean Error (ME).
 
     Parameters
     ----------
@@ -151,7 +150,7 @@ def rmse(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Root Mean Squared Error (RMSE).
+    r"""Compute the (weighted) Root Mean Squared Error (RMSE).
 
     Parameters
     ----------
@@ -198,7 +197,7 @@ def sse(
     res: Series | None = None,
     missing: str = "drop",
 ) -> float:
-    """Compute the Sum of the Squared Errors (SSE).
+    r"""Compute the Sum of the Squared Errors (SSE).
 
     Parameters
     ----------
@@ -241,7 +240,7 @@ def pearsonr(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Pearson correlation (r).
+    r"""Compute the (weighted) Pearson correlation (r).
 
     Parameters
     ----------
@@ -298,7 +297,7 @@ def evp(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Explained Variance Percentage (EVP).
+    r"""Compute the (weighted) Explained Variance Percentage (EVP).
 
     Parameters
     ----------
@@ -364,7 +363,7 @@ def nse(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
+    r"""Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
 
     Parameters
     ----------
@@ -413,7 +412,7 @@ def nnse(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Normalized Nash-Sutcliffe Efficiency (NNSE).
+    r"""Compute the (weighted) Normalized Nash-Sutcliffe Efficiency (NNSE).
 
     Parameters
     ----------
@@ -468,7 +467,7 @@ def rsq(
     max_gap: int = 30,
     nparam: int | None = None,
 ) -> float:
-    """Compute R-squared, possibly adjusted for the number of free parameters.
+    r"""Compute R-squared, possibly adjusted for the number of free parameters.
 
     Parameters
     ----------
@@ -533,7 +532,7 @@ def bic(
     missing: str = "drop",
     nparam: int = 1,
 ) -> float:
-    """Compute the Bayesian Information Criterium (BIC).
+    r"""Compute the Bayesian Information Criterium (BIC).
 
     Parameters
     ----------
@@ -578,7 +577,7 @@ def aic(
     missing: str = "drop",
     nparam: int = 1,
 ) -> float:
-    """Compute the Akaike Information Criterium (AIC).
+    r"""Compute the Akaike Information Criterium (AIC).
 
     Parameters
     ----------
@@ -631,8 +630,7 @@ def aicc(
     missing: str = "drop",
     nparam: int = 1,
 ) -> float:
-    """Compute the Akaike Information Criterium with second order
-    bias correction for the number of observations (AICc)
+    r"""Compute the Akaike Information Criterium with second order bias correction.
 
     Parameters
     ----------
@@ -652,7 +650,6 @@ def aicc(
 
     Notes
     -----
-
     The corrected Akaike Information Criterium (AICc)
     :cite:p:`sugiura_further_1978` is computed as follows:
 
@@ -685,7 +682,7 @@ def kge(
     max_gap: int = 30,
     modified: bool = False,
 ) -> float:
-    """Compute the (weighted) Kling-Gupta Efficiency (KGE).
+    r"""Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
     Parameters
     ----------
@@ -763,7 +760,7 @@ def kge_2012(
     weighted: bool = False,
     max_gap: int = 30,
 ) -> float:
-    """Compute the (weighted) Kling-Gupta Efficiency (KGE).
+    r"""Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
     Parameters
     ----------
@@ -810,7 +807,8 @@ def _compute_err(
     res: Series | None = None,
     missing: str = "drop",
 ):
-    """
+    """Compute the error series.
+
     Parameters
     ----------
     sim: pandas.Series, optional
@@ -852,7 +850,7 @@ def _compute_err(
 
 
 def picp(obs: Series, bounds: DataFrame):
-    """Compute the prediction interval coverage probability (PICP).
+    r"""Compute the prediction interval coverage probability (PICP).
 
     Parameters
     ----------

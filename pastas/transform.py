@@ -62,6 +62,7 @@ class ThresholdTransform:
 
     @property
     def nparam(self) -> int:
+        """Return the number of parameters."""
         return self._nparam
 
     @nparam.setter
@@ -71,6 +72,7 @@ class ThresholdTransform:
         self._nparam = value
 
     def set_model(self, ml: Model) -> None:
+        """Set model observations and initialize parameters."""
         obs = ml.observations()
         if np.isnan(self.value):
             self.value = obs.min() + 0.75 * (obs.max() - obs.min())
@@ -81,6 +83,7 @@ class ThresholdTransform:
         self.set_init_parameters()
 
     def set_init_parameters(self) -> None:
+        """Set the initial parameter values in the parameters DataFrame."""
         self.parameters.loc[self.name + "_d"] = (
             self.value,
             self.vmin,
@@ -93,7 +96,7 @@ class ThresholdTransform:
 
     @set_parameter
     def _set_initial(self, name: str, value: float) -> None:
-        """Internal method to set the initial parameter value.
+        """Set the initial parameter value.
 
         Notes
         -----
@@ -103,7 +106,7 @@ class ThresholdTransform:
 
     @set_parameter
     def _set_pmin(self, name: str, value: float) -> None:
-        """Internal method to set the lower bound of the parameter value.
+        """Set the lower bound of the parameter value.
 
         Notes
         -----
@@ -113,7 +116,7 @@ class ThresholdTransform:
 
     @set_parameter
     def _set_pmax(self, name: str, value: float) -> None:
-        """Internal method to set the upper bound of the parameter value.
+        """Set the upper bound of the parameter value.
 
         Notes
         -----
@@ -123,7 +126,7 @@ class ThresholdTransform:
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
-        """Internal method to set if the parameter is varied during optimization.
+        """Set if the parameter is varied during optimization.
 
         Notes
         -----
@@ -133,7 +136,7 @@ class ThresholdTransform:
 
     @set_parameter
     def _set_dist(self, name: str, value: str) -> None:
-        """Internal method to set distribution of prior of the parameter.
+        """Set distribution of prior of the parameter.
 
         Notes
         -----
@@ -142,6 +145,20 @@ class ThresholdTransform:
         self.parameters.at[name] = str(value)
 
     def simulate(self, h: Series, p: ArrayLike) -> Series:
+        """Apply the threshold transform to the simulation.
+
+        Parameters
+        ----------
+        h : pandas.Series
+            The simulation to transform.
+        p : ArrayLike
+            The parameters for the transform.
+
+        Returns
+        -------
+        pandas.Series
+            The transformed simulation.
+        """
         if self.nparam == 1:
             # value above a threshold p[0] are equal to the threshold
             h[h > p[0]] = p[0]
@@ -158,6 +175,13 @@ class ThresholdTransform:
         return self.__class__.__name__
 
     def to_dict(self) -> dict:
+        """Return the transform as a dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary with the transform properties.
+        """
         data = {
             "class": self._name,
             "value": self.value,

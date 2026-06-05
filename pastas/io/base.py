@@ -1,4 +1,4 @@
-"""This module provides functions to load and save Pastas models.
+"""Functions to load and save Pastas models.
 
 Examples
 --------
@@ -23,7 +23,7 @@ logger = getLogger(__name__)
 
 
 def load(fname: str | Path, **kwargs) -> Model:
-    """Method to load a Pastas Model from file.
+    """Load a Pastas Model from file.
 
     Parameters
     ----------
@@ -81,7 +81,7 @@ def load(fname: str | Path, **kwargs) -> Model:
 
 
 def _load_model(data: dict) -> Model:
-    """Internal method to create a model from a dictionary."""
+    """Create a model from a dictionary."""
     # Create model
     oseries = data["oseries"]["series"]
     metadata = data["oseries"]["metadata"]
@@ -287,7 +287,7 @@ def _load_stressmodel(ts, data):
 
 
 def _unpack_series(data: dict):
-    """
+    """Unpack series data from a dictionary.
 
     Parameters
     ----------
@@ -307,7 +307,7 @@ def _unpack_series(data: dict):
 
 
 def dump(fname: str, data: dict, **kwargs):
-    """Method to save a pastas-model to a file.
+    """Save a pastas-model to a file.
 
     Parameters
     ----------

@@ -1,5 +1,5 @@
 # ruff: noqa: F401
-"""The stats sub-package contains statistical methods for Pastas."""
+"""Stats sub-package contains statistical methods for Pastas."""
 
 import pastas.stats.metrics as metrics
 import pastas.stats.signatures as signatures

@@ -44,6 +44,7 @@ class Plotting:
         self.ml = ml  # Store a reference to the model class
 
     def __repr__(self) -> str:
+        """Return a string representation of the ModelPlots class."""
         msg = (
             "This module contains all the built-in plotting options that are available."
         )
@@ -90,7 +91,6 @@ class Plotting:
         --------
         >>> ml.plot()
         """
-
         kwargs = {} or kwargs
         if ax is None:
             layout = kwargs.pop("layout", "tight")
@@ -388,8 +388,9 @@ class Plotting:
         version="2.2.0", reason="Use `results` instead with the return_dict argument."
     )
     def results_mosaic(self, *args, **kwargs) -> dict[str, Axes]:
-        """Deprecated method to plot the results of the model in a mosaic plot.
-        Use `results` instead with the return_dict argument to specify the layout
+        """Plot the results of the model in a mosaic plot (deprecated).
+
+        Deprecated: Use `results` instead with the return_dict argument to specify the layout
         of the mosaic plot.
         """
         kwargs = {} or kwargs
@@ -403,7 +404,7 @@ class Plotting:
         ax: Axes,
         istress: int | None = None,
     ):
-        """Internal method to plot the response of a Stressmodel in the results-plot"""
+        """Plot the response of a Stressmodel in the results-plot."""
         responses = sm._get_responses(
             self.ml, block_or_step=block_or_step, istress=istress
         )
@@ -441,7 +442,7 @@ class Plotting:
         return ax
 
     def _plot_parameters_table(self, ax: Axes, stderr: bool) -> None:
-        """Internal method to plot the parameters table in the results-plot"""
+        """Plot the parameters table in the results-plot."""
         ax.set_title(
             f"Model parameters ($N_c$={self.ml.parameters.vary.sum()})",
             loc="left",
@@ -754,8 +755,6 @@ class Plotting:
 
         Parameters
         ----------
-        Parameters
-        ----------
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
             (E.g. '1980-01-01 00:00:00'). Strings are converted to
@@ -887,7 +886,7 @@ class Plotting:
         figsize: tuple = (10, 8),
         **kwargs,
     ) -> list[Axes]:
-        """This method creates a graph with all the stresses used in the model.
+        """Create a graph with all the stresses used in the model.
 
         Parameters
         ----------
@@ -953,8 +952,9 @@ class Plotting:
         autopct: str = "%1.1f%%",
         **kwargs,
     ) -> Axes:
-        """Make a pie chart of the contributions. This plot is based on the TNO
-        Groundwatertoolbox.
+        """Make a pie chart of the contributions.
+
+        This plot is based on the TNO Groundwatertoolbox.
 
         Parameters
         ----------
@@ -1037,9 +1037,10 @@ class Plotting:
         stacklegend_kws: dict | None = None,
         **kwargs,
     ) -> list[Axes]:
-        """Create a results plot, similar to `ml.plots.results()`, in which the
-        individual contributions of stresses (in stressmodels with multiple stresses)
-        are stacked.
+        """Create a results plot, similar to `ml.plots.results()`.
+
+        In this plot, the individual contributions of stresses (in stressmodels with
+        multiple stresses) are stacked.
 
         Parameters
         ----------
@@ -1066,7 +1067,6 @@ class Plotting:
         -------
         axes: list of axes objects
         """
-
         # Create standard results plot
         kwargs["return_dict"] = True
         axd = self.ml.plots.results(tmin=tmin, tmax=tmax, **kwargs)
@@ -1151,7 +1151,7 @@ class Plotting:
         split: bool = True,
         **kwargs,
     ) -> Axes:
-        """Method to plot all the time series going into a Pastas Model.
+        """Plot all the time series going into a Pastas Model.
 
         Parameters
         ----------
@@ -1214,7 +1214,6 @@ class Plotting:
         -------
         fig: matplotlib.pyplot.Figure instance
         """
-
         fig = plt.figure(figsize=(8.27, 11.69), dpi=50, layout="constrained")
         fig1, fig2 = fig.subfigures(2, 1, height_ratios=[2, 1], hspace=0.08)
 
@@ -1280,8 +1279,7 @@ class Plotting:
         bins: int | None = None,
         split: bool = True,
     ) -> dict[str, Axes]:
-        """Method to plot the correlation between all the time series going
-        into a Pastas Model.
+        """Plot the correlation between all the time series going into a Pastas Model.
 
         Parameters
         ----------
