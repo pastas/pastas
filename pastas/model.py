@@ -659,8 +659,8 @@ class Model:
         warmup: float or int, optional
             Warmup period (in Days).
         subtract_mean: bool, optional
-            Subtract the mean from the residuals before returning. Default is False.
-            This can be useful when a noisemodel is present.
+            Subtract the mean from the residuals, called internally by this method.
+            Default is False.
 
         Returns
         -------
@@ -1014,10 +1014,9 @@ class Model:
 
         if self.settings["fit_constant"] is False:
             # Determine the residuals and set the constant to their mean.
-            # Temporarily set self._fit_constant=None to compute non-centered
-            # residuals: constant_d was fixed at 0 during optimization, so (obs - sim)
+            # constant_d was fixed at 0 during optimization, so (obs - sim)
             # gives (obs - other_contributions), whose mean is the estimated constant.
-            residual_mean = np.mean(self.residuals())
+            residual_mean = np.mean(self.residuals(subtract_mean=False))
             self._parameters.loc[f"{self.constant.name}_d", "optimal"] = residual_mean
 
         if report:
