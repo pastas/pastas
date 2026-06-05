@@ -38,15 +38,11 @@ def misfit(
     np.ndarray or tuple[np.ndarray, np.ndarray, np.ndarray]
         The calculated residuals or noise, optionally with separate components.
     """
-    subtract_mean = not ml.settings["fit_constant"]
-
     # Get the residuals or the noise
     if noise:
-        rv = ml.noise(p=p, subtract_mean=subtract_mean) * ml._noise_weights(
-            p=p, subtract_mean=subtract_mean
-        )
+        rv = ml.noise(p) * ml._noise_weights(p)
     else:
-        rv = ml.residuals(p=p, subtract_mean=subtract_mean)
+        rv = ml.residuals(p)
 
     # Apply weights if provided
     if weights is not None:
@@ -61,9 +57,9 @@ def misfit(
     # Return separate components if requested
     if returnseparate:
         return (
-            ml.residuals(p=p, subtract_mean=subtract_mean).to_numpy(copy=True),
-            ml.noise(p=p, subtract_mean=subtract_mean).to_numpy(copy=True),
-            ml._noise_weights(p=p, subtract_mean=subtract_mean).to_numpy(copy=True),
+            ml.residuals(p).to_numpy(copy=True),
+            ml.noise(p).to_numpy(copy=True),
+            ml._noise_weights(p).to_numpy(copy=True),
         )
 
     return rv.to_numpy(copy=True)
