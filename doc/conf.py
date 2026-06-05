@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Pastas documentation build configuration file, created by
-# sphinx-quickstart on Wed May 11 12:38:06 2016.
+"""Configuration file for the Sphinx documentation builder."""
 
 import os
 import re

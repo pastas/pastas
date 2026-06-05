@@ -14,11 +14,11 @@ from platform import python_version
 
 logger = logging.getLogger(__name__)
 
-__version__ = "2.0.0rc1"
+__version__ = "2.0.0"
 
 
 def get_versions(optional: bool = False) -> dict[str, str]:
-    """Method to get the version of dependencies.
+    """Get version of dependencies.
 
     Parameters
     ----------
@@ -69,7 +69,7 @@ def get_versions(optional: bool = False) -> dict[str, str]:
 
 
 def show_versions(optional: bool = False) -> None:
-    """Method to print the version of dependencies.
+    """Print the version of dependencies.
 
     Parameters
     ----------

@@ -1,5 +1,4 @@
-"""The following methods may be used to describe the fit between the model simulation
-and the observations.
+"""The following methods may be used to describe the fit between the model simulation and the observations.
 
 Examples
 --------
@@ -26,7 +25,7 @@ from .stats import diagnostics, metrics
 
 
 class Statistics:
-    """This class provides statistics to pastas Model class.
+    """Class providing statistics to pastas Model class.
 
     Parameters
     ----------
@@ -60,7 +59,14 @@ class Statistics:
         # Save a reference to the model.
         self.ml = ml
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return string representation of the Statistics object.
+
+        Returns
+        -------
+        str
+            String representation of the Statistics object.
+        """
         msg = """This module contains all the statistical functions included in Pastas.
 
         To obtain a list of all statistics that are included type:
@@ -142,7 +148,7 @@ class Statistics:
     def sse(
         self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> float:
-        """Sum of the squares of the error (SSE)
+        """Sum of the squares of the error (SSE).
 
         Parameters
         ----------
@@ -232,7 +238,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Nash-Sutcliffe Efficiency for model fit .
+        """Calculate Nash-Sutcliffe Efficiency for model fit.
 
         Parameters
         ----------
@@ -264,7 +270,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Normalized Nash-Sutcliffe Efficiency for model fit .
+        """Calculate normalized Nash-Sutcliffe Efficiency for model fit.
 
         Parameters
         ----------
@@ -571,7 +577,7 @@ class Statistics:
         tmax: Timestamp | str | None = None,
         stats: list[str] | None = None,
     ) -> DataFrame:
-        """Returns a Pandas DataFrame with goodness-of-fit metrics.
+        """Return a Pandas DataFrame with goodness-of-fit metrics.
 
         Parameters
         ----------
@@ -594,14 +600,12 @@ class Statistics:
 
         Examples
         --------
-
         >>> ml.stats.summary()
 
         or
 
         >>> ml.stats.summary(stats=["mae", "rmse"])
         """
-
         if stats is None:
             stats_to_compute = self.ops
         else:
@@ -628,8 +632,9 @@ class Statistics:
         stats: tuple = (),
         float_fmt: str = "{0:.2f}",
     ) -> DataFrame:
-        """Methods to compute various diagnostics checks for the noise time series. If
-        no NoiseModel is used, the diagnostics are computed on the model residuals.
+        """Compute various diagnostics checks for the noise time series.
+
+        If no NoiseModel is used, the diagnostics are computed on the model residuals.
 
         Parameters
         ----------

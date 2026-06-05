@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def _table_formatter_params(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting parameters in tables in Pastas plots.
+    """Format parameters in tables in Pastas plots.
 
     Parameters
     ----------
@@ -37,7 +37,7 @@ def _table_formatter_params(s: float, na_rep: str = "") -> str:
 
 
 def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting stderrs in tables in Pastas plots.
+    """Format stderrs in tables in Pastas plots.
 
     Parameters
     ----------
@@ -83,7 +83,7 @@ def _get_stress_series(ml: Model, split: bool = True) -> list[Series]:
 
 
 def share_xaxes(axes: list[Axes]) -> None:
-    """share x-axes"""
+    """Share x-axes."""
     for i, iax in enumerate(axes):
         if i < (len(axes) - 1):
             iax.sharex(axes[-1])
@@ -92,7 +92,7 @@ def share_xaxes(axes: list[Axes]) -> None:
 
 
 def share_yaxes(axes: list[Axes]) -> None:
-    """share y-axes"""
+    """Share y-axes."""
     for iax in axes[1:]:
         iax.sharey(axes[0])
         for t in iax.get_yticklabels():

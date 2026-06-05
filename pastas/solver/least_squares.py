@@ -1,4 +1,4 @@
-"""This module contains the least squares based solvers for Pastas."""
+"""Module containing the least squares based solvers for Pastas."""
 
 from abc import abstractmethod
 from collections.abc import Callable
@@ -31,7 +31,7 @@ class LeastSquaresBase(SolverBase):
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
-        """Base class for least squares solvers.
+        """Initialize base class for least squares solvers.
 
         Parameters
         ----------
@@ -78,7 +78,7 @@ class LeastSquaresBase(SolverBase):
         max_iter: int = 10,
         **kwargs,
     ) -> DataFrame:
-        """Internal method to obtain n number of parameter realizations.
+        """Obtain n number of parameter realizations.
 
         Parameters
         ----------
@@ -119,7 +119,7 @@ class LeastSquaresBase(SolverBase):
         alpha: float = 0.05,
         **kwargs,
     ) -> DataFrame:
-        """Internal method to obtain a confidence interval."""
+        """Obtain a confidence interval."""
         q = [alpha / 2, 1 - alpha / 2]
         data = self._get_realizations(
             func=func, n=n, name=name, max_iter=max_iter, **kwargs
@@ -127,7 +127,7 @@ class LeastSquaresBase(SolverBase):
         return data.quantile(q=q, axis=1).transpose()
 
     def _get_covariance_matrix(self, name: str | None = None) -> DataFrame:
-        """Internal method to obtain the covariance matrix from the model.
+        """Obtain the covariance matrix from the model.
 
         Parameters
         ----------
@@ -153,8 +153,7 @@ class LeastSquaresBase(SolverBase):
 
     @staticmethod
     def _get_correlations(pcov: DataFrame) -> DataFrame:
-        """Internal method to obtain the parameter correlations from the
-        covariance matrix.
+        """Obtain the parameter correlations from the covariance matrix.
 
         Parameters
         ----------
@@ -179,7 +178,7 @@ class LeastSquaresBase(SolverBase):
     def get_parameter_sample(
         self, name: str | None = None, n: int | None = None, max_iter: int = 10
     ) -> ArrayLike:
-        """Method to obtain a parameter sets for monte carlo analyses.
+        """Obtain a parameter sets for monte carlo analyses.
 
         Parameters
         ----------
@@ -260,7 +259,7 @@ class LeastSquaresBase(SolverBase):
     def prediction_interval(
         self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
     ) -> DataFrame:
-        """Method to calculate the prediction interval for the simulation.
+        """Calculate the prediction interval for the simulation.
 
         Parameters
         ----------
@@ -292,7 +291,6 @@ class LeastSquaresBase(SolverBase):
         equal to the standard deviation of the residuals.
 
         """
-
         sigr = self.ml.residuals().std()
         data = self._get_realizations(
             func=self.ml.simulate, n=n, name=None, max_iter=max_iter, **kwargs
@@ -306,7 +304,7 @@ class LeastSquaresBase(SolverBase):
     def ci_simulation(
         self, n: int = 1000, alpha: float = 0.05, max_iter: int = 10, **kwargs
     ) -> DataFrame:
-        """Method to calculate the confidence interval for the simulation.
+        """Calculate the confidence interval for the simulation.
 
         Parameters
         ----------
@@ -351,7 +349,7 @@ class LeastSquaresBase(SolverBase):
         max_iter: int = 10,
         **kwargs,
     ) -> DataFrame:
-        """Method to calculate the confidence interval for the block response.
+        """Calculate the confidence interval for the block response.
 
         Parameters
         ----------
@@ -406,7 +404,7 @@ class LeastSquaresBase(SolverBase):
         max_iter: int = 10,
         **kwargs,
     ) -> DataFrame:
-        """Method to calculate the confidence interval for the step response.
+        """Calculate the confidence interval for the step response.
 
         Parameters
         ----------
@@ -453,7 +451,7 @@ class LeastSquaresBase(SolverBase):
         max_iter: int = 10,
         **kwargs,
     ) -> DataFrame:
-        """Method to calculate the confidence interval for the contribution.
+        """Calculate the confidence interval for the contribution.
 
         Parameters
         ----------
@@ -498,8 +496,9 @@ class LeastSquaresBase(SolverBase):
 
     @abstractmethod
     def solve(self) -> tuple[bool, DataFrame]:
-        """Abstract method that has to be implemented by
-        all least squares solvers.
+        """Solve the optimization problem.
+
+        Abstract method that has to be implemented by all least squares solvers.
 
         Returns
         -------
@@ -522,7 +521,7 @@ class LeastSquaresBase(SolverBase):
         warnings: bool = True,
         obj_func: float = np.nan,
     ) -> str:
-        """Method that reports on the fit after a model is optimized.
+        """Report on the fit after a model is optimized.
 
         Parameters
         ----------
@@ -674,12 +673,18 @@ class LeastSquaresBase(SolverBase):
         return report
 
     def to_dict(self) -> dict:
+        """Convert solver to a dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary containing the solver's state including the covariance matrix.
+        """
         return super().to_dict() | {"pcov": self.pcov}
 
 
 class LeastSquares(LeastSquaresBase):
     """Solver based on Scipy's least_squares method :cite:p:`virtanen_scipy_2020`.
-
 
     Notes
     -----
@@ -689,7 +694,6 @@ class LeastSquares(LeastSquaresBase):
 
     Examples
     --------
-
     >>> ml.solve(solver=ps.solver.LeastSquares())
 
     References
@@ -771,8 +775,7 @@ class LeastSquares(LeastSquaresBase):
         weights: Series | None = None,
         **kwargs,
     ) -> tuple[bool, DataFrame]:
-        """Solve method calling scipy.optimize.least_squares"""
-
+        """Solve method calling scipy.optimize.least_squares."""
         if self.ml is None:
             raise RuntimeError("Solver is not attached to a Pastas model.")
 
@@ -871,6 +874,18 @@ class LeastSquares(LeastSquaresBase):
 
     @staticmethod
     def get_stderr(pcov: DataFrame) -> Series:
+        """Calculate the standard error of the parameters from the covariance matrix.
+
+        Parameters
+        ----------
+        pcov : pandas.DataFrame
+            The covariance matrix of the parameters.
+
+        Returns
+        -------
+        pandas.Series
+            Series with the standard errors for each parameter.
+        """
         if pcov is None:
             raise RuntimeError("Covariance matrix `pcov` is not available.")
         return Series(np.sqrt(np.diag(pcov)), index=pcov.index)
@@ -882,8 +897,7 @@ class LeastSquares(LeastSquaresBase):
         method: Literal["trf", "dogbox", "lm"] = "trf",
         absolute_sigma: bool = False,
     ) -> ArrayLike:
-        """
-        Method to get the covariance matrix from the jacobian.
+        r"""Calculate the covariance matrix from the jacobian.
 
         Parameters
         ----------
@@ -927,7 +941,6 @@ class LeastSquares(LeastSquaresBase):
         - r is the vector of residuals.
         - W is the diagonal matrix of weights.
         """
-
         nobs, npar = jacobian.shape
         cost = 2 * cost  # res.cost is half sum of squares!
         s_sq = cost / (nobs - npar)  # variance of the residuals
@@ -1006,7 +1019,7 @@ class LeastSquares(LeastSquaresBase):
         obj_func: float = np.nan,
         full_output: bool = False,
     ) -> str:
-        """Method that reports on the fit after a model is optimized.
+        """Report on the fit after a model is optimized.
 
         Parameters
         ----------
@@ -1042,7 +1055,6 @@ class LeastSquares(LeastSquaresBase):
         If interpolation is used this means that the result may slightly differ
         compared to using ml.simulate() and ml.observations().
         """
-
         return super().fit_report(
             corr=corr,
             stderr=stderr,
@@ -1052,6 +1064,7 @@ class LeastSquares(LeastSquaresBase):
         )
 
     def to_dict(self) -> dict:
+        """Convert the solver settings to a dictionary."""
         settings = super().to_dict() | {
             "jac": self.jac,
             "method": self.method,
@@ -1073,6 +1086,7 @@ class LeastSquares(LeastSquaresBase):
     version="2.3.0", reason="The LmfitSolve class is renamed to Lmfit."
 )
 def LmfitSolve(*args, **kwargs):
+    """Alias for Lmfit."""
     return Lmfit(*args, **kwargs)
 
 
@@ -1113,8 +1127,7 @@ class Lmfit(LeastSquaresBase):
         weights: Series | None = None,
         **kwargs,
     ) -> tuple[bool, DataFrame]:
-        """Solve method calling lmfit.Minimizer.minimize"""
-
+        """Call lmfit.Minimizer.minimize to solve the model."""
         # Overwrite kwargs of init if parsed to solve
         init_kwargs = [k for k in kwargs if hasattr(self, k)]
         for k in init_kwargs:
@@ -1182,6 +1195,7 @@ class Lmfit(LeastSquaresBase):
     def objfunction(
         self, parameters: DataFrame, noise: bool, weights: Series
     ) -> ArrayLike:
+        """Objective function that is minimized by the Lmfit solver."""
         p = np.array([p.value for p in parameters.values()])
         return misfit(
             ml=self.ml,
@@ -1200,6 +1214,7 @@ class Lmfit(LeastSquaresBase):
         obj_func: float = np.nan,
         full_output: bool = False,
     ) -> str:
+        """Report on the fit after a model is optimized."""
         # nobs = self.result.ndata
         # aic = self.result.aic
         # bic = self.result.bic
@@ -1213,4 +1228,5 @@ class Lmfit(LeastSquaresBase):
         )
 
     def to_dict(self) -> dict:
+        """Return a dictionary representation of the Lmfit object."""
         return super().to_dict() | {"method": self.method}

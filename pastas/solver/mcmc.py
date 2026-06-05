@@ -1,4 +1,4 @@
-"""This module contains the EmceeSolve class, which is a solver based on the MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`."""
+"""Module containing the EmceeSolve class, which is a solver based on the MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`."""
 
 import importlib
 from logging import getLogger
@@ -21,6 +21,7 @@ logger = getLogger(__name__)
     version="2.3.0", reason="The EmceeSolve class is renamed to Emcee."
 )
 def EmceeSolve(*args, **kwargs):
+    """Alias for Emcee class."""
     return Emcee(*args, **kwargs)
 
 
@@ -140,7 +141,7 @@ class Emcee(SolverBase):
             raise ImportError(msg) from None
 
     def get_init_parameters(self, name: str) -> DataFrame:
-        """Get the initial parameters for the solver.
+        """Get initial parameters for the solver.
 
         Parameters
         ----------
@@ -164,6 +165,7 @@ class Emcee(SolverBase):
         callback: CallBack | None = None,
         **kwargs: Any,
     ) -> tuple[bool, DataFrame]:
+        """Solve the model using MCMC."""
         # Store initial parameters
         self.initial = self.ml.parameters.initial.to_numpy(dtype=float)
         self.vary = self.ml.parameters.vary.to_numpy(dtype=bool)
@@ -416,7 +418,7 @@ class Emcee(SolverBase):
         warnings: bool = True,
         obj_func: float = np.nan,
     ) -> str:
-        """Method that reports on the fit after a model is optimized.
+        """Report on the fit after a model is optimized.
 
         Parameters
         ----------
@@ -530,7 +532,7 @@ class Emcee(SolverBase):
         return report
 
     def to_dict(self) -> dict:
-        """This method is not supported for this solver.
+        """Not supported for this solver.
 
         Returns
         -------

@@ -1,4 +1,4 @@
-"""This module provides functions for checking Pastas models and their components.
+"""Functions for checking Pastas models and their components.
 
 This can be useful to define checks that can be applied to multiple models to ensure
 they meet certain criteria.
@@ -103,7 +103,7 @@ def _value_ufunc_threshold(
     threshold: float,
     label: str,
 ):
-    """Generic function to compare a value with a threshold using a ufunc.
+    """Compare a value with a threshold using a ufunc.
 
     Parameters
     ----------
@@ -135,7 +135,7 @@ def stat_ufunc_threshold(
     threshold: float,
     **kwargs,
 ):
-    """Generic function to compare a model statistic with a threshold using a ufunc.
+    """Compare a model statistic with a threshold using a ufunc.
 
     Parameters
     ----------
@@ -373,7 +373,7 @@ def parameter_ufunc_threshold(
     ufunc: Callable,
     threshold: float,
 ):
-    """Generic function to compare a model statistic with a threshold using a ufunc.
+    """Compare a model statistic with a threshold using a ufunc.
 
     Parameters
     ----------
@@ -534,7 +534,7 @@ def uncertainty_parameters(
 
 
 def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
-    """Internal method to check if parameter value is larger than n_std * std.
+    """Check if parameter value is larger than n_std * std.
 
     Parameters
     ----------
@@ -622,7 +622,7 @@ def guess_unit_or_dims(parameter: str, return_dims=True):
 
 
 def acf_runs_test(ml: Model, p_threshold: float = 0.05):
-    """Runs test to check if there is significant autocorrelation in the noise.
+    """Check if there is significant autocorrelation in the noise using runs test.
 
     Parameters
     ----------
@@ -640,7 +640,7 @@ def acf_runs_test(ml: Model, p_threshold: float = 0.05):
 
 
 def acf_stoffer_toloi_test(ml: Model, p_threshold: float = 0.05, **kwargs):
-    """Stoffer-Toloi test to check if there is significant autocorrelation in the noise.
+    """Check if there is significant autocorrelation in the noise using Stoffer-Toloi test.
 
     Parameters
     ----------
@@ -660,7 +660,7 @@ def acf_stoffer_toloi_test(ml: Model, p_threshold: float = 0.05, **kwargs):
 
 
 def acf_ljung_box_test(ml: Model, p_threshold: float = 0.05, **kwargs):
-    """Ljung-Box test to check if there is significant autocorrelation in the noise.
+    """Check check if there is significant autocorrelation in the noise.
 
     Parameters
     ----------
@@ -680,7 +680,7 @@ def acf_ljung_box_test(ml: Model, p_threshold: float = 0.05, **kwargs):
 
 
 def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
-    """Internal method to get the result of a diagnostic test.
+    """Get result of a diagnostic test.
 
     Parameters
     ----------
@@ -779,7 +779,6 @@ def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
     df: pandas.DataFrame
         DataFrame with the results of the checks.
     """
-
     results = []
     for check in checks:
         if isinstance(check, str):
@@ -826,7 +825,6 @@ def print_check_report(df: DataFrame):
 
     def boolean_row_styler(row, column):
         """Styler function to color rows based on the value in column."""
-
         colors = [""] * row.size
 
         # make result based on std deviation check yellow, because we cannot
