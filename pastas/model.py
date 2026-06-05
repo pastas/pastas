@@ -147,7 +147,6 @@ class Model:
 
         # some _attributes simulation and solving
         self._interpolate_simulation: bool | None = None
-        self._solve_success: bool | None = None
         self._fit_constant = None  # Internal variable used during solving
 
         # Load modules for statistics and plotting
