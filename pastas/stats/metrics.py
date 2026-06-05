@@ -275,7 +275,6 @@ def pearsonr(
     Where :math:`y_o` is observed time series, :math:`y_s` the simulated time series,
     and :math:`N` the number of observations in the observed time series.
     """
-
     obs = obs.dropna() if missing == "drop" else obs
 
     w = _get_weights(series=obs, weighted=weighted, max_gap=max_gap)
@@ -733,7 +732,6 @@ def kge(
     \\bar{y}}`. If weighted equals True, the weighted mean, variance and
     pearson correlation are used.
     """
-
     obs = obs.dropna() if missing == "drop" else obs
 
     sim = sim.reindex(obs.index).dropna()
@@ -845,7 +843,6 @@ def _compute_err(
         The pandas.Series with the errors, computed as
 
     """
-
     if (obs is not None) and (sim is not None):
         err = sim.subtract(obs)
     elif res is not None:

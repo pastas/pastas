@@ -130,7 +130,7 @@ class TrackSolve:
         # calculate EVP
         self.evp = np.array([evp(obs=self.obs, res=res)])
 
-    def track_solve(self, params: ArrayLike) -> None:
+    def track_solve(self, p: ArrayLike, **kwargs) -> None:
         """Track solve progress for an iteration.
 
         Append parameters to self.parameters DataFrame, update
@@ -160,11 +160,11 @@ class TrackSolve:
         self.parameters.loc[self.itercount, self.ml.parameters.index] = p.copy()
 
         # calculate new RMSE values
-        r_res = self._residuals(p)
+        r_res = self._residuals(p, **kwargs)
         self.rmse_res = np.r_[self.rmse_res, rmse(res=r_res)]
 
         if self.ml.noisemodel is not None:
-            n_res = self._noise(p)
+            n_res = self._noise(p, **kwargs)
             self.rmse_noise = np.r_[self.rmse_noise, rmse(res=n_res)]
 
         # recalculate EVP
@@ -181,7 +181,7 @@ class TrackSolve:
         self.tmax = self.ml.settings["tmax"]
         self.freq = self.ml.settings["freq"]
 
-    def _noise(self, params: ArrayLike) -> ArrayLike:
+    def _noise(self, p: ArrayLike, **kwargs) -> ArrayLike:
         """Get noise.
 
         Parameters
@@ -204,7 +204,7 @@ class TrackSolve:
         noise = self.ml.noise(p=p, tmin=self.tmin, tmax=self.tmax)
         return noise
 
-    def _residuals(self, params: ArrayLike) -> ArrayLike:
+    def _residuals(self, p: ArrayLike, **kwargs) -> ArrayLike:
         """Calculate residuals.
 
         Parameters
@@ -356,7 +356,7 @@ class TrackSolve:
         self.fig.tight_layout()
         return self.fig
 
-    def plot_track_solve(self, params: ArrayLike) -> None:
+    def plot_track_solve(self, p: ArrayLike, **kwargs) -> None:
         """Plot model simulation while model is being solved.
 
         Parameters

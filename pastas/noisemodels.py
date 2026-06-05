@@ -197,7 +197,6 @@ class ArNoiseModel(NoiseModelBase):
         noise: pandas.Series
             Series of the noise.
         """
-
         alpha = p[0]
         odelt = np.diff(res.index.to_numpy(copy=True)) / Timedelta("1D")
         resv = res.to_numpy(copy=True)
@@ -230,7 +229,6 @@ class ArNoiseModel(NoiseModelBase):
 
         which are then normalized so that sum(w) = len(res).
         """
-
         alpha = p[0]
         # large for first measurement
         odelt = np.append(1e12, np.diff(res.index.to_numpy()) / Timedelta("1D"))
@@ -274,7 +272,6 @@ class ArNoiseModel(NoiseModelBase):
         and the forecast, and :math:`\\alpha` is the noise parameter.
 
         """
-
         alpha = p[0]
         last_residual = res.iat[-1]
         last_date = res.index[-1]
