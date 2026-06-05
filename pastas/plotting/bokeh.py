@@ -1,4 +1,4 @@
-"""This module contains interactive Bokeh plots for Pastas models.
+"""Module containing interactive Bokeh plots for Pastas models.
 
 Examples
 --------
@@ -29,7 +29,6 @@ class Bokeh:
 
     Examples
     --------
-
     Register extension::
         ps.extensions.register_bokeh()
 
@@ -87,7 +86,6 @@ class Bokeh:
         >>> fig = ml.bokeh.plot()
 
         """
-
         data = self._model.get_output_series(
             tmin=tmin, tmax=tmax, split_contributions=False
         )

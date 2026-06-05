@@ -1,8 +1,8 @@
-"""The following methods may be used to calculate statistics, the crosscorrelation and
-autocorrelation for time series.
+"""Module containing methods to calculate statistics.
 
-These methods are 'special' in the sense that they are able to deal with irregular
-time steps often observed in hydrological time series.
+Compute core statistics such as variance, mean, standard deviation, moment, cross-
+and autocorrelation for time series. These methods are 'special' in the sense that
+they are able to deal with irregular time steps often observed in hydrological time series.
 """
 
 from logging import getLogger
@@ -146,7 +146,7 @@ def ccf(
     fallback_bin_method: str = "gaussian",
     **kwargs,
 ) -> Series | DataFrame:
-    """Method to compute the cross-correlation for irregular time series.
+    """Compute the cross-correlation for irregular time series.
 
     Parameters
     ----------
@@ -299,7 +299,7 @@ def ccf(
 def _preprocess(
     series: Series | None = None, max_gap: float = np.inf, **kwargs
 ) -> tuple[ArrayLike, ArrayLike, float]:
-    """Internal method to preprocess the time series."""
+    """Preprocess the time series."""
     if "x" in kwargs:
         deprecate_args_or_kwargs(
             name="x",
@@ -318,6 +318,7 @@ def _preprocess(
         raise TypeError("_preprocess() missing required argument: 'series'")
 
     x_idx = series.index.to_series().diff().dropna().to_numpy(copy=True)
+
     dt = x_idx / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
     dt_mu = max(dt_mu, 1)  # Prevent division by zero error
@@ -339,7 +340,7 @@ def _compute_ccf_rectangle(
     y: ArrayLike,
     bin_width: float = 0.5,
 ) -> tuple[ArrayLike, ArrayLike]:
-    """Internal numba-optimized method to compute the ccf."""
+    """Compute the ccf."""
     c = np.empty_like(lags)
     b = np.empty_like(lags)
     n = len(t_x)
@@ -375,7 +376,7 @@ def _compute_ccf_gaussian(
     y: ArrayLike,
     bin_width: float = 0.5,
 ) -> tuple[ArrayLike, ArrayLike]:
-    """Internal numba-optimized method to compute the ccf."""
+    """Compute the ccf."""
     c = np.empty_like(lags)
     b = np.empty_like(lags)
     n = len(t_x)
@@ -430,7 +431,7 @@ def mean(
     max_gap: int = 30,
     **kwargs,
 ) -> ArrayLike:
-    """Method to compute the (weighted) mean of a time series.
+    r"""Compute the (weighted) mean of a time series.
 
     Parameters
     ----------
@@ -482,7 +483,7 @@ def var(
     max_gap: int = 30,
     **kwargs,
 ) -> ArrayLike:
-    """Method to compute the (weighted) variance of a time series.
+    r"""Compute the (weighted) variance of a time series.
 
     Parameters
     ----------
@@ -536,7 +537,7 @@ def std(
     max_gap: int = 30,
     **kwargs,
 ) -> ArrayLike:
-    """Method to compute the (weighted) variance of a time series.
+    """Compute the (weighted) variance of a time series.
 
     Parameters
     ----------
@@ -623,7 +624,7 @@ def _get_weights(
     max_gap: int = 30,
     **kwargs,
 ) -> ArrayLike:
-    """Helper method to compute the weights as the time step between obs.
+    """Compute the weights as the time step between observations.
 
     Parameters
     ----------

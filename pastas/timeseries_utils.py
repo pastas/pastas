@@ -55,7 +55,7 @@ def _offset_to_timedelta(offset: BaseOffset) -> Timedelta:
 
 
 def _frequency_is_supported(freq: str) -> str:
-    """Method to check if frequency string is supported by Pastas Model.
+    """Check if frequency string is supported by Pastas Model.
 
     Parameters
     ----------
@@ -105,7 +105,7 @@ def _frequency_is_supported(freq: str) -> str:
 
 
 def _get_stress_dt(freq: str) -> float:
-    """Internal method to obtain a timestep in days from a frequency string.
+    """Obtain a timestep in days from a frequency string.
 
     Parameters
     ----------
@@ -166,7 +166,7 @@ def _get_stress_dt(freq: str) -> float:
 
 
 def _get_dt(freq: str) -> float:
-    """Internal method to obtain a timestep in DAYS from a frequency string.
+    """Obtain a timestep in DAYS from a frequency string.
 
     Parameters
     ----------
@@ -188,7 +188,7 @@ def _get_dt(freq: str) -> float:
 
 
 def _get_time_offset(t: Timestamp | DatetimeIndex, freq: str) -> Timedelta:
-    """Internal method to calculate the time offset of a Timestamp.
+    """Calculate the time offset of a Timestamp.
 
     Parameters
     ----------
@@ -209,7 +209,7 @@ def _get_time_offset(t: Timestamp | DatetimeIndex, freq: str) -> Timedelta:
 
 
 def _infer_fixed_freq(tindex: Index) -> str:
-    """Internal method to get the frequency string.
+    """Get frequency string.
 
     This methods avoids returning anchored offsets, e.g.
     'W-TUE' will return 7D.
@@ -241,7 +241,7 @@ def _infer_fixed_freq(tindex: Index) -> str:
 def _get_sim_index(
     tmin: Timestamp, tmax: Timestamp, freq: str, time_offset: Timedelta
 ) -> DatetimeIndex:
-    """Internal method to determine the simulation index
+    """Determine the simulation index.
 
     Parameters
     ----------
@@ -290,8 +290,7 @@ def _parse_warmup(warmup: Timedelta | float | int | str) -> Timedelta:
 
 
 def get_sample(tindex: DatetimeIndex, ref_tindex: DatetimeIndex) -> DatetimeIndex:
-    """Sample the index of a pandas Series or DataFrame so that the frequency is not
-    higher than the frequency of ref_tindex.
+    """Sample the index of a pandas Series or DataFrame so that the frequency is not higher than the frequency of ref_tindex.
 
     Parameters
     ----------
@@ -329,8 +328,7 @@ def get_sample_for_freq(
     tmax: Timestamp | str | None = None,
     **kwargs,
 ):
-    """Sample a pandas Series or DataFrame so that the frequency is not higher than a
-    supplied frequency.
+    """Sample a pandas Series or DataFrame so that the frequency is not higher than a supplied frequency.
 
     Parameters
     ----------
@@ -388,8 +386,7 @@ def timestep_weighted_resample(
     fast: bool = False,
     **kwargs,
 ) -> Series:
-    """Resample a time series to a new time index, using an overlapping period
-    weighted average.
+    """Resample a time series to a new time index, using an overlapping period weighted average.
 
     The original series and the new index do not have to be equidistant. Also, the
     timestep-edges of the new index do not have to overlap with the original series.
@@ -694,7 +691,6 @@ def get_equidistant_series_nearest(
     time series. Values are filled as close as possible to their original timestamp
     in the new equidistant time series.
     """
-
     # build new equidistant index
     t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
     # use t_offset to pick time that will keep the most data without shifting in time
@@ -901,5 +897,4 @@ def resample(
         https://pandas.pydata.org/docs/reference/resampling.html
 
     """
-
     return series.resample(freq, closed=closed, label=label, **kwargs)

@@ -122,13 +122,13 @@ class StressModelBase(ABC):
 
     @property
     @abstractmethod
-    def stresses(self) -> tuple:
-        """Return the stresses used by the stress model."""
+    def stresses(self) -> tuple[TimeSeries, ...]:
+        """All the stress time series in the stressmodel as a tuple."""
 
     @property
     @abstractmethod
     def nsplit(self) -> int:
-        """Determine in how many time series the contribution can be split."""
+        """Number of time series the contribution can be split in."""
         pass
 
     @property
@@ -172,7 +172,7 @@ class StressModelBase(ABC):
 
     @abstractmethod
     def simulate(self, *args, **kwargs) -> Any:
-        """Simulate the stress model contribution."""
+        """Simulate the stressmodel's contribution."""
 
     @abstractmethod
     def set_init_parameters(self) -> None:
@@ -246,7 +246,7 @@ class StressModelBase(ABC):
         istress: int | None = None,
         **kwargs,
     ) -> Series | DataFrame:
-        """Get the stress(es) of the time series object(s).
+        """Get stress(es) of the time series object(s).
 
         If the time series object has multiple stresses each column represents a stress.
 
@@ -335,7 +335,7 @@ class StressModelBase(ABC):
     def _get_block(
         self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
     ) -> ArrayLike:
-        """Get the block-response function."""
+        """Get block-response function."""
         if tmin is not None and tmax is not None:
             day = Timedelta(1, "D")
             maxtmax = (Timestamp(tmax) - Timestamp(tmin)) / day
@@ -367,7 +367,6 @@ class StressModelBase(ABC):
         ----------
         series: bool, optional
             Whether to include the time series data of the stresses in the dictionary.
-            Default is False.
 
         Returns
         -------
@@ -541,15 +540,17 @@ class StressModel(StressModelBase):
 
     @property
     def stresses(self) -> tuple[TimeSeries]:
-        """Return the stress time series as a tuple."""
+        """All the stress time series in the stressmodel as a tuple."""
         nt = namedtuple("StressesTuple", ["stress"])
         return nt(stress=self.stress)
 
     @property
     def nsplit(self) -> int:
+        """Number of time series the contribution can be split in."""
         return len(self.stresses)
 
     def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(
@@ -560,6 +561,7 @@ class StressModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
+        """Simulate the stressmodel's contribution."""
         return self._simulate(tuple(p), tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
@@ -606,10 +608,24 @@ class StressModel(StressModelBase):
             data=fftconvolve(stress, b, "full")[:npoints],
             index=stress.index,
             name=self.name,
+            dtype=np.asarray(p).dtype,
         )
         return h
 
-    def to_dict(self, series: bool = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict[str, Any]:
+        """Export the stressmodel to a dictionary.
+
+        Parameters
+        ----------
+        series: bool, optional
+            Whether to include the time series in the dictionary. If False, only the
+            metadata of the time series is included. Default is True.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the information of the stressmodel.
+        """
         data = super().to_dict() | {
             "rfunc": self.rfunc.to_dict(),
             "up": self.rfunc.up,
@@ -665,13 +681,16 @@ class StepModel(StressModelBase):
 
     @property
     def stresses(self) -> tuple:
+        """All the stress time series in the stressmodel as a tuple."""
         return ()
 
     @property
     def nsplit(self) -> int:
+        """Number of time series the contribution can be split in."""
         return 1
 
     def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
         tmin = Timestamp.min.toordinal()
         tmax = Timestamp.max.toordinal()
@@ -693,6 +712,7 @@ class StepModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
+        """Simulate the stressmodel's contribution."""
         return self._simulate(tuple(p), tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
@@ -719,6 +739,20 @@ class StepModel(StressModelBase):
         return h
 
     def to_dict(self, series: bool = False) -> dict:
+        """Export the stressmodel to a dictionary.
+
+        Parameters
+        ----------
+        series: bool, optional
+            Whether to include the time series in the dictionary. If False, only the
+            metadata of the time series is included. Default is False since
+            StepModel does not have a time series.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the information of the stressmodel.
+        """
         _ = series
         data = super().to_dict() | {
             "tstart": self.tstart,
@@ -791,13 +825,16 @@ class LinearTrend(StressModelBase):
 
     @property
     def stresses(self) -> tuple:
+        """All the stress time series in the stressmodel as a tuple."""
         return ()
 
     @property
     def nsplit(self) -> int:
+        """Number of time series the contribution can be split in."""
         return 1
 
     def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
         start = Timestamp(self.tstart).toordinal()
         end = Timestamp(self.tend).toordinal()
         tmin = Timestamp.min.toordinal()
@@ -833,7 +870,7 @@ class LinearTrend(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
-        """Simulate the trend."""
+        """Simulate the stressmodel's contribution."""
         tindex = date_range(tmin, tmax, freq=freq)
 
         if p[1] < tindex[0].toordinal():
@@ -852,7 +889,21 @@ class LinearTrend(StressModelBase):
         trend = trend.cumsum() * p[0]
         return trend.rename(self.name)
 
-    def to_dict(self, series: bool = False) -> dict:
+    def to_dict(self, series: bool = False) -> dict[str, Any]:
+        """Export the stressmodel to a dictionary.
+
+        Parameters
+        ----------
+        series: bool, optional
+            Whether to include the time series in the dictionary. If False, only the
+            metadata of the time series is included. Default is False since
+            StepModel does not have a time series.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the information of the stressmodel.
+        """
         _ = series
         data = super().to_dict() | {
             "tstart": self.tstart,
@@ -882,13 +933,16 @@ class Constant(StressModelBase):
 
     @property
     def stresses(self) -> tuple:
+        """All the stress time series in the stressmodel as a tuple."""
         return ()
 
     @property
     def nsplit(self) -> int:
+        """Number of time series the contribution can be split in."""
         return 1
 
-    def set_init_parameters(self):
+    def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
         self.parameters.loc[self.name + "_d"] = (
             self.initial,
             np.nan,
@@ -899,9 +953,24 @@ class Constant(StressModelBase):
 
     @staticmethod
     def simulate(p: float | None = None) -> float:
+        """Simulate the stressmodel's contribution."""
         return p
 
     def to_dict(self, series: bool = False) -> dict:
+        """Export the stressmodel to a dictionary.
+
+        Parameters
+        ----------
+        series: bool, optional
+            Whether to include the time series in the dictionary. If False, only the
+            metadata of the time series is included. Default is False since
+            Constant does not have a time series.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the information of the stressmodel.
+        """
         _ = series
         data = super().to_dict() | {"initial": self.initial}
         return data
@@ -1241,15 +1310,17 @@ class WellModel(StressModelBase):
 
     @property
     def stresses(self) -> tuple[TimeSeries, ...]:
-        """Return the stress time series as a tuple."""
+        """All the stress time series in the stressmodel as a tuple."""
         nt = namedtuple("StressesTuple", [s.name for s in self._stress])
         return nt(*self._stress)
 
     @property
     def nsplit(self) -> int:
+        """Number of time series the contribution can be split in."""
         return len(self.stresses)
 
     def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
         self.parameters = self.rfunc.get_init_parameters(self.name)
 
     def simulate(
@@ -1261,6 +1332,7 @@ class WellModel(StressModelBase):
         dt: float = 1.0,
         istress: int | None = None,
     ) -> Series:
+        """Simulate the stressmodel's contribution."""
         return self._simulate(tuple(p), tmin, tmax, freq, dt, istress)
 
     @conditional_cachedmethod(lambda self: self._cache)
@@ -1277,7 +1349,12 @@ class WellModel(StressModelBase):
         stress_df = self.get_stress(
             p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress, squeeze=False
         )
-        h = Series(data=0, index=self.stresses[0].series.index, name=self.name)
+        h = Series(
+            data=0,
+            index=self.stresses[0].series.index,
+            name=self.name,
+            dtype=np.asarray(p).dtype,
+        )
         for name, r in distances.items():
             stress = stress_df.loc[:, name]
             npoints = stress.index.size
@@ -1306,6 +1383,7 @@ class WellModel(StressModelBase):
         squeeze: bool = True,
         **kwargs,
     ) -> Series | DataFrame:
+        """Get the stress time series."""
         _ = p, kwargs
 
         tmin = self.tmin if tmin is None else tmin
@@ -1468,6 +1546,19 @@ class WellModel(StressModelBase):
         return data
 
     def to_dict(self, series: bool = True) -> dict:
+        """Export the stressmodel to a dictionary.
+
+        Parameters
+        ----------
+        series: bool, optional
+            Whether to include the time series in the dictionary. If False, only the
+            metadata of the time series is included. Default is True.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the information of the stressmodel.
+        """
         data = super().to_dict() | {
             "stress": self.dump_stress(series=series),
             "rfunc": self.rfunc.to_dict(),
@@ -1727,8 +1818,8 @@ class RechargeModel(StressModelBase):
         self.set_stress(temp=series)
 
     @property
-    def stresses(self) -> tuple[TimeSeries]:
-        """Return the stress time series as a tuple."""
+    def stresses(self) -> tuple[TimeSeries, ...]:
+        """All the stress time series in the stressmodel as a tuple."""
         if self.temp is None:
             nt = namedtuple("StressesTuple", ["prec", "evap"])
             return nt(prec=self.prec, evap=self.evap)
@@ -1814,6 +1905,7 @@ class RechargeModel(StressModelBase):
             raise ValueError(msg)
 
     def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
         self.parameters = concat(
             [
                 self.rfunc.get_init_parameters(name=self.name),
@@ -1830,6 +1922,7 @@ class RechargeModel(StressModelBase):
         dt: float = 1.0,
         istress: int | None = None,
     ) -> Series:
+        """Simulate the stressmodel's contribution."""
         return self._simulate(tuple(p), tmin, tmax, freq, dt, istress)
 
     @conditional_cachedmethod(lambda self: self._cache)
@@ -1891,6 +1984,7 @@ class RechargeModel(StressModelBase):
             data=fftconvolve(stress, b, "full")[: stress.size],
             index=self.prec.series.index,
             name=name,
+            dtype=p.dtype,
         )
 
     def get_stress(
@@ -2098,7 +2192,20 @@ class RechargeModel(StressModelBase):
                 ml, block_or_step=block_or_step, istress=istress
             )
 
-    def to_dict(self, series: bool = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict[str, Any]:
+        """Export the stressmodel to a dictionary.
+
+        Parameters
+        ----------
+        series: bool, optional
+            Whether to include the time series in the dictionary. If False, only the
+            metadata of the time series is included. Default is True.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the information of the stressmodel.
+        """
         data = super().to_dict() | {
             "prec": self.prec.to_dict(series=series),
             "evap": self.evap.to_dict(series=series),
@@ -2189,10 +2296,11 @@ class TarsoModel(RechargeModel):
 
     @property
     def nsplit(self) -> int:
-        """Tarso has a single effective contribution."""
+        """Number of time series the contribution can be split in."""
         return 1
 
     def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.5 * (self.dmax - self.dmin)
@@ -2238,6 +2346,7 @@ class TarsoModel(RechargeModel):
         dt: float = 1.0,
         istress: int | None = None,
     ) -> Series:
+        """Simulate the stressmodel's contribution."""
         return self._simulate(
             p=tuple(p),
             tmin=tmin,
@@ -2260,6 +2369,9 @@ class TarsoModel(RechargeModel):
         _ = istress  # istress is not used for TarsoModel
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
         h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(copy=True), dt)
+        # Strip imaginary part when not doing complex-step Jacobian
+        if not np.iscomplexobj(p):
+            h = h.real
         sim = Series(h, name=self.name, index=stress.index)
         return sim
 
@@ -2299,11 +2411,12 @@ class TarsoModel(RechargeModel):
         d_e = (c1 / (c0 + c1)) * d0 + (c0 / (c0 + c1)) * d1
         a_e = S1 * c_e
 
-        h = np.full(len(r), np.nan)
+        h = np.empty(len(r), dtype=np.complex128)
         for i in range(len(r)):
             if i == 0:
                 h0 = (d0 + d1) / 2
-                high = h0 > d1
+                # Use .real for comparison to support complex-step differentiation
+                high = h0.real > d1.real
                 if high:
                     S, a, c, d = S1, a_e, c_e, d_e
                 else:
@@ -2312,11 +2425,12 @@ class TarsoModel(RechargeModel):
                 h0 = h[i - 1]
             exp_a = np.exp(-dt / a)
             h[i] = (h0 - d) * exp_a + r[i] * c * (1 - exp_a) + d
-            newhigh = h[i] > d1
+            # Use .real for comparison to support complex-step differentiation
+            newhigh = h[i].real > d1.real
             if high != newhigh:
                 # calculate time until d1 is reached
                 dtdr = -S * c * np.log((d1 - d - r[i] * c) / (h0 - d - r[i] * c))
-                if dtdr > dt:
+                if dtdr.real > dt:
                     raise ValueError("TarsoModel: dtdr > dt")
                 # change parameters
                 high = newhigh
@@ -2355,7 +2469,20 @@ class TarsoModel(RechargeModel):
         ]
         return responses
 
-    def to_dict(self, series: bool = True) -> dict:
+    def to_dict(self, series: bool = True) -> dict[str, Any]:
+        """Export the stressmodel to a dictionary.
+
+        Parameters
+        ----------
+        series: bool, optional
+            Whether to include the time series in the dictionary. If False, only the
+            metadata of the time series is included. Default is True.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the information of the stressmodel.
+        """
         data = super().to_dict(series=series) | {"dmin": self.dmin, "dmax": self.dmax}
         return data
 
@@ -2503,15 +2630,17 @@ class ChangeModel(StressModelBase):
 
     @property
     def stresses(self) -> tuple[TimeSeries]:
-        """Return the stress time series as a tuple."""
+        """All the stress time series in the stressmodel as a tuple."""
         nt = namedtuple("StressesTuple", ["stress"])
         return nt(stress=self.stress)
 
     @property
     def nsplit(self) -> int:
+        """Number of time series the contribution can be split in."""
         return 1
 
     def set_init_parameters(self) -> None:
+        """Set the initial parameters (back) to their default values."""
         self.parameters = concat(
             [
                 self.rfunc1.get_init_parameters("{}_1".format(self.name)),
@@ -2548,6 +2677,7 @@ class ChangeModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
     ) -> Series:
+        """Simulate the stressmodel's contribution."""
         return self._simulate(tuple(p), tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
@@ -2622,7 +2752,20 @@ class ChangeModel(StressModelBase):
         ]
         return responses
 
-    def to_dict(self, series: bool = True):
+    def to_dict(self, series: bool = True) -> dict[str, Any]:
+        """Export the stressmodel to a dictionary.
+
+        Parameters
+        ----------
+        series: bool, optional
+            Whether to include the time series in the dictionary. If False, only the
+            metadata of the time series is included. Default is True.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the information of the stressmodel.
+        """
         data = super().to_dict() | {
             "stress": self.stresses[0].to_dict(series=series),
             "rfunc1": self.rfunc1.to_dict(),

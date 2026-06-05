@@ -1,4 +1,4 @@
-"""This module contains the Model class.
+"""Module contains the Model class.
 
 Model is the central class in Pastas and contains all the information
 necessary to set up, solve and analyze time series models.
@@ -155,7 +155,7 @@ class Model:
         self.plot = self.plots.plot  # because we are lazy
 
     def __repr__(self):
-        """Prints a simple string representation of the model."""
+        """Print a simple string representation of the model."""
         template = (
             "{cls}(oseries={os}, name={name}, constant={const}, noisemodel={noise})"
         )
@@ -169,7 +169,7 @@ class Model:
 
     @property
     def parameters(self) -> DataFrame:
-        """Get the model parameters DataFrame.
+        """Get model parameters DataFrame.
 
         Returns
         -------
@@ -200,7 +200,7 @@ class Model:
 
     @property
     def settings(self) -> dict[str, Any]:
-        """Get the model settings dictionary.
+        """Get model settings dictionary.
 
         Returns
         -------
@@ -330,7 +330,7 @@ class Model:
         self._check_stressmodel_compatibility()
 
     def add_noisemodel(self, noisemodel: NoiseModelType) -> None:
-        """Adds a noisemodel to the time series Model.
+        """Add a noisemodel to the time series Model.
 
         Parameters
         ----------
@@ -359,7 +359,7 @@ class Model:
         self._parameters = self.get_init_parameters(initial=False)
 
     def add_solver(self, solver: Solver) -> None:
-        """Method to add a solver to the model.
+        """Add a solver to the model.
 
         Parameters
         ----------
@@ -380,7 +380,7 @@ class Model:
 
     @get_stressmodel
     def del_stressmodel(self, name: str):
-        """Method to safely delete a stress model from the Model.
+        """Safely delete a stress model from the Model.
 
         Parameters
         ----------
@@ -397,7 +397,7 @@ class Model:
         self._parameters = self.get_init_parameters(initial=False)
 
     def del_constant(self) -> None:
-        """Method to safely delete the Constant from the Model."""
+        """Safely delete the Constant from the Model."""
         if self.constant is None:
             logger.warning("No constant is present in this model.")
         else:
@@ -405,7 +405,7 @@ class Model:
             self._parameters = self.get_init_parameters(initial=False)
 
     def del_transform(self) -> None:
-        """Method to safely delete the transform from the Model."""
+        """Safely delete the transform from the Model."""
         if self.transform is None:
             logger.warning("No transform is present in this model.")
         else:
@@ -413,7 +413,7 @@ class Model:
             self._parameters = self.get_init_parameters(initial=False)
 
     def del_noisemodel(self) -> None:
-        """Method to safely delete the noise model from the Model."""
+        """Safely delete the noise model from the Model."""
         if self.noisemodel is None:
             logger.warning("No noisemodel is present in this model.")
         else:
@@ -429,7 +429,7 @@ class Model:
         warmup: float | None = None,
         return_warmup: bool = False,
     ) -> Series:
-        """Method to simulate the time series model.
+        """Simulate the time series model.
 
         Parameters
         ----------
@@ -552,7 +552,7 @@ class Model:
         freq: str | None = None,
         warmup: float | None = None,
     ) -> Series:
-        """Method to calculate the residual series.
+        """Calculate the residual series.
 
         Parameters
         ----------
@@ -635,7 +635,7 @@ class Model:
         freq: str | None = None,
         warmup: float | None = None,
     ) -> Series:
-        """Method to simulate the noise when a noisemodel is present.
+        """Simulate the noise when a noisemodel is present.
 
         Parameters
         ----------
@@ -699,7 +699,7 @@ class Model:
         freq: str | None = None,
         warmup: float | None = None,
     ) -> ArrayLike:
-        """Internal method to calculate the noise weights."""
+        """Calculate the noise weights."""
         # Get parameters if none are provided
         if p is None:
             p = self.get_parameters()
@@ -719,7 +719,7 @@ class Model:
         freq: str | None = None,
         update_observations: bool = False,
     ) -> Series:
-        """Method that returns the observations series used for calibration.
+        """Return the observations series used for calibration.
 
         Parameters
         ----------
@@ -787,6 +787,10 @@ class Model:
         reason="The initialize method is not needed anymore in favor of the `set_settings` method.",
     )
     def initialize(**kwargs) -> None:
+        """Initialize the model.
+
+        Deprecated: This method is no longer needed. Use `set_settings` instead.
+        """
         pass
 
     def solve(
@@ -806,7 +810,7 @@ class Model:
         noise: bool | None = None,
         **kwargs,
     ) -> None:
-        """Method to solve the time series model.
+        """Solve the time series model.
 
         Parameters
         ----------
@@ -838,7 +842,7 @@ class Model:
             parameters, or set to False to suppress the report.
 
             .. versionchanged:: 2.0.0
-             To have full conrol over the report, a dictionary with the arguments of
+             To have full control over the report, a dictionary with the arguments of
              ml.solve.fit_report() can be provided:
              (i.e., ml.solve(report=dict(stderr=True, corr=False))).
 
@@ -900,7 +904,6 @@ class Model:
         pastas.solver
             Different solver objects are available to estimate parameters.
         """
-
         if noise is not None:
             if noise is True:
                 msg = (
@@ -1015,10 +1018,14 @@ class Model:
         version="2.0.0", reason="Use 'ml.observations()' instead."
     )
     def oseries_calib(self):
+        """Deprecated property for calibration observations.
+
+        Use `ml.observations()` instead.
+        """
         return self.oseries.series
 
     def reset_settings(self) -> None:
-        """Method to reset the model settings to the default settings."""
+        """Reset the model settings to the default settings."""
         self.set_settings(
             tmin=self.get_tmin(use_oseries=True, use_stresses=True),
             tmax=self.get_tmax(use_oseries=True, use_stresses=True),
@@ -1040,7 +1047,7 @@ class Model:
         fit_constant: bool | None = None,
         freq_obs: str | None = None,
     ) -> None:
-        """Method to change the model settings.
+        """Change the model settings.
 
         Parameters
         ----------
@@ -1126,7 +1133,7 @@ class Model:
         move_bounds: bool = False,
         **kwargs,
     ) -> None:
-        """Method to change the parameter properties.
+        """Change the parameter properties.
 
         Parameters
         ----------
@@ -1338,6 +1345,7 @@ class Model:
     @property
     def sim_index(self) -> DatetimeIndex:
         """Property that returns the simulation index, including the warmup.
+
         Using the tmin, tmax, freq, and warmup from the model
         settings, a DatetimeIndex is created that includes the warmup period.
         This index is used for simulating the model and calculating the residuals.
@@ -1361,7 +1369,7 @@ class Model:
         use_oseries: bool = True,
         use_stresses: bool = False,
     ) -> Timestamp:
-        """Method that checks and returns valid values for tmin.
+        """Check and return valid values for tmin.
 
         Parameters
         ----------
@@ -1425,7 +1433,7 @@ class Model:
         use_oseries: bool = True,
         use_stresses: bool = False,
     ) -> Timestamp:
-        """Method that checks and returns valid values for tmax.
+        """Check and return valid values for tmax.
 
         Parameters
         ----------
@@ -1487,7 +1495,7 @@ class Model:
         return Timestamp(tmax)
 
     def get_init_parameters(self, initial: bool = True) -> DataFrame:
-        """Method to get all initial parameters from the individual objects.
+        """Get all initial parameters from the individual objects.
 
         Parameters
         ----------
@@ -1532,7 +1540,7 @@ class Model:
         return parameters
 
     def get_parameters(self, name: str | None = None) -> ArrayLike:
-        """Method to obtain the parameters needed for calculation.
+        """Obtain the parameters needed for calculation.
 
         This method is used by the simulation, residuals and the noise methods as
         well as other methods that need parameters values as arrays.
@@ -1560,12 +1568,12 @@ class Model:
         return p.values
 
     def get_stressmodel_names(self) -> list[str]:
-        """Returns list of stressmodel names."""
+        """Return list of stressmodel names."""
         return list(self.stressmodels.keys())
 
     @get_stressmodel
     def get_stressmodel_settings(self, name: str) -> dict[str, Any] | None:
-        """Method to obtain the time series settings for a stress model.
+        """Obtain the time series settings for a stress model.
 
         Parameters
         ----------
@@ -1594,7 +1602,7 @@ class Model:
         return_warmup: bool = False,
         p: ArrayLike | None = None,
     ) -> Series:
-        """Method to get the contribution of a stressmodel.
+        """Get contribution of a stressmodel.
 
         Parameters
         ----------
@@ -1656,7 +1664,7 @@ class Model:
         return contrib
 
     def get_contributions(self, split: bool = True, **kwargs) -> list[Series]:
-        """Method to get contributions of all stressmodels.
+        """Get contributions of all stressmodels.
 
         Parameters
         ----------
@@ -1690,7 +1698,7 @@ class Model:
     def get_transform_contribution(
         self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> Series:
-        """Method to get the contribution of a transform.
+        """Get contribution of a transform.
 
         Parameters
         ----------
@@ -1723,7 +1731,7 @@ class Model:
         split_contributions: bool = True,
         **kwargs,
     ) -> DataFrame:
-        """Method to get all the modeled output time series from the Model.
+        """Get all the modeled output time series from the Model.
 
         Parameters
         ----------
@@ -1795,7 +1803,7 @@ class Model:
         istress: int | None = None,
         **kwargs,
     ) -> Series | None:
-        """Internal method to compute the block and step response.
+        """Compute the block and step response.
 
         Parameters
         ----------
@@ -1862,7 +1870,7 @@ class Model:
         dt: float | None = None,
         **kwargs,
     ) -> Series | None:
-        """Method to obtain the block response for a stressmodel.
+        """Obtain the block response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
 
@@ -1899,7 +1907,7 @@ class Model:
         dt: float | None = None,
         **kwargs,
     ) -> Series | None:
-        """Method to obtain the step response for a stressmodel.
+        """Obtain the step response for a stressmodel.
 
         The optimal parameters are used when available, initial otherwise.
 
@@ -1935,7 +1943,7 @@ class Model:
         cutoff: float = 0.999,
         warn: bool = True,
     ) -> float | None:
-        """Method to get the tmax used for the response function.
+        """Get tmax used for the response function.
 
         Parameters
         ----------
@@ -1986,7 +1994,7 @@ class Model:
         return_warmup: bool = False,
         p: ArrayLike | None = None,
     ) -> Series | list[Series]:
-        """Method to obtain the stress(es) from the stressmodel.
+        """Obtain the stress(es) from the stressmodel.
 
         Parameters
         ----------
@@ -2044,7 +2052,7 @@ class Model:
         return stress
 
     def _get_file_info(self) -> dict[str, Any]:
-        """Internal method to get the file information.
+        """Get file information.
 
         Returns
         -------
@@ -2071,7 +2079,7 @@ class Model:
     def _generate_warnings_report(
         self, log: bool = True, solve_success: bool = True
     ) -> list[str]:
-        """Internal method to generate warnings after model optimization.
+        """Generate warnings after model optimization.
 
         Parameters
         ----------
@@ -2085,7 +2093,6 @@ class Model:
         msg: list of str
             List of warning messages.
         """
-
         msg = []
         # model optimization unsuccessful
         if solve_success is False:
@@ -2177,7 +2184,7 @@ class Model:
         return self.solver.fit_report(full_output=full_output, **kwargs)
 
     def _check_response_tmax(self, cutoff: float | None = None) -> DataFrame:
-        """Internal method to check if response tmax is smaller than calibration period.
+        """Check if response tmax is smaller than calibration period.
 
         Parameters
         ----------
@@ -2191,7 +2198,6 @@ class Model:
             dataframe containing length calibration period, response tmax for each
             stressmodel, and check result.
         """
-
         len_oseries = (self.settings["tmax"] - self.settings["tmin"]).days
 
         # only check stressmodels with a response function
@@ -2230,7 +2236,7 @@ class Model:
         return check
 
     def to_dict(self, series: bool = True, file_info: bool = True) -> dict:
-        """Method to export a model to a dictionary.
+        """Export a model to a dictionary.
 
         Parameters
         ----------
@@ -2245,7 +2251,6 @@ class Model:
         compatibility most attributes are stored in dictionaries that can be updated
         when a model is created.
         """
-
         # Create a dictionary to store all data
         data = {
             "name": self.name,
@@ -2282,7 +2287,7 @@ class Model:
         return data
 
     def to_file(self, fname: str | Path, series: bool | str = True, **kwargs) -> None:
-        """Method to save the Pastas model to a file.
+        """Save the Pastas model to a file.
 
         Parameters
         ----------
@@ -2309,7 +2314,7 @@ class Model:
         return dump(fname, data, **kwargs)
 
     def copy(self, name: str | None = None) -> ModelType:
-        """Method to copy a model.
+        """Copy a model.
 
         Parameters
         ----------
@@ -2333,8 +2338,10 @@ class Model:
         return ml
 
     def _check_stressmodel_compatibility(self) -> None:
-        """Internal method to check if the stressmodels are compatible with the
-        model."""
+        """Check if the stressmodels are compatible with the model.
+
+        This is an internal method to verify stressmodel compatibility.
+        """
         for sm in self.stressmodels.values():
             if hasattr(sm, "_check_stressmodel_compatibility"):
                 sm._check_stressmodel_compatibility(self)
