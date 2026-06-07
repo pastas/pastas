@@ -405,30 +405,29 @@ class Plotting:
         istress: int | None = None,
     ):
         """Plot the response of a Stressmodel in the results-plot."""
-        responses = sm._get_responses(
-            self.ml, block_or_step=block_or_step, istress=istress
+        responses = self.ml._get_response(
+            block_or_step=block_or_step, name=sm.name, istress=istress
         )
-        responses = [x for x in responses if x is not None]
-        if responses:
+        print(responses)
+        # responses = [x for x in responses if x is not None]
+        if responses is not None:
             # Keep the first cycle color for a single response, but reserve it
             # when plotting multiple responses.
-            if len(responses) > 1:
+            if responses.columns.size > 1:
                 ax._get_lines.get_next_color()
 
-            xlim_left = min(
-                [
-                    x.index[0] if block_or_step == "step" else x.index[1]
-                    for x in responses
-                    if x is not None
-                ]
+            xlim_left = (
+                responses.index[0] if block_or_step == "step" else responses.index[1]
             )
-            xlim_right = max([x.index[-1] for x in responses])
-            for i, response in enumerate(responses):
+            xlim_right = responses.index[-1]
+
+            for i, name in enumerate(responses.columns):
+                response = responses.loc[:, name]
                 if i == 0 and block_or_step == "block":
                     ax.set_xscale("log")
                     ax.xaxis.set_major_formatter(LogFormatter())
 
-                if len(responses) == 1:
+                if responses.columns.size == 1:
                     label = f"{block_or_step.capitalize()} response"
                 else:
                     label = response.name

@@ -1806,36 +1806,35 @@ class Model:
         response: pandas.Series or None
             Pandas.Series with the response, None if not present.
         """
-        rfunc = self.stressmodels[name].rfunc
-        if rfunc is None:
-            logger.warning("Stressmodel %s has no rfunc.", name)
-            return None
-        else:
-            block_or_step = getattr(rfunc, block_or_step)
+        sm = self.stressmodels[name]
 
-        p = self.get_parameters(name)[: rfunc.nparam] if p is None else p
+        # Get parameters
+        # if istress is None:
+        #     p = sm.get_parameters(model=self)
+        # else:
+        #     p = sm.get_parameters(model=self, istress=istress)
 
+        p = self.get_parameters(name=name)
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
-        if istress is not None and self.stressmodels[name].nsplit > 1:
-            p = self.stressmodels[name].get_parameters(model=self, istress=istress)
+        response = sm._get_responses(
+            block_or_step=block_or_step, p=p, dt=dt, istress=istress, *kwargs
+        )
 
-        response = block_or_step(p, dt, **kwargs)
+        # if add_0:
+        #     if isinstance(dt, np.ndarray):
+        #         t = dt
+        #     else:
+        #         t = np.linspace(0, response.size * dt, response.size + 1)
+        #     response = np.insert(response, 0, 0.0)
+        # else:
+        #     if isinstance(dt, np.ndarray):
+        #         t = dt
+        #     else:
+        #         t = np.linspace(dt, response.size * dt, response.size)
 
-        if add_0:
-            if isinstance(dt, np.ndarray):
-                t = dt
-            else:
-                t = np.linspace(0, response.size * dt, response.size + 1)
-            response = np.insert(response, 0, 0.0)
-        else:
-            if isinstance(dt, np.ndarray):
-                t = dt
-            else:
-                t = np.linspace(dt, response.size * dt, response.size)
-
-        response = Series(response, index=t, name=name)
-        response.index.name = "Time [days]"
+        # response = Series(response, index=t, name=name)
+        # response.index.name = "Time [days]"
 
         return response
 

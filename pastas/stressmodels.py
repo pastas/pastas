@@ -346,19 +346,52 @@ class StressModelBase(ABC):
 
     def _get_responses(
         self,
-        ml: Model,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
+        **kwargs,
     ) -> list[Series]:
-        responses = [
-            ml._get_response(
-                block_or_step=block_or_step,
-                name=self.name,
-                add_0=True,
-                istress=istress,
-            )
-        ]
-        return responses
+        """Compute the block and step response.
+
+        Parameters
+        ----------
+        block_or_step: {"block", "step"}
+            String with "step" or "block"
+        p : array_like, optional
+            array_like object with the values as floats representing the model
+            parameters. See Model.get_parameters() for more info if parameters is None.
+        dt: float, optional
+            timestep for the response function.
+        add_0: bool, optional
+            Add a zero at t=0.
+        istress: int, optional
+            When multiple stresses are present in a stressmodel, this keyword can be
+            used to obtain the response to an individual stress.
+        kwargs: dict: passed to rfunc.step() or rfunc.block()
+
+        """
+        if istress is None:
+            istress = list(range(len(self.stresses)))
+            responses = []
+            for i in istress:
+                s = super()._get_responses(p=p, block_or_step=block_or_step, istress=i)[
+                    0
+                ]
+                s.name = self.stresses[i].name
+                responses.append(s)
+            return responses
+        else:
+            block_or_step = getattr(self.rfunc, block_or_step)
+
+            dt = _get_dt(self.settings["freq"]) if dt is None else dt
+
+            if block_or_step == "step":
+                response = self.rfunc.step(p, dt, **kwargs)
+            elif block_or_step == "block":
+                response = self.rfunc.block(p, dt, **kwargs)
+
+            return response
 
     def to_dict(self, series: bool = False) -> dict[str, Any]:
         """Export the stress model to a dictionary.
@@ -1511,6 +1544,15 @@ class WellModel(StressModelBase):
         block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
     ) -> list[Series]:
+        distances = self.get_distances(istress=istress).values
+        if distances.size > 1:
+            p_with_r = np.concatenate(
+                [np.tile(p, (distances.size, 1)), distances[:, np.newaxis]], axis=1
+            )
+        else:
+            p_with_r = np.r_[p, distances]
+        p = np.asarray(p_with_r, dtype=float)
+
         if istress is None:
             istress = list(range(len(self.stresses)))
         else:
@@ -2167,30 +2209,46 @@ class RechargeModel(StressModelBase):
 
     def _get_responses(
         self,
-        ml: Model,
+        p,
+        dt,
         block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
     ) -> list[Series]:
+        if block_or_step == "step":
+            rfunc = self.rfunc.step
+        else:
+            rfunc = self.rfunc.block
+
         if isinstance(self.recharge, Linear):
             if istress is None:
                 istress = list(range(len(self.stresses)))
             else:
                 istress = [istress]
+
             responses = []
+            names = []
             for i in istress:
-                response = ml._get_response(
-                    block_or_step=block_or_step,
-                    name=self.name,
-                    add_0=True,
-                    istress=i,
-                )
-                response.name = self.stresses[i].name
+                # Figure out the parameters
+                if i == 0:
+                    pnew = p[:-1]
+                elif i == 1:
+                    pnew = p.copy()
+                    pnew[0] *= p[-1]
+                    pnew = pnew[:-1]
+
+                response = rfunc(p=pnew, dt=dt)
+                names.append(self.stresses[i].name)
                 responses.append(response)
-            return responses
         else:
-            return super()._get_responses(
-                ml, block_or_step=block_or_step, istress=istress
-            )
+            responses = [rfunc(p=p[: self.rfunc.nparam], dt=dt)]
+            names = [self.name]
+
+        responses = DataFrame(
+            data=responses,
+            # index=np.linspace(0, responses[0].size * dt, responses[0].size + 1),
+            # columns=names,
+        ).T
+        return responses
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
@@ -2304,30 +2362,26 @@ class TarsoModel(RechargeModel):
         # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.5 * (self.dmax - self.dmin)
-        pd0 = Series(
-            {
-                "initial": initial,
-                "pmin": np.nan,
-                "pmax": np.nan,
-                "vary": True,
-                "name": self.name,
-            }
-        )
+        pd0 = Series({
+            "initial": initial,
+            "pmin": np.nan,
+            "pmax": np.nan,
+            "vary": True,
+            "name": self.name,
+        })
         p0.loc[f"{self.name}_d"] = pd0
         p0.index = [f"{x}0" for x in p0.index]
 
         # parameters for the second drainage level
         p1 = self.rfunc.get_init_parameters(self.name)
         initial = self.dmin + 0.75 * (self.dmax - self.dmin)
-        pd1 = Series(
-            {
-                "initial": initial,
-                "pmin": self.dmin,
-                "pmax": self.dmax,
-                "vary": True,
-                "name": self.name,
-            }
-        )
+        pd1 = Series({
+            "initial": initial,
+            "pmin": self.dmin,
+            "pmax": self.dmax,
+            "vary": True,
+            "name": self.name,
+        })
         p1.loc[f"{self.name}_d"] = pd1
         p1.index = [f"{x}1" for x in p1.index]
 
@@ -2445,29 +2499,27 @@ class TarsoModel(RechargeModel):
 
     def _get_responses(
         self,
-        ml: Model,
+        p,
+        dt,
         block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
     ) -> list[Series]:
-        dt = _get_dt(ml.settings["freq"])
-        parnames = list(self.rfunc.get_init_parameters(self.name).index)
-        response0 = getattr(self.rfunc, block_or_step)(
-            p=ml.parameters.loc[[f"{x}0" for x in parnames], "optimal"].values,
-            dt=dt,
+        A0, a0, _, A1, a1, _ = p
+        block_or_step = getattr(self.rfunc, block_or_step)
+
+        response0 = block_or_step(p=[A0, a0], dt=dt)
+        response1 = block_or_step(p=[A1, a1], dt=dt)
+
+        responses = DataFrame(
+            data=[response0, response1],
+            index=np.linspace(0, response0.size * dt, response0.size + 1),
+            names=[f"{self.name}_rf0", f"{self.name}_rf0"],
         )
-        response1 = getattr(self.rfunc, block_or_step)(
-            p=ml.parameters.loc[[f"{x}1" for x in parnames], "optimal"].values,
-            dt=dt,
-        )
-        responses = [
-            Series(
-                np.insert(response, 0, 0.0),
-                index=np.linspace(0, response.size * dt, response.size + 1),
-                name=f"{self.name}_rf{i}",
-            )
-            for i, response in enumerate([response0, response1])
-        ]
-        return responses
+
+        if istress is None:
+            return responses
+        else:
+            return responses.iloc[:, istress].squeeze()
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
@@ -2719,38 +2771,30 @@ class ChangeModel(StressModelBase):
 
     def _get_responses(
         self,
-        ml: Model,
+        p,
+        dt,
         block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
     ) -> list[Series]:
-        dt = _get_dt(ml.settings["freq"])
-        parnames0 = [
-            x.split("_") for x in list(self.rfunc1.get_init_parameters(self.name).index)
-        ]
+
         response0 = getattr(self.rfunc1, block_or_step)(
-            p=ml.parameters.loc[
-                [f"{x[0]}_1_{x[1]}" for x in parnames0], "optimal"
-            ].values,
+            p=p[: self.rfunc1.nparam],
             dt=dt,
         )
-        parnames1 = [
-            x.split("_") for x in list(self.rfunc2.get_init_parameters(self.name).index)
-        ]
         response1 = getattr(self.rfunc2, block_or_step)(
-            p=ml.parameters.loc[
-                [f"{x[0]}_2_{x[1]}" for x in parnames1], "optimal"
-            ].values,
+            p=p[self.rfunc1.nparam : self.rfunc1.nparam + self.rfunc2.nparam],
             dt=dt,
         )
-        responses = [
-            Series(
-                np.insert(response, 0, 0.0),
-                index=np.linspace(0, response.size * dt, response.size + 1),
-                name=f"{self.name}_rf{i}",
-            )
-            for i, response in enumerate([response0, response1])
-        ]
-        return responses
+        responses = DataFrame(
+            data=[response0, response1],
+            index=np.linspace(0, response0.size * dt, response0.size + 1),
+            names=[f"{self.name}_rf0", f"{self.name}_rf0"],
+        )
+
+        if istress is None:
+            return responses
+        else:
+            return responses.iloc[:, istress].squeeze()
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
