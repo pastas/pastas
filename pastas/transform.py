@@ -151,15 +151,15 @@ class ThresholdTransform:
 
         Parameters
         ----------
-        h : pandas.Series
-            The simulation to transform.
+        series : pandas.Series
+            The series to transform.
         p : ArrayLike
             The parameters for the transform.
 
         Returns
         -------
         pandas.Series
-            The transformed simulation.
+            The transformed series.
         """
         if "h" in kwargs:
             deprecate_args_or_kwargs(

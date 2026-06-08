@@ -826,14 +826,14 @@ def _compute_err(
 
     Parameters
     ----------
+    obs: pandas.Series, optional
+        The Series with the observed values.
     sim: pandas.Series, optional
         Series with the simulated values.
-    oseries: pandas.Series, optional
-        The Series with the observed values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
-        provided, the sim and oseries arguments are ignored. Note that the residuals
-        must be computed as `oseries - sim` here.
+        provided, the sim and obs arguments are ignored. Note that the residuals
+        must be computed as `obs - sim` here.
     missing: str, optional
         string with the rule to deal with missing values. Only "drop" is supported now.
 
