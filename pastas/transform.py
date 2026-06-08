@@ -147,7 +147,7 @@ class ThresholdTransform:
     def simulate(
         self, series: Series | None = None, p: ArrayLike | None = None, **kwargs
     ) -> Series:
-        """Apply the threshold transform to the simulation.
+        """Apply the threshold transform to the series.
 
         Parameters
         ----------
