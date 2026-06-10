@@ -8,8 +8,7 @@
 [![image](https://img.shields.io/pypi/dm/pastas)](https://pypi.org/project/pastas/)
 [![image](https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg)](https://doi.org/10.5281/zenodo.1465866)
 
-[![image](https://app.codacy.com/project/badge/Grade/952f41c453854064ba0ee1fa0a0b4434)](https://app.codacy.com/gh/pastas/pastas/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![image](https://api.codacy.com/project/badge/Coverage/952f41c453854064ba0ee1fa0a0b4434)](https://app.codacy.com/gh/pastas/pastas/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage9)
+[![image](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/pastas/{GIST_TAG_HERE}/raw/coverage.json&color=green)](https://github.com/pastas/pastas/actions/workflows/test_unit_pytest.yml)
 [![image](https://readthedocs.org/projects/pastas/badge/?version=stable)](https://pastas.readthedocs.io/)
 [<img src="https://github.com/codespaces/badge.svg" height="20">](https://codespaces.new/pastas/pastas?quickstart=1)
 [![image](https://github.com/pastas/pastas/actions/workflows/test_unit_pytest.yml/badge.svg?branch=master)](https://github.com/pastas/pastas/actions/workflows/test_unit_pytest.yml)

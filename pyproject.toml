@@ -132,7 +132,7 @@ commands = [
 ]
 
 [tool.tox.env.all]
-description = "run all unit tests (including Notebooks) and obtain coverage"
+description = "run all unit tests and notebooks"
 extras = ["ci"]
 commands = [
     [
@@ -146,7 +146,7 @@ commands = [
     ],
     [
         "coverage",
-        "xml",
+        "json",
     ],
 ]
 
