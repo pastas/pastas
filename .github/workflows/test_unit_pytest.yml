@@ -96,7 +96,7 @@ jobs:
         uses: Schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ env.BADGE_GIST_COVERAGE_TOKEN }}
-          gistID: "{GIST_TAG_HERE}"
+          gistID: "{02bcb92e1d487ffc9143752296b8db72}"
           filename: coverage.json
           label: coverage
           message: ${{ steps.coverage.outputs.coverage }}%
