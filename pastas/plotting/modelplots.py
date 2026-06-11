@@ -1099,8 +1099,7 @@ class Plotting:
                         contributions[name] = h
 
                         # plot step responses for each well, scaled with distance
-                        p = sm.get_parameters(model=self.ml, istress=istress)
-                        step = self.ml.get_step_response(sm_name, p=p)
+                        step = self.ml.get_step_response(sm_name, istress=istress)
                         axd[f"rf_{sm_name}"].plot(
                             step.index, step, c=stackcolors[name], label=name
                         )
