@@ -561,8 +561,8 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
     if sm is not None and sm._name == "WellModel" and parameter.endswith("_A"):
         nwells = sm.distances.index.size
         for iw in range(nwells):
-            params = sm.get_parameters(model=ml, istress=iw)
-            p = sm.rfunc.gain(params)
+            p = sm.get_parameters(model=ml, istress=iw)
+            p = sm.rfunc.gain(p)
             std = sm.variance_gain(model=ml, istress=iw)
             check = np.abs(p) > (n_std * std)
             df.loc[f"|{parameter} ({sm.distances.index[iw]})| > {n_std}σ"] = [

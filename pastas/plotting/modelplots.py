@@ -530,7 +530,7 @@ class Plotting:
         if "split" in kwargs:
             deprecate_args_or_kwargs(
                 name="split",
-                version="3.0.0",
+                version="2.3.0",
                 reason="Use `split_contributions` instead.",
             )
             split_contributions = kwargs.pop("split")

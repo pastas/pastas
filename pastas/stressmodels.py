@@ -502,9 +502,9 @@ class StressModel(StressModelBase):
         return self._stress
 
     @stress.setter
-    def stress(self, value: Series | TimeSeries) -> None:
+    def stress(self, series: Series | TimeSeries) -> None:
         """Set the stress time series."""
-        self.set_stress(value)
+        self.set_stress(series)
 
     def set_stress(
         self,
@@ -1793,9 +1793,9 @@ class RechargeModel(StressModelBase):
         return self._prec
 
     @prec.setter
-    def prec(self, value: Series) -> None:
+    def prec(self, series: Series) -> None:
         """Set the precipitation time series."""
-        self.set_stress(prec=value)
+        self.set_stress(prec=series)
 
     @property
     def evap(self) -> TimeSeries:
@@ -1803,9 +1803,9 @@ class RechargeModel(StressModelBase):
         return self._evap
 
     @evap.setter
-    def evap(self, value: Series) -> None:
+    def evap(self, series: Series) -> None:
         """Set the evaporation time series."""
-        self.set_stress(evap=value)
+        self.set_stress(evap=series)
 
     @property
     def temp(self) -> TimeSeries | None:
@@ -1813,9 +1813,9 @@ class RechargeModel(StressModelBase):
         return self._temp
 
     @temp.setter
-    def temp(self, value: Series) -> None:
+    def temp(self, series: Series) -> None:
         """Set the temperature time series."""
-        self.set_stress(temp=value)
+        self.set_stress(temp=series)
 
     @property
     def stresses(self) -> tuple[TimeSeries, ...]:
@@ -2597,9 +2597,9 @@ class ChangeModel(StressModelBase):
         return self._stress
 
     @stress.setter
-    def stress(self, value: Series | TimeSeries) -> None:
+    def stress(self, series: Series | TimeSeries) -> None:
         """Set the stress time series."""
-        self.set_stress(value)
+        self.set_stress(series)
 
     def set_stress(
         self,

@@ -404,7 +404,7 @@ class CompareModels:
 
         Returns
         -------
-        params : pd.DataFrame
+        p : pd.DataFrame
             parameter DataFrame containing parameters for each model.
         """
         if models is None:
@@ -415,16 +415,16 @@ class CompareModels:
         else:
             modelnames = self.modelnames
 
-        params = concat([ml.parameters[param_col] for ml in models], axis=1, sort=False)
-        params.columns = modelnames
+        p = concat([ml.parameters[param_col] for ml in models], axis=1, sort=False)
+        p.columns = modelnames
 
         if param_selection:
             sel = np.array([])
             for sub in param_selection:
-                sel = np.append(sel, [idx for idx in params.index if sub in idx])
-            return params.loc[sel].sort_index()
+                sel = np.append(sel, [idx for idx in p.index if sub in idx])
+            return p.loc[sel].sort_index()
         else:
-            return params
+            return p
 
     def get_diagnostics(
         self, models: list[Model] | None = None, diag_col: str = "P-value"
@@ -799,7 +799,7 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             noise = ml.residuals() if ml.noisemodel is None else ml.noise()
-            r = acf(x=noise, full_output=True)
+            r = acf(series=noise, full_output=True)
             conf = r.conf.rolling(10, min_periods=1).mean().values
 
             axs[axn].fill_between(
@@ -865,16 +865,16 @@ class CompareModels:
             string to filter parameter names that are included in table, by default
             None.
         """
-        params = self.get_parameters(
+        p = self.get_parameters(
             self.models,
             param_selection=param_selection,
             param_col=param_col,
         ).apply(lambda x: x.apply(_table_formatter_params), axis=1)
 
         # add separate column with parameter names
-        params.loc[:, "Parameters"] = params.index
-        cols = params.columns.to_list()[-1:] + params.columns.to_list()[:-1]
-        return self.plot_table(axn=axn, df=params[cols])
+        p.loc[:, "Parameters"] = p.index
+        cols = p.columns.to_list()[-1:] + p.columns.to_list()[:-1]
+        return self.plot_table(axn=axn, df=p[cols])
 
     def plot_table_metrics(
         self, axn: str = "met", metric_selection: list[str] | None = None

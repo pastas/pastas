@@ -50,6 +50,7 @@ def mae(
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     r"""Compute the (weighted) Mean Absolute Error (MAE).
 
@@ -100,6 +101,7 @@ def me(
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     r"""Compute the (weighted) Mean Error (ME).
 
@@ -149,15 +151,16 @@ def rmse(
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     r"""Compute the (weighted) Root Mean Squared Error (RMSE).
 
     Parameters
     ----------
-    sim: pandas.Series, optional
-        Series with the simulated values.
     obs: pandas.Series, optional
         The Series with the observed values.
+    sim: pandas.Series, optional
+        Series with the simulated values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
         provided, the sim and obs arguments are ignored. Note that the residuals
@@ -196,15 +199,16 @@ def sse(
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
+    **kwargs,
 ) -> float:
     r"""Compute the Sum of the Squared Errors (SSE).
 
     Parameters
     ----------
-    sim: pandas.Series, optional
-        Series with the simulated values.
     obs: pandas.Series, optional
         The Series with the observed values.
+    sim: pandas.Series, optional
+        Series with the simulated values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
         provided, the sim and obs arguments are ignored. Note that the residuals
@@ -239,6 +243,7 @@ def pearsonr(
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     r"""Compute the (weighted) Pearson correlation (r).
 
@@ -270,10 +275,9 @@ def pearsonr(
     Where :math:`y_o` is observed time series, :math:`y_s` the simulated time series,
     and :math:`N` the number of observations in the observed time series.
     """
-    if missing == "drop":
-        obs = obs.dropna()
+    obs = obs.dropna() if missing == "drop" else obs
 
-    w = _get_weights(obs, weighted=weighted, max_gap=max_gap)
+    w = _get_weights(series=obs, weighted=weighted, max_gap=max_gap)
     sim = sim.reindex(obs.index).dropna().to_numpy()
 
     # Return nan if the time indices of the sim and obs don't match
@@ -290,12 +294,13 @@ def pearsonr(
 
 
 def evp(
-    obs: Series,
+    obs: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     r"""Compute the (weighted) Explained Variance Percentage (EVP).
 
@@ -356,12 +361,13 @@ def evp(
 
 
 def nse(
-    obs: Series,
+    obs: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     r"""Compute the (weighted) Nash-Sutcliffe Efficiency (NSE).
 
@@ -405,12 +411,13 @@ def nse(
 
 
 def nnse(
-    obs: Series,
+    obs: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     r"""Compute the (weighted) Normalized Nash-Sutcliffe Efficiency (NNSE).
 
@@ -453,19 +460,21 @@ def nnse(
             missing=missing,
             weighted=weighted,
             max_gap=max_gap,
+            **kwargs,
         )
     )
     return nnse
 
 
 def rsq(
-    obs: Series,
+    obs: Series | None = None,
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
     nparam: int | None = None,
+    **kwargs,
 ) -> float:
     r"""Compute R-squared, possibly adjusted for the number of free parameters.
 
@@ -531,6 +540,7 @@ def bic(
     res: Series | None = None,
     missing: str = "drop",
     nparam: int = 1,
+    **kwargs,
 ) -> float:
     r"""Compute the Bayesian Information Criterium (BIC).
 
@@ -576,6 +586,7 @@ def aic(
     res: Series | None = None,
     missing: str = "drop",
     nparam: int = 1,
+    **kwargs,
 ) -> float:
     r"""Compute the Akaike Information Criterium (AIC).
 
@@ -629,6 +640,7 @@ def aicc(
     res: Series | None = None,
     missing: str = "drop",
     nparam: int = 1,
+    **kwargs,
 ) -> float:
     r"""Compute the Akaike Information Criterium with second order bias correction.
 
@@ -681,6 +693,7 @@ def kge(
     weighted: bool = False,
     max_gap: int = 30,
     modified: bool = False,
+    **kwargs,
 ) -> float:
     r"""Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
@@ -719,8 +732,7 @@ def kge(
     \\bar{y}}`. If weighted equals True, the weighted mean, variance and
     pearson correlation are used.
     """
-    if missing == "drop":
-        obs = obs.dropna()
+    obs = obs.dropna() if missing == "drop" else obs
 
     sim = sim.reindex(obs.index).dropna()
 
@@ -754,11 +766,12 @@ def kge(
     use `pastas.stats.kge(modified=True)` to get the same outcome.""",
 )
 def kge_2012(
-    obs: Series,
-    sim: Series,
+    obs: Series | None = None,
+    sim: Series | None = None,
     missing: str = "drop",
     weighted: bool = False,
     max_gap: int = 30,
+    **kwargs,
 ) -> float:
     r"""Compute the (weighted) Kling-Gupta Efficiency (KGE).
 
@@ -798,6 +811,7 @@ def kge_2012(
         weighted=weighted,
         max_gap=max_gap,
         modified=True,
+        **kwargs,
     )
 
 
@@ -806,15 +820,16 @@ def _compute_err(
     sim: Series | None = None,
     res: Series | None = None,
     missing: str = "drop",
+    **kwargs,
 ):
     """Compute the error series.
 
     Parameters
     ----------
-    sim: pandas.Series, optional
-        Series with the simulated values.
     obs: pandas.Series, optional
         The Series with the observed values.
+    sim: pandas.Series, optional
+        Series with the simulated values.
     res: pandas.Series, optional
         The Series with the residual values. If time series for the residuals are
         provided, the sim and obs arguments are ignored. Note that the residuals
@@ -840,8 +855,7 @@ def _compute_err(
         logger.error(msg)
         raise ValueError(msg)
 
-    if missing == "drop":
-        err = err.dropna()
+    err = err.dropna() if missing == "drop" else err
 
     return err
 
@@ -855,7 +869,7 @@ def picp(obs: Series, bounds: DataFrame):
     Parameters
     ----------
     obs : pandas.Series
-        Pandas Series with the measured time series and a DateTimeIndex.
+        Pandas Series with the observed time series and a DateTimeIndex.
     bounds : DataFrame
         DataFrame with the lower (first column) and upper (second columns) bounds of the
         prediction intervals.
@@ -877,11 +891,14 @@ def picp(obs: Series, bounds: DataFrame):
     >>> import numpy as np
     >>> from pastas.stats import picp
     >>> obs = pd.Series(np.random.rand(100),
-                        index=pd.date_range("2000-01-01", periods=100))
+    ...                     index=pd.date_range("2000-01-01", periods=100))
     >>> bounds = pd.DataFrame(np.random.rand(100, 2), index=obs.index)
     >>> picp(obs, bounds)
 
     """
+    if bounds is None:
+        raise TypeError("picp() missing required argument: 'bounds'")
+
     # Check if the DateTimeIndex of the observations and the bounds match
     if not obs.index.isin(bounds.index).all():
         msg = "The DateTimeIndex of the observations and the bounds do not match."
