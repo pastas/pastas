@@ -637,8 +637,8 @@ class StressModel(StressModelBase):
 
     def _get_responses(
         self,
-        p,
-        dt,
+        p: ArrayLike,
+        dt: float,
         block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
         **kwargs,
@@ -1563,8 +1563,8 @@ class WellModel(StressModelBase):
 
     def _get_responses(
         self,
-        p,
-        dt,
+        p: ArrayLike,
+        dt: float,
         block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
         **kwargs,
@@ -1593,7 +1593,6 @@ class WellModel(StressModelBase):
         names = []
         for ip, i in enumerate(istress):
             response = rfunc(p=p[ip], dt=dt, **kwargs)
-            print(response.shape)
             names.append(self.stresses[i].name)
             responses.append(response)
 
@@ -2533,12 +2532,11 @@ class TarsoModel(RechargeModel):
 
     def _get_responses(
         self,
-        p,
-        dt,
+        p: ArrayLike,
+        dt: float,
         block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
     ) -> list[Series]:
-        print(p)
         A0, a0, _, A1, a1, _, _ = p
         block_or_step = getattr(self.rfunc, block_or_step)
 
@@ -2547,9 +2545,8 @@ class TarsoModel(RechargeModel):
 
         responses = DataFrame(
             data=[response0, response1],
-            index=np.linspace(0, response0.size * dt, response0.size + 1),
-            names=[f"{self.name}_rf0", f"{self.name}_rf0"],
-        )
+            index=[f"{self.name}_rf0", f"{self.name}_rf0"],
+        ).T
 
         if istress is None:
             return responses
@@ -2806,8 +2803,8 @@ class ChangeModel(StressModelBase):
 
     def _get_responses(
         self,
-        p,
-        dt,
+        p: ArrayLike,
+        dt: float,
         block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
     ) -> list[Series]:
