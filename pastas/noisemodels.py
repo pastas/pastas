@@ -28,7 +28,11 @@ from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 
 from pastas.typing import ArrayLike
 
-from .decorators import PastasDeprecationWarning, njit, set_parameter
+from .decorators import (
+    PastasDeprecationWarning,
+    njit,
+    set_parameter,
+)
 
 logger = getLogger(__name__)
 
@@ -105,6 +109,7 @@ class NoiseModelBase(ABC):
         return {"class": self._name, "norm": self.norm}
 
     def weights(self, res: Series, p: ArrayLike) -> Series | int:
+        _, _ = res, p
         return 1
 
 
@@ -234,7 +239,10 @@ class ArNoiseModel(NoiseModelBase):
         return Series(data=w, index=res.index, name="noise_weights")
 
     def get_correction(
-        self, res: Series, p: ArrayLike, tindex: DatetimeIndex
+        self,
+        res: Series,
+        p: ArrayLike,
+        tindex: DatetimeIndex,
     ) -> Series:
         r"""Get correction for a forecast using the noise model.
 

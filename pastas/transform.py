@@ -16,7 +16,7 @@ from pandas import DataFrame, Series
 
 from pastas.typing import ArrayLike, Model
 
-from .decorators import set_parameter
+from .decorators import deprecate_args_or_kwargs, set_parameter
 from .utils import validate_name
 
 
@@ -144,31 +144,52 @@ class ThresholdTransform:
         """
         self.parameters.at[name] = str(value)
 
-    def simulate(self, h: Series, p: ArrayLike) -> Series:
-        """Apply the threshold transform to the simulation.
+    def simulate(
+        self, series: Series | None = None, p: ArrayLike | None = None, **kwargs
+    ) -> Series:
+        """Apply the threshold transform to the series.
 
         Parameters
         ----------
-        h : pandas.Series
-            The simulation to transform.
+        series : pandas.Series
+            The series to transform.
         p : ArrayLike
             The parameters for the transform.
 
         Returns
         -------
         pandas.Series
-            The transformed simulation.
+            The transformed series.
         """
+        if "h" in kwargs:
+            deprecate_args_or_kwargs(
+                name="h",
+                version="2.3.0",
+                reason="Please use `series` instead of `h`.",
+            )
+            if series is None:
+                series = kwargs.pop("h")
+            else:
+                kwargs.pop("h")
+        if kwargs:
+            raise TypeError(
+                f"simulate() got unexpected keyword argument '{next(iter(kwargs))}'"
+            )
+        if series is None:
+            raise TypeError("simulate() missing required argument: 'series'")
+        if p is None:
+            raise TypeError("simulate() missing required argument: 'p'")
+
         if self.nparam == 1:
             # value above a threshold p[0] are equal to the threshold
-            h[h > p[0]] = p[0]
+            series[series > p[0]] = p[0]
         elif self.nparam == 2:
             # values above a threshold p[0] are scaled by p[1]
-            mask = h > p[0]
-            h[mask] = p[0] + p[1] * (h[mask] - p[0])
+            mask = series > p[0]
+            series[mask] = p[0] + p[1] * (series[mask] - p[0])
         else:
             raise ValueError("Not yet implemented yet")
-        return h
+        return series
 
     @property
     def _name(self) -> str:

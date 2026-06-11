@@ -13,7 +13,7 @@ from scipy.stats import norm
 
 from pastas.typing import ArrayLike
 
-from ..decorators import njit
+from ..decorators import deprecate_args_or_kwargs, njit
 
 try:
     from numba import prange
@@ -24,7 +24,7 @@ logger = getLogger(__name__)
 
 
 def acf(
-    x: Series,
+    series: Series | None = None,
     lags: ArrayLike = 365,
     bin_method: str = "regular",
     bin_width: float = 0.5,
@@ -33,12 +33,13 @@ def acf(
     full_output: bool = False,
     alpha: float = 0.05,
     fallback_bin_method: str = "gaussian",
+    **kwargs,
 ) -> Series | DataFrame:
     """Calculate the autocorrelation function for irregular time steps.
 
     Parameters
     ----------
-    x: pandas.Series
+    series: pandas.Series
         Pandas Series containing the values to calculate the cross-correlation on.
         The index has to be a Pandas.DatetimeIndex.
     lags: array_like, optional
@@ -86,16 +87,33 @@ def acf(
     For example, to estimate the autocorrelation for every second lag up to lags of
     one year:
 
-    >>> acf = ps.stats.acf(x, lags=np.arange(1.0, 366.0, 2.0))
+    >>> acf = ps.stats.acf(series, lags=np.arange(1.0, 366.0, 2.0))
 
     See Also
     --------
     pastas.stats.ccf
     statsmodels.api.tsa.acf
     """
+    if "x" in kwargs:
+        deprecate_args_or_kwargs(
+            name="x",
+            version="2.3.0",
+            reason="Please use `series` instead of `x`.",
+        )
+        if series is None:
+            series = kwargs.pop("x")
+        else:
+            kwargs.pop("x")
+
+    if kwargs:
+        raise TypeError(f"acf() got unexpected keyword argument '{next(iter(kwargs))}'")
+
+    if series is None:
+        raise TypeError("acf() missing required argument: 'series'")
+
     c = ccf(
-        x=x,
-        y=x,
+        series_x=series,
+        series_y=series,
         lags=lags,
         bin_method=bin_method,
         bin_width=bin_width,
@@ -116,8 +134,8 @@ def acf(
 
 
 def ccf(
-    x: Series,
-    y: Series,
+    series_x: Series | None = None,
+    series_y: Series | None = None,
     lags: ArrayLike = 365,
     bin_method: str = "regular",
     bin_width: float = 0.5,
@@ -126,12 +144,13 @@ def ccf(
     full_output: bool = False,
     alpha: float = 0.05,
     fallback_bin_method: str = "gaussian",
+    **kwargs,
 ) -> Series | DataFrame:
     """Compute the cross-correlation for irregular time series.
 
     Parameters
     ----------
-    x,y: pandas.Series
+    series_x, series_y: pandas.Series
         Pandas Series containing the values to calculate the cross-correlation on.
         The index has to be a Pandas.DatetimeIndex.
     lags: array_like, optional
@@ -167,7 +186,7 @@ def ccf(
 
     Examples
     --------
-    >>> ccf = ps.stats.ccf(x, y, bin_method="gaussian")
+    >>> ccf = ps.stats.ccf(series_x, series_y, bin_method="gaussian")
 
     Notes
     -----
@@ -183,10 +202,39 @@ def ccf(
     1 or below -1. If this occurs, a warning is raised.
 
     """
+    if "x" in kwargs:
+        deprecate_args_or_kwargs(
+            name="x",
+            version="2.3.0",
+            reason="Please use `series_x` instead of `x`.",
+        )
+        if series_x is None:
+            series_x = kwargs.pop("x")
+        else:
+            kwargs.pop("x")
+    if "y" in kwargs:
+        deprecate_args_or_kwargs(
+            name="y",
+            version="2.3.0",
+            reason="Please use `series_y` instead of `y`.",
+        )
+        if series_y is None:
+            series_y = kwargs.pop("y")
+        else:
+            kwargs.pop("y")
+
+    if kwargs:
+        raise TypeError(f"ccf() got unexpected keyword argument '{next(iter(kwargs))}'")
+
+    if series_x is None:
+        raise TypeError("ccf() missing required argument: 'series_x'")
+    if series_y is None:
+        raise TypeError("ccf() missing required argument: 'series_y'")
+
     # Check if the time series have regular time steps
     if (
-        not x.index.inferred_freq
-        and not y.index.inferred_freq
+        not series_x.index.inferred_freq
+        and not series_y.index.inferred_freq
         and bin_method == "regular"
     ):
         msg = (
@@ -197,8 +245,8 @@ def ccf(
         bin_method = fallback_bin_method
 
     # prepare the time indices for x and y
-    x, t_x, dt_x_mu = _preprocess(x, max_gap=max_gap)
-    y, t_y, dt_y_mu = _preprocess(y, max_gap=max_gap)
+    x, t_x, dt_x_mu = _preprocess(series_x, max_gap=max_gap)
+    y, t_y, dt_y_mu = _preprocess(series_y, max_gap=max_gap)
     dt_mu = max(dt_x_mu, dt_y_mu)  # The mean time step from both series
 
     if isinstance(lags, int) and bin_method == "regular":
@@ -248,16 +296,36 @@ def ccf(
         return result.ccf
 
 
-def _preprocess(x: Series, max_gap: float) -> tuple[ArrayLike, ArrayLike, float]:
+def _preprocess(
+    series: Series | None = None, max_gap: float = np.inf, **kwargs
+) -> tuple[ArrayLike, ArrayLike, float]:
     """Preprocess the time series."""
-    x_idx = x.index.to_series().diff().dropna().to_numpy(copy=True)
+    if "x" in kwargs:
+        deprecate_args_or_kwargs(
+            name="x",
+            version="2.3.0",
+            reason="Please use `series` instead of `x`.",
+        )
+        if series is None:
+            series = kwargs.pop("x")
+        else:
+            kwargs.pop("x")
+    if kwargs:
+        raise TypeError(
+            f"_preprocess() got unexpected keyword argument '{next(iter(kwargs))}'"
+        )
+    if series is None:
+        raise TypeError("_preprocess() missing required argument: 'series'")
+
+    x_idx = series.index.to_series().diff().dropna().to_numpy(copy=True)
+
     dt = x_idx / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
     dt_mu = max(dt_mu, 1)  # Prevent division by zero error
     t = dt.cumsum()
 
     # Normalize the values and create numpy arrays
-    x_vals = x.to_numpy(copy=True)  # pandas 3.0: ensure writeable array
+    x_vals = series.to_numpy(copy=True)  # pandas 3.0: ensure writeable array
     x = (x_vals - x_vals.mean()) / x_vals.std()
 
     return x, t, dt_mu
@@ -357,12 +425,17 @@ def _compute_ccf_regular(
     return c, b
 
 
-def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
+def mean(
+    series: Series | None = None,
+    weighted: bool = True,
+    max_gap: int = 30,
+    **kwargs,
+) -> ArrayLike:
     r"""Compute the (weighted) mean of a time series.
 
     Parameters
     ----------
-    x: pandas.Series
+    series: pandas.Series
         Series with the values and a DatetimeIndex as an index.
     weighted: bool, optional
         Weight the values by the normalized time step to account for irregular time
@@ -383,16 +456,38 @@ def mean(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     where :math:`w_i` are the weights, taken as the time step between observations,
     normalized by the sum of all time steps.
     """
-    w = _get_weights(x, weighted=weighted, max_gap=max_gap)
-    return np.average(x.to_numpy(), weights=w)
+    if "x" in kwargs:
+        deprecate_args_or_kwargs(
+            name="x",
+            version="2.3.0",
+            reason="Please use `series` instead of `x`.",
+        )
+        if series is None:
+            series = kwargs.pop("x")
+        else:
+            kwargs.pop("x")
+    if kwargs:
+        raise TypeError(
+            f"mean() got unexpected keyword argument '{next(iter(kwargs))}'"
+        )
+    if series is None:
+        raise TypeError("mean() missing required argument: 'series'")
+
+    w = _get_weights(series, weighted=weighted, max_gap=max_gap)
+    return np.average(series.to_numpy(), weights=w)
 
 
-def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
+def var(
+    series: Series | None = None,
+    weighted: bool = True,
+    max_gap: int = 30,
+    **kwargs,
+) -> ArrayLike:
     r"""Compute the (weighted) variance of a time series.
 
     Parameters
     ----------
-    x: pandas.Series
+    series: pandas.Series
         Series with the values and a DatetimeIndex as an index.
     weighted: bool, optional
         Weight the values by the normalized time step to account for irregular time
@@ -414,19 +509,39 @@ def var(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     normalized by the sum of all time steps. Note how weighted mean (:math:`\\bar{
     x}`) is used in this formula.
     """
-    w = _get_weights(x, weighted=weighted, max_gap=max_gap)
-    x = x.to_numpy(copy=True)
+    if "x" in kwargs:
+        deprecate_args_or_kwargs(
+            name="x",
+            version="2.3.0",
+            reason="Please use `series` instead of `x`.",
+        )
+        if series is None:
+            series = kwargs.pop("x")
+        else:
+            kwargs.pop("x")
+    if kwargs:
+        raise TypeError(f"var() got unexpected keyword argument '{next(iter(kwargs))}'")
+    if series is None:
+        raise TypeError("var() missing required argument: 'series'")
+
+    w = _get_weights(series, weighted=weighted, max_gap=max_gap)
+    x = series.to_numpy(copy=True)
     mu = np.average(x, weights=w)
     sigma = np.sum(x.size / (x.size - 1) * w * (x - mu) ** 2)
     return sigma
 
 
-def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
+def std(
+    series: Series | None = None,
+    weighted: bool = True,
+    max_gap: int = 30,
+    **kwargs,
+) -> ArrayLike:
     """Compute the (weighted) variance of a time series.
 
     Parameters
     ----------
-    x: pandas.Series
+    series: pandas.Series
         Series with the values and a DatetimeIndex as an index.
     weighted: bool, optional
         Weight the values by the normalized time step to account for irregular time
@@ -440,15 +555,30 @@ def std(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
     --------
     ps.stats.mean, ps.stats.var
     """
-    return np.sqrt(var(x, weighted=weighted, max_gap=max_gap))
+    if "x" in kwargs:
+        deprecate_args_or_kwargs(
+            name="x",
+            version="2.3.0",
+            reason="Please use `series` instead of `x`.",
+        )
+        if series is None:
+            series = kwargs.pop("x")
+        else:
+            kwargs.pop("x")
+    if kwargs:
+        raise TypeError(f"std() got unexpected keyword argument '{next(iter(kwargs))}'")
+    if series is None:
+        raise TypeError("std() missing required argument: 'series'")
+
+    return np.sqrt(var(series, weighted=weighted, max_gap=max_gap))
 
 
-def moment(x: Series, order: int) -> float:
+def moment(series: Series | None = None, order: int = 0, **kwargs) -> float:
     """Compute the raw moment of an impulse response array.
 
     Parameters
     ----------
-    x : Series
+    series : Series
         Impulse response values with a numeric index (float or int)
         representing time steps. A DatetimeIndex is not supported.
     order : int
@@ -459,24 +589,46 @@ def moment(x: Series, order: int) -> float:
     moment : float
         The computed raw moment of the impulse response.
     """
-    index = x.index
+    if "x" in kwargs:
+        deprecate_args_or_kwargs(
+            name="x",
+            version="2.3.0",
+            reason="Please use `series` instead of `x`.",
+        )
+        if series is None:
+            series = kwargs.pop("x")
+        else:
+            kwargs.pop("x")
+    if kwargs:
+        raise TypeError(
+            f"moment() got unexpected keyword argument '{next(iter(kwargs))}'"
+        )
+    if series is None:
+        raise TypeError("moment() missing required argument: 'series'")
+
+    index = series.index
     if isinstance(index, DatetimeIndex):
         raise TypeError(
             "The index of the series must be numeric (float or int) representing "
             "time steps, not a DatetimeIndex. Use a numeric index instead."
         )
-    return float(np.sum((index**order) * x.to_numpy(copy=True)))
+    return float(np.sum((index**order) * series.to_numpy(copy=True)))
 
 
 # Helper functions
 
 
-def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLike:
+def _get_weights(
+    series: Series | None = None,
+    weighted: bool = True,
+    max_gap: int = 30,
+    **kwargs,
+) -> ArrayLike:
     """Compute the weights as the time step between observations.
 
     Parameters
     ----------
-    x: pandas.Series
+    series: pandas.Series
         Series with the values and a DatetimeIndex as an index.
     weighted: bool, optional
         Weight the values by the normalized time step to account for irregular time
@@ -486,7 +638,24 @@ def _get_weights(x: Series, weighted: bool = True, max_gap: int = 30) -> ArrayLi
         All time steps larger than max_gap are replace with the mean weight. Default
         value is 30 days.
     """
-    x_index = x.index.to_numpy(copy=True)
+    if "x" in kwargs:
+        deprecate_args_or_kwargs(
+            name="x",
+            version="2.3.0",
+            reason="Please use `series` instead of `x`.",
+        )
+        if series is None:
+            series = kwargs.pop("x")
+        else:
+            kwargs.pop("x")
+    if kwargs:
+        raise TypeError(
+            f"_get_weights() got unexpected keyword argument '{next(iter(kwargs))}'"
+        )
+    if series is None:
+        raise TypeError("_get_weights() missing required argument: 'series'")
+
+    x_index = series.index.to_numpy(copy=True)
     if weighted:
         w = np.append(0.0, np.diff(x_index) / Timedelta("1D"))
         w[w > max_gap] = max_gap
