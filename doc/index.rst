@@ -101,6 +101,7 @@ you to cite the Pastas article published in Groundwater journal as follows:
 
     User Guide <userguide/index>
     Examples <examples/index>
+    Gallery <gallery/index>
     API Reference <api/index>
     Benchmarks <benchmarks/index>
     Development <developers/index>

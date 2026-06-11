@@ -34,6 +34,7 @@ extensions = [
     "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_design",
+    "sphinx_gallery.gen_gallery",
 ]
 
 # -- General configuration ------------------------------------------------------------
@@ -176,3 +177,12 @@ nb_execution_mode = "auto"
 nb_merge_streams = True
 myst_enable_extensions = ["dollarmath", "amsmath"]
 myst_dmath_double_inline = True
+
+# -- Sphinx Gallery options ----------------------------------------------------------
+
+sphinx_gallery_conf = {
+    "examples_dirs": "../examples",  # path to your example scripts
+    "gallery_dirs": "gallery",  # path to where to save gallery generated output
+    "write_computation_times": True,  # write computation times to file
+    "notebook_extensions": {".py", ".ipynb"},
+}
