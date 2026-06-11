@@ -8,7 +8,7 @@
 [![image](https://img.shields.io/pypi/dm/pastas)](https://pypi.org/project/pastas/)
 [![image](https://zenodo.org/badge/DOI/10.5281/zenodo.1465866.svg)](https://doi.org/10.5281/zenodo.1465866)
 
-[![image](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/pastas/{02bcb92e1d487ffc9143752296b8db72}/raw/coverage.json&color=green)](https://github.com/pastas/pastas/actions/workflows/test_unit_pytest.yml)
+[![image](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/raoulcollenteur/02bcb92e1d487ffc9143752296b8db72/raw/coverage.json&color=green)](https://github.com/pastas/pastas/actions/workflows/test_unit_pytest.yml)
 [![image](https://readthedocs.org/projects/pastas/badge/?version=stable)](https://pastas.readthedocs.io/)
 [<img src="https://github.com/codespaces/badge.svg" height="20">](https://codespaces.new/pastas/pastas?quickstart=1)
 [![image](https://github.com/pastas/pastas/actions/workflows/test_unit_pytest.yml/badge.svg?branch=master)](https://github.com/pastas/pastas/actions/workflows/test_unit_pytest.yml)
