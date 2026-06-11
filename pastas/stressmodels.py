@@ -2255,10 +2255,8 @@ class RechargeModel(StressModelBase):
         else:
             rfunc = self.rfunc.block
 
-        if isinstance(self.recharge, Linear):
-            if istress is None:
-                istress = list(range(len(self.stresses)))
-            else:
+        if isinstance(self.recharge, Linear) and istress is not None:
+            if not isinstance(istress, list):
                 istress = [istress]
 
             responses = []

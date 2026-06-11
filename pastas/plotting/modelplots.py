@@ -410,6 +410,8 @@ class Plotting:
         )
         # responses = [x for x in responses if x is not None]
         if responses is not None:
+            if not isinstance(responses, DataFrame):
+                responses = DataFrame(responses)
             # Keep the first cycle color for a single response, but reserve it
             # when plotting multiple responses.
             if responses.columns.size > 1:

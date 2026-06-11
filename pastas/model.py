@@ -1808,12 +1808,6 @@ class Model:
         """
         sm = self.stressmodels[name]
 
-        # Get parameters
-        # if istress is None:
-        #     p = sm.get_parameters(model=self)
-        # else:
-        #     p = sm.get_parameters(model=self, istress=istress)
-
         p = self.get_parameters(name=name)
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
@@ -1821,22 +1815,22 @@ class Model:
             block_or_step=block_or_step, p=p, dt=dt, istress=istress, *kwargs
         )
 
-        # if add_0:
-        #     if isinstance(dt, np.ndarray):
-        #         t = dt
-        #     else:
-        #         t = np.linspace(0, response.size * dt, response.size + 1)
-        #     response = np.insert(response, 0, 0.0)
-        # else:
-        #     if isinstance(dt, np.ndarray):
-        #         t = dt
-        #     else:
-        #         t = np.linspace(dt, response.size * dt, response.size)
+        if add_0:
+            if isinstance(dt, np.ndarray):
+                t = dt
+            else:
+                t = np.linspace(0, response.size * dt, response.index.size + 1)
+            response.loc[0] = 0.0
+        else:
+            if isinstance(dt, np.ndarray):
+                t = dt
+            else:
+                t = np.linspace(dt, response.size * dt, response.index.size)
 
-        # response = Series(response, index=t, name=name)
-        # response.index.name = "Time [days]"
+        response.index = t
+        response.index.name = "Time [days]"
 
-        return response
+        return response.squeeze()
 
     @get_stressmodel
     def get_block_response(
@@ -1845,6 +1839,7 @@ class Model:
         p: ArrayLike | None = None,
         add_0: bool = False,
         dt: float | None = None,
+        istress=None,
         **kwargs,
     ) -> Series | None:
         """Obtain the block response for a stressmodel.
@@ -1872,7 +1867,13 @@ class Model:
             frequency that is present in the model.settings.
         """
         return self._get_response(
-            block_or_step="block", name=name, dt=dt, p=p, add_0=add_0, **kwargs
+            block_or_step="block",
+            name=name,
+            dt=dt,
+            p=p,
+            add_0=add_0,
+            istress=istress,
+            **kwargs,
         )
 
     @get_stressmodel
@@ -1882,6 +1883,7 @@ class Model:
         p: ArrayLike | None = None,
         add_0: bool = False,
         dt: float | None = None,
+        istress=None,
         **kwargs,
     ) -> Series | None:
         """Obtain the step response for a stressmodel.
@@ -1909,7 +1911,13 @@ class Model:
             that is present in the model.settings.
         """
         return self._get_response(
-            block_or_step="step", name=name, dt=dt, p=p, add_0=add_0, **kwargs
+            block_or_step="step",
+            name=name,
+            dt=dt,
+            p=p,
+            add_0=add_0,
+            istress=istress,
+            **kwargs,
         )
 
     @get_stressmodel
