@@ -47,6 +47,7 @@ jobs:
             toxenv: all
             experimental: false
     env:
+      BADGE_GIST_COVERAGE_TOKEN: ${{ secrets.BADGE_GIST_COVERAGE_TOKEN }}
       CI_PASFILES: "0" # do not generate pas files for these tests
       # Color Output
       # Rich (pip)
@@ -75,10 +76,27 @@ jobs:
       - name: Test
         run: uv run tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
-      - name: Run codacy-coverage-reporter
-        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' &&
-          success() }}
-        uses: codacy/codacy-coverage-reporter-action@master
+      - name: Export Coverage Percent
+        if: matrix.toxenv == 'all'
+        id: coverage
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = json.loads(Path("coverage.json").read_text())
+          coverage = data["totals"]["percent_covered_display"]
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as fh:
+              fh.write(f"coverage={coverage}\n")
+          PY
+
+      - name: Update Coverage Badge
+        if: matrix.toxenv == 'all' && github.event_name == 'push' && env.BADGE_GIST_COVERAGE_TOKEN != ''
+        uses: Schneegans/dynamic-badges-action@v1.7.0
         with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          coverage-reports: coverage.xml
+          auth: ${{ env.BADGE_GIST_COVERAGE_TOKEN }}
+          gistID: "{02bcb92e1d487ffc9143752296b8db72}"
+          filename: coverage.json
+          label: coverage
+          message: ${{ steps.coverage.outputs.coverage }}%
