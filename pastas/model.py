@@ -1837,11 +1837,12 @@ class Model:
         )
 
         if add_0:
+            response.loc[0] = 0.0
+
             if isinstance(dt, np.ndarray):
                 t = dt
             else:
-                t = np.linspace(0, response.size * dt, response.index.size + 1)
-            response.loc[0] = 0.0
+                t = np.linspace(0, response.size * dt, response.index.size)
         else:
             if isinstance(dt, np.ndarray):
                 t = dt
