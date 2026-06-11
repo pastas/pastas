@@ -398,7 +398,7 @@ def generate(series: pd.Series, output_dir: Path) -> None:
             "gw_uptake": {"gw_uptake": True},
         },
     }
-    recharge_names = ["Linear", "FlexModel", "Berendrecht", "Peterson", "Ireson"]
+    recharge_names = ["Linear", "FlexModel", "Berendrecht", "Peterson"]
     stresses = {"prec": series, "evap": series, "temp": series}
     for recharge in recharge_names:
         for kwargs in recharge_variants.get(recharge, {"default": {}}).values():
