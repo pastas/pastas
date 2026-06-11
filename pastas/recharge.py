@@ -933,7 +933,7 @@ class Peterson(RechargeBase):
 
 
 class Ireson(RechargeBase):
-    """Simple conventional recharge model.
+    """Nonlinear recharge model with soil moisture deficit approach.
 
     Calculated according to the simple recharge model evaluated in
     :cite:t:`ireson_nonlinear_2013`. This approach is similar to
