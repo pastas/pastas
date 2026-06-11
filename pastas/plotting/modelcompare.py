@@ -624,13 +624,7 @@ class CompareModels:
                     if response == "step":
                         kwargs = {}
                         p = None
-                        if ml.stressmodels[smn].rfunc is not None:
-                            if isinstance(ml.stressmodels[smn], WellModel):
-                                kwargs = {"warn": False}
-                                p = ml.stressmodels[smn].get_parameters(
-                                    model=ml, istress=0
-                                )
-                        step = ml.get_step_response(smn, p=p, add_0=True, **kwargs)
+                        step = ml.get_step_response(name=smn, add_0=True, **kwargs)
                         if step is None:
                             continue
                         if self.axes is None:

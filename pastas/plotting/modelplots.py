@@ -408,7 +408,6 @@ class Plotting:
         responses = self.ml._get_response(
             block_or_step=block_or_step, name=sm.name, istress=istress
         )
-        print(responses)
         # responses = [x for x in responses if x is not None]
         if responses is not None:
             # Keep the first cycle color for a single response, but reserve it

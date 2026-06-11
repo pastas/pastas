@@ -44,7 +44,7 @@ from .decorators import (
 )
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
-from .timeseries import TimeSeries, _get_dt
+from .timeseries import TimeSeries
 from .utils import validate_name
 
 try:
@@ -363,35 +363,25 @@ class StressModelBase(ABC):
             parameters. See Model.get_parameters() for more info if parameters is None.
         dt: float, optional
             timestep for the response function.
-        add_0: bool, optional
-            Add a zero at t=0.
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword can be
             used to obtain the response to an individual stress.
         kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         """
-        if istress is None:
-            istress = list(range(len(self.stresses)))
-            responses = []
-            for i in istress:
-                s = super()._get_responses(p=p, block_or_step=block_or_step, istress=i)[
-                    0
-                ]
-                s.name = self.stresses[i].name
-                responses.append(s)
-            return responses
+        if block_or_step == "step":
+            rfunc = self.rfunc.step
         else:
-            block_or_step = getattr(self.rfunc, block_or_step)
+            rfunc = self.rfunc.block
 
-            dt = _get_dt(self.settings["freq"]) if dt is None else dt
+        if istress is None:
+            istress = 0
 
-            if block_or_step == "step":
-                response = self.rfunc.step(p, dt, **kwargs)
-            elif block_or_step == "block":
-                response = self.rfunc.block(p, dt, **kwargs)
+        response = rfunc(p=p, dt=dt, **kwargs)
 
-            return response
+        # Make a DataFrame
+        responses = DataFrame(data=response, columns=[self.stress.name])
+        return responses
 
     def to_dict(self, series: bool = False) -> dict[str, Any]:
         """Export the stress model to a dictionary.
@@ -644,6 +634,29 @@ class StressModel(StressModelBase):
             dtype=np.asarray(p).dtype,
         )
         return h
+
+    def _get_responses(
+        self,
+        p,
+        dt,
+        block_or_step: Literal["block", "step"] = "step",
+        istress: int | None = None,
+        **kwargs,
+    ) -> list[Series]:
+
+        if block_or_step == "step":
+            rfunc = self.rfunc.step
+        else:
+            rfunc = self.rfunc.block
+
+        if istress is None:
+            istress = 0
+
+        response = rfunc(p=p, dt=dt, **kwargs)
+
+        # Make a DataFrame
+        responses = DataFrame(data=response, columns=[self.stress.name])
+        return responses
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
@@ -922,6 +935,11 @@ class LinearTrend(StressModelBase):
         trend = trend.cumsum() * p[0]
         return trend.rename(self.name)
 
+    def _get_responses(
+        self, block_or_step="step", p=None, dt=None, istress=None, **kwargs
+    ):
+        return None
+
     def to_dict(self, series: bool = False) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
 
@@ -988,6 +1006,11 @@ class Constant(StressModelBase):
     def simulate(p: float | None = None) -> float:
         """Simulate the stressmodel's contribution."""
         return p
+
+    def _get_responses(
+        self, block_or_step="step", p=None, dt=None, istress=None, **kwargs
+    ):
+        return None
 
     def to_dict(self, series: bool = False) -> dict:
         """Export the stressmodel to a dictionary.
@@ -1540,28 +1563,41 @@ class WellModel(StressModelBase):
 
     def _get_responses(
         self,
-        ml: Model,
+        p,
+        dt,
         block_or_step: Literal["block", "step"] = "step",
         istress: int | None = None,
+        **kwargs,
     ) -> list[Series]:
-        distances = self.get_distances(istress=istress).values
-        if distances.size > 1:
-            p_with_r = np.concatenate(
-                [np.tile(p, (distances.size, 1)), distances[:, np.newaxis]], axis=1
-            )
+
+        if block_or_step == "step":
+            rfunc = self.rfunc.step
         else:
-            p_with_r = np.r_[p, distances]
-        p = np.asarray(p_with_r, dtype=float)
+            rfunc = self.rfunc.block
 
         if istress is None:
             istress = list(range(len(self.stresses)))
         else:
             istress = [istress]
+
+        distances = self.get_distances(istress=istress).values
+        p_with_r = np.concatenate(
+            [np.tile(p, (distances.size, 1)), distances[:, np.newaxis]],
+            axis=1,
+            dtype=float,
+        )
+
+        p = np.asarray(p_with_r, dtype=float)
+
         responses = []
-        for i in istress:
-            s = super()._get_responses(ml=ml, block_or_step=block_or_step, istress=i)[0]
-            s.name = self.stresses[i].name
-            responses.append(s)
+        names = []
+        for ip, i in enumerate(istress):
+            response = rfunc(p=p[ip], dt=dt, **kwargs)
+            print(response.shape)
+            names.append(self.stresses[i].name)
+            responses.append(response)
+
+        responses = DataFrame(data=responses, index=names).T
         return responses
 
     def dump_stress(self, series: bool = True) -> list:
@@ -2243,11 +2279,7 @@ class RechargeModel(StressModelBase):
             responses = [rfunc(p=p[: self.rfunc.nparam], dt=dt)]
             names = [self.name]
 
-        responses = DataFrame(
-            data=responses,
-            # index=np.linspace(0, responses[0].size * dt, responses[0].size + 1),
-            # columns=names,
-        ).T
+        responses = DataFrame(data=responses, index=names).T
         return responses
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
