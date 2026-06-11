@@ -1833,8 +1833,10 @@ class Model:
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
         response = sm._get_responses(
-            block_or_step=block_or_step, p=p, dt=dt, istress=istress, *kwargs
+            block_or_step=block_or_step, p=p, dt=dt, istress=istress, **kwargs
         )
+        if response is None:
+            return None
 
         if add_0:
             response.loc[0] = 0.0
@@ -1851,8 +1853,7 @@ class Model:
 
         response.index = t
         response.index.name = "Time [days]"
-
-        return response.squeeze()
+        return response.squeeze(axis=1)
 
     @get_stressmodel
     def get_block_response(

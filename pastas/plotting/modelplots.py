@@ -408,10 +408,10 @@ class Plotting:
         responses = self.ml._get_response(
             block_or_step=block_or_step, name=sm.name, istress=istress
         )
-        # responses = [x for x in responses if x is not None]
+
         if responses is not None:
             if not isinstance(responses, DataFrame):
-                responses = DataFrame(responses)
+                responses = responses.to_frame()
             # Keep the first cycle color for a single response, but reserve it
             # when plotting multiple responses.
             if responses.columns.size > 1:

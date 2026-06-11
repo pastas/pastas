@@ -784,6 +784,16 @@ class StepModel(StressModelBase):
         )
         return h
 
+    def _get_responses(
+        self, block_or_step="step", p=None, dt=None, istress=None, **kwargs
+    ):
+        rfunc = self.rfunc.step if block_or_step == "step" else self.rfunc.block
+
+        response = rfunc(p=p[:-1], dt=dt, **kwargs)
+        response = DataFrame(data=response, columns=[self.name])
+
+        return response
+
     def to_dict(self, series: bool = False) -> dict:
         """Export the stressmodel to a dictionary.
 
