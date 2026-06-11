@@ -206,3 +206,65 @@ def test_njit_peterson_recharge(prec: Series, evap: Series) -> None:
     )
     # Check that the final state is reasonable (not NaN or inf)
     assert isclose(s[-1], s[-1])  # Quick way to check for NaN
+
+
+# Ireson tests
+def test_ireson(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
+    rm = ps.RechargeModel(prec=prec, evap=evap, recharge=ps.rch.Ireson())
+    ml_basic.add_stressmodel(rm)
+    ml_basic.simulate()
+
+
+def test_ireson_water_balance(prec: Series, evap: Series) -> None:
+    """Test the water balance for the Ireson recharge model."""
+    rch = ps.rch.Ireson()
+    p = prec.to_numpy()
+    e = evap.to_numpy()
+    # Use default parameters: rc=500, pwp=1000, bf=0.05, th=0.0
+    r, smda, smdp, ea, b, _ = rch.get_recharge(
+        p, e, rc=500.0, pwp=1000.0, bf=0.05, th=0.0
+    )
+    # Compute final SMDa state from the last step
+    # The returned smda array has states smda[0] to smda[n-1]
+    # We need smda[n] (final state after last time step)
+    if smdp[-1].real < 0.0:
+        smda_final = 0.0
+    else:
+        smda_final = smda[-1] - (p[-1] - b[-1]) + ea[-1]
+    # Water balance: sum(P) - sum(R) - sum(Ea) = SMDa[0] - SMDa_final
+    error = (p - r - ea).sum() - (smda[0] - smda_final)
+    assert isclose(error, 0, atol=1e-3)
+
+
+def test_njit_ireson_recharge(prec: Series, evap: Series) -> None:
+    """Test the raw njit function for Ireson recharge calculation."""
+    p = prec.to_numpy()
+    e = evap.to_numpy()
+
+    # Test with default parameters
+    r, smda, smdp, ea, b, d = ps.rch.Ireson.get_recharge.py_func(
+        prec=p, evap=e, rc=500.0, pwp=1000.0, bf=0.05, th=0.0
+    )
+    # Check that the final state is reasonable (not NaN or inf)
+    assert isclose(smda[-1], smda[-1])
+    # Compute final SMDa state from the last step
+    if smdp[-1].real < 0.0:
+        smda_final = 0.0
+    else:
+        smda_final = smda[-1] - (p[-1] - b[-1]) + ea[-1]
+    # Check water balance
+    error = (p - r - ea).sum() - (smda[0] - smda_final)
+    assert isclose(error, 0, atol=1e-3)
+
+    # Test with custom parameters
+    r, smda, smdp, ea, b, d = ps.rch.Ireson.get_recharge(
+        prec=p, evap=e, rc=300.0, pwp=800.0, bf=0.1, th=5.0
+    )
+    assert isclose(smda[-1], smda[-1])
+    # Compute final SMDa state from the last step
+    if smdp[-1].real < 0.0:
+        smda_final = 0.0
+    else:
+        smda_final = smda[-1] - (p[-1] - b[-1]) + ea[-1]
+    error = (p - r - ea).sum() - (smda[0] - smda_final)
+    assert isclose(error, 0, atol=1e-3)
