@@ -374,7 +374,7 @@ class StressModelBase(ABC):
         else:
             rfunc = self.rfunc.block
 
-        if istress is None:
+        if istress is None or istress == "all":
             istress = 0
 
         response = rfunc(p=p, dt=dt, **kwargs)
@@ -649,7 +649,7 @@ class StressModel(StressModelBase):
         else:
             rfunc = self.rfunc.block
 
-        if istress is None:
+        if istress is None or istress == "all":
             istress = 0
 
         response = rfunc(p=p, dt=dt, **kwargs)
@@ -1585,7 +1585,7 @@ class WellModel(StressModelBase):
         else:
             rfunc = self.rfunc.block
 
-        if istress is None:
+        if istress is None or istress == "all":
             istress = list(range(len(self.stresses)))
         else:
             istress = [istress]
@@ -2265,7 +2265,9 @@ class RechargeModel(StressModelBase):
             rfunc = self.rfunc.block
 
         if isinstance(self.recharge, Linear) and istress is not None:
-            if not isinstance(istress, list):
+            if istress == "all":
+                istress = list(range(len(self.stresses)))
+            elif not isinstance(istress, list):
                 istress = [istress]
 
             responses = []
@@ -2555,10 +2557,10 @@ class TarsoModel(RechargeModel):
 
         responses = DataFrame(
             data=[response0, response1],
-            index=[f"{self.name}_rf0", f"{self.name}_rf0"],
+            index=[f"{self.name}_rf0", f"{self.name}_rf1"],
         ).T
 
-        if istress is None:
+        if istress is None or istress == "all":
             return responses
         else:
             return responses.iloc[:, istress].squeeze()
@@ -2830,13 +2832,12 @@ class ChangeModel(StressModelBase):
         responses = DataFrame(
             data=[response0, response1],
             index=np.linspace(0, response0.size * dt, response0.size + 1),
-            names=[f"{self.name}_rf0", f"{self.name}_rf0"],
+            names=[f"{self.name}_rf0", f"{self.name}_rf1"],
         )
-
-        if istress is None:
+        if istress is None or istress == "all":
             return responses
         else:
-            return responses.iloc[:, istress].squeeze()
+            return responses.iloc[:, istress]
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.

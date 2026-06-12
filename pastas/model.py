@@ -1799,7 +1799,7 @@ class Model:
         p: ArrayLike | None = None,
         dt: float | None = None,
         add_0: bool = False,
-        istress: int | None = None,
+        istress: int | None | Literal["all"] = None,
         **kwargs,
     ) -> Series | None:
         """Compute the block and step response.
@@ -1819,7 +1819,7 @@ class Model:
             Add a zero at t=0.
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword can be
-            used to obtain the response to an individual stress.
+            used to obtain the response to an individual stress (an int for response to the n-th stress in sm.stresses) or all stresses ("all"). If None, the default for the stressmodel is returned, which is stressmodel dependent.
         kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns

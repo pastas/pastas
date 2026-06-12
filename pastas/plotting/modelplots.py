@@ -341,7 +341,9 @@ class Plotting:
                 block_or_step=block_or_step,
                 ax=axd[rf_key],
                 istress=(
-                    istress if split_contributions else (None if all_responses else 0)
+                    istress
+                    if split_contributions
+                    else ("all" if all_responses else None)
                 ),
             )
 
@@ -431,7 +433,7 @@ class Plotting:
                 if responses.columns.size == 1:
                     label = f"{block_or_step.capitalize()} response"
                 else:
-                    label = response.name
+                    label = name
                 ax.plot(
                     response.index,
                     response.values,
@@ -785,6 +787,7 @@ class Plotting:
         stressmodels: list[str] | None = None,
         ax: Axes | None = None,
         legend: bool = True,
+        all_responses: bool = True,
         **kwargs,
     ) -> Axes:
         """Plot the block response for a specific stressmodels.
@@ -799,6 +802,8 @@ class Plotting:
             Tuple with the height and width of the figure in inches.
         legend: bool, optional
             Boolean to determine to show the legend. Default is True.
+        all_responses: bool, optional
+            Optional to show all the step responses from the stressmodel(s)
 
         Returns
         -------
@@ -815,9 +820,11 @@ class Plotting:
 
         legend = []
 
+        istress = "all" if all_responses else None
+
         for name in stressmodels:
             if hasattr(self.ml.stressmodels[name], "rfunc"):
-                self.ml.get_block_response(name).plot(ax=ax)
+                self.ml.get_block_response(name, istress=istress).plot(ax=ax)
                 legend.append(name)
             else:
                 logger.warning("Stressmodel %s not in stressmodels list.", name)
@@ -834,6 +841,7 @@ class Plotting:
         ax: Axes | None = None,
         figsize: tuple[float, float] | None = None,
         legend: bool = True,
+        all_responses: bool = True,
         **kwargs,
     ) -> Axes:
         """Plot the step response for a specific stressmodels.
@@ -848,6 +856,8 @@ class Plotting:
             Tuple with the height and width of the figure in inches.
         legend: bool, optional
             Boolean to determine to show the legend. Default is True.
+        all_responses: bool, optional
+            Optional to show all the step responses from the stressmodel(s).
 
         Returns
         -------
@@ -862,9 +872,11 @@ class Plotting:
 
         legend = []
 
+        istress = "all" if all_responses else None
+
         for name in stressmodels:
             if hasattr(self.ml.stressmodels[name], "rfunc"):
-                self.ml.get_step_response(name).plot(ax=ax)
+                self.ml.get_step_response(name, istress=istress).plot(ax=ax)
                 legend.append(name)
             else:
                 logger.warning("Stressmodel %s not in stressmodels list.", name)
