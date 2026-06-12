@@ -133,7 +133,7 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         split_contributions: bool = False,
-        all_responses: bool = False,
+        all_responses: bool | None = None,
         adjust_height: bool = True,
         return_warmup: bool = False,
         add_ylabels: bool = False,
@@ -157,9 +157,10 @@ class Plotting:
         split_contributions: bool, optional
             Split the contributions in multiple stresses when possible. Default is
             False.
-        all_responses: bool, optional
+        all_responses: bool | None, optional
             Plot all responses if True. If False, only the first response per
-            contribution is plotted. Default is False.
+            contribution is plotted. Default is None, which means the behavior
+            is determined by the individual stress model defaults.
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all the
             subplots on the left is equal. Default is True.
@@ -1099,23 +1100,18 @@ class Plotting:
                 elif not isinstance(stackcolors, dict):
                     raise TypeError("stackcolors must be None, list, or dict.")
                 if sm.nsplit > 1:
-                    axd[f"rf_{sm_name}"].lines[
-                        0
-                    ].remove()  # remove step response for r=1 m
                     for istress in range(len(sm.stresses)):
                         h = self.ml.get_contribution(
                             sm_name, istress=istress, tmin=tmin, tmax=tmax
                         )
-                        name = sm.stresses[istress].name
-                        name = sm if name is None else name
+                        name = (
+                            sm if (name := sm.stresses[istress].name) is None else name
+                        )
                         contributions[name] = h
 
-                        # plot step responses for each well, scaled with distance
-                        step = self.ml.get_step_response(sm_name, istress=istress)
-                        axd[f"rf_{sm_name}"].plot(
-                            step.index, step, c=stackcolors[name], label=name
-                        )
-                        axd[f"rf_{sm_name}"].relim()
+                        axd[f"rf_{sm_name}"].lines[istress].set_color(
+                            stackcolors[name]
+                        )  # change color of existing line
                 else:
                     contributions[sm_name] = self.ml.get_contribution(
                         sm_name, tmin=tmin, tmax=tmax
