@@ -966,8 +966,8 @@ class Ireson(RechargeBase):
         """Get initial parameters and bounds for the Ireson recharge model."""
         parameters = DataFrame(
             [
-                (500.0, 10.0, 2000.0, True, name),  # rc: root constant
-                (1000.0, 20.0, 4000.0, True, name),  # pwp: permanent wilting point
+                (500.0, 300.0, 920.0, True, name),  # rc: root constant
+                (1500.0, 20.0, 4000.0, True, name),  # pwp: permanent wilting point
                 (0.0, 0.0, 0.3, False, name),  # bf: bypass fraction
                 (0.0, 0.0, 30.0, False, name),  # th: bypass threshold
             ],
