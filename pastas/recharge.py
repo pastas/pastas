@@ -939,7 +939,6 @@ class Ireson(RechargeBase):
     :cite:t:`ireson_nonlinear_2013`. This approach is similar to
     conventional approaches for modelling recharge to Chalk aquifers.
 
-
     Notes
     -----
     The water balance tracks the actual soil moisture deficit (SMDa).
@@ -951,6 +950,10 @@ class Ireson(RechargeBase):
 
     Drainage (D) occurs when SMDp is negative. Recharge (R) is the sum
     of drainage and bypass flow: R = D + B
+
+    The parameter `apwp` represents the difference between the permanent
+    wilting point and the root constant. The actual permanent wilting point
+    is calculated as `rc + apwp`.
 
     """
 
@@ -966,18 +969,13 @@ class Ireson(RechargeBase):
         """Get initial parameters and bounds for the Ireson recharge model."""
         parameters = DataFrame(
             [
-                (500.0, 300.0, 920.0, True, name),  # rc: root constant
-                (1500.0, 20.0, 4000.0, True, name),  # pwp: permanent wilting point
-                (0.0, 0.0, 0.3, False, name),  # bf: bypass fraction
+                (500.0, 10.0, 2000.0, True, name),  # rc: root constant
+                (1500.0, 10.0, 2000.0, False, name),  # apwp: additive PWP (PWP - RC)
+                (0.0, 0.0, 0.15, False, name),  # bf: bypass fraction
                 (0.0, 0.0, 30.0, False, name),  # th: bypass threshold
             ],
             columns=["initial", "pmin", "pmax", "vary", "name"],
-            index=[
-                name + "_rc",
-                name + "_pwp",
-                name + "_bf",
-                name + "_th",
-            ],
+            index=[name + "_rc", name + "_apwp", name + "_bf", name + "_th"],
         )
         return parameters
 
@@ -1000,7 +998,7 @@ class Ireson(RechargeBase):
             Potential evapotranspiration flux in mm/d.
         p: array_like
             array_like object with the values as floats representing the model
-            parameters.
+            parameters. Note p[1] is the difference between PWP and RC.
         dt: float, optional
             time step for the calculation of the recharge. Only dt=1 is possible now.
         return_full: bool
@@ -1012,8 +1010,11 @@ class Ireson(RechargeBase):
             Recharge flux calculated by the model if the argument full_output is
             False, otherwise a tuple with all fluxes and states.
         """
+        rc = p[0]  # Get the root constant parameter
+        apwp = p[1]  # Get the additive PWP parameter
+        pwp = rc + apwp  # Calculate actual PWP
         r, smda, smdp, ea, b, d = self.get_recharge(
-            prec, evap, rc=p[0], pwp=p[1], bf=p[2], th=p[3], dt=dt
+            prec, evap, rc=rc, pwp=pwp, bf=p[2], th=p[3], dt=dt
         )
         if return_full:
             # Strip imaginary part when not doing complex-step Jacobian
