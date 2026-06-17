@@ -225,9 +225,9 @@ class FlexModel(RechargeBase):
         """Get initial parameters and bounds for the FlexModel recharge model."""
         parameters = DataFrame(
             [
-                (250.0, 10, 1e3, True, name),  # srmax
+                (250.0, 10.0, 1e3, True, name),  # srmax
                 (0.25, 1e-5, 1.0, False, name),  # lp
-                (100.0, 1, 1e4, True, name),  # ks
+                (100.0, 1.0, 1e4, True, name),  # ks
                 (2.0, 1e-5, 5.0, True, name),  # gamma
                 (1.0, 0.5, 1.5, True, name),  # kv
             ],
