@@ -55,10 +55,11 @@ formatting = ["pastas[ruffing]"]
 linting = ["pastas[ruffing]"]
 caching = ["cachetools"]
 codespelling = ["codespell[toml]"]
-full = ["pastas[solvers,interactive,datasets,caching]"]
+mpmath = ["mpmath"]
+full = ["pastas[solvers,interactive,datasets,caching,mpmath]"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
-    "pastas[pytesting,solvers,interactive,caching]",
+    "pastas[pytesting,solvers,interactive,caching,mpmath]",
     "jupyter",
     "coverage",
     "corner",
@@ -87,9 +88,18 @@ version = { attr = "pastas.version.__version__" }
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
-lint.extend-select = ["I"]
 show-fixes = true
 fix = true
+
+[tool.ruff.lint]
+extend-select = ["I", "D"]
+pydocstyle.convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D"]
+"doc/**/*.ipynb" = ["D"]
+"doc/**/*.py" = ["D"]
+
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
@@ -122,7 +132,7 @@ commands = [
 ]
 
 [tool.tox.env.all]
-description = "run all unit tests (including Notebooks) and obtain coverage"
+description = "run all unit tests and notebooks"
 extras = ["ci"]
 commands = [
     [
@@ -136,7 +146,7 @@ commands = [
     ],
     [
         "coverage",
-        "xml",
+        "json",
     ],
 ]
 

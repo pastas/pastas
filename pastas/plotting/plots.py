@@ -1,4 +1,4 @@
-"""This module contains plotting methods for Pastas."""
+"""Module containing plotting methods for Pastas."""
 
 import logging
 
@@ -8,7 +8,7 @@ import numpy as np
 from pandas import DataFrame, Series, Timestamp, concat
 from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 from pastas.plotting.modelcompare import CompareModels
 from pastas.plotting.plotutil import plot_series_with_gaps, share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
@@ -75,7 +75,7 @@ def compare(
 
 
 def series(
-    head: Series | None = None,
+    oseries: Series | None = None,
     stresses: list[Series] | None = None,
     hist: bool = True,
     kde: bool = False,
@@ -92,7 +92,7 @@ def series(
 
     Parameters
     ----------
-    head: pd.Series
+    oseries: pd.Series
         Pandas time series with DatetimeIndex.
     stresses: list of pd.Series
         List with Pandas time series with DatetimeIndex.
@@ -124,11 +124,22 @@ def series(
     -------
     matplotlib.Axes
     """
+    if "head" in kwargs:
+        deprecate_args_or_kwargs(
+            name="head",
+            version="2.3.0",
+            reason="Please use `oseries` instead of `head`.",
+        )
+        if oseries is None:
+            oseries = kwargs.pop("head")
+        else:
+            kwargs.pop("head")
+
     nrows = 0
-    if head is not None:
+    if oseries is not None:
         nrows += 1
-        tmin = head.index[0] if tmin is None else tmin
-        tmax = head.index[-1] if tmax is None else tmax
+        tmin = oseries.index[0] if tmin is None else tmin
+        tmax = oseries.index[-1] if tmax is None else tmax
     if stresses is not None:
         nrows += len(stresses)
     if colors_stresses is None:
@@ -163,48 +174,48 @@ def series(
         axes[-1, 1].set_xlabel("Frequency [%]")
     if kde:
         axes[-1, 1].set_xlabel("Density [-]")
-    if head is not None:
-        head = head.loc[tmin:tmax].dropna()
-        head.plot(
+    if oseries is not None:
+        oseries = oseries.loc[tmin:tmax].dropna()
+        oseries.plot(
             ax=axes[0, 0], marker=".", linestyle=" ", color="k", xlabel="", **kwargs
         )
         if titles:
-            axes[0, 0].set_title(head.name)
+            axes[0, 0].set_title(oseries.name)
         if labels is not None:
             axes[0, 0].set_ylabel(labels[0])
         if hist:
-            weights = None if kde else np.ones(len(head)) / len(head) * 100
-            head.hist(
+            weights = None if kde else np.ones(len(oseries)) / len(oseries) * 100
+            oseries.hist(
                 ax=axes[0, 1],
                 orientation="horizontal",
                 color="k",
                 weights=weights,
-                bins=int(np.ceil(1 + np.log2(len(head)))),
+                bins=int(np.ceil(1 + np.log2(len(oseries)))),
                 grid=False,
                 density=kde,
             )
         if kde:
-            gkde = gaussian_kde(head, bw_method="scott")
-            sample_range = np.max(head) - np.min(head)
+            gkde = gaussian_kde(oseries, bw_method="scott")
+            sample_range = np.max(oseries) - np.min(oseries)
             ind = np.linspace(
-                np.min(head) - 0.1 * sample_range,
-                np.max(head) + 0.1 * sample_range,
+                np.min(oseries) - 0.1 * sample_range,
+                np.max(oseries) + 0.1 * sample_range,
                 1000,
             )
             color = "darkgrey" if hist else "k"
             axes[0, 1].plot(gkde.evaluate(ind), ind, color=color)
         if table:
             # stats table
-            head_stats = [
-                ["Count", f"{head.count():0.0f}"],
-                ["Mean", f"{head.mean():0.2f}"],
-                ["Max", f"{head.max():0.2f}"],
-                ["Min", f"{head.min():0.2f}"],
-                ["Skew", f"{head.skew():0.2f}"],
-                ["Kurtosis", f"{head.kurtosis():0.2f}"],
+            oseries_stats = [
+                ["Count", f"{oseries.count():0.0f}"],
+                ["Mean", f"{oseries.mean():0.2f}"],
+                ["Max", f"{oseries.max():0.2f}"],
+                ["Min", f"{oseries.min():0.2f}"],
+                ["Skew", f"{oseries.skew():0.2f}"],
+                ["Kurtosis", f"{oseries.kurtosis():0.2f}"],
             ]
             axes[0, 2].table(
-                bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1), cellText=head_stats
+                bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1), cellText=oseries_stats
             )
             axes[0, 2].axis("off")
 
@@ -491,7 +502,7 @@ def diagnostics(
 
 
 def cum_frequency(
-    obs: Series,
+    oseries: Series | None = None,
     sim: Series | None = None,
     ax: Axes | None = None,
     **kwargs,
@@ -502,7 +513,7 @@ def cum_frequency(
     ----------
     sim: pandas.Series
         Series with the simulated values.
-    obs: pandas.Series
+    oseries: pandas.Series
         The pandas Series with the observed values.
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to create the plot on. A new Figure and Axes is
@@ -516,18 +527,32 @@ def cum_frequency(
 
     Examples
     --------
-    >>> obs = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.normal(0, 1, 1000))
-    >>> ps.stats.plot_cum_frequency(obs)
+    >>> oseries = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                     data=np.random.normal(0, 1, 1000))
+    >>> ps.stats.plot_cum_frequency(oseries)
     """
+    if "obs" in kwargs:
+        deprecate_args_or_kwargs(
+            name="obs",
+            version="2.3.0",
+            reason="Please use `oseries` instead of `obs`.",
+        )
+        if oseries is None:
+            oseries = kwargs.pop("obs")
+        else:
+            kwargs.pop("obs")
+
+    if oseries is None:
+        raise TypeError("cum_frequency() missing required argument: 'oseries'")
+
     kwargs = {} or kwargs
     if ax is None:
         figsize = kwargs.pop("figsize", (5.0, 3.0))
         _, ax = plt.subplots(1, 1, figsize=figsize, **kwargs)
 
     ax.plot(
-        obs.sort_values(),
-        np.arange(0, obs.size) / obs.size * 100,
+        oseries.sort_values(),
+        np.arange(0, oseries.size) / oseries.size * 100,
         color="k",
         marker=".",
         linestyle=" ",

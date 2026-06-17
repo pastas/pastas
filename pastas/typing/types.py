@@ -58,9 +58,7 @@ class OseriesSettingsDict(TypedDict):
 
 
 class StressSettingsDict(TypedDict):
-    """
-    Stress time series settings dictionary defining logic for filling and up- or
-    downsampling time series.
+    """Stress time series settings dictionary defining logic for filling and up- or downsampling time series.
 
     Parameters
     ----------

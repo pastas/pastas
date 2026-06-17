@@ -1,4 +1,4 @@
-"""This module contains utility functions for working with Pastas models."""
+"""Utility functions for working with Pastas models."""
 
 import logging
 from logging import handlers
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_stress_tmin_tmax(ml: ModelType) -> tuple[Timestamp | str, Timestamp | str]:
-    """Get the minimum and maximum time that all the stresses have data."""
+    """Get minimum and maximum time that all the stresses have data."""
     from pastas import Model
 
     tmin = Timestamp.min
@@ -30,7 +30,7 @@ def get_stress_tmin_tmax(ml: ModelType) -> tuple[Timestamp | str, Timestamp | st
 def initialize_logger(
     logger: logging.Logger | None = None, level: int | str | None = logging.INFO
 ) -> None:
-    """Internal method to create a logger instance to log program output.
+    """Create a logger instance to log program output.
 
     Parameters
     ----------
@@ -51,7 +51,7 @@ def set_console_handler(
     level: int | None = logging.INFO,
     fmt: str = "%(levelname)s: %(message)s",
 ) -> None:
-    """Method to add a console handler to the logger of Pastas.
+    """Add a console handler to the logger of Pastas.
 
     Parameters
     ----------
@@ -80,7 +80,6 @@ def set_log_level(level: int | str) -> None:
 
     Examples
     --------
-
     >>> import pandas as ps
     >>> ps.set_log_level("ERROR")
     """
@@ -89,7 +88,7 @@ def set_log_level(level: int | str) -> None:
 
 
 def remove_console_handler(logger: logging.Logger | None = None) -> None:
-    """Method to remove the console handler to the logger of Pastas.
+    """Remove the console handler to the logger of Pastas.
 
     Parameters
     ----------
@@ -114,7 +113,7 @@ def add_file_handlers(
     fmt: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     datefmt: str = "%y-%m-%d %H:%M",
 ) -> None:
-    """Method to add file handlers in the logger of Pastas.
+    """Add file handlers in the logger of Pastas.
 
     Parameters
     ----------
@@ -138,7 +137,7 @@ def add_file_handlers(
 
 
 def remove_file_handlers(logger: logging.Logger | None = None) -> None:
-    """Method to remove any file handlers in the logger of Pastas.
+    """Remove any file handlers in the logger of Pastas.
 
     Parameters
     ----------
@@ -154,7 +153,7 @@ def remove_file_handlers(logger: logging.Logger | None = None) -> None:
 
 
 def validate_name(name: str, raise_error: bool = False) -> str:
-    """Method to check user-provided names and log a warning if wrong.
+    """Check user-provided names and log a warning if wrong.
 
     Parameters
     ----------

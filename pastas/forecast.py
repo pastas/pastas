@@ -1,4 +1,4 @@
-"""This module contains methods to generate forecasts using a Pastas model instance.
+"""Methods to generate forecasts using a Pastas model instance.
 
 Examples
 --------
@@ -33,7 +33,7 @@ def _check_forecast_data(
     forecasts: dict[str, list[DataFrame | Series]]
     | dict[str, dict[str, DataFrame | Series]],
 ) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
-    """Internal method to check the integrity of the forecasts data.
+    """Check the integrity of the forecasts data.
 
     Parameters
     ----------
@@ -95,7 +95,7 @@ def _check_forecast_data(
             if fc.empty:
                 msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}' for stress '{stress_name}'"
                 logger.error(msg)
-                continue
+                raise ValueError(msg)
 
             # Check if the number of columns is the same for all DataFrames
             if n is None:
@@ -135,7 +135,7 @@ def forecast(
     p: ArrayLike | None = None,
     post_process: bool = False,
 ) -> DataFrame:
-    """Method to forecast the head from ensembles of stress forecasts.
+    """Forecast the head from ensembles of stress forecasts.
 
     Parameters
     ----------
@@ -271,7 +271,7 @@ def forecast(
 
 
 def get_overall_mean_and_variance(df: DataFrame) -> tuple[DataFrame, DataFrame]:
-    """Method to get the overall mean and variance of the forecast ensemble.
+    """Get overall mean and variance of the forecast ensemble.
 
     Parameters
     ----------
