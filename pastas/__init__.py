@@ -21,6 +21,7 @@ from pastas.decorators import (
 )
 from pastas.model import Model
 from pastas.noisemodels import ArmaNoiseModel, ArNoiseModel
+from pastas.options import options
 from pastas.plotting import plots
 from pastas.plotting.modelcompare import CompareModels
 from pastas.rcparams import rcParams
