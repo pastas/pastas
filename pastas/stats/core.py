@@ -6,7 +6,6 @@ they are able to deal with irregular time steps often observed in hydrological t
 """
 
 from logging import getLogger
-from typing import Callable
 
 import numpy as np
 from pandas import DataFrame, DatetimeIndex, Index, Series, Timedelta, to_timedelta
@@ -17,18 +16,6 @@ from ..decorators import deprecate_args_or_kwargs, njit
 from ..typing import ArrayLike
 
 logger = getLogger(__name__)
-
-
-def _get_prange() -> Callable[[int], range]:
-    """Get prange, respecting global numba and parallel settings."""
-    try:
-        from numba import prange
-    except ImportError:
-        return range
-
-    if global_settings["numba"] and global_settings["parallel"]:
-        return prange
-    return range
 
 
 def acf(
@@ -353,7 +340,7 @@ def _compute_ccf_rectangle(
     b = np.empty_like(lags)
     n = len(t_x)
 
-    for k in _get_prange(len(lags)):
+    for k in range(len(lags)):
         cl = 0.0
         b_sum = 0.0
         lag_k = lags[k]
@@ -392,7 +379,7 @@ def _compute_ccf_gaussian(
     den1 = -2 * bin_width**2  # denominator 1
     den2 = np.sqrt(2 * np.pi * bin_width)  # denominator 2
     six_den2 = 6 * den2  # six std. dev.
-    for k in _get_prange(len(lags)):
+    for k in range(len(lags)):
         cl = 0.0
         b_sum = 0.0
         lag_k = lags[k]
