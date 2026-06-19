@@ -6,8 +6,7 @@ Defines default settings for handling time series, e.g. for resampling and gap f
     The rcParams dictionary is deprecated. Use `pastas.options` instead for a more
     Pythonic API. For example:
 
-    - Instead of `ps.options.timeseries["prec"]`, use `ps.options.timeseries["prec"]`
-    - Instead of `ps.rcParams["seed"] = 42`, use `ps.options.seed = 42`
+    - Instead of `ps.rcParams["timeseries"]["prec"]`, use `ps.options.timeseries["prec"]`
 
 This module is maintained for backward compatibility only.
 """
