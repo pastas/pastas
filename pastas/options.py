@@ -50,9 +50,9 @@ class OptionsContainer:
 
     Dict-style access:
 
-    >>> ps.options["seed"] = 100
+    >>> ps.options["seed"] = 42
     >>> print(ps.options["seed"])
-    100
+    42
 
     Notes
     -----
