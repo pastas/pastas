@@ -26,9 +26,9 @@ import pastas as ps
 
 OUTPUT_DIR = Path(f"data/pas_files_{ps.__version__}")
 
-_rng = np.random.default_rng(42)
-_idx = pd.date_range("2000-01-01", periods=365, freq="D")
-DATA = pd.Series(_rng.random(365), index=_idx, name="head")
+rng = np.random.default_rng(ps.options.seed)
+idx = pd.date_range("2000-01-01", periods=365, freq="D")
+DATA = pd.Series(rng.random(365), index=idx, name="head")
 
 
 # ---------------------------------------------------------------------------
