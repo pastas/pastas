@@ -48,7 +48,7 @@ class TimeSeries:
         to derive the name from the series.
     settings: str or dict, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary with
+        settings dictionary (defined in ps.options.timeseries), or a dictionary with
         the settings to apply. For more information refer to Time series settings
         section below.
     metadata: dict, optional
@@ -106,7 +106,7 @@ class TimeSeries:
     To obtain the predefined TimeSeries settings, you can run the following line of
     code:
 
-    >>> ps.rcParams["timeseries"]
+    >>> ps.options.timeseries
 
     See Also
     --------
