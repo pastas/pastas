@@ -14,6 +14,7 @@ from warnings import warn
 from packaging.version import parse as parse_version
 from pandas import Timestamp
 
+from pastas._config import global_settings
 from pastas.version import __version__
 
 try:
@@ -25,44 +26,79 @@ except (ModuleNotFoundError, ImportError):
 
 logger = getLogger(__name__)
 
+# Keep these for backward compatibility but they now delegate to central settings
+# These will be removed in a future version 2.3.0
 USE_NUMBA = True
 USE_CACHE = False
 CURRENT_PASTAS_VERSION = parse_version(__version__)
 
 
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The set_use_numba function is deprecated. Use ps.options.numba = True/False instead.",
+)
 def set_use_numba(b: bool) -> None:
-    """Enable or disable the use of Numba JIT compilation."""
+    """Enable or disable the use of Numba JIT compilation.
+
+    .. deprecated::
+        Use `pastas.options.numba = True/False` instead.
+    """
+    global_settings["numba"] = b
+    # Update the module-level global for backward compatibility
     global USE_NUMBA
     USE_NUMBA = b
 
 
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The get_use_numba function is deprecated. Use ps.options.numba instead.",
+)
 def get_use_numba() -> bool:
-    """Check if Numba JIT compilation is enabled."""
-    global USE_NUMBA
-    return USE_NUMBA
+    """Check if Numba JIT compilation is enabled.
+
+    .. deprecated::
+        Use `pastas.options.numba` instead.
+    """
+    return global_settings["numba"]
 
 
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The set_use_cache function is deprecated. Use ps.options.cache = True/False instead.",
+)
 def set_use_cache(b: bool) -> None:
     """Enable or disable the use of caching with cachetools.
 
     When caching is enabled, the results of simulate() calls are stored in a cache
     to speed up repeated calls with the same parameters. This requires the cachetools
     package to be installed and the USE_CACHE variable to be set to True.
+
+    .. deprecated::
+        Use `pastas.options.cache = True/False` instead.
     """
-    global USE_CACHE
     if b and not CACHETOOLS_AVAILABLE:
         logger.error(
             "Cannot enable caching: cachetools is not installed. "
             "Install with: pip install cachetools"
         )
         return
+    global_settings["cache"] = b
+    # Update the module-level global for backward compatibility
+    global USE_CACHE
     USE_CACHE = b
 
 
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The get_use_cache function is deprecated. Use ps.options.cache instead.",
+)
 def get_use_cache() -> bool:
-    """Check if caching with cachetools is enabled."""
-    global USE_CACHE
-    return USE_CACHE
+    """Check if caching with cachetools is enabled.
+
+    .. deprecated::
+        Use `pastas.options.cache` instead.
+    """
+    return global_settings["cache"]
 
 
 def set_parameter(function: Callable) -> Callable:
@@ -268,7 +304,7 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
 
     def njit_decorator(f: Callable) -> Callable:
         try:
-            if not USE_NUMBA:
+            if not global_settings["numba"]:
                 return f
             else:
                 from numba import njit
@@ -318,7 +354,7 @@ def conditional_cachedmethod(cache_getter):
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if USE_CACHE:
+            if global_settings["cache"]:
                 return cached_func.__get__(self, type(self))(*args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
@@ -328,6 +364,10 @@ def conditional_cachedmethod(cache_getter):
     return decorator
 
 
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The temporarily_disable_cache context manager is deprecated. Use ps.options.cache = False directly instead.",
+)
 @contextmanager
 def temporarily_disable_cache():
     """Context manager to temporarily disable caching.
@@ -339,16 +379,27 @@ def temporarily_disable_cache():
         with ps.temporarily_disable_cache():
             # Caching is disabled within this block
             ml.simulate()
+
+    .. deprecated::
+        Use `ps.options.cache` directly instead.
     """
+    original_state = global_settings["cache"]
+    global_settings["cache"] = False
+    # Update module-level global for backward compatibility
     global USE_CACHE
-    original_state = USE_CACHE
+    original_use_cache = USE_CACHE
     USE_CACHE = False
     try:
         yield
     finally:
-        USE_CACHE = original_state
+        global_settings["cache"] = original_state
+        USE_CACHE = original_use_cache
 
 
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The temporarily_enable_cache context manager is deprecated. Use ps.options.cache = True directly instead.",
+)
 @contextmanager
 def temporarily_enable_cache():
     """Context manager to temporarily enable caching.
@@ -358,11 +409,18 @@ def temporarily_enable_cache():
     >>> with ps.temporarily_enable_cache():
     ...     # Caching is enabled within this block
     ...     ml.simulate()
+
+    .. deprecated::
+        Use `ps.options.cache` directly instead.
     """
+    original_state = global_settings["cache"]
+    global_settings["cache"] = True
+    # Update module-level global for backward compatibility
     global USE_CACHE
-    original_state = USE_CACHE
+    original_use_cache = USE_CACHE
     USE_CACHE = True
     try:
         yield
     finally:
-        USE_CACHE = original_state
+        global_settings["cache"] = original_state
+        USE_CACHE = original_use_cache
