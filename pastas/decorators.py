@@ -25,12 +25,105 @@ except (ModuleNotFoundError, ImportError):
     CACHETOOLS_AVAILABLE = False
 
 logger = getLogger(__name__)
+CURRENT_PASTAS_VERSION = parse_version(__version__)
 
 # Keep these for backward compatibility but they now delegate to central settings
 # These will be removed in a future version 2.3.0
 USE_NUMBA = True
 USE_CACHE = False
-CURRENT_PASTAS_VERSION = parse_version(__version__)
+
+
+def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
+    """Provide a warning or error when a Pastas class, method or function is deprecated.
+
+    This decorator manages deprecation of classes, functions, or methods across Pastas versions.
+    The behavior depends on the current version:
+
+    - If current version < version: logs a warning and allows execution to continue
+    - If current version >= version: raises AttributeError which indicates
+    that it can be removed from the codebase entirely in the (near) future.
+
+    Parameters
+    ----------
+    version: str
+        The version in which the function, method or class raises an AttributeError.
+    reason: str, optional
+        The reason why the function or class is deprecated, or a message directing users
+        to an alternative. Default is an empty string.
+
+    Returns
+    -------
+    callable
+        A decorator that wraps the target class or function.
+    """
+
+    def wrapper(obj: Any):
+        name = obj.__name__
+
+        def _function(*args, **kwargs):
+            VERSION = parse_version(version)
+            if CURRENT_PASTAS_VERSION < VERSION:
+                msg = (
+                    f"{name} is deprecated and will not be available "
+                    f"from Pastas version >= {VERSION}. {reason}"
+                )
+                warn(message=msg, category=DeprecationWarning)
+            else:
+                msg = (
+                    f"Module has no attribute '{name}'. "
+                    f"{name} is deprecated and is not available since"
+                    f" Pastas version {VERSION}. {reason}"
+                )
+                raise AttributeError(msg)
+
+            return obj(*args, **kwargs)
+
+        return _function
+
+    return wrapper
+
+
+def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
+    """Provide a warning or error when a function argument is deprecated.
+
+    This function raises errors or warnings based on the current Pastas version and the
+    deprecation timeline. The behavior is:
+
+    - If current version < version: logs a warning
+    - If current version >= version: raises TypeError which indicates that it can be
+    removed from the codebase entirely in the (near) future.
+
+    Parameters
+    ----------
+    name: str
+        The name of the argument that is deprecated.
+    version: str
+        The version in which using the argument will raise a TypeError.
+    reason: str, optional
+        The reason why the argument is deprecated, or a message directing users to
+        an alternative. Default is an empty string.
+
+    Raises
+    ------
+    DeprecationWarning
+        If current version < version and the argument is used.
+    TypeError
+        If current version >= version and the argument is used.
+    """
+    VERSION = parse_version(version)
+    if CURRENT_PASTAS_VERSION < VERSION:
+        msg = (
+            f"The {name} argument is deprecated and will not be available"
+            f" from Pastas version >= {VERSION}. {reason}"
+        )
+        warn(message=msg, category=DeprecationWarning)
+    else:
+        msg = (
+            f"Got an unexpected keyword argument {name}. "
+            f"The {name} argument is deprecated and is not available"
+            f" since Pastas version {VERSION}. {reason}"
+        )
+        raise TypeError(msg)
 
 
 @PastasDeprecationWarning(
@@ -191,99 +284,6 @@ def model_tmin_tmax(function: Callable) -> Callable:
         return function(self, tmin, tmax, *args, **kwargs)
 
     return _model_tmin_tmax
-
-
-def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
-    """Provide a warning or error when a Pastas class, method or function is deprecated.
-
-    This decorator manages deprecation of classes, functions, or methods across Pastas versions.
-    The behavior depends on the current version:
-
-    - If current version < version: logs a warning and allows execution to continue
-    - If current version >= version: raises AttributeError which indicates
-    that it can be removed from the codebase entirely in the (near) future.
-
-    Parameters
-    ----------
-    version: str
-        The version in which the function, method or class raises an AttributeError.
-    reason: str, optional
-        The reason why the function or class is deprecated, or a message directing users
-        to an alternative. Default is an empty string.
-
-    Returns
-    -------
-    callable
-        A decorator that wraps the target class or function.
-    """
-
-    def wrapper(obj: Any):
-        name = obj.__name__
-
-        def _function(*args, **kwargs):
-            VERSION = parse_version(version)
-            if CURRENT_PASTAS_VERSION < VERSION:
-                msg = (
-                    f"{name} is deprecated and will not be available "
-                    f"from Pastas version >= {VERSION}. {reason}"
-                )
-                warn(message=msg, category=DeprecationWarning)
-            else:
-                msg = (
-                    f"Module has no attribute '{name}'. "
-                    f"{name} is deprecated and is not available since"
-                    f" Pastas version {VERSION}. {reason}"
-                )
-                raise AttributeError(msg)
-
-            return obj(*args, **kwargs)
-
-        return _function
-
-    return wrapper
-
-
-def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
-    """Provide a warning or error when a function argument is deprecated.
-
-    This function raises errors or warnings based on the current Pastas version and the
-    deprecation timeline. The behavior is:
-
-    - If current version < version: logs a warning
-    - If current version >= version: raises TypeError which indicates that it can be
-    removed from the codebase entirely in the (near) future.
-
-    Parameters
-    ----------
-    name: str
-        The name of the argument that is deprecated.
-    version: str
-        The version in which using the argument will raise a TypeError.
-    reason: str, optional
-        The reason why the argument is deprecated, or a message directing users to
-        an alternative. Default is an empty string.
-
-    Raises
-    ------
-    DeprecationWarning
-        If current version < version and the argument is used.
-    TypeError
-        If current version >= version and the argument is used.
-    """
-    VERSION = parse_version(version)
-    if CURRENT_PASTAS_VERSION < VERSION:
-        msg = (
-            f"The {name} argument is deprecated and will not be available"
-            f" from Pastas version >= {VERSION}. {reason}"
-        )
-        warn(message=msg, category=DeprecationWarning)
-    else:
-        msg = (
-            f"Got an unexpected keyword argument {name}. "
-            f"The {name} argument is deprecated and is not available"
-            f" since Pastas version {VERSION}. {reason}"
-        )
-        raise TypeError(msg)
 
 
 def njit(function: Callable | None = None, **kwargs) -> Callable:
