@@ -14,8 +14,8 @@ This module is maintained for backward compatibility only.
 from collections.abc import Mapping
 from typing import Any
 
-from pastas._config import global_settings
 from pastas.decorators import PastasDeprecationWarning
+from pastas._options import options
 
 reason = "Using ps.rcParams is deprecated. Use ps.options instead."
 
@@ -40,7 +40,7 @@ class _DeprecatedRcParams(Mapping[str, Any]):
     """
 
     def __init__(self) -> None:
-        self._data = global_settings
+        self._data = options
 
     @PastasDeprecationWarning(version="2.3.0", reason=reason)
     def __getitem__(self, key: str) -> Any:

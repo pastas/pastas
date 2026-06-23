@@ -14,7 +14,7 @@ from warnings import warn
 from packaging.version import parse as parse_version
 from pandas import Timestamp
 
-from pastas._config import global_settings
+from pastas._options import options
 from pastas.version import __version__
 
 try:
@@ -136,7 +136,7 @@ def set_use_numba(b: bool) -> None:
     .. deprecated::
         Use `pastas.options.numba = True/False` instead.
     """
-    global_settings["numba"] = b
+    options["numba"] = b
     # Update the module-level global for backward compatibility
     global USE_NUMBA
     USE_NUMBA = b
@@ -152,7 +152,7 @@ def get_use_numba() -> bool:
     .. deprecated::
         Use `pastas.options.numba` instead.
     """
-    return global_settings["numba"]
+    return options["numba"]
 
 
 @PastasDeprecationWarning(
@@ -175,7 +175,7 @@ def set_use_cache(b: bool) -> None:
             "Install with: pip install cachetools"
         )
         return
-    global_settings["cache"] = b
+    options["cache"] = b
     # Update the module-level global for backward compatibility
     global USE_CACHE
     USE_CACHE = b
@@ -191,7 +191,7 @@ def get_use_cache() -> bool:
     .. deprecated::
         Use `pastas.options.cache` instead.
     """
-    return global_settings["cache"]
+    return options["cache"]
 
 
 def set_parameter(function: Callable) -> Callable:
@@ -304,7 +304,7 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
 
     def njit_decorator(f: Callable) -> Callable:
         try:
-            if not global_settings["numba"]:
+            if not options["numba"]:
                 return f
             else:
                 from numba import njit
@@ -354,7 +354,7 @@ def conditional_cachedmethod(cache_getter):
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if global_settings["cache"]:
+            if options["cache"]:
                 return cached_func.__get__(self, type(self))(*args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
@@ -384,8 +384,8 @@ def temporarily_disable_cache():
     >>> ps.options.cache = True   # Re-enable caching
 
     """
-    original_state = global_settings["cache"]
-    global_settings["cache"] = False
+    original_state = options["cache"]
+    options["cache"] = False
     # Update module-level global for backward compatibility
     global USE_CACHE
     original_use_cache = USE_CACHE
@@ -393,7 +393,7 @@ def temporarily_disable_cache():
     try:
         yield
     finally:
-        global_settings["cache"] = original_state
+        options["cache"] = original_state
         USE_CACHE = original_use_cache
 
 
@@ -417,8 +417,8 @@ def temporarily_enable_cache():
     >>> ps.options.cache = False  # Disable caching
 
     """
-    original_state = global_settings["cache"]
-    global_settings["cache"] = True
+    original_state = options["cache"]
+    options["cache"] = True
     # Update module-level global for backward compatibility
     global USE_CACHE
     original_use_cache = USE_CACHE
@@ -426,5 +426,5 @@ def temporarily_enable_cache():
     try:
         yield
     finally:
-        global_settings["cache"] = original_state
+        options["cache"] = original_state
         USE_CACHE = original_use_cache

@@ -1,8 +1,10 @@
-"""Tests for options API and global_settings behavior in Pastas.
+"""Tests for options API and options behavior in Pastas.
 
-This module contains tests for the basic options functionality and global_settings
+This module contains tests for the basic options functionality and options
 access patterns.
 """
+
+from dataclasses import is_dataclass
 
 import pytest
 
@@ -12,7 +14,7 @@ class TestOptionsAPI:
 
     def test_attribute_style_get(self):
         """Test attribute-style access for getting values."""
-        from pastas.options import options
+        from pastas._options import options
 
         assert options.seed == 358183147
         assert options.cache is False
@@ -22,7 +24,7 @@ class TestOptionsAPI:
 
     def test_attribute_style_set(self):
         """Test attribute-style access for setting values."""
-        from pastas.options import options
+        from pastas._options import options
 
         original_seed = options.seed
         try:
@@ -33,7 +35,7 @@ class TestOptionsAPI:
 
     def test_dict_style_get(self):
         """Test dict-style access for getting values."""
-        from pastas.options import options
+        from pastas._options import options
 
         assert options["seed"] == 358183147
         assert options["cache"] is False
@@ -42,7 +44,7 @@ class TestOptionsAPI:
 
     def test_dict_style_set(self):
         """Test dict-style access for setting values."""
-        from pastas.options import options
+        from pastas._options import options
 
         original_seed = options.seed
         try:
@@ -54,35 +56,35 @@ class TestOptionsAPI:
 
     def test_invalid_attribute_raises(self):
         """Test that accessing non-existent attribute raises AttributeError."""
-        from pastas.options import options
+        from pastas._options import options
 
         with pytest.raises(AttributeError, match="has no attribute"):
             _ = options.nonexistent_key
 
     def test_invalid_key_raises(self):
         """Test that accessing non-existent key raises KeyError."""
-        from pastas.options import options
+        from pastas._options import options
 
-        with pytest.raises(KeyError, match="has no key"):
+        with pytest.raises(KeyError, match="Invalid setting: 'nonexistent_key'"):
             _ = options["nonexistent_key"]
 
     def test_set_invalid_attribute_raises(self):
         """Test that setting non-existent attribute raises AttributeError."""
-        from pastas.options import options
+        from pastas._options import options
 
         with pytest.raises(AttributeError, match="has no attribute"):
             options.nonexistent_key = 123
 
     def test_set_invalid_key_raises(self):
         """Test that setting non-existent key raises KeyError."""
-        from pastas.options import options
+        from pastas._options import options
 
-        with pytest.raises(KeyError, match="has no key"):
+        with pytest.raises(KeyError, match="Invalid setting: 'nonexistent_key'"):
             options["nonexistent_key"] = 123
 
     def test_contains(self):
         """Test __contains__ method."""
-        from pastas.options import options
+        from pastas._options import options
 
         assert "seed" in options
         assert "cache" in options
@@ -93,7 +95,7 @@ class TestOptionsAPI:
 
     def test_iteration(self):
         """Test iteration over options."""
-        from pastas.options import options
+        from pastas._options import options
 
         keys = set(options)
         assert "seed" in keys
@@ -104,14 +106,14 @@ class TestOptionsAPI:
 
     def test_len(self):
         """Test __len__ method."""
-        from pastas.options import options
+        from pastas._options import options
 
         # Should have: seed, cache, numba, parallel, timeseries
         assert len(options) == 5
 
     def test_repr(self):
         """Test __repr__ method."""
-        from pastas.options import options
+        from pastas._options import options
 
         repr_str = repr(options)
         assert "seed" in repr_str
@@ -119,7 +121,7 @@ class TestOptionsAPI:
 
     def test_dir(self):
         """Test __dir__ method."""
-        from pastas.options import options
+        from pastas._options import options
 
         keys = dir(options)
         assert "seed" in keys
@@ -127,36 +129,36 @@ class TestOptionsAPI:
 
 
 class TestGlobalSettings:
-    """Tests for global_settings access."""
+    """Tests for options access."""
 
-    def test_global_settings_exists(self):
-        """Test that global_settings exists in _config."""
-        from pastas._config import global_settings
+    def test_options_exists(self):
+        """Test that options exists in _config."""
+        from pastas._options import options
 
-        assert isinstance(global_settings, dict)
+        assert is_dataclass(options)
 
-    def test_global_settings_has_expected_keys(self):
-        """Test that global_settings has expected keys."""
-        from pastas._config import global_settings
+    def test_options_has_expected_keys(self):
+        """Test that options has expected keys."""
+        from pastas._options import options
 
         expected_keys = {"seed", "cache", "numba", "parallel", "timeseries"}
-        assert set(global_settings.keys()) == expected_keys
+        assert set(options.keys()) == expected_keys
 
-    def test_global_settings_values(self):
-        """Test that global_settings has expected default values."""
-        from pastas._config import global_settings
+    def test_options_values(self):
+        """Test that options has expected default values."""
+        from pastas._options import options
 
-        assert global_settings["seed"] == 358183147
-        assert global_settings["cache"] is False
-        assert global_settings["numba"] is True
-        assert global_settings["parallel"] is False
-        assert "timeseries" in global_settings
+        assert options["seed"] == 358183147
+        assert options["cache"] is False
+        assert options["numba"] is True
+        assert options["parallel"] is False
+        assert "timeseries" in options
 
-    def test_global_settings_timeseries_structure(self):
+    def test_options_timeseries_structure(self):
         """Test that timeseries settings have expected structure."""
-        from pastas._config import global_settings
+        from pastas._options import options
 
-        timeseries = global_settings["timeseries"]
+        timeseries = options["timeseries"]
         assert isinstance(timeseries, dict)
 
         # Check expected stress types exist
@@ -188,51 +190,37 @@ class TestGlobalSettings:
         expected_oseries_keys = {"fill_nan", "sample_down"}
         assert set(oseries.keys()) == expected_oseries_keys
 
-    def test_global_settings_mutability(self):
-        """Test that global_settings can be modified."""
-        from pastas._config import global_settings
+    def test_options_mutability(self):
+        """Test that options can be modified."""
+        from pastas._options import options
 
-        original_seed = global_settings["seed"]
+        original_seed = options["seed"]
         try:
-            global_settings["seed"] = 999
-            assert global_settings["seed"] == 999
+            options["seed"] = 999
+            assert options["seed"] == 999
         finally:
-            global_settings["seed"] = original_seed
+            options["seed"] = original_seed
 
 
 class TestOptionsGlobalSettingsLink:
-    """Tests to verify options and global_settings are linked."""
+    """Tests to verify options and options are linked."""
 
-    def test_options_reflects_global_settings_changes(self):
-        """Test that changes to global_settings are visible through options."""
-        from pastas._config import global_settings
-        from pastas.options import options
+    def test_options_reflects_options_changes(self):
+        """Test that changes to options are visible through options."""
+        from pastas._options import options
 
-        original_seed = global_settings["seed"]
+        original_seed = options["seed"]
         try:
-            global_settings["seed"] = 12345
+            options["seed"] = 12345
             assert options.seed == 12345
             assert options["seed"] == 12345
         finally:
-            global_settings["seed"] = original_seed
-
-    def test_global_settings_reflects_options_changes(self):
-        """Test that changes to options are visible through global_settings."""
-        from pastas._config import global_settings
-        from pastas.options import options
-
-        original_seed = options.seed
-        try:
-            options.seed = 54321
-            assert global_settings["seed"] == 54321
-        finally:
-            options.seed = original_seed
+            options["seed"] = original_seed
 
     def test_timeseries_link(self):
-        """Test that timeseries settings are linked between options and global_settings."""
-        from pastas._config import global_settings
-        from pastas.options import options
+        """Test that timeseries settings are linked between options and options."""
+        from pastas._options import options
 
         # Check they reference the same object
-        assert options.timeseries is global_settings["timeseries"]
-        assert options["timeseries"] is global_settings["timeseries"]
+        assert options.timeseries is options["timeseries"]
+        assert options["timeseries"] is options["timeseries"]

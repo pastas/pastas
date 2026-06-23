@@ -12,8 +12,8 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, OptimizeResult, least_squares
 
-from pastas._config import global_settings
 from pastas.decorators import PastasDeprecationWarning, temporarily_disable_cache
+from pastas._options import options
 from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike
 
@@ -227,7 +227,7 @@ class LeastSquaresBase(SolverBase):
 
         # Start truncated multivariate sampling
         it = 0
-        rng = np.random.default_rng(seed=global_settings["seed"])
+        rng = np.random.default_rng(seed=options["seed"])
         while samples.shape[0] < n:
             s = rng.multivariate_normal(
                 mean=p, cov=pcov, size=(n,), check_valid="ignore"
@@ -296,7 +296,7 @@ class LeastSquaresBase(SolverBase):
         data = self._get_realizations(
             func=self.ml.simulate, n=n, name=None, max_iter=max_iter, **kwargs
         )
-        rng = np.random.default_rng(seed=global_settings["seed"])
+        rng = np.random.default_rng(seed=options["seed"])
         datan = data + rng.normal(loc=0, scale=sigr, size=data.shape)
         q = [alpha / 2, 1 - alpha / 2]
         rv = datan.quantile(q, axis=1).transpose()

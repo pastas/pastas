@@ -11,8 +11,8 @@ import numpy as np
 from pandas import DataFrame, DatetimeIndex, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
-from .._config import global_settings
 from ..decorators import deprecate_args_or_kwargs, njit
+from .._options import options
 from ..typing import ArrayLike
 
 logger = getLogger(__name__)
@@ -326,7 +326,7 @@ def _preprocess(
     return x, t, dt_mu
 
 
-@njit(parallel=global_settings["parallel"], nogil=True, cache=global_settings["cache"])
+@njit(parallel=options["parallel"], nogil=True, cache=options["cache"])
 def _compute_ccf_rectangle(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -362,7 +362,7 @@ def _compute_ccf_rectangle(
     return c, b
 
 
-@njit(parallel=global_settings["parallel"], nogil=True, cache=global_settings["cache"])
+@njit(parallel=options["parallel"], nogil=True, cache=options["cache"])
 def _compute_ccf_gaussian(
     lags: ArrayLike,
     t_x: ArrayLike,

@@ -10,7 +10,7 @@ from pandas import DataFrame, Series
 from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 from pastas.typing import ArrayLike, CallBack
 
-from .._config import global_settings
+from .._options import options
 from .base import SolverBase
 from .likelihood import GaussianLikelihood, GaussianLikelihoodAr1
 from .objective_function import misfit
@@ -98,7 +98,7 @@ class Emcee(SolverBase):
         nwalkers: int = 20,
         backend: Any | None = None,
         moves: Any | None = None,
-        parallel: bool = global_settings["parallel"],
+        parallel: bool = options["parallel"],
         progress_bar: bool = True,
         **kwargs: Any,
     ) -> None:
