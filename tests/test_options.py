@@ -18,7 +18,7 @@ class TestOptionsAPI:
         assert options.cache is False
         assert options.numba is True
         assert options.parallel is False
-        assert "timeseries" in options._data
+        assert "timeseries" in options
 
     def test_attribute_style_set(self):
         """Test attribute-style access for setting values."""
@@ -124,7 +124,6 @@ class TestOptionsAPI:
         keys = dir(options)
         assert "seed" in keys
         assert "cache" in keys
-        assert "_data" in keys
 
 
 class TestGlobalSettings:

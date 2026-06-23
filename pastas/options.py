@@ -21,12 +21,13 @@ dictionary is also available but its use is discouraged.
 
 from __future__ import annotations
 
+from collections import UserDict
 from typing import Any
 
 from pastas._config import global_settings
 
 
-class OptionsContainer:
+class OptionsContainer(UserDict):
     """Container for Pastas global options.
 
     This class provides attribute-style and dict-style access to global settings,
@@ -73,8 +74,7 @@ class OptionsContainer:
 
     def __init__(self) -> None:
         """Initialize the options container."""
-        # Use object.__setattr__ to avoid triggering our custom __setattr__
-        object.__setattr__(self, "_data", global_settings)
+        super().__init__(global_settings)
 
     def __getattr__(self, name: str) -> Any:
         """Get a setting value by attribute name.
@@ -94,11 +94,11 @@ class OptionsContainer:
         AttributeError
             If the setting does not exist.
         """
-        if name in self._data:
-            return self._data[name]
+        if name in self.data:
+            return self.data[name]
         raise AttributeError(
             f"'{type(self).__name__}' object has no attribute '{name}'. "
-            f"Available settings: {list(self._data.keys())}"
+            f"Available settings: {list(self.data.keys())}"
         )
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -119,83 +119,13 @@ class OptionsContainer:
         if name.startswith("_"):
             # Allow setting internal attributes
             object.__setattr__(self, name, value)
-        elif name in self._data:
-            self._data[name] = value
+        elif name in self.data:
+            self.data[name] = value
         else:
             raise AttributeError(
                 f"'{type(self).__name__}' object has no attribute '{name}'. "
-                f"Available settings: {list(self._data.keys())}"
+                f"Available settings: {list(self.data.keys())}"
             )
-
-    def __getitem__(self, key: str) -> Any:
-        """Get a setting value by key.
-
-        Parameters
-        ----------
-        key : str
-            The key of the setting to retrieve.
-
-        Returns
-        -------
-        Any
-            The value of the setting.
-
-        Raises
-        ------
-        KeyError
-            If the setting does not exist.
-        """
-        if key in self._data:
-            return self._data[key]
-        raise KeyError(
-            f"'{type(self).__name__}' object has no key '{key}'. "
-            f"Available settings: {list(self._data.keys())}"
-        )
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        """Set a setting value by key.
-
-        Parameters
-        ----------
-        key : str
-            The key of the setting to modify.
-        value : Any
-            The new value for the setting.
-
-        Raises
-        ------
-        KeyError
-            If the setting does not exist.
-        """
-        if key in self._data:
-            self._data[key] = value
-        else:
-            raise KeyError(
-                f"'{type(self).__name__}' object has no key '{key}'. "
-                f"Available settings: {list(self._data.keys())}"
-            )
-
-    def __contains__(self, key: str) -> bool:
-        """Check if a key exists."""
-        return key in self._data
-
-    def __iter__(self):
-        """Iterate over setting keys."""
-        return iter(self._data)
-
-    def __len__(self) -> int:
-        """Return the number of settings."""
-        return len(self._data)
-
-    def __repr__(self) -> str:
-        """Return a string representation of the options.
-
-        Returns
-        -------
-        str
-            A string representation showing all settings.
-        """
-        return repr(self._data)
 
     def __dir__(self) -> list[str]:
         """Return a list of available setting names.
@@ -203,17 +133,17 @@ class OptionsContainer:
         Returns
         -------
         list[str]
-            List of setting names plus internal attributes.
+            List of setting names.
         """
-        return list(self._data.keys()) + ["_data"]
+        return list(self.data.keys())
 
     def __getstate__(self) -> dict[str, Any]:
         """Support for pickling."""
-        return self._data
+        return self.data
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Support for unpickling."""
-        object.__setattr__(self, "_data", state)
+        self.data = state
 
 
 # Create singleton instance
