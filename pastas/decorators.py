@@ -364,10 +364,6 @@ def conditional_cachedmethod(cache_getter):
     return decorator
 
 
-@PastasDeprecationWarning(
-    version="2.3.0",
-    reason="The temporarily_disable_cache context manager is deprecated. Use ps.options.cache = False directly instead.",
-)
 @contextmanager
 def temporarily_disable_cache():
     """Context manager to temporarily disable caching.
@@ -376,12 +372,17 @@ def temporarily_disable_cache():
     --------
     To temporarily disable the cache (if it is currently active)::
 
-        with ps.temporarily_disable_cache():
-            # Caching is disabled within this block
-            ml.simulate()
+    >>> with ps.temporarily_disable_cache():
+    >>>     # Caching is disabled within this block
+    >>>     ml.simulate()
 
-    .. deprecated::
-        Use `ps.options.cache` directly instead.
+    Alternatively you can use the `ps.options.cache` attribute directly
+    to disable caching as needed::
+
+    >>> ps.options.cache = False  # Disable caching
+    >>> ml.simulate()
+    >>> ps.options.cache = True   # Re-enable caching
+
     """
     original_state = global_settings["cache"]
     global_settings["cache"] = False
@@ -396,22 +397,25 @@ def temporarily_disable_cache():
         USE_CACHE = original_use_cache
 
 
-@PastasDeprecationWarning(
-    version="2.3.0",
-    reason="The temporarily_enable_cache context manager is deprecated. Use ps.options.cache = True directly instead.",
-)
 @contextmanager
 def temporarily_enable_cache():
     """Context manager to temporarily enable caching.
 
     Examples
     --------
-    >>> with ps.temporarily_enable_cache():
-    ...     # Caching is enabled within this block
-    ...     ml.simulate()
+    To temporarily enable the cache::
 
-    .. deprecated::
-        Use `ps.options.cache` directly instead.
+    >>> with ps.temporarily_enable_cache():
+    >>>     # Caching is enabled within this block
+    >>>     ml.simulate()
+
+    Alternatively you can use the `ps.options.cache` attribute directly
+    to enable or disable caching as needed::
+
+    >>> ps.options.cache = True   # Enable caching
+    >>> ml.simulate()
+    >>> ps.options.cache = False  # Disable caching
+
     """
     original_state = global_settings["cache"]
     global_settings["cache"] = True
