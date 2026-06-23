@@ -65,7 +65,8 @@ class OptionsContainer(UserDict):
         Global enable/disable caching for simulate() calls.
         Requires cachetools to be installed.
     - numba : bool
-        Global enable/disable Numba JIT compilation.
+        Global enable/disable Numba JIT compilation. Turning it off is
+        mostly a debugging option and not really recommended.
     - parallel : bool
         Global enable/disable parallelization.
     - timeseries : dict
