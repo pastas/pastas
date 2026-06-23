@@ -14,8 +14,8 @@ This module is maintained for backward compatibility only.
 from collections.abc import Mapping
 from typing import Any
 
-from pastas.decorators import PastasDeprecationWarning
 from pastas._options import options
+from pastas.decorators import PastasDeprecationWarning
 
 reason = "Using ps.rcParams is deprecated. Use ps.options instead."
 

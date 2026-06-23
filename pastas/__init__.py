@@ -9,6 +9,7 @@ from pandas.plotting import register_matplotlib_converters
 import pastas.recharge as rch
 import pastas.timeseries_utils as ts
 from pastas import check, extensions, forecast, solver, stats
+from pastas._options import options
 from pastas.dataset import list_datasets, load_dataset
 from pastas.decorators import (
     PastasDeprecationWarning,
@@ -21,7 +22,6 @@ from pastas.decorators import (
 )
 from pastas.model import Model
 from pastas.noisemodels import ArmaNoiseModel, ArNoiseModel
-from pastas.options import options
 from pastas.plotting import plots
 from pastas.plotting.modelcompare import CompareModels
 from pastas.rcparams import rcParams

@@ -11,8 +11,8 @@ import numpy as np
 from pandas import DataFrame, DatetimeIndex, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
-from ..decorators import deprecate_args_or_kwargs, njit
 from .._options import options
+from ..decorators import deprecate_args_or_kwargs, njit
 from ..typing import ArrayLike
 
 logger = getLogger(__name__)

@@ -12,8 +12,8 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, OptimizeResult, least_squares
 
-from pastas.decorators import PastasDeprecationWarning, temporarily_disable_cache
 from pastas._options import options
+from pastas.decorators import PastasDeprecationWarning, temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike
 
