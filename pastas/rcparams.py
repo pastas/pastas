@@ -62,44 +62,40 @@ class _DeprecatedRcParams(Mapping[str, Any]):
 
     def keys(self):
         """Return setting keys."""
-        return self._data.keys()
+        return self._data.__dict__.keys()
 
     def items(self):
         """Return setting items."""
-        return self._data.items()
+        return self._data.__dict__.items()
 
     def values(self):
         """Return setting values."""
-        return self._data.values()
+        return self._data.__dict__.values()
 
     @PastasDeprecationWarning(version="2.3.0", reason=reason)
     def get(self, key: str, default: Any = None) -> Any:
         """Get a setting with a default value."""
-        return self._data.get(key, default)
+        return self._data.__dict__.get(key, default)
 
     @PastasDeprecationWarning(version="2.3.0", reason=reason)
     def pop(self, key: str, *args: Any) -> Any:
         """Remove and return a setting."""
-        return self._data.pop(key, *args)
+        return self._data.__dict__.pop(key, *args)
 
     @PastasDeprecationWarning(version="2.3.0", reason=reason)
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Update settings from a dictionary."""
-        self._data.update(*args, **kwargs)
-
-    @PastasDeprecationWarning(version="2.3.0", reason=reason)
-    def clear(self) -> None:
-        """Clear all settings."""
-        self._data.clear()
+        for key, value in dict(*args, **kwargs).items():
+            setattr(self._data, key, value)
 
     def __contains__(self, value: Any) -> bool:
         """Check if a key exists."""
-        return bool(value in self._data.keys())
+        return bool(value in self._data.__dict__.keys())
 
     def __eq__(self, other: object) -> bool:
         """Check equality with another object."""
         if isinstance(other, Mapping):
-            return dict(self._data) == dict(other)
+            return dict(self._data.__dict__) == dict(other)
         return False
 
 
