@@ -13,7 +13,11 @@ from scipy.stats import norm
 
 from ..decorators import deprecate_args_or_kwargs, njit
 from ..typing import ArrayLike
-from ..utils import get_prange
+
+try:
+    from numba import prange
+except ImportError:
+    prange = range
 
 logger = getLogger(__name__)
 
@@ -340,7 +344,6 @@ def _compute_ccf_rectangle(
     b = np.empty_like(lags)
     n = len(t_x)
 
-    prange = get_prange()
     for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
@@ -381,7 +384,6 @@ def _compute_ccf_gaussian(
     den2 = np.sqrt(2 * np.pi * bin_width)  # denominator 2
     six_den2 = 6 * den2  # six std. dev.
 
-    prange = get_prange()
     for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
