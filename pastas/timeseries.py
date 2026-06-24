@@ -168,7 +168,9 @@ class TimeSeries:
         if settings:
             if isinstance(settings, str):
                 if settings in options["timeseries"].keys():
-                    settings: StressSettingsDict | OseriesSettingsDict = options["timeseries"][settings]
+                    settings: StressSettingsDict | OseriesSettingsDict = options[
+                        "timeseries"
+                    ][settings]
                 else:
                     msg = (
                         "Settings shortcut code '%s' is not in the options.timeseries "
