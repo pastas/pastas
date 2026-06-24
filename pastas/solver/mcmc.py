@@ -44,7 +44,8 @@ class Emcee(SolverBase):
         the MCMC approach. One of the Moves classes from Emcee has to be provided.
         See Emcee documentation for more information.
     parallel: bool, optional
-        Run the sampler in parallel or not.
+        Run the sampler in parallel or not. By default, the parallel option is set
+        to the value of the global Pastas option.
     progress_bar: bool, optional
         Show the progress bar or not. Requires the `tqdm` package to be installed.
     **kwargs, optional
