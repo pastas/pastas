@@ -69,7 +69,6 @@ DEFAULT_TIMESERIES_SETTINGS = {
 class PastasOptions:
     """Central configuration storage for Pastas global settings."""
 
-    seed: int | None = 358183147
     cache: bool = False
     numba: bool = True
     parallel: bool = False
