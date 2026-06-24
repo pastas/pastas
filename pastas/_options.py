@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from pastas.typing import OseriesSettingsDict, StressSettingsDict
 
@@ -76,6 +77,11 @@ class PastasOptions:
             k: v.copy() for k, v in DEFAULT_TIMESERIES_SETTINGS.items()
         }
     )
+    plotting: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        # Add plotting defaults
+        self.plotting["max_gap"] = 50.0
 
 
 options = PastasOptions()
