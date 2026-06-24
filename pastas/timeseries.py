@@ -19,8 +19,8 @@ from pandas.tseries.frequencies import to_offset
 
 from pastas.typing import OseriesSettingsDict, StressSettingsDict
 
+from ._options import options
 from .io.base import _unpack_series
-from .rcparams import rcParams
 from .timeseries_utils import (
     _get_dt,
     _get_sim_index,
@@ -114,8 +114,6 @@ class TimeSeries:
         For the individual options for the different settings.
     """
 
-    _predefined_settings = rcParams["timeseries"]
-
     def __init__(
         self,
         series: Series,
@@ -169,15 +167,15 @@ class TimeSeries:
         # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in self._predefined_settings.keys():
-                    settings = self._predefined_settings[settings]
+                if settings in options["timeseries"].keys():
+                    settings: StressSettingsDict | OseriesSettingsDict = options["timeseries"][settings]
                 else:
                     msg = (
-                        "Settings shortcut code '%s' is not in the predefined "
+                        "Settings shortcut code '%s' is not in the options.timeseries "
                         "settings options. Please choose from %s.",
                     )
 
-                    raise KeyError(msg, settings, self._predefined_settings.keys())
+                    raise KeyError(msg, settings, options["timeseries"].keys())
             self._update_settings(**settings)
 
         # Make sure we have a workable Pandas Series, depends on type of time series
