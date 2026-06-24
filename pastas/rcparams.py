@@ -26,10 +26,6 @@ class _DeprecatedRcParams(Mapping[str, Any]):
     This class provides a dictionary-like interface to the central settings,
     but emits deprecation warnings when accessed for writes.
 
-    For backward compatibility, reads are allowed without warnings,
-    but writes will trigger a deprecation warning suggesting the use of
-    `pastas.options` instead.
-
     Examples
     --------
     >>> import pastas as ps
