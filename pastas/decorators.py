@@ -301,7 +301,7 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
     callable
         The decorated function, or the original function if numba is not available.
     """
-    from pastas import options
+    from pastas._options import options
 
     def njit_decorator(f: Callable) -> Callable:
         try:
