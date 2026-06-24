@@ -1,6 +1,7 @@
 """Utility functions for working with Pastas models."""
 
 import logging
+from collections.abc import Callable
 from logging import handlers
 from platform import platform
 
@@ -203,3 +204,29 @@ def validate_name(name: str, raise_error: bool = False) -> str:
                 logger.warning(msg, name, char)
 
     return name
+
+
+def get_prange() -> Callable[[int], range]:
+    """Get the range of the current process.
+
+    Returns
+    -------
+    range
+        Range object for the current process.
+    """
+    from pastas import options
+
+    prange = range
+
+    try:
+        from numba import prange
+
+        if not options["parallel"] or not options["numba"]:
+            prange = range
+    except ImportError:
+        logger.warning(
+            "Numba is not installed. Parallel execution is not available. "
+            "Falling back to serial execution."
+        )
+
+    return prange

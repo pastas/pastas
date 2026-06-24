@@ -6,7 +6,7 @@ and other convenient methods for handling time, numba compiled code, etc.
 
 from collections.abc import Callable
 from contextlib import contextmanager
-from functools import wraps
+from functools import partial, wraps
 from logging import getLogger
 from typing import Any
 from warnings import warn
@@ -301,6 +301,7 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
     callable
         The decorated function, or the original function if numba is not available.
     """
+    from pastas import options
 
     def njit_decorator(f: Callable) -> Callable:
         try:
@@ -309,8 +310,8 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
             else:
                 from numba import njit
 
-                fnumba = njit(f, **kwargs)
-                return fnumba
+                njit_partial = partial(njit, parallel=options["parallel"])
+                return njit_partial(f, **kwargs)
         except ImportError:
             return f
 

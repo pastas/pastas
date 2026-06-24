@@ -11,9 +11,9 @@ import numpy as np
 from pandas import DataFrame, DatetimeIndex, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
-from .._options import options
 from ..decorators import deprecate_args_or_kwargs, njit
 from ..typing import ArrayLike
+from ..utils import get_prange
 
 logger = getLogger(__name__)
 
@@ -326,7 +326,7 @@ def _preprocess(
     return x, t, dt_mu
 
 
-@njit(parallel=options["parallel"], nogil=True, cache=True)
+@njit(nogil=True, cache=True)
 def _compute_ccf_rectangle(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -340,7 +340,8 @@ def _compute_ccf_rectangle(
     b = np.empty_like(lags)
     n = len(t_x)
 
-    for k in range(len(lags)):
+    prange = get_prange()
+    for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
         lag_k = lags[k]
@@ -362,7 +363,7 @@ def _compute_ccf_rectangle(
     return c, b
 
 
-@njit(parallel=options["parallel"], nogil=True, cache=True)
+@njit(nogil=True, cache=True)
 def _compute_ccf_gaussian(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -379,7 +380,9 @@ def _compute_ccf_gaussian(
     den1 = -2 * bin_width**2  # denominator 1
     den2 = np.sqrt(2 * np.pi * bin_width)  # denominator 2
     six_den2 = 6 * den2  # six std. dev.
-    for k in range(len(lags)):
+
+    prange = get_prange()
+    for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
         lag_k = lags[k]
