@@ -167,7 +167,7 @@ class TimeSeries:
         # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in options["timeseries"].keys():
+                if settings in options.timeseries.keys():
                     settings: StressSettingsDict | OseriesSettingsDict = options[
                         "timeseries"
                     ][settings]
@@ -177,7 +177,7 @@ class TimeSeries:
                         "settings options. Please choose from %s.",
                     )
 
-                    raise KeyError(msg, settings, options["timeseries"].keys())
+                    raise KeyError(msg, settings, options.timeseries.keys())
             self._update_settings(**settings)
 
         # Make sure we have a workable Pandas Series, depends on type of time series

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 from pastas.typing import OseriesSettingsDict, StressSettingsDict
 
@@ -77,39 +76,6 @@ class PastasOptions:
             k: v.copy() for k, v in DEFAULT_TIMESERIES_SETTINGS.items()
         }
     )
-
-    def __getitem__(self, key: str) -> Any:
-        """Get the value of a setting in the PastasOptions dataclass as a dictionary."""
-        try:
-            return getattr(self, key)
-        except AttributeError:
-            raise KeyError(
-                f"Invalid setting: '{key}'. Available: {list(self.__slots__)}"
-            )
-
-    def __setitem__(self, key: str, value: Any) -> None:
-        """Set the value of a setting in the PastasOptions dataclass as a dictionary."""
-        if not hasattr(self, key):
-            raise KeyError(
-                f"Invalid setting: '{key}'. Available: {list(self.__slots__)}"
-            )
-        setattr(self, key, value)
-
-    def __contains__(self, key: str) -> bool:
-        """Return True if the PastasOptions dataclass has the specified setting."""
-        return hasattr(self, key)
-
-    def __iter__(self):
-        """Return an iterator over the settings in the PastasOptions dataclass."""
-        return iter(self.__slots__)
-
-    def __len__(self) -> int:
-        """Return the number of settings in the PastasOptions dataclass."""
-        return len(self.__slots__)
-
-    def keys(self):
-        """Return the keys of the PastasOptions dataclass."""
-        return self.__slots__
 
 
 options = PastasOptions()

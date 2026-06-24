@@ -137,7 +137,7 @@ def set_use_numba(b: bool) -> None:
     """
     from pastas._options import options
 
-    options["numba"] = b
+    options.numba = b
     # Update the module-level global for backward compatibility
     global USE_NUMBA
     USE_NUMBA = b
@@ -155,7 +155,7 @@ def get_use_numba() -> bool:
     """
     from pastas._options import options
 
-    return options["numba"]
+    return options.numba
 
 
 @PastasDeprecationWarning(
@@ -180,7 +180,7 @@ def set_use_cache(b: bool) -> None:
             "Install with: pip install cachetools"
         )
         return
-    options["cache"] = b
+    options.cache = b
     # Update the module-level global for backward compatibility
     global USE_CACHE
     USE_CACHE = b
@@ -198,7 +198,7 @@ def get_use_cache() -> bool:
     """
     from pastas._options import options
 
-    return options["cache"]
+    return options.cache
 
 
 def set_parameter(function: Callable) -> Callable:
@@ -312,12 +312,12 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
 
     def njit_decorator(f: Callable) -> Callable:
         try:
-            if not options["numba"]:
+            if not options.numba:
                 return f
             else:
                 from numba import njit
 
-                njit_partial = partial(njit, parallel=options["parallel"])
+                njit_partial = partial(njit, parallel=options.parallel)
                 return njit_partial(f, **kwargs)
         except ImportError:
             return f
@@ -363,7 +363,7 @@ def conditional_cachedmethod(cache_getter):
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if options["cache"]:
+            if options.cache:
                 return cached_func.__get__(self, type(self))(*args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
@@ -395,8 +395,8 @@ def temporarily_disable_cache():
     """
     from pastas._options import options
 
-    original_state = options["cache"]
-    options["cache"] = False
+    original_state = options.cache
+    options.cache = False
     # Update module-level global for backward compatibility
     global USE_CACHE
     original_use_cache = USE_CACHE
@@ -404,7 +404,7 @@ def temporarily_disable_cache():
     try:
         yield
     finally:
-        options["cache"] = original_state
+        options.cache = original_state
         USE_CACHE = original_use_cache
 
 
@@ -430,8 +430,8 @@ def temporarily_enable_cache():
     """
     from pastas._options import options
 
-    original_state = options["cache"]
-    options["cache"] = True
+    original_state = options.cache
+    options.cache = True
     # Update module-level global for backward compatibility
     global USE_CACHE
     original_use_cache = USE_CACHE
@@ -439,5 +439,5 @@ def temporarily_enable_cache():
     try:
         yield
     finally:
-        options["cache"] = original_state
+        options.cache = original_state
         USE_CACHE = original_use_cache

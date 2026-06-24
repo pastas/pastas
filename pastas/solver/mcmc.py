@@ -121,7 +121,7 @@ class Emcee(SolverBase):
         self.sampler: Any | None = None
         self.backend = backend
         self.moves = moves
-        self.parallel = options["parallel"] if parallel is None else parallel
+        self.parallel = options.parallel if parallel is None else parallel
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
         self.nsteps: int | None = None
