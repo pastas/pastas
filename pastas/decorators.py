@@ -14,7 +14,6 @@ from warnings import warn
 from packaging.version import parse as parse_version
 from pandas import Timestamp
 
-from pastas._options import options
 from pastas.version import __version__
 
 try:
@@ -136,6 +135,8 @@ def set_use_numba(b: bool) -> None:
     .. deprecated::
         Use `pastas.options.numba = True/False` instead.
     """
+    from pastas._options import options
+
     options["numba"] = b
     # Update the module-level global for backward compatibility
     global USE_NUMBA
@@ -152,6 +153,8 @@ def get_use_numba() -> bool:
     .. deprecated::
         Use `pastas.options.numba` instead.
     """
+    from pastas._options import options
+
     return options["numba"]
 
 
@@ -169,6 +172,8 @@ def set_use_cache(b: bool) -> None:
     .. deprecated::
         Use `pastas.options.cache = True/False` instead.
     """
+    from pastas._options import options
+
     if b and not CACHETOOLS_AVAILABLE:
         logger.error(
             "Cannot enable caching: cachetools is not installed. "
@@ -191,6 +196,8 @@ def get_use_cache() -> bool:
     .. deprecated::
         Use `pastas.options.cache` instead.
     """
+    from pastas._options import options
+
     return options["cache"]
 
 
@@ -344,6 +351,7 @@ def conditional_cachedmethod(cache_getter):
     cache_getter : callable
         Function that returns the cache object from self (e.g., lambda self: self._cache)
     """
+    from pastas._options import options
 
     def decorator(func):
         if not CACHETOOLS_AVAILABLE:
@@ -385,6 +393,8 @@ def temporarily_disable_cache():
     >>> ps.options.cache = True   # Re-enable caching
 
     """
+    from pastas._options import options
+
     original_state = options["cache"]
     options["cache"] = False
     # Update module-level global for backward compatibility
@@ -418,6 +428,8 @@ def temporarily_enable_cache():
     >>> ps.options.cache = False  # Disable caching
 
     """
+    from pastas._options import options
+
     original_state = options["cache"]
     options["cache"] = True
     # Update module-level global for backward compatibility
