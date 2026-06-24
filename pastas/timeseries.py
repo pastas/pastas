@@ -19,7 +19,6 @@ from pandas.tseries.frequencies import to_offset
 
 from pastas.typing import OseriesSettingsDict, StressSettingsDict
 
-from ._options import options
 from .io.base import _unpack_series
 from .timeseries_utils import (
     _get_dt,
@@ -166,9 +165,13 @@ class TimeSeries:
 
         # Update the settings with user-provided values, if any.
         if settings:
+            from pastas._options import options
+
             if isinstance(settings, str):
                 if settings in options.timeseries.keys():
-                    settings: StressSettingsDict | OseriesSettingsDict = options.timeseries[settings]
+                    settings: StressSettingsDict | OseriesSettingsDict = (
+                        options.timeseries[settings]
+                    )
                 else:
                     msg = (
                         "Settings shortcut code '%s' is not in the options.timeseries "
