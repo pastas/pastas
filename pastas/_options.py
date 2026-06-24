@@ -74,7 +74,9 @@ class PastasOptions:
     numba: bool = True
     parallel: bool = False
     timeseries: dict[str, OseriesSettingsDict | StressSettingsDict] = field(
-        default_factory=lambda: DEFAULT_TIMESERIES_SETTINGS.copy()
+        default_factory=lambda: {
+             k: v.copy() for k, v in DEFAULT_TIMESERIES_SETTINGS.items()
+         }
     )
 
     def __getitem__(self, key: str) -> Any:
