@@ -326,7 +326,7 @@ def _preprocess(
     return x, t, dt_mu
 
 
-@njit(parallel=options["parallel"], nogil=True, cache=options["cache"])
+@njit(parallel=options["parallel"], nogil=True, cache=True)
 def _compute_ccf_rectangle(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -362,7 +362,7 @@ def _compute_ccf_rectangle(
     return c, b
 
 
-@njit(parallel=options["parallel"], nogil=True, cache=options["cache"])
+@njit(parallel=options["parallel"], nogil=True, cache=True)
 def _compute_ccf_gaussian(
     lags: ArrayLike,
     t_x: ArrayLike,
