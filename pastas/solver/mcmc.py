@@ -98,7 +98,7 @@ class Emcee(SolverBase):
         nwalkers: int = 20,
         backend: Any | None = None,
         moves: Any | None = None,
-        parallel: bool = options["parallel"],
+        parallel: bool | None = None,
         progress_bar: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -120,7 +120,7 @@ class Emcee(SolverBase):
         self.sampler: Any | None = None
         self.backend = backend
         self.moves = moves
-        self.parallel = parallel
+        self.parallel = options["parallel"] if parallel is None else parallel
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
         self.nsteps: int | None = None
