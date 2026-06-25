@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import DataFrame, Series, Timestamp, concat
+from pandas import DataFrame, Series, Timedelta, Timestamp, concat
 
 from pastas.decorators import (
     PastasDeprecationWarning,
@@ -140,6 +140,7 @@ class Plotting:
         block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
         return_dict: bool = False,
+        gap: Timedelta | None = None,
         **kwargs,
     ) -> dict[str, Axes] | list[Axes]:
         """Plot the results of the model in a mosaic plot.
@@ -309,10 +310,10 @@ class Plotting:
         axd["sim"].set_ylim(bottom=ylims["sim"][0], top=ylims["sim"][1])
 
         # plot residuals (and noise if present)
-        _ = plot_series_with_gaps(res, ax=axd["res"], color="k")
+        _ = plot_series_with_gaps(res, ax=axd["res"], color="k", gap=gap)
         if self.ml.noisemodel is not None:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
-            _ = plot_series_with_gaps(noise, ax=axd["res"], color="C0")
+            _ = plot_series_with_gaps(noise, ax=axd["res"], color="C0", gap=gap)
         axd["res"].axhline(0.0, color="k", linestyle="--", zorder=0)
         axd["res"].legend(loc=(0, 1), ncol=2, frameon=False)
 
