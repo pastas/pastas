@@ -118,27 +118,13 @@ def plot_series_with_gaps(
     kwargs: dict
         Additional keyword arguments that are passed to the plot method.
     """
-    from pastas._options import options
-
     if ax is None:
         _, ax = plt.subplots()
 
     td_diff = series.index[1:] - series.index[:-1]
     if gap is None:
         gapq = Timedelta(np.quantile(td_diff, 0.95))
-        max_gap = Timedelta(options.plotting["max_gap"], "D")
-        if gapq > max_gap:
-            logger.debug(
-                f"The 95th percentile of the differences in the series index ({gapq.days} D) is larger than "
-                f"the maximum gap ({max_gap.days} D). The maximum gap will be used as gap. To change this "
-                f"value, set ps.options.plotting['max_gap'] to a different value."
-            )
-        else:
-            logger.debug(
-                f"The 95th percentile of the differences in the series index ({gapq.days} D) is smaller than "
-                f"the maximum gap ({max_gap.days} D). The 95th percentile will be used as gap. To change this "
-                f"value, set ps.options.plotting['max_gap'] to a different value."
-            )
+        max_gap = Timedelta(50.0, "D")
         gap = max(gapq, max_gap)
 
     s_split = np.append(0.0, np.cumsum(td_diff >= gap))
