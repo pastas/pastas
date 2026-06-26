@@ -357,7 +357,7 @@ class StressModelBase(ABC):
         Parameters
         ----------
         block_or_step: {"block", "step"}
-            String with "step" or "block"
+            String with "step" or "block".
         p : array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
@@ -366,9 +366,19 @@ class StressModelBase(ABC):
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword can be
             used to obtain the response to an individual stress.
-        kwargs: dict: passed to rfunc.step() or rfunc.block()
+        kwargs: dict, optional
+            Additional keyword arguments passed to rfunc.step() or rfunc.block().
+
+        Returns
+        -------
+        pandas.DataFrame | None
+            DataFrame with the response indexed by time and the stress name as column.
+            Returns None if the stressmodel has no response function (e.g., LinearTrend).
 
         """
+        if self.freq is None:
+            return None
+
         if block_or_step == "step":
             resp_fcn = self.rfunc.step
         else:
@@ -634,51 +644,6 @@ class StressModel(StressModelBase):
             dtype=np.asarray(p).dtype,
         )
         return h
-
-    def _get_responses(
-        self,
-        p: ArrayLike,
-        dt: float,
-        block_or_step: Literal["block", "step"] = "step",
-        istress: int | None = None,
-        **kwargs,
-    ) -> DataFrame:
-        """Compute the block or step response for the stress.
-
-        Parameters
-        ----------
-        p : array_like
-            Array with parameter values. See Model.get_parameters() for more info.
-        dt : float
-            Timestep for the response function.
-        block_or_step : {"block", "step"}, optional
-            String indicating whether to compute the block or step response.
-            Default is "step".
-        istress : int, optional
-            Index of the stress to compute the response for. Not used here as
-            StressModel contains a single stress, but kept for API consistency.
-        kwargs : dict
-            Additional keyword arguments passed to rfunc.step() or rfunc.block().
-
-        Returns
-        -------
-        pandas.DataFrame
-            DataFrame with the response indexed by time and the stress name as column.
-
-        """
-        if block_or_step == "step":
-            resp_fcn = self.rfunc.step
-        else:
-            resp_fcn = self.rfunc.block
-
-        if istress is None or istress == "all":
-            istress = 0
-
-        response = resp_fcn(p=p, dt=dt, **kwargs)
-
-        # Make a DataFrame
-        responses = DataFrame(data=response, columns=[self.stress.name])
-        return responses
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
@@ -996,36 +961,6 @@ class LinearTrend(StressModelBase):
         trend = trend.cumsum() * p[0]
         return trend.rename(self.name)
 
-    def _get_responses(
-        self,
-        block_or_step: Literal["block", "step"] = "step",
-        p: ArrayLike | None = None,
-        dt: float | None = None,
-        istress: int | None = None,
-        **kwargs,
-    ) -> None:
-        """Return None as LinearTrend has no response function.
-
-        Parameters
-        ----------
-        block_or_step : {"block", "step"}, optional
-            Not used. Kept for API consistency.
-        p : array_like, optional
-            Not used. Kept for API consistency.
-        dt : float, optional
-            Not used. Kept for API consistency.
-        istress : int, optional
-            Not used. Kept for API consistency.
-        kwargs : dict
-            Not used. Kept for API consistency.
-
-        Returns
-        -------
-        None
-
-        """
-        return None
-
     def to_dict(self, series: bool = False) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
 
@@ -1092,36 +1027,6 @@ class Constant(StressModelBase):
     def simulate(p: float | None = None) -> float:
         """Simulate the stressmodel's contribution."""
         return p
-
-    def _get_responses(
-        self,
-        block_or_step: Literal["block", "step"] = "step",
-        p: ArrayLike | None = None,
-        dt: float | None = None,
-        istress: int | None = None,
-        **kwargs,
-    ) -> None:
-        """Return None as Constant has no response function.
-
-        Parameters
-        ----------
-        block_or_step : {"block", "step"}, optional
-            Not used. Kept for API consistency.
-        p : array_like, optional
-            Not used. Kept for API consistency.
-        dt : float, optional
-            Not used. Kept for API consistency.
-        istress : int, optional
-            Not used. Kept for API consistency.
-        kwargs : dict
-            Not used. Kept for API consistency.
-
-        Returns
-        -------
-        None
-
-        """
-        return None
 
     def to_dict(self, series: bool = False) -> dict:
         """Export the stressmodel to a dictionary.
@@ -3020,17 +2925,17 @@ class ChangeModel(StressModelBase):
             ``istress`` is None or "all", or a Series for a single index.
 
         """
-        resp_fcn0 = getattr(self.rfunc1, block_or_step)(
+        response0 = getattr(self.rfunc1, block_or_step)(
             p=p[: self.rfunc1.nparam],
             dt=dt,
         )
-        resp_fcn1 = getattr(self.rfunc2, block_or_step)(
+        response1 = getattr(self.rfunc2, block_or_step)(
             p=p[self.rfunc1.nparam : self.rfunc1.nparam + self.rfunc2.nparam],
             dt=dt,
         )
         responses = DataFrame(
-            data=[resp_fcn0, resp_fcn1],
-            index=np.linspace(0, resp_fcn0.size * dt, resp_fcn0.size + 1),
+            data=[response0, response1],
+            index=np.linspace(0, response0.size * dt, response0.size + 1),
             names=[f"{self.name}_rf0", f"{self.name}_rf1"],
         )
         if istress is None or istress == "all":
