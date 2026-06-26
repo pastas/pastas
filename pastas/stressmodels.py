@@ -370,14 +370,14 @@ class StressModelBase(ABC):
 
         """
         if block_or_step == "step":
-            rfunc = self.rfunc.step
+            resp_fcn = self.rfunc.step
         else:
-            rfunc = self.rfunc.block
+            resp_fcn = self.rfunc.block
 
         if istress is None or istress == "all":
             istress = 0
 
-        response = rfunc(p=p, dt=dt, **kwargs)
+        response = resp_fcn(p=p, dt=dt, **kwargs)
 
         # Make a DataFrame
         responses = DataFrame(data=response, columns=[self.stress.name])
@@ -667,14 +667,14 @@ class StressModel(StressModelBase):
 
         """
         if block_or_step == "step":
-            rfunc = self.rfunc.step
+            resp_fcn = self.rfunc.step
         else:
-            rfunc = self.rfunc.block
+            resp_fcn = self.rfunc.block
 
         if istress is None or istress == "all":
             istress = 0
 
-        response = rfunc(p=p, dt=dt, **kwargs)
+        response = resp_fcn(p=p, dt=dt, **kwargs)
 
         # Make a DataFrame
         responses = DataFrame(data=response, columns=[self.stress.name])
@@ -838,9 +838,9 @@ class StepModel(StressModelBase):
             column.
 
         """
-        rfunc = self.rfunc.step if block_or_step == "step" else self.rfunc.block
+        resp_fcn = self.rfunc.step if block_or_step == "step" else self.rfunc.block
 
-        response = rfunc(p=p[:-1], dt=dt, **kwargs)
+        response = resp_fcn(p=p[:-1], dt=dt, **kwargs)
         response = DataFrame(data=response, columns=[self.name])
 
         return response
@@ -1707,9 +1707,9 @@ class WellModel(StressModelBase):
 
         """
         if block_or_step == "step":
-            rfunc = self.rfunc.step
+            resp_fcn = self.rfunc.step
         else:
-            rfunc = self.rfunc.block
+            resp_fcn = self.rfunc.block
 
         if istress is None or istress == "all":
             istress = list(range(len(self.stresses)))
@@ -1728,7 +1728,7 @@ class WellModel(StressModelBase):
         responses = []
         names = []
         for ip, i in enumerate(istress):
-            response = rfunc(p=p[ip], dt=dt, **kwargs)
+            response = resp_fcn(p=p[ip], dt=dt, **kwargs)
             names.append(self.stresses[i].name)
             responses.append(response)
 
@@ -2414,9 +2414,9 @@ class RechargeModel(StressModelBase):
 
         """
         if block_or_step == "step":
-            rfunc = self.rfunc.step
+            resp_fcn = self.rfunc.step
         else:
-            rfunc = self.rfunc.block
+            resp_fcn = self.rfunc.block
 
         if isinstance(self.recharge, Linear) and istress is not None:
             if istress == "all":
@@ -2435,11 +2435,11 @@ class RechargeModel(StressModelBase):
                     pnew[0] *= p[-1]
                     pnew = pnew[:-1]
 
-                response = rfunc(p=pnew, dt=dt)
+                response = resp_fcn(p=pnew, dt=dt)
                 names.append(self.stresses[i].name)
                 responses.append(response)
         else:
-            responses = [rfunc(p=p[: self.rfunc.nparam], dt=dt)]
+            responses = [resp_fcn(p=p[: self.rfunc.nparam], dt=dt)]
             names = [self.name]
 
         responses = DataFrame(data=responses, index=names).T
@@ -2727,10 +2727,10 @@ class TarsoModel(RechargeModel):
 
         """
         A0, a0, _, A1, a1, _, _ = p
-        block_or_step = getattr(self.rfunc, block_or_step)
+        resp_fcn = getattr(self.rfunc, block_or_step)
 
-        response0 = block_or_step(p=[A0, a0], dt=dt)
-        response1 = block_or_step(p=[A1, a1], dt=dt)
+        response0 = resp_fcn(p=[A0, a0], dt=dt)
+        response1 = resp_fcn(p=[A1, a1], dt=dt)
 
         responses = DataFrame(
             data=[response0, response1],
@@ -3020,17 +3020,17 @@ class ChangeModel(StressModelBase):
             ``istress`` is None or "all", or a Series for a single index.
 
         """
-        response0 = getattr(self.rfunc1, block_or_step)(
+        resp_fcn0 = getattr(self.rfunc1, block_or_step)(
             p=p[: self.rfunc1.nparam],
             dt=dt,
         )
-        response1 = getattr(self.rfunc2, block_or_step)(
+        resp_fcn1 = getattr(self.rfunc2, block_or_step)(
             p=p[self.rfunc1.nparam : self.rfunc1.nparam + self.rfunc2.nparam],
             dt=dt,
         )
         responses = DataFrame(
-            data=[response0, response1],
-            index=np.linspace(0, response0.size * dt, response0.size + 1),
+            data=[resp_fcn0, resp_fcn1],
+            index=np.linspace(0, resp_fcn0.size * dt, resp_fcn0.size + 1),
             names=[f"{self.name}_rf0", f"{self.name}_rf1"],
         )
         if istress is None or istress == "all":
