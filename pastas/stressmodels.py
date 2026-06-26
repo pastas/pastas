@@ -376,7 +376,7 @@ class StressModelBase(ABC):
             Returns None if the stressmodel has no response function (e.g., LinearTrend).
 
         """
-        if self.freq is None:
+        if self.rfunc is None:
             return None
 
         if block_or_step == "step":
