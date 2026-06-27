@@ -280,8 +280,10 @@ def _load_stressmodel(ts, model):
         ts["metadata"] = metadata if len(metadata) > 1 else metadata[0]
     if settings:
         ts["settings"] = settings if len(settings) > 1 else settings[0]
+    if "model" not in ts.keys():
+        ts["model"] = model
 
-    sm = stressmodel(model, **ts)
+    sm = stressmodel(**ts)
     return sm
 
 

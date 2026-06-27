@@ -378,10 +378,7 @@ class StressModelBase(ABC):
 
         """
         _ = series
-        settings = {
-            "class": self._name,
-            "name": self.name,
-        }
+        settings = {"class": self._name, "name": self.name, "model": self.model}
         return settings
 
 
