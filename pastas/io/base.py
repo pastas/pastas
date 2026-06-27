@@ -116,8 +116,7 @@ def _load_model(data: dict) -> Model:
     # Add stressmodels
     rfunc_one_sm_names = []
     for name, smdata in data["stressmodels"].items():
-        sm = _load_stressmodel(smdata, data)
-        ml.add_stressmodel(sm)
+        sm = _load_stressmodel(smdata, model=ml)
         if sm.rfunc is not None and sm.rfunc._name == "One":
             rfunc_one_sm_names.append(name)
 
@@ -225,7 +224,7 @@ def _load_model(data: dict) -> Model:
     return ml
 
 
-def _load_stressmodel(ts, data):
+def _load_stressmodel(ts, model):
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts.pop("class"))
 
@@ -282,7 +281,7 @@ def _load_stressmodel(ts, data):
     if settings:
         ts["settings"] = settings if len(settings) > 1 else settings[0]
 
-    sm = stressmodel(**ts)
+    sm = stressmodel(model, **ts)
     return sm
 
 

@@ -83,6 +83,7 @@ class StressModelBase(ABC):
 
     def __init__(
         self,
+        model: Model,
         name: str,
         tmin: Timestamp | str,
         tmax: Timestamp | str,
@@ -91,6 +92,8 @@ class StressModelBase(ABC):
         gain_scale_factor: float = 1.0,
         max_cache_size: int | None = 32,
     ) -> None:
+        self.model = model
+
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
@@ -469,6 +472,7 @@ class StressModel(StressModelBase):
 
     def __init__(
         self,
+        model: Model,
         stress: Series,
         rfunc: RFunc,
         name: str,
@@ -481,6 +485,7 @@ class StressModel(StressModelBase):
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
         super().__init__(
+            model=model,
             name=name,
             tmin=self.stress.series.index.min(),
             tmax=self.stress.series.index.max(),
@@ -495,6 +500,7 @@ class StressModel(StressModelBase):
         )
         self.gain_scale_factor = gain_scale_factor
         self.set_init_parameters()
+        self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> TimeSeries:
@@ -662,6 +668,7 @@ class StepModel(StressModelBase):
 
     def __init__(
         self,
+        model: Model,
         tstart: Timestamp | str,
         rfunc: RFunc | None = None,
         name: str = "step",
@@ -669,6 +676,7 @@ class StepModel(StressModelBase):
         max_cache_size: int | None = None,
     ) -> None:
         super().__init__(
+            model=model,
             name=name,
             tmin=Timestamp.min,
             tmax=Timestamp.max,
@@ -678,6 +686,7 @@ class StepModel(StressModelBase):
         )
         self.tstart = Timestamp(tstart)
         self.set_init_parameters()
+        self.model._add_stressmodel(self)
 
     @property
     def stresses(self) -> tuple:
@@ -786,6 +795,7 @@ class LinearTrend(StressModelBase):
 
     def __init__(
         self,
+        model: Model,
         tstart: Timestamp | str | None = None,
         tend: Timestamp | str | None = None,
         name: str = "trend",
@@ -818,10 +828,11 @@ class LinearTrend(StressModelBase):
         if tend is None:
             raise TypeError("LinearTrend.__init__() missing required argument: 'tend'")
 
-        super().__init__(name=name, tmin=Timestamp.min, tmax=Timestamp.max)
+        super().__init__(model=model, name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.tstart = tstart
         self.tend = tend
         self.set_init_parameters()
+        self.model._add_stressmodel(self)
 
     @property
     def stresses(self) -> tuple:
@@ -926,10 +937,13 @@ class Constant(StressModelBase):
 
     """
 
-    def __init__(self, initial: float = 0.0, name: str = "constant") -> None:
-        super().__init__(name=name, tmin=Timestamp.min, tmax=Timestamp.max)
+    def __init__(
+        self, model: Model, initial: float = 0.0, name: str = "constant"
+    ) -> None:
+        super().__init__(model=model, name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.initial = initial
         self.set_init_parameters()
+        self.model.add_constant(self)
 
     @property
     def stresses(self) -> tuple:
@@ -1062,6 +1076,7 @@ class WellModel(StressModelBase):
 
     def __init__(
         self,
+        model: Model,
         stress: Iterable[Series],
         rfunc: HantushWellModel | None = None,
         name: str = "well",
@@ -1122,6 +1137,7 @@ class WellModel(StressModelBase):
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
         super().__init__(
+            model=model,
             name=name,
             tmin=tmin,
             tmax=tmax,
@@ -1133,6 +1149,7 @@ class WellModel(StressModelBase):
 
         self.rfunc.set_distances(self.distances.values)
         self.set_init_parameters()
+        self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> tuple[TimeSeries, ...]:
@@ -1684,6 +1701,7 @@ class RechargeModel(StressModelBase):
 
     def __init__(
         self,
+        model: Model,
         prec: Series,
         evap: Series,
         rfunc: RFunc | None = None,
@@ -1745,6 +1763,7 @@ class RechargeModel(StressModelBase):
         ).std()
 
         super().__init__(
+            model=model,
             name=name,
             tmin=index.min(),
             tmax=index.max(),
@@ -1755,6 +1774,7 @@ class RechargeModel(StressModelBase):
         )
 
         self.set_init_parameters()
+        self.model._add_stressmodel(self)
 
         # Check if precipitation is likely in mm/d and not m/d. If the maximum
         # value of the annual sums is smaller than 12 (m), the highest annual
@@ -2268,6 +2288,7 @@ class TarsoModel(RechargeModel):
 
     def __init__(
         self,
+        model: Model,
         prec: Series,
         evap: Series,
         rfunc: Exponential | None = None,
@@ -2292,7 +2313,10 @@ class TarsoModel(RechargeModel):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
         self.dmin = dmin
         self.dmax = dmax
-        super().__init__(prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs)
+        super().__init__(
+            model=model, prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs
+        )
+        self.model._add_stressmodel(self)
 
     @property
     def nsplit(self) -> int:
@@ -2564,6 +2588,7 @@ class ChangeModel(StressModelBase):
 
     def __init__(
         self,
+        model: Model,
         stress: Series,
         rfunc1: RFunc,
         rfunc2: RFunc,
@@ -2575,8 +2600,8 @@ class ChangeModel(StressModelBase):
     ) -> None:
         self.set_stress(stress, settings=settings, metadata=metadata)
 
-        StressModelBase.__init__(
-            self,
+        super().__init__(
+            model=model,
             name=name,
             rfunc=None,
             tmin=self.stress.series.index.min(),
@@ -2590,6 +2615,7 @@ class ChangeModel(StressModelBase):
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
         self.set_init_parameters()
+        self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> TimeSeries:

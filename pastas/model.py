@@ -126,7 +126,9 @@ class Model:
         self.solver: Any = None
         if constant:
             self.add_constant(
-                constant=Constant(initial=self.oseries.series.mean(), name="constant")
+                constant=Constant(
+                    model=self, initial=self.oseries.series.mean(), name="constant"
+                )
             )
         else:
             self.constant = None
@@ -224,70 +226,47 @@ class Model:
             "like ml.solve() and ml.set_settings()."
         )
 
-    def add_stressmodel(
-        self, stressmodel: StressModel | list[StressModel], replace: bool = True
-    ) -> None:
+    @PastasDeprecationWarning(
+        version="2.0",
+        reason="Stressmodels are now added by adding the Pastas Model as the first argument during stressmodel initialization (i.e., ps.Stressmodel(model=ml, *args))",
+    )
+    def add_stressmodel(*args, **kwargs):
+        """Add a stressmodel to the model (Deprecated)."""
+        pass
+
+    def _add_stressmodel(self, stressmodel: StressModel) -> None:
         """Add a stressmodel to the main model.
 
         Parameters
         ----------
-        stressmodel: pastas.stressmodel or list of pastas.stressmodel
-            instance of a pastas.stressmodel class. Multiple stress models can be
-            provided (e.g., ml.add_stressmodel([sm1, sm2]) in one call.
-        replace: bool, optional
-            force replace the stressmodel if a stressmodel with the same name already
-            exists. Not recommended but useful at times. Default is True.
+        stressmodel: pastas.stressmodel
+            instance of a pastas.stressmodel class that is added
 
         Notes
         -----
-        To obtain a list of the stressmodel names, type:
-
-        >>> ml.get_stressmodel_names()
-
-        Examples
-        --------
-        >>> sm = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress")
-        >>> ml.add_stressmodel(sm)
-
-        To add multiple stress models at once you can do the following:
-
-        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress1")
-        >>> sm2 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress2")
-        >>> ml.add_stressmodel([sm1, sm2])
+        This method is internally used by the stressmodels to add
 
         See Also
         --------
         pastas.stressmodels
         """
         # Method can take multiple stressmodels at once through args
-        if isinstance(stressmodel, list):
-            for sm in stressmodel:
-                self.add_stressmodel(sm)
-        elif (stressmodel.name in self.stressmodels.keys()) and not replace:
-            msg = (
-                "The name for the stressmodel you are trying to add already exists "
-                "for this model. Select another name."
+        if stressmodel.name in self.stressmodels.keys():
+            logger.warning(
+                "The name for the stressmodel you are trying to add already "
+                "exists for this model. The stressmodel is replaced."
             )
-            logger.error(msg)
-            raise ValueError(msg)
+        self.stressmodels[stressmodel.name] = stressmodel
+        self._parameters = self.get_init_parameters(initial=False)
+        stressmodel.update_stress(freq=self.settings["freq"])
 
-        else:
-            if stressmodel.name in self.stressmodels.keys():
-                logger.warning(
-                    "The name for the stressmodel you are trying to add already "
-                    "exists for this model. The stressmodel is replaced."
-                )
-            self.stressmodels[stressmodel.name] = stressmodel
-            self._parameters = self.get_init_parameters(initial=False)
-            stressmodel.update_stress(freq=self.settings["freq"])
-
-            # Check if stress overlaps with oseries, if not give a warning
-            if (stressmodel.tmin > self.oseries.series.index.max()) or (
-                stressmodel.tmax < self.oseries.series.index.min()
-            ):
-                logger.warning(
-                    "The stress of the stressmodel has no overlap with ml.oseries."
-                )
+        # Check if stress overlaps with oseries, if not give a warning
+        if (stressmodel.tmin > self.oseries.series.index.max()) or (
+            stressmodel.tmax < self.oseries.series.index.min()
+        ):
+            logger.warning(
+                "The stress of the stressmodel has no overlap with ml.oseries."
+            )
         self._check_stressmodel_compatibility()
 
     def add_constant(self, constant: Constant) -> None:
