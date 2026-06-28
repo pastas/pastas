@@ -37,6 +37,7 @@ from pastas.typing import (
 
 from .decorators import (
     PastasDeprecationWarning,
+    check_argument_model,
     conditional_cachedmethod,
     deprecate_args_or_kwargs,
     njit,
@@ -467,6 +468,7 @@ class StressModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
         model: Model,
@@ -663,6 +665,7 @@ class StepModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
         model: Model,
@@ -790,6 +793,7 @@ class LinearTrend(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
         model: Model,
@@ -934,6 +938,7 @@ class Constant(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self, model: Model, initial: float = 0.0, name: str = "constant"
     ) -> None:
@@ -1071,6 +1076,7 @@ class WellModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
         model: Model,
@@ -1696,6 +1702,7 @@ class RechargeModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
         model: Model,
@@ -2283,6 +2290,7 @@ class TarsoModel(RechargeModel):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
         model: Model,
@@ -2583,6 +2591,7 @@ class ChangeModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
         model: Model,

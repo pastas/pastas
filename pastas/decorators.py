@@ -124,6 +124,26 @@ def get_stressmodel(function: Callable) -> Callable:
 
     return _get_stressmodel
 
+def check_argument_model(function: Callable) -> Callable:
+    """Check if the first argument is a pastas Model."""
+
+    @wraps(function)
+    def _make_model_component(self, *args, **kwargs):
+        if args:
+            from pastas.model import Model
+
+            ml = args[0]
+            if not isinstance(ml, Model):
+                msg = "Since Pastas 2.0, the first argument of a stress model needs to be a Pastas Model instance to which the stress model is added. Please provide the model is the first argument: %s(model=ml, ...)"
+                logger.error(msg % self._name)
+                raise KeyError(msg % self._name)
+            else:
+                return function(self, *args, **kwargs)
+        else:
+            return function(self, *args, **kwargs)
+
+    return _make_model_component
+
 
 def model_tmin_tmax(function: Callable) -> Callable:
     """Use model tmin and tmax settings as default values.
