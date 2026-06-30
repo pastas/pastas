@@ -124,6 +124,7 @@ def get_stressmodel(function: Callable) -> Callable:
 
     return _get_stressmodel
 
+
 def check_argument_model(function: Callable) -> Callable:
     """Check if the first argument is a pastas Model."""
 

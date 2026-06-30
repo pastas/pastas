@@ -31,12 +31,14 @@ class SolverBase(ABC):
 
     """
 
-    def __init__(self, name: str = "solver", **kwargs: Any) -> None:
+    def __init__(self, model: Model, name: str = "solver", **kwargs: Any) -> None:
+        self.model = model
         self.name = name
         self.kwargs = kwargs
         self.ml: Model | None = None
         self.parameters: pd.DataFrame | None = None
         self.set_init_parameters()  # adds self.Parameters DataFrame
+        self.model._add_solver(self)
 
     def get_init_parameters(self, name: str) -> pd.DataFrame:
         """Get initial parameters of the solver.

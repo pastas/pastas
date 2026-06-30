@@ -8,7 +8,7 @@ import numpy as np
 from pandas import DataFrame, Series
 
 from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
-from pastas.typing import ArrayLike, CallBack
+from pastas.typing import ArrayLike, CallBack, Model
 
 from .base import SolverBase
 from .likelihood import GaussianLikelihood, GaussianLikelihoodAr1
@@ -90,6 +90,7 @@ class Emcee(SolverBase):
 
     def __init__(
         self,
+        model: Model,
         name: str = "solver",
         objfunction: GaussianLikelihood
         | GaussianLikelihoodAr1
@@ -113,7 +114,7 @@ class Emcee(SolverBase):
 
         self.objfunction = objfunction
 
-        super().__init__(name=name, **kwargs)
+        super().__init__(model=model, name=name, **kwargs)
 
         # Set sampler properties
         self.sampler: Any | None = None

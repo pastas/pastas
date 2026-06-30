@@ -1724,7 +1724,6 @@ class RechargeModel(StressModelBase):
         metadata: tuple[dict | None, dict | None, dict | None] = (None, None, None),
         max_cache_size: int | None = None,
     ) -> None:
-
         # Store the precipitation and evaporation time series
         self.set_stress(prec=prec, settings=settings[0], metadata=metadata[0])
         self.set_stress(evap=evap, settings=settings[1], metadata=metadata[1])

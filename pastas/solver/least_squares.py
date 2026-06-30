@@ -14,7 +14,7 @@ from scipy.optimize import Bounds, OptimizeResult, least_squares
 
 from pastas.decorators import PastasDeprecationWarning, temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
-from pastas.typing import ArrayLike
+from pastas.typing import ArrayLike, Model
 
 from .base import SolverBase
 from .objective_function import misfit
@@ -27,6 +27,7 @@ class LeastSquaresBase(SolverBase):
 
     def __init__(
         self,
+        model: Model,
         name: str = "solver",
         pcov: DataFrame | None = None,
         **kwargs,
@@ -51,7 +52,7 @@ class LeastSquaresBase(SolverBase):
                 "The 'obj_func' argument is not used in the LeastSquaresBase class and will be ignored."
             )
             kwargs.pop("obj_func")
-        super().__init__(name=name, **kwargs)
+        super().__init__(model=model, name=name, **kwargs)
         self.pcov: DataFrame | None = pcov
         self.result: OptimizeResult | "lmfit.minimize.MinimizerResult" | None = None
 
@@ -703,6 +704,7 @@ class LeastSquares(LeastSquaresBase):
 
     def __init__(
         self,
+        model: Model,
         name: str = "solver",
         jac: Literal["2-point", "3-point", "cs"] = "2-point",
         method: Literal["trf", "dogbox", "lm"] = "trf",
@@ -720,7 +722,7 @@ class LeastSquares(LeastSquaresBase):
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(name=name, pcov=pcov, **kwargs)
+        super().__init__(model=model, name=name, pcov=pcov, **kwargs)
         self.result: OptimizeResult | None = None
         self.jac = jac
         self.method = method
@@ -1103,13 +1105,14 @@ class Lmfit(LeastSquaresBase):
 
     def __init__(
         self,
+        model: Model,
         name: str = "solver",
         method: Literal["leastsq"] = "leastsq",
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
         self._assert_lmfit_installation()
-        super().__init__(name=name, pcov=pcov, **kwargs)
+        super().__init__(model=model, name=name, pcov=pcov, **kwargs)
         self.method = method
         self.result: "lmfit.minimize.MinimizerResult" | None = None
 

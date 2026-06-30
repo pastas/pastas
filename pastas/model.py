@@ -347,7 +347,17 @@ class Model:
 
         self._parameters = self.get_init_parameters(initial=False)
 
-    def add_solver(self, solver: Solver) -> None:
+    @PastasDeprecationWarning(
+        version="2.0",
+        reason="Solvers are now added by adding the Pastas Model as the first "
+        "argument during solver initialization (i.e.,  ps.solver.LeastSquares"
+        "(model=ml, *args))",
+    )
+    def add_solver(*args, **kwargs):
+        """Add a solver to the model (Deprecated)."""
+        pass
+
+    def _add_solver(self, solver: Solver) -> None:
         """Add a solver to the model.
 
         Parameters
