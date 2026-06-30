@@ -8,16 +8,12 @@ Examples
 --------
 A noise model can be added to a Pastas model.::
 
-    n = ps.ArmaNoiseModel()
-    ml.add_noisemodel(n)
+    n = ps.ArmaNoiseModel(model=ml)
 
 Or delete the noise model from the model::
 
     ml.del_noisemodel()
 
-See Also
---------
-pastas.model.Model.add_noisemodel
 """
 
 from abc import ABC, abstractmethod

@@ -158,8 +158,8 @@ def _load_model(data: dict) -> Model:
             data["noisemodel"]["class"] = "ArNoiseModel"
         elif data["noisemodel"]["class"] == "ArmaModel":
             data["noisemodel"]["class"] = "ArmaNoiseModel"
-        n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
-        ml.add_noisemodel(n)
+        data["noisemodel"]["model"] = ml
+        getattr(ps.noisemodels, data["noisemodel"].pop("class"))(**data["noisemodel"])
 
     solver_name = None
     for solver_key in ("fit", "solver"):
@@ -175,8 +175,9 @@ def _load_model(data: dict) -> Model:
         solver_name = data[solver_key].pop("class")
         solver_name = "Lmfit" if solver_name == "LmfitSolve" else solver_name
         solver_name = "Emcee" if solver_name == "EmceeSolve" else solver_name
-        solver = getattr(ps.solver, solver_name)
-        ml.add_solver(solver(**data[solver_key]))
+
+        data[solver_key]["model"] = ml
+        getattr(ps.solver, solver_name)(**data[solver_key])
 
     # Fix old parameter names for One response functions to match the naming convention from Pastas 2.0
     # TODO: Deprecate if pas-files < 2.0 are no longer supported
