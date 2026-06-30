@@ -120,6 +120,8 @@ class ArNoiseModel(NoiseModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the noise model is added.
     name: str, optional
         Name of the noise model. Default is "noise".
     norm: boolean, optional

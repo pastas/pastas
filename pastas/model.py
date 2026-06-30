@@ -978,12 +978,12 @@ class Model:
         if solver is not None:  # add solver if provided
             if self.solver is None or self.solver._name != solver._name:
                 logger.info("Setting solver to `%s`." % solver._name)
-                self.add_solver(solver=solver)
+                self._add_solver(solver=solver)
             else:
                 logger.info("Keeping original solver `%s`." % self.solver._name)
         elif self.solver is None:  # add scipy least_squares if no solver provided
             logger.debug("Adding LeastSquares as default solver.")
-            self.add_solver(solver=LeastSquares())
+            self._add_solver(solver=LeastSquares(model=self))
 
         # Solve model
         solve_success, result = self.solver.solve(weights=weights, **kwargs)

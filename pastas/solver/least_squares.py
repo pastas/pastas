@@ -36,6 +36,8 @@ class LeastSquaresBase(SolverBase):
 
         Parameters
         ----------
+        model: pastas.Model
+            The Pastas Model instance to which the solver is attached.
         name: str, optional
             Name of the solver instance. Default is "solver".
         pcov: DataFrame, optional

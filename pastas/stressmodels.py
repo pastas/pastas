@@ -75,6 +75,8 @@ class StressModelBase(ABC):
 
     Attributes
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which this stressmodel is added.
     name: str
         Name of this stressmodel object. Used as prefix for the parameters.
     parameters: pandas.DataFrame
@@ -388,6 +390,8 @@ class StressModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the stress model is added.
     stress: pandas.Series
         pandas.Series with pandas.DatetimeIndex containing the stress.
     rfunc: pastas.rfunc instance
@@ -645,6 +649,8 @@ class StepModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the step model is added.
     tstart: str or Timestamp
         String with the start date of the step, e.g. '2018-01-01'. This value is
         fixed by default. Use ml.set_parameter("step_tstart", vary=True) to vary the
@@ -776,6 +782,8 @@ class LinearTrend(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the linear trend is added.
     tstart: str or Timestamp
         String with a date to start the trend (e.g., "2018-01-01"), will be
         transformed to an ordinal number internally.
@@ -930,6 +938,8 @@ class Constant(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the constant is added.
     initial: float, optional
         Initial estimate of the parameter value. For example, the minimum of the
         observed series.
@@ -997,6 +1007,8 @@ class WellModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the well model is added.
     stress: list
         list containing the stresses time series
     rfunc: pastas.rfunc instance, optional
@@ -1594,6 +1606,8 @@ class RechargeModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the recharge model is added.
     prec: pandas.Series
         pandas.Series with pandas.DatetimeIndex containing the precipitation series.
         The precipitation series should be provided in mm/day when a nonlinear model is
@@ -2244,6 +2258,8 @@ class TarsoModel(RechargeModel):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the Tarso model is added.
     prec: pandas.Series
         pandas.Series with pandas.DatetimeIndex containing the precipitation series.
     evap: pandas.Series
@@ -2520,6 +2536,8 @@ class ChangeModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the change model is added.
     stress: pandas.Series
         pandas Series object containing the stress.
     rfunc1: pastas.rfunc instance
