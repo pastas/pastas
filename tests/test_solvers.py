@@ -15,11 +15,11 @@ from pastas.solver.objective_function import misfit
 
 # Existing integration tests with real models
 def test_least_squares(ml_recharge: ps.Model) -> None:
-    ml_recharge.solve(solver=ps.solver.LeastSquares())
+    ml_recharge.solve(solver=ps.solver.LeastSquares(model=ml_recharge))
 
 
 def test_least_squares_lm(ml_recharge: ps.Model) -> None:
-    ml_recharge.solve(solver=ps.solver.LeastSquares(), method="lm")
+    ml_recharge.solve(solver=ps.solver.LeastSquares(model=ml_recharge), method="lm")
     assert ml_recharge.parameters.loc[ml_recharge.parameters.vary, "pmin"].isna().all()
 
 
@@ -35,7 +35,7 @@ def test_no_noise(ml_recharge: ps.Model) -> None:
 def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
     """Verify weighted least-squares uses weights on residual terms."""
     ml_recharge.del_noisemodel()
-    ml_recharge.solve(solver=ps.solver.LeastSquares(), report=False)
+    ml_recharge.solve(solver=ps.solver.LeastSquares(model=ml_recharge), report=False)
 
     p = ml_recharge.get_parameters()
     residuals = ml_recharge.residuals(p)
@@ -84,11 +84,10 @@ def test_ci_contribution(ml_solved: ps.Model) -> None:
 # Test the EmceeSolver
 def test_emcee(ml_recharge: ps.Model) -> None:
     try:
-        ml_recharge.solve(solver=ps.solver.LeastSquares())
+        ml_recharge.solve(solver=ps.solver.LeastSquares(model=ml_recharge))
         ml_recharge.del_noisemodel()
 
-        s = ps.solver.Emcee(nwalkers=10)
-        ml_recharge.add_solver(s)
+        s = ps.solver.Emcee(model=ml_recharge, nwalkers=10)
 
         ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)
 
@@ -107,28 +106,28 @@ def test_emcee(ml_recharge: ps.Model) -> None:
 class TestOptionalSolvers:
     """Tests for solvers that depend on optional dependencies."""
 
-    def test_lmfit_solve_init(self) -> None:
+    def test_lmfit_solve_init(self, ml_recharge: ps.Model) -> None:
         """Test LmfitSolve initialization."""
         try:
-            solver = LmfitSolve()
+            solver = LmfitSolve(model=ml_recharge)
             assert solver._name == "Lmfit"
         except ImportError:
             pytest.skip("lmfit not installed")
 
-    def test_emcee_solve_init(self) -> None:
+    def test_emcee_solve_init(self, ml_recharge: ps.Model) -> None:
         """Test EmceeSolve initialization."""
         try:
-            solver = EmceeSolve()
+            solver = EmceeSolve(model=ml_recharge)
             assert solver._name == "Emcee"
             assert solver.nwalkers == 20
             assert solver.progress_bar is True
         except ImportError:
             pytest.skip("emcee not installed")
 
-    def test_emcee_to_dict_warning(self, caplog) -> None:
+    def test_emcee_to_dict_warning(self, ml_recharge: ps.Model, caplog) -> None:
         """Test that EmceeSolve.to_dict caplogs a logger.warning."""
         try:
-            solver = EmceeSolve()
+            solver = EmceeSolve(model=ml_recharge)
             with caplog.at_level(logging.WARNING, logger="pastas.solver.mcmc"):
                 solver.to_dict()
                 assert (
@@ -153,8 +152,7 @@ def test_leastsquares_covariance_scenarios(
     # Using small subset for speed
 
     ml = ps.Model(head)
-    rm = ps.RechargeModel(prec, evap, name="rch")
-    ml.add_stressmodel(rm)
+    rm = ps.RechargeModel(model=ml, prec=prec, evap=evap, name="rch")
 
     weights_random = pd.Series(
         np.random.RandomState(seed=0).rand(len(head)), index=head.index

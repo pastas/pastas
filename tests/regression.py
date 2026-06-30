@@ -38,13 +38,13 @@ def bench():
     ml = Model(head, name="nonlinear")
     recharge = FlexModel()
     sm = RechargeModel(
-        prec,
-        evap,
+        model=ml,
+        prec=prec,
+        evap=evap,
         rfunc=Exponential(),
         name="rch",
         recharge=recharge,
     )
-    ml.add_stressmodel(sm)
 
     if ml.noisemodel is not None:
         ml.del_noisemodel()

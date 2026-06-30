@@ -2024,14 +2024,14 @@ def test_simulate_with_block(head: Series, prec: Series, evap: Series) -> None:
     pex = prec - evap  # compute precipitation excess
     ml = ps.Model(head)  # head is not used but is required to create the model
     sm = ps.StressModel(
-        pex,
+        model=ml,
+        stress=pex,
         name="rch",
         rfunc=ps.Exponential(
             use_block=True
         ),  # simulate with the block response function
         settings="evap",
     )
-    ml.add_stressmodel(sm)
     for param, value in TRUE_PARAMS.items():
         ml.set_parameter(param, optimal=value)
     sim = ml.simulate()
@@ -2043,14 +2043,14 @@ def test_simulate_with_impulse(head: Series, prec: Series, evap: Series) -> None
     pex = prec - evap  # compute precipitation excess
     ml = ps.Model(head)  # head is not used but is required to create the model
     sm = ps.StressModel(
-        pex,
+        model=ml,
+        stress=pex,
         name="rch",
         rfunc=ps.Exponential(
             use_block=False
         ),  # simulate with the impulse response function
         settings="evap",
     )
-    ml.add_stressmodel(sm)
     for param, value in TRUE_PARAMS.items():
         ml.set_parameter(param, optimal=value)
     sim = ml.simulate()

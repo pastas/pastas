@@ -23,9 +23,12 @@ ml.del_constant()
 
 # then add a TarsoModel
 sm = ps.TarsoModel(
-    prec, evap, dmin=ml.oseries.series.min(), dmax=ml.oseries.series.max()
+    model=ml,
+    prec=prec,
+    evap=evap,
+    dmin=ml.oseries.series.min(),
+    dmax=ml.oseries.series.max(),
 )
-ml.add_stressmodel(sm)
 
 # and solve and plot again
 ml.solve()
