@@ -104,7 +104,9 @@ def ml_with_interpolation(
     head: pd.Series, prec: pd.Series, evap: pd.Series
 ) -> ps.Model:
     """Return a model with a recharge (rain) model with some offset added to the head-series."""
-    ml = ps.Model(head + pd.Timedelta(hours=12), name="recharge_model")
+    head_offset = head.copy()
+    head_offset.index = head_offset.index + pd.Timedelta(hours=12)
+    ml = ps.Model(head_offset, name="recharge_model")
     sm = ps.RechargeModel(prec, evap, name="rch", rfunc=ps.Exponential())
     ml.add_stressmodel(sm)
     return ml
