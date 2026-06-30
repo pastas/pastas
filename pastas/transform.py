@@ -16,7 +16,7 @@ from pandas import DataFrame, Series
 
 from pastas.typing import ArrayLike, Model
 
-from .decorators import deprecate_args_or_kwargs, set_parameter
+from .decorators import check_argument_model, deprecate_args_or_kwargs, set_parameter
 from .utils import validate_name
 
 
@@ -25,6 +25,8 @@ class ThresholdTransform:
 
     Parameters
     ----------
+    model : Model
+        Instance of a Pastas Model to which the Transform is added.
     value : float, optional
         The initial starting value above which the simulation is lowered.
     vmin : float, optional
@@ -45,20 +47,25 @@ class ThresholdTransform:
     of the lake, the (groundwater) level then rises slower when it rains.
     """
 
+    @check_argument_model
     def __init__(
         self,
+        model: Model,
         value: float = np.nan,
         vmin: float = np.nan,
         vmax: float = np.nan,
         name: str = "transform",
         nparam: int = 2,
     ) -> None:
+        self.model = model
         self.value = value
         self.vmin = vmin
         self.vmax = vmax
         self.name = validate_name(name)
         self._nparam = nparam
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
+        self.model._add_transform(self)
+        self.set_init_parameters()
 
     @property
     def nparam(self) -> int:
@@ -71,19 +78,17 @@ class ThresholdTransform:
             raise AttributeError("nparam can only be set during initialization.")
         self._nparam = value
 
-    def set_model(self, ml: Model) -> None:
-        """Set model observations and initialize parameters."""
-        obs = ml.observations()
+    def set_init_parameters(self) -> None:
+        """Set the initial parameter values in the parameters DataFrame."""
+        obs = self.model.observations()
+
         if np.isnan(self.value):
             self.value = obs.min() + 0.75 * (obs.max() - obs.min())
         if np.isnan(self.vmin):
             self.vmin = obs.min() + 0.5 * (obs.max() - obs.min())
         if np.isnan(self.vmax):
             self.vmax = obs.max()
-        self.set_init_parameters()
 
-    def set_init_parameters(self) -> None:
-        """Set the initial parameter values in the parameters DataFrame."""
         self.parameters.loc[self.name + "_d"] = (
             self.value,
             self.vmin,

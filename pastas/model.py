@@ -125,11 +125,8 @@ class Model:
         self.noisemodel: NoiseModelType | None = None
         self.solver: Any = None
         if constant:
-            self.add_constant(
-                constant=Constant(
-                    model=self, initial=self.oseries.series.mean(), name="constant"
-                )
-            )
+            Constant(model=self, initial=self.oseries.series.mean(), name="constant")
+
         else:
             self.constant = None
 
@@ -269,7 +266,15 @@ class Model:
             )
         self._check_stressmodel_compatibility()
 
-    def add_constant(self, constant: Constant) -> None:
+    @PastasDeprecationWarning(
+        version="2.0",
+        reason="Constants are now added by adding the Pastas Model as the first argument during initialization (i.e., ps.Constant(model=ml, *args))",
+    )
+    def add_constant(*args, **kwargs):
+        """Add a constant to the model (Deprecated)."""
+        pass
+
+    def _add_constant(self, constant: Constant) -> None:
         """Add a Constant to the time series Model.
 
         Parameters
@@ -277,16 +282,22 @@ class Model:
         constant: pastas.stressmodels.Constant
             Pastas constant instance.
 
-        Examples
-        --------
-        >>> d = ps.Constant()
-        >>> ml.add_constant(d)
         """
         self.constant = constant
         self._parameters = self.get_init_parameters(initial=False)
         self._check_stressmodel_compatibility()
 
-    def add_transform(self, transform: ThresholdTransform):
+    @PastasDeprecationWarning(
+        version="2.0",
+        reason="Transforms are now added by adding the Pastas Model as the first "
+        "argument during Transform initialization (i.e., ps.ThresholdTransform"
+        "(model=ml, *args))",
+    )
+    def add_transform(*args, **kwargs):
+        """Add a Transform to the model (Deprecated)."""
+        pass
+
+    def _add_transform(self, transform: ThresholdTransform):
         """Add a Transform to the time series Model.
 
         Parameters
@@ -294,32 +305,31 @@ class Model:
         transform: ps.ThresholdTransform
             An instance of a pastas.transform class.
 
-        Examples
-        --------
-        >>> tt = ps.ThresholdTransform()
-        >>> ml.add_transform(tt)
-
         See Also
         --------
         pastas.transform
         """
-        transform.set_model(self)
         self.transform = transform
         self._parameters = self.get_init_parameters(initial=False)
         self._check_stressmodel_compatibility()
 
-    def add_noisemodel(self, noisemodel: NoiseModelType) -> None:
+    @PastasDeprecationWarning(
+        version="2.0",
+        reason="Noise models are now added by adding the Pastas Model as the first "
+        "argument during noise model initialization (i.e., ps.ArNoiseModel"
+        "(model=ml, *args))",
+    )
+    def add_noisemodel(*args, **kwargs):
+        """Add a noisemodel to the model (Deprecated)."""
+        pass
+
+    def _add_noisemodel(self, noisemodel: NoiseModelType) -> None:
         """Add a noisemodel to the time series Model.
 
         Parameters
         ----------
         noisemodel: NoiseModelType
             Instance of a noise model class.
-
-        Examples
-        --------
-        >>> n = ps.ArNoiseModel()
-        >>> ml.add_noisemodel(n)
 
         Notes
         -----

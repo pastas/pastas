@@ -26,10 +26,11 @@ from logging import getLogger
 import numpy as np
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 
-from pastas.typing import ArrayLike
+from pastas.typing import ArrayLike, Model
 
 from .decorators import (
     PastasDeprecationWarning,
+    check_argument_model,
     njit,
     set_parameter,
 )
@@ -42,7 +43,8 @@ __all__ = ["ArNoiseModel", "ArmaNoiseModel"]
 class NoiseModelBase(ABC):
     """Base class for noise models."""
 
-    def __init__(self, name: str, norm: bool | None = None) -> None:
+    def __init__(self, model: Model, name: str, norm: bool | None = None) -> None:
+        self.model = model
         self.name = name
         self.norm = norm
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -144,9 +146,11 @@ class ArNoiseModel(NoiseModelBase):
     optional.
     """
 
-    def __init__(self, name: str = "noise", norm: bool = True) -> None:
-        super().__init__(name=name, norm=norm)
+    @check_argument_model
+    def __init__(self, model: Model, name: str = "noise", norm: bool = True) -> None:
+        super().__init__(model=model, name=name, norm=norm)
         self.set_init_parameters()
+        self.model._add_noisemodel(self)
 
     def set_init_parameters(self, oseries: Series | None = None) -> None:
         """Set initial parameters for the noise model.
@@ -318,9 +322,11 @@ class ArmaNoiseModel(NoiseModelBase):
     irregular time steps yet.
     """
 
-    def __init__(self, name: str = "noise", norm: bool = True) -> None:
-        super().__init__(name=name, norm=norm)
+    @check_argument_model
+    def __init__(self, model: Model, name: str = "noise", norm: bool = True) -> None:
+        super().__init__(model=model, name=name, norm=norm)
         self.set_init_parameters()
+        self.model._add_noisemodel(self)
 
     @property
     def nparam(self) -> int:

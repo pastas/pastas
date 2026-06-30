@@ -379,7 +379,7 @@ class StressModelBase(ABC):
 
         """
         _ = series
-        settings = {"class": self._name, "name": self.name, "model": self.model}
+        settings = {"class": self._name, "name": self.name}
         return settings
 
 
@@ -945,7 +945,7 @@ class Constant(StressModelBase):
         super().__init__(model=model, name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.initial = initial
         self.set_init_parameters()
-        self.model.add_constant(self)
+        self.model._add_constant(self)
 
     @property
     def stresses(self) -> tuple:
