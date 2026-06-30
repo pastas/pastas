@@ -443,12 +443,23 @@ class TestModelParameters:
 class TestModelSolving:
     """Test model solving."""
 
-    def test_solve(self, ml_solved: ps.Model) -> None:
+    # Parameterize the test with the string names of the fixtures you want to use
+    @pytest.mark.parametrize("model_name", ["ml_recharge", "ml_with_interpolation"])
+    def test_solve(self, model_name: str, request: pytest.FixtureRequest) -> None:
         """Test solving the model."""
-        ml_solved.solve(report=False)
+        ml = request.getfixturevalue(model_name)
+        ml.solve(report=False)
 
-        assert ml_solved.solver is not None
-        assert ml_solved.parameters["optimal"].notna().any()
+        assert ml.solver is not None
+        assert ml.parameters["optimal"].notna().any()
+
+        # make sure all parameters that can vary have changed from their initial values
+        for param in ml.parameters.index:
+            if ml.parameters.at[param, "vary"]:
+                assert not np.isclose(
+                    ml.parameters.at[param, "optimal"],
+                    ml.parameters.at[param, "initial"],
+                )
 
     def test_solve_with_weights(self, ml_solved: ps.Model) -> None:
         """Test solving with weights."""

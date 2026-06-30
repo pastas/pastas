@@ -100,6 +100,17 @@ def ml_recharge(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
 
 
 @pytest.fixture
+def ml_with_interpolation(
+    head: pd.Series, prec: pd.Series, evap: pd.Series
+) -> ps.Model:
+    """Return a model with a recharge (rain) model with some offset added to the head-series."""
+    ml = ps.Model(head + pd.Timedelta(hours=12), name="recharge_model")
+    sm = ps.RechargeModel(prec, evap, name="rch", rfunc=ps.Exponential())
+    ml.add_stressmodel(sm)
+    return ml
+
+
+@pytest.fixture
 def ml_solved(ml_recharge: ps.Model) -> ps.Model:
     """Return a model with a recharge (rain) model."""
     ml = ml_recharge.copy()
