@@ -37,6 +37,16 @@ def test_results(ml_noisemodel: Model) -> None:
     plt.close()
 
 
+def test_results_default_ylabels(ml_noisemodel: Model) -> None:
+    # regression test for https://github.com/pastas/pastas/issues/1271
+    axd = ml_noisemodel.plots.results(return_dict=True)
+    assert axd["sim"].get_ylabel() == "Head"
+    con_keys = [k for k in axd if k.startswith("con_")]
+    assert con_keys
+    assert all(axd[k].get_ylabel() == "Rise" for k in con_keys)
+    plt.close()
+
+
 def test_results_kwargs(ml_noisemodel: Model) -> None:
     _ = ml_noisemodel.plots.results(
         split_contributions=True,

@@ -137,7 +137,7 @@ class Plotting:
         all_responses: bool = False,
         adjust_height: bool = True,
         return_warmup: bool = False,
-        add_ylabels: bool = False,
+        add_ylabels: bool = True,
         block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
         return_dict: bool = False,
@@ -167,7 +167,7 @@ class Plotting:
         return_warmup: bool, optional
             Show, not return, the warmup-period. Default is False.
         add_ylabels: bool, optional
-            Add ylabels to the subplots. Default is False.
+            Add ylabels to the subplots. Default is True.
         block_or_step: {"block", "step"}, optional
             Plot the block- or step-response on the right. Default is 'step'.
         stderr : bool, optional
