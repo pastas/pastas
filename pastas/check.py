@@ -67,6 +67,7 @@ from matplotlib.colors import rgb2hex
 from pandas import DataFrame, Series, Timedelta, concat
 
 from pastas.stats import tests as diagnostic_tests
+from pastas.timeseries_utils import _index_to_int64
 from pastas.typing import Model
 
 logger = logging.getLogger(__name__)
@@ -747,9 +748,9 @@ def correlation_sim_vs_res(ml: Model, threshold: float = 0.2):
     sim = Series(
         index=res.index,
         data=np.interp(
-            res.index.view("int64"),
-            sim.index.view("int64"),
-            sim.to_numpy(copy=True),
+            _index_to_int64(res.index),
+            _index_to_int64(sim.index),
+            sim.to_numpy(),
         ),
     )
     label = f"|corr(sim, res)| < {threshold}"
