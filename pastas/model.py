@@ -53,6 +53,7 @@ from pastas.timeseries_utils import (
     _get_dt,
     _get_sim_index,
     _get_time_offset,
+    _index_to_int64,
     _parse_warmup,
 )
 from pastas.transform import ThresholdTransform
@@ -606,9 +607,9 @@ class Model:
         if self._interpolate_simulation:
             # interpolate simulation to times of observations
             sim_interpolated = np.interp(
-                obs.index.view("int64"),
-                sim.index.view("int64"),
-                sim.to_numpy(copy=True),
+                _index_to_int64(obs.index),
+                _index_to_int64(sim.index),
+                sim.to_numpy(),
             )
         else:
             # All the observation indexes are in the simulation
@@ -1819,7 +1820,9 @@ class Model:
             Add a zero at t=0.
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword can be
-            used to obtain the response to an individual stress (an int for response to the n-th stress in sm.stresses) or all stresses ("all"). If None, the default for the stressmodel is returned, which is stressmodel dependent.
+            used to obtain the response to an individual stress (an int for response to
+            the n-th stress in sm.stresses) or all stresses ("all"). If None, the default
+            for the stressmodel is returned, which is stressmodel dependent.
         kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns
