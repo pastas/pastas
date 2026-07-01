@@ -5,7 +5,7 @@ import pastas as ps
 
 
 def test_berendrecht(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(
+    ps.RechargeModel(
         model=ml_basic,
         prec=prec,
         evap=evap,
@@ -15,21 +15,17 @@ def test_berendrecht(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
 
 
 def test_peterson(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(
-        model=ml_basic, prec=prec, evap=evap, recharge=ps.rch.Peterson()
-    )
+    ps.RechargeModel(model=ml_basic, prec=prec, evap=evap, recharge=ps.rch.Peterson())
     ml_basic.simulate()
 
 
 def test_linear(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(
-        model=ml_basic, prec=prec, evap=evap, recharge=ps.rch.Linear()
-    )
+    ps.RechargeModel(model=ml_basic, prec=prec, evap=evap, recharge=ps.rch.Linear())
     ml_basic.simulate()
 
 
 def test_flexmodel(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(
+    ps.RechargeModel(
         model=ml_basic,
         prec=prec,
         evap=evap,
@@ -41,7 +37,7 @@ def test_flexmodel(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
 def test_flexmodel_no_interception(
     ml_basic: ps.Model, prec: Series, evap: Series
 ) -> None:
-    rm = ps.RechargeModel(
+    ps.RechargeModel(
         model=ml_basic,
         prec=prec,
         evap=evap,
@@ -51,7 +47,7 @@ def test_flexmodel_no_interception(
 
 
 def test_flexmodel_gw_uptake(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(
+    ps.RechargeModel(
         model=ml_basic,
         prec=prec,
         evap=evap,
@@ -63,7 +59,7 @@ def test_flexmodel_gw_uptake(ml_basic: ps.Model, prec: Series, evap: Series) -> 
 def test_flexmodel_snow(
     ml_basic: ps.Model, prec: Series, evap: Series, temp: Series
 ) -> None:
-    rm = ps.RechargeModel(
+    ps.RechargeModel(
         model=ml_basic,
         prec=prec,
         evap=evap,

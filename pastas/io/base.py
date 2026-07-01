@@ -146,9 +146,10 @@ def _load_model(data: dict) -> Model:
                     ),
                 )
                 file_parameters = file_parameters.rename(index=rename_map)
+
         transform = getattr(ps.transform, data["transform"].pop("class"))
+        data["transform"]["model"] = ml
         transform = transform(**data["transform"])
-        ml.add_transform(transform)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():

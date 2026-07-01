@@ -37,7 +37,7 @@ def bench():
 
     ml = Model(head, name="nonlinear")
     recharge = FlexModel()
-    sm = RechargeModel(
+    RechargeModel(
         model=ml,
         prec=prec,
         evap=evap,

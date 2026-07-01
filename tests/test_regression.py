@@ -2023,7 +2023,7 @@ def test_simulate_with_block(head: Series, prec: Series, evap: Series) -> None:
     """Test that the outcome is the same as a previous simulation with the same parameters."""
     pex = prec - evap  # compute precipitation excess
     ml = ps.Model(head)  # head is not used but is required to create the model
-    sm = ps.StressModel(
+    ps.StressModel(
         model=ml,
         stress=pex,
         name="rch",
@@ -2042,7 +2042,7 @@ def test_simulate_with_impulse(head: Series, prec: Series, evap: Series) -> None
     """Test that the outcome is similar to a previous simulation with the same parameters and a block response."""
     pex = prec - evap  # compute precipitation excess
     ml = ps.Model(head)  # head is not used but is required to create the model
-    sm = ps.StressModel(
+    ps.StressModel(
         model=ml,
         stress=pex,
         name="rch",

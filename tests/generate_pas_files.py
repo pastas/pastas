@@ -74,7 +74,7 @@ def add_stressmodel(
         Keyword arguments forwarded to the response function constructor.
     """
     rfunc_cls = getattr(ps, rfunc_name)
-    sm = ps.StressModel(
+    ps.StressModel(
         model=ml,
         stress=stress,
         name="stress",
@@ -103,7 +103,7 @@ def add_rechargemodel(
         Keyword arguments forwarded to the recharge constructor.
     """
     recharge_cls = getattr(ps.recharge, recharge_name)
-    rm = ps.RechargeModel(
+    ps.RechargeModel(
         model=ml,
         **stresses,
         rfunc=ps.Exponential(),
@@ -134,7 +134,7 @@ def add_tarsomodel(
     transform. Create the model with ``constant=False`` and add no other
     stressmodels beforehand.
     """
-    tm = ps.TarsoModel(
+    ps.TarsoModel(
         model=ml,
         prec=prec,
         evap=evap,
@@ -151,7 +151,7 @@ def add_thresholdtransform(ml: ps.Model) -> None:
     ml : ps.Model
         Pastas model to which the transform is added.
     """
-    tt = ps.ThresholdTransform(model=ml, name="ThresholdTransform")
+    ps.ThresholdTransform(model=ml, name="ThresholdTransform")
 
 
 def add_wellmodel(
@@ -173,7 +173,7 @@ def add_wellmodel(
     rfunc_kwargs : dict
         Keyword arguments forwarded to ``ps.HantushWellModel``.
     """
-    wm = ps.WellModel(
+    ps.WellModel(
         model=ml,
         stress=stresses,
         name="wellmodel",
@@ -192,7 +192,7 @@ def add_changemodel(ml: ps.Model, stress: pd.Series) -> None:
     stress : pd.Series
         Stress time series driving the change model.
     """
-    cm = ps.ChangeModel(
+    ps.ChangeModel(
         model=ml,
         stress=stress,
         rfunc1=ps.Exponential(),
@@ -224,7 +224,7 @@ def add_lineartrend(ml: ps.Model) -> None:
     ml : ps.Model
         Pastas model to which the LinearTrend is added.
     """
-    lt = ps.LinearTrend(
+    ps.LinearTrend(
         model=ml,
         tstart="2000-01-01",
         tend="2000-12-31",
@@ -240,7 +240,7 @@ def add_stepmodel(ml: ps.Model) -> None:
     ml : ps.Model
         Pastas model to which the StepModel is added.
     """
-    sm = ps.StepModel(
+    ps.StepModel(
         model=ml,
         tstart="2000-07-01",
         rfunc=ps.One(),

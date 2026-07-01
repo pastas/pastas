@@ -87,7 +87,7 @@ def test_emcee(ml_recharge: ps.Model) -> None:
         ml_recharge.solve(solver=ps.solver.LeastSquares(model=ml_recharge))
         ml_recharge.del_noisemodel()
 
-        s = ps.solver.Emcee(model=ml_recharge, nwalkers=10)
+        ps.solver.Emcee(model=ml_recharge, nwalkers=10)
 
         ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)
 
@@ -152,7 +152,7 @@ def test_leastsquares_covariance_scenarios(
     # Using small subset for speed
 
     ml = ps.Model(head)
-    rm = ps.RechargeModel(model=ml, prec=prec, evap=evap, name="rch")
+    ps.RechargeModel(model=ml, prec=prec, evap=evap, name="rch")
 
     weights_random = pd.Series(
         np.random.RandomState(seed=0).rand(len(head)), index=head.index

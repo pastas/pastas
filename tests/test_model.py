@@ -139,13 +139,13 @@ class TestModelComponents:
     ) -> None:
         """Test adding multiple stress models at once."""
 
-        sm1 = ps.StressModel(
+        ps.StressModel(
             model=ml_basic,
             stress=prec,
             rfunc=ps.Exponential(),
             name="precipitation",
         )
-        sm2 = ps.StressModel(
+        ps.StressModel(
             model=ml_basic,
             stress=evap,
             rfunc=ps.Exponential(),
@@ -163,7 +163,7 @@ class TestModelComponents:
         first_sm_name = list(ml_solved.stressmodels.keys())[0]
 
         # Create a new stress model with the same name but different response function
-        sm = ps.StressModel(
+        ps.StressModel(
             model=ml_solved,
             stress=prec,
             rfunc=ps.Gamma(),
@@ -211,7 +211,7 @@ class TestModelComponents:
     def test_del_transform(self, ml_recharge: ps.Model) -> None:
         """Test deleting a transform."""
         # First add a transform
-        transform = ps.ThresholdTransform(model=ml_recharge)
+        ps.ThresholdTransform(model=ml_recharge)
 
         # Then delete it
         ml_recharge.del_transform()
@@ -226,7 +226,7 @@ class TestModelComponents:
     def test_del_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test deleting a noise model."""
         # First add a noise model
-        noise = ps.ArmaNoiseModel(model=ml_basic)
+        ps.ArmaNoiseModel(model=ml_basic)
 
         # Then delete it
         ml_basic.del_noisemodel()

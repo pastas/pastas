@@ -94,7 +94,7 @@ def ml_basic(head: pd.Series) -> ps.Model:
 def ml_recharge(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
     """Return a model with a recharge (rain) model."""
     ml = ps.Model(head, name="recharge_model")
-    sm = ps.RechargeModel(
+    ps.RechargeModel(
         model=ml,
         prec=prec,
         evap=evap,
@@ -116,14 +116,14 @@ def ml_solved(ml_recharge: ps.Model) -> ps.Model:
 def ml_sm(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
     """Return a model with multiple stress models."""
     ml = ps.Model(head, name="multistress_model")
-    sm1 = ps.StressModel(
+    ps.StressModel(
         model=ml,
         stress=prec,
         name="prec",
         rfunc=ps.Exponential(),
         settings="prec",
     )
-    sm2 = ps.StressModel(
+    ps.StressModel(
         model=ml,
         stress=evap,
         name="evap",
@@ -138,21 +138,21 @@ def ml_sm(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
 def ml_step_and_exp(head: pd.Series, prec: pd.Series, step: pd.Series) -> ps.Model:
     """Return a model with step and exponential response functions."""
     ml = ps.Model(head, name="step_exp_model")
-    sm1 = ps.StressModel(
+    ps.StressModel(
         model=ml,
         stress=prec,
         name="prec",
         rfunc=ps.Exponential(),
         settings="prec",
     )
-    sm2 = ps.StressModel(model=ml, stress=step, name="step", rfunc=ps.StepResponse())
+    ps.StressModel(model=ml, stress=step, name="step", rfunc=ps.StepResponse())
     return ml
 
 
 @pytest.fixture
 def ml_with_transform(ml_solved: ps.Model) -> ps.Model:
     """Add a transform to the basic recharge model."""
-    transform = ps.ThresholdTransform(model=ml_solved)
+    ps.ThresholdTransform(model=ml_solved)
     return ml_solved
 
 
@@ -160,7 +160,7 @@ def ml_with_transform(ml_solved: ps.Model) -> ps.Model:
 def ml_noisemodel(ml_solved: ps.Model) -> ps.Model:
     """Return an already solved model."""
     ml_copy = ml_solved.copy()
-    noise = ps.ArNoiseModel(model=ml_copy)
+    ps.ArNoiseModel(model=ml_copy)
     ml_copy.solve(report=False)
     return ml_copy
 
