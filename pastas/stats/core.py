@@ -317,7 +317,7 @@ def _preprocess(
     if series is None:
         raise TypeError("_preprocess() missing required argument: 'series'")
 
-    x_idx = series.index.to_series().diff().dropna().to_numpy(copy=True)
+    x_idx = series.index.to_series().diff().dropna().to_numpy()
 
     dt = x_idx / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
@@ -325,7 +325,7 @@ def _preprocess(
     t = dt.cumsum()
 
     # Normalize the values and create numpy arrays
-    x_vals = series.to_numpy(copy=True)  # pandas 3.0: ensure writeable array
+    x_vals = series.to_numpy()  # pandas 3.0: ensure writeable array
     x = (x_vals - x_vals.mean()) / x_vals.std()
 
     return x, t, dt_mu
@@ -525,7 +525,7 @@ def var(
         raise TypeError("var() missing required argument: 'series'")
 
     w = _get_weights(series, weighted=weighted, max_gap=max_gap)
-    x = series.to_numpy(copy=True)
+    x = series.to_numpy()
     mu = np.average(x, weights=w)
     sigma = np.sum(x.size / (x.size - 1) * w * (x - mu) ** 2)
     return sigma
@@ -612,7 +612,7 @@ def moment(series: Series | None = None, order: int = 0, **kwargs) -> float:
             "The index of the series must be numeric (float or int) representing "
             "time steps, not a DatetimeIndex. Use a numeric index instead."
         )
-    return float(np.sum((index**order) * series.to_numpy(copy=True)))
+    return float(np.sum((index**order) * series.to_numpy()))
 
 
 # Helper functions
@@ -655,7 +655,7 @@ def _get_weights(
     if series is None:
         raise TypeError("_get_weights() missing required argument: 'series'")
 
-    x_index = series.index.to_numpy(copy=True)
+    x_index = series.index.to_numpy()
     if weighted:
         w = np.append(0.0, np.diff(x_index) / Timedelta("1D"))
         w[w > max_gap] = max_gap
