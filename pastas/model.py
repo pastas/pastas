@@ -53,6 +53,7 @@ from pastas.timeseries_utils import (
     _get_dt,
     _get_sim_index,
     _get_time_offset,
+    _index_to_int64,
     _parse_warmup,
 )
 from pastas.transform import ThresholdTransform
@@ -606,9 +607,9 @@ class Model:
         if self._interpolate_simulation:
             # interpolate simulation to times of observations
             sim_interpolated = np.interp(
-                obs.index.view("int64"),
-                sim.index.view("int64"),
-                sim.to_numpy(copy=True),
+                _index_to_int64(obs.index),
+                _index_to_int64(sim.index),
+                sim.to_numpy(),
             )
         else:
             # All the observation indexes are in the simulation

@@ -135,7 +135,7 @@ class StressModelBase(ABC):
     @PastasDeprecationWarning(
         version="2.0.0",
         reason=(
-            "The get_nsplit methods is deprecated. To inspect the number of available split"
+            "The get_nsplit method is deprecated. To inspect the number of available split"
             " options, use the property `nsplit` instead, e.g., `stressmodel.nsplit`."
         ),
     )
@@ -2154,13 +2154,13 @@ class RechargeModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
         if istress is None:
-            prec = self.prec.series.to_numpy(copy=True)
-            evap = self.evap.series.to_numpy(copy=True)
+            prec = self.prec.series.to_numpy()
+            evap = self.evap.series.to_numpy()
             temp = None
             if self.temp is not None:
-                temp = self.temp.series.to_numpy(copy=True)
+                temp = self.temp.series.to_numpy()
             if p is None:
-                p = self.parameters.loc[:, "initial"].to_numpy(copy=True)
+                p = self.parameters.loc[:, "initial"].to_numpy()
             stress = self.recharge.simulate(
                 prec=prec, evap=evap, p=p[-self.recharge.nparam :], **{"temp": temp}
             )
@@ -2232,7 +2232,7 @@ class RechargeModel(StressModelBase):
 
         """
         if p is None:
-            p = self.parameters.initial.to_numpy(copy=True)
+            p = self.parameters.initial.to_numpy()
 
         prec = self.get_stress(tmin=tmin, tmax=tmax, freq=freq, istress=0).to_numpy(
             copy=True
@@ -2270,11 +2270,10 @@ class RechargeModel(StressModelBase):
             An array of the parameters of the stressmodel.
 
         """
-        p = (
-            self.parameters.initial.to_numpy(copy=True)
-            if model is None
-            else model.get_parameters(self.name).copy()
-        )
+        if model is None:
+            p = self.parameters.initial.to_numpy(copy=True)
+        else:
+            p = model.get_parameters(self.name).copy()
 
         if istress is not None and isinstance(self.recharge, Linear):
             if istress == 0:
@@ -2526,7 +2525,7 @@ class TarsoModel(RechargeModel):
     ) -> Series:
         _ = istress  # istress is not used for TarsoModel
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
-        h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(copy=True), dt)
+        h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(), dt)
         # Strip imaginary part when not doing complex-step Jacobian
         if not np.iscomplexobj(p):
             h = h.real
