@@ -1579,9 +1579,9 @@ class WellModel(StressModelBase):
 
     def _get_responses(
         self,
-        p: ArrayLike,
-        dt: float,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
         **kwargs,
     ) -> DataFrame:
@@ -1592,13 +1592,13 @@ class WellModel(StressModelBase):
 
         Parameters
         ----------
+        block_or_step : {"block", "step"}, optional
+            String indicating whether to compute the block or step response.
+            Default is "step".
         p : array_like
             Array with parameter values. See Model.get_parameters() for more info.
         dt : float
             Timestep for the response function.
-        block_or_step : {"block", "step"}, optional
-            String indicating whether to compute the block or step response.
-            Default is "step".
         istress : int or None, optional
             Index of the stress to compute the response for. If None or "all",
             responses for all stresses are computed. Default is None.
@@ -1821,7 +1821,6 @@ class RechargeModel(StressModelBase):
         metadata: tuple[dict | None, dict | None, dict | None] = (None, None, None),
         max_cache_size: int | None = None,
     ) -> None:
-
         # Store the precipitation and evaporation time series
         self.set_stress(prec=prec, settings=settings[0], metadata=metadata[0])
         self.set_stress(evap=evap, settings=settings[1], metadata=metadata[1])
@@ -2285,9 +2284,9 @@ class RechargeModel(StressModelBase):
 
     def _get_responses(
         self,
-        p: ArrayLike,
-        dt: float,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
     ) -> DataFrame:
         """Compute the block or step response for the recharge model.
@@ -2297,13 +2296,13 @@ class RechargeModel(StressModelBase):
 
         Parameters
         ----------
+        block_or_step : {"block", "step"}, optional
+            String indicating whether to compute the block or step response.
+            Default is "step".
         p : array_like
             Array with parameter values. See Model.get_parameters() for more info.
         dt : float
             Timestep for the response function.
-        block_or_step : {"block", "step"}, optional
-            String indicating whether to compute the block or step response.
-            Default is "step".
         istress : int or None, optional
             Index of the stress to compute the response for. If None, a single
             combined response is returned. If "all" or a list index, individual
@@ -2602,23 +2601,23 @@ class TarsoModel(RechargeModel):
 
     def _get_responses(
         self,
-        p: ArrayLike,
-        dt: float,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
     ) -> DataFrame | Series:
         """Compute the block or step responses for both Tarso response functions.
 
         Parameters
         ----------
+        block_or_step : {"block", "step"}, optional
+            String indicating whether to compute the block or step response.
+            Default is "step".
         p : array_like
             Array with parameter values ``[A0, a0, d0, A1, a1, d1, delt]``.
             See Model.get_parameters() for more info.
         dt : float
             Timestep for the response function.
-        block_or_step : {"block", "step"}, optional
-            String indicating whether to compute the block or step response.
-            Default is "step".
         istress : int or None, optional
             Index of the response function to return (0 or 1). If None or "all",
             both responses are returned. Default is None.
@@ -2896,23 +2895,23 @@ class ChangeModel(StressModelBase):
 
     def _get_responses(
         self,
-        p: ArrayLike,
-        dt: float,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
     ) -> DataFrame | Series:
         """Compute the block or step responses for both response functions.
 
         Parameters
         ----------
+        block_or_step : {"block", "step"}, optional
+            String indicating whether to compute the block or step response.
+            Default is "step".
         p : array_like
             Array with parameter values for both response functions concatenated.
             See Model.get_parameters() for more info.
         dt : float
             Timestep for the response functions.
-        block_or_step : {"block", "step"}, optional
-            String indicating whether to compute the block or step response.
-            Default is "step".
         istress : int or None, optional
             Column index (0 or 1) of the response to return. If None or "all",
             both responses are returned. Default is None.
