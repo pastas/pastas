@@ -368,7 +368,7 @@ def diagnostics(
     bins: int = 50,
     acf_options: dict | None = None,
     heteroscedasicity: bool = True,
-    gap: Timedelta | None = None,
+    max_gap: Timedelta | float | None = None,
     **kwargs,
 ) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
@@ -389,6 +389,10 @@ def diagnostics(
     heteroscedasicity: bool, optional
         Create two additional subplots to check for heteroscedasticity. If true,
         a simulated time series has to be provided with the sim argument.
+    max_gap: Timedelta | float | None, optional
+        Maximum gap to be considered as a gap. If the difference between two
+        consecutive index values is larger than max_gap, a gap is inserted in the
+        plot. Default is None.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -451,7 +455,7 @@ def diagnostics(
 
     # Plot the residuals or noise series
     axd["series"].axhline(0, c="k")
-    axd["series"] = plot_series_with_gaps(series, ax=axd["series"], gap=gap)
+    axd["series"] = plot_series_with_gaps(series, ax=axd["series"], gap=max_gap)
     axd["series"].set_ylabel(series.name)
     axd["series"].set_xlim(series.index.min(), series.index.max())
     axd["series"].set_title(

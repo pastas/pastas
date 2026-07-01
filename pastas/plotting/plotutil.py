@@ -100,7 +100,10 @@ def share_yaxes(axes: list[Axes]) -> None:
 
 
 def plot_series_with_gaps(
-    series: Series, gap: Timedelta | None = None, ax: Axes | None = None, **kwargs
+    series: Series,
+    gap: Timedelta | float | None = None,
+    ax: Axes | None = None,
+    **kwargs,
 ) -> Axes:
     """Plot a pandas Series with gaps if index difference is larger than gap.
 
@@ -108,8 +111,8 @@ def plot_series_with_gaps(
     ----------
     series: pd.Series
         The series to plot.
-    gap: Timedelta | None
-        Timedelta to be considered as a gap. If the difference between two
+    gap: Timedelta | float | None
+        Timedelta or float to be considered as a gap. If the difference between two
         consecutive index values is larger than gap, a gap is inserted in the
         plot. If None, the maximum value between the 95th percentile of the
         differences and 50 days is used as gap.
@@ -126,6 +129,8 @@ def plot_series_with_gaps(
         gapq = Timedelta(np.quantile(td_diff, 0.95))
         max_gap = Timedelta(50.0, "D")
         gap = max(gapq, max_gap)
+    elif isinstance(gap, (int, float)):
+        gap = Timedelta(gap, "D")
 
     s_split = np.append(0.0, np.cumsum(td_diff >= gap))
 
