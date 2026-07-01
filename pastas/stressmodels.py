@@ -2933,10 +2933,20 @@ class ChangeModel(StressModelBase):
             p=p[self.rfunc1.nparam : self.rfunc1.nparam + self.rfunc2.nparam],
             dt=dt,
         )
+        if len(response0) > len(response1):
+            response1 = np.append(
+                response1, np.full(len(response0) - len(response1), np.nan)
+            )
+        elif len(response1) > len(response0):
+            response0 = np.append(
+                response0, np.full(len(response1) - len(response0), np.nan)
+            )
+        else:
+            pass
         responses = DataFrame(
-            data=[response0, response1],
-            index=np.linspace(0, response0.size * dt, response0.size + 1),
-            names=[f"{self.name}_rf0", f"{self.name}_rf1"],
+            data=np.vstack([response0, response1]).T,
+            index=np.linspace(0, len(response0) * dt, len(response0)),
+            columns=[f"{self.name}_rf0", f"{self.name}_rf1"],
         )
         if istress is None or istress == "all":
             return responses
