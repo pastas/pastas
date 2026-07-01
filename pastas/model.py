@@ -1861,7 +1861,11 @@ class Model:
 
         response.index = t
         response.index.name = "Time [days]"
-        return response.squeeze(axis=1)
+
+        if isinstance(response, DataFrame):
+            return response.squeeze(axis=1)
+        else:
+            return response
 
     @get_stressmodel
     def get_block_response(
