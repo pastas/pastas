@@ -23,6 +23,7 @@ from pastas.plotting.plotutil import (
     plot_series_with_gaps,
     share_xaxes,
 )
+from pastas.timeseries_utils import _index_to_int64
 from pastas.typing import Axes, Figure, Model, StressModel
 
 logger = logging.getLogger(__name__)
@@ -727,8 +728,8 @@ class Plotting:
 
         if self.ml._interpolate_simulation:
             sim_interpolated = np.interp(
-                res.index.view("int64"),
-                sim.index.view("int64"),
+                _index_to_int64(res.index),
+                _index_to_int64(sim.index),
                 sim.values,
             )
             sim = Series(index=res.index, data=sim_interpolated)
