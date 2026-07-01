@@ -1829,27 +1829,32 @@ class Model:
         """
         sm = self.stressmodels[name]
 
-        p = self.get_parameters(name=name)
+        if p is None:
+            p = self.get_parameters(name=name)
+
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
         response = sm._get_responses(
             block_or_step=block_or_step, p=p, dt=dt, istress=istress, **kwargs
         )
+        response.index = response.index + 1
+
         if response is None:
             return None
 
         if add_0:
             response.loc[0] = 0.0
+            response = response.sort_index()
 
             if isinstance(dt, np.ndarray):
                 t = dt
             else:
-                t = np.linspace(0, response.size * dt, response.index.size)
+                t = np.linspace(0, response.index.size * dt, response.index.size)
         else:
             if isinstance(dt, np.ndarray):
                 t = dt
             else:
-                t = np.linspace(dt, response.size * dt, response.index.size)
+                t = np.linspace(dt, response.index.size * dt, response.index.size)
 
         response.index = t
         response.index.name = "Time [days]"

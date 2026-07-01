@@ -2935,9 +2935,8 @@ class ChangeModel(StressModelBase):
         )
         responses = DataFrame(
             data=[response0, response1],
-            index=np.linspace(0, response0.size * dt, response0.size + 1),
-            names=[f"{self.name}_rf0", f"{self.name}_rf1"],
-        )
+            index=[f"{self.name}_rf0", f"{self.name}_rf1"],
+        ).T
         if istress is None or istress == "all":
             return responses
         else:
