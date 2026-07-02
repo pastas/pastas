@@ -835,6 +835,10 @@ class Model:
             solver for the options. The solver is stored in the `ml.solver` attribute.
             If None, the solver from `ml.solver` is used. If `solver` and `ml.solver`
             are both None, the default ps.solver.LeastSquares() is used.
+
+            .. deprecated:: 2.0.0
+                The solver argument is deprecated in favor of adding a solver using the `ps.solver.LeastSquares(model=ml)` pattern.
+
         report: bool | Literal["full"] | dict, optional
             Print a report to the screen after optimization finished. Set to
             True (default) to print a standard report, set to "full" to print a
@@ -975,14 +979,14 @@ class Model:
             logger.error(msg)
             raise ValueError(msg)
 
-        # Check if the solver is already added to the model, if not add the default least squares solver
+        # Check if the solver is provided, deprecated with Pastas 2.0
         if solver is not None:  # add solver if provided
-            if self.solver is None or self.solver._name != solver._name:
-                logger.info("Setting solver to `%s`." % solver._name)
-                self._add_solver(solver=solver)
-            else:
-                logger.info("Keeping original solver `%s`." % self.solver._name)
-        elif self.solver is None:  # add scipy least_squares if no solver provided
+            msg = "solver argument is deprecated since Pastas 2.0. Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
+            logger.error(msg)
+            raise KeyError(msg)
+
+        # Add default solver if none is provided
+        if self.solver is None:  # add scipy least_squares if no solver provided
             logger.debug("Adding LeastSquares as default solver.")
             self._add_solver(solver=LeastSquares(model=self))
 
