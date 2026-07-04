@@ -17,6 +17,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from packaging.version import parse as parse_version
 
 import pastas as ps
 
@@ -29,6 +30,8 @@ OUTPUT_DIR = Path(f"data/pas_files_{ps.__version__}")
 _rng = np.random.default_rng(42)
 _idx = pd.date_range("2000-01-01", periods=365, freq="D")
 DATA = pd.Series(_rng.random(365), index=_idx, name="head")
+
+IS_PASTAS_V2_OR_HIGHER = parse_version(ps.__version__) >= parse_version("2.0.0")
 
 
 # ---------------------------------------------------------------------------
@@ -74,13 +77,22 @@ def add_stressmodel(
         Keyword arguments forwarded to the response function constructor.
     """
     rfunc_cls = getattr(ps, rfunc_name)
-    ps.StressModel(
-        model=ml,
-        stress=stress,
-        name="stress",
-        rfunc=rfunc_cls(**rfunc_kwargs),
-        settings="prec",
-    )
+    if IS_PASTAS_V2_OR_HIGHER:
+        ps.StressModel(
+            model=ml,
+            stress=stress,
+            name="stress",
+            rfunc=rfunc_cls(**rfunc_kwargs),
+            settings="prec",
+        )
+    else:
+        sm = ps.StressModel(
+            stress,
+            name="stress",
+            rfunc=rfunc_cls(**rfunc_kwargs),
+            settings="prec",
+        )
+        ml.add_stressmodel(sm)
 
 
 def add_rechargemodel(
@@ -103,13 +115,22 @@ def add_rechargemodel(
         Keyword arguments forwarded to the recharge constructor.
     """
     recharge_cls = getattr(ps.recharge, recharge_name)
-    ps.RechargeModel(
-        model=ml,
-        **stresses,
-        rfunc=ps.Exponential(),
-        name="recharge",
-        recharge=recharge_cls(**rech_kwargs),
-    )
+    if IS_PASTAS_V2_OR_HIGHER:
+        ps.RechargeModel(
+            model=ml,
+            **stresses,
+            rfunc=ps.Exponential(),
+            name="recharge",
+            recharge=recharge_cls(**rech_kwargs),
+        )
+    else:
+        rm = ps.RechargeModel(
+            **stresses,
+            rfunc=ps.Exponential(),
+            name="recharge",
+            recharge=recharge_cls(**rech_kwargs),
+        )
+        ml.add_stressmodel(rm)
 
 
 def add_tarsomodel(
@@ -134,13 +155,22 @@ def add_tarsomodel(
     transform. Create the model with ``constant=False`` and add no other
     stressmodels beforehand.
     """
-    ps.TarsoModel(
-        model=ml,
-        prec=prec,
-        evap=evap,
-        oseries=ml.oseries.series_original,
-        name="tarso",
-    )
+    if IS_PASTAS_V2_OR_HIGHER:
+        ps.TarsoModel(
+            model=ml,
+            prec=prec,
+            evap=evap,
+            oseries=ml.oseries.series_original,
+            name="tarso",
+        )
+    else:
+        tm = ps.TarsoModel(
+            prec,
+            evap,
+            oseries=ml.oseries.series_original,
+            name="tarso",
+        )
+        ml.add_stressmodel(tm)
 
 
 def add_thresholdtransform(ml: ps.Model) -> None:
@@ -151,7 +181,11 @@ def add_thresholdtransform(ml: ps.Model) -> None:
     ml : ps.Model
         Pastas model to which the transform is added.
     """
-    ps.ThresholdTransform(model=ml, name="ThresholdTransform")
+    if IS_PASTAS_V2_OR_HIGHER:
+        ps.ThresholdTransform(model=ml, name="ThresholdTransform")
+    else:
+        tt = ps.ThresholdTransform(name="ThresholdTransform")
+        ml.add_transform(tt)
 
 
 def add_wellmodel(
@@ -173,13 +207,22 @@ def add_wellmodel(
     rfunc_kwargs : dict
         Keyword arguments forwarded to ``ps.HantushWellModel``.
     """
-    ps.WellModel(
-        model=ml,
-        stress=stresses,
-        name="wellmodel",
-        distances=distances,
-        rfunc=ps.HantushWellModel(**rfunc_kwargs),
-    )
+    if IS_PASTAS_V2_OR_HIGHER:
+        ps.WellModel(
+            model=ml,
+            stress=stresses,
+            name="wellmodel",
+            distances=distances,
+            rfunc=ps.HantushWellModel(**rfunc_kwargs),
+        )
+    else:
+        wm = ps.WellModel(
+            stresses,
+            name="wellmodel",
+            distances=distances,
+            rfunc=ps.HantushWellModel(**rfunc_kwargs),
+        )
+        ml.add_stressmodel(wm)
 
 
 def add_changemodel(ml: ps.Model, stress: pd.Series) -> None:
@@ -192,14 +235,24 @@ def add_changemodel(ml: ps.Model, stress: pd.Series) -> None:
     stress : pd.Series
         Stress time series driving the change model.
     """
-    ps.ChangeModel(
-        model=ml,
-        stress=stress,
-        rfunc1=ps.Exponential(),
-        rfunc2=ps.Gamma(),
-        name="changemodel",
-        tchange="2000-07-01",
-    )
+    if IS_PASTAS_V2_OR_HIGHER:
+        ps.ChangeModel(
+            model=ml,
+            stress=stress,
+            rfunc1=ps.Exponential(),
+            rfunc2=ps.Gamma(),
+            name="changemodel",
+            tchange="2000-07-01",
+        )
+    else:
+        cm = ps.ChangeModel(
+            stress,
+            rfunc1=ps.Exponential(),
+            rfunc2=ps.Gamma(),
+            name="changemodel",
+            tchange="2000-07-01",
+        )
+        ml.add_stressmodel(cm)
 
 
 def add_noisemodel(ml: ps.Model, noise_name: str) -> None:
@@ -213,7 +266,10 @@ def add_noisemodel(ml: ps.Model, noise_name: str) -> None:
         Name of the noise model class (e.g. ``"ArNoiseModel"``).
     """
     noise_cls = getattr(ps, noise_name)
-    noise_cls(model=ml)
+    if IS_PASTAS_V2_OR_HIGHER:
+        noise_cls(model=ml)
+    else:
+        ml.add_noisemodel(noise_cls())
 
 
 def add_lineartrend(ml: ps.Model) -> None:
@@ -224,12 +280,16 @@ def add_lineartrend(ml: ps.Model) -> None:
     ml : ps.Model
         Pastas model to which the LinearTrend is added.
     """
-    ps.LinearTrend(
-        model=ml,
-        tstart="2000-01-01",
-        tend="2000-12-31",
-        name="lineartrend",
-    )
+    if IS_PASTAS_V2_OR_HIGHER:
+        ps.LinearTrend(
+            model=ml,
+            tstart="2000-01-01",
+            tend="2000-12-31",
+            name="lineartrend",
+        )
+    else:
+        lt = ps.LinearTrend(start="2000-01-01", end="2000-12-31", name="lineartrend")
+        ml.add_stressmodel(lt)
 
 
 def add_stepmodel(ml: ps.Model) -> None:
@@ -240,12 +300,16 @@ def add_stepmodel(ml: ps.Model) -> None:
     ml : ps.Model
         Pastas model to which the StepModel is added.
     """
-    ps.StepModel(
-        model=ml,
-        tstart="2000-07-01",
-        rfunc=ps.One(),
-        name="steptrend",
-    )
+    if IS_PASTAS_V2_OR_HIGHER:
+        ps.StepModel(
+            model=ml,
+            tstart="2000-07-01",
+            rfunc=ps.One(),
+            name="steptrend",
+        )
+    else:
+        sm = ps.StepModel(tstart="2000-07-01", rfunc=ps.One(), name="steptrend")
+        ml.add_stressmodel(sm)
 
 
 def add_solver(ml: ps.Model, stress: pd.Series, solver_name: str) -> None:
@@ -262,7 +326,10 @@ def add_solver(ml: ps.Model, stress: pd.Series, solver_name: str) -> None:
     """
     add_stressmodel(ml, stress, rfunc_name="Exponential", rfunc_kwargs={})
     solver_cls = getattr(ps, solver_name)
-    ml.solve(solver=solver_cls(), report=False)
+    if IS_PASTAS_V2_OR_HIGHER:
+        ml.solve(solver=solver_cls(model=ml), report=False)
+    else:
+        ml.solve(solver=solver_cls(), report=False)
 
 
 # ---------------------------------------------------------------------------
