@@ -22,8 +22,8 @@ from pastas.plotting.plotutil import (
     _table_formatter_stderr,
 )
 from pastas.rfunc import HantushWellModel
-from pastas.timeseries_utils import _index_to_int64
 from pastas.stats import acf
+from pastas.timeseries_utils import _index_to_int64
 
 
 @register_model_accessor("plotly")

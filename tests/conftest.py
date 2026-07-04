@@ -112,7 +112,7 @@ def ml_with_interpolation(
     head_offset = head.copy()
     head_offset.index = head_offset.index + pd.Timedelta(hours=12)
     ml = ps.Model(head_offset, name="recharge_model")
-    sm = ps.RechargeModel(ml, prec, evap, name="rch", rfunc=ps.Exponential())
+    ps.RechargeModel(ml, prec, evap, name="rch", rfunc=ps.Exponential())
     return ml
 
 
