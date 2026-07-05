@@ -18,6 +18,7 @@ This returns a Series containing the statistics::
 from numpy import interp, nan
 from pandas import DataFrame, Series, Timestamp
 
+from pastas.timeseries_utils import _index_to_int64
 from pastas.typing import Model
 
 from .decorators import model_tmin_tmax
@@ -430,9 +431,9 @@ class Statistics:
             # interpolate simulation to times of observations
             sim_interpolated = Series(
                 interp(
-                    obs.index.view("int64"),
-                    sim.index.view("int64"),
-                    sim.to_numpy(copy=True),
+                    _index_to_int64(obs.index),
+                    _index_to_int64(sim.index),
+                    sim.to_numpy(),
                 ),
                 index=obs.index,
             )
