@@ -1840,10 +1840,11 @@ class Model:
         response = sm._get_responses(
             block_or_step=block_or_step, p=p, dt=dt, istress=istress, **kwargs
         )
-        response.index = response.index + 1
 
         if response is None:
             return None
+
+        response.index = response.index + 1
 
         if add_0:
             response.loc[0] = 0.0
