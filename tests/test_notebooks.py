@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-pathname = Path(__file__).parent.parent / "doc/examples"
+pathname = Path(__file__).parent.parent / "examples"
 files = list(pathname.glob("*.ipynb"))
 
 testdir = "build"

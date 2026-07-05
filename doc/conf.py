@@ -34,6 +34,7 @@ extensions = [
     "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_design",
+    "sphinx_gallery.gen_gallery",
 ]
 
 # -- General configuration ------------------------------------------------------------
@@ -176,3 +177,57 @@ nb_execution_mode = "auto"
 nb_merge_streams = True
 myst_enable_extensions = ["dollarmath", "amsmath"]
 myst_dmath_double_inline = True
+
+# -- sphinx-gallery configuration ---------------------------------------------------
+
+# Path to examples at repository root (via symlink, doc/examples -> ../examples)
+sphinx_gallery_conf = {
+    # Directories containing example notebooks
+    "examples_dirs": ["examples"],  # This points to the symlink which goes to ../examples
+    
+    # Output directory for generated gallery files
+    "gallery_dirs": ["examples"],
+    
+    # Only process .ipynb files
+    "filename_pattern": "*.ipynb",
+    
+    # Don't re-execute notebooks (they may have outputs already from myst-nb)
+    "run_stale_notebooks": False,
+    
+    # Show download links for notebooks
+    "download_all_examples": True,
+    
+    # Don't abort on errors
+    "abort_on_example_error": False,
+    
+    # Expected failing examples (if any)
+    "expected_failing_examples": [],
+    
+    # Custom CSS
+    "css": ["_static/sphinx-gallery.css"],
+    
+    # Section headings for categorization
+    "section_headings": [
+        "Basics",
+        "Stressmodels", 
+        "Model Evaluation",
+        "Applications",
+        "Time Series Analysis Manual",
+        "Pastas Performance",
+        "Groundwater Article"
+    ],
+    
+    # Sort examples within sections
+    "within_subsection_order": "FileNameSortKey",
+    
+    # Matplotlib settings
+    "matplotlib_animations": True,
+    "reset_argv": True,
+    
+    # Notebook images
+    "notebook_images": True,
+    
+    # First and last notebook for index
+    "first_notebook": "prepare_timeseries.ipynb",
+    "last_notebook": "stowa_cases_forecasting.ipynb",
+}

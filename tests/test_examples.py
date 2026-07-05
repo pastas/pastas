@@ -4,7 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pytest
 
-pathname = Path(__file__).parent.parent / "doc/examples"
+pathname = Path(__file__).parent.parent / "examples"
 files = list(pathname.glob("*.py"))
 
 
