@@ -140,7 +140,7 @@ class Plotting:
         add_ylabels: bool = False,
         block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
-        max_gap: Timedelta | float | None = None,
+        max_plot_gap: Timedelta | float | None = None,
         return_dict: bool = False,
         **kwargs,
     ) -> dict[str, Axes] | list[Axes]:
@@ -173,7 +173,7 @@ class Plotting:
             Plot the block- or step-response on the right. Default is 'step'.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
-        max_gap: Timedelta | float | None = None,
+        max_plot_gap: Timedelta | float | None = None,
             Timedelta or float with the maximum gap in the residuals or noise. If
             the gap between two consecutive residuals or noise is larger than
             this value, a gap is inserted in the plot. Default is None.
@@ -315,10 +315,12 @@ class Plotting:
         axd["sim"].set_ylim(bottom=ylims["sim"][0], top=ylims["sim"][1])
 
         # plot residuals (and noise if present)
-        _ = plot_series_with_gaps(res, ax=axd["res"], color="k", gap=max_gap)
+        _ = plot_series_with_gaps(res, ax=axd["res"], color="k", gap=max_plot_gap)
         if self.ml.noisemodel is not None:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
-            _ = plot_series_with_gaps(noise, ax=axd["res"], color="C0", gap=max_gap)
+            _ = plot_series_with_gaps(
+                noise, ax=axd["res"], color="C0", gap=max_plot_gap
+            )
         axd["res"].axhline(0.0, color="k", linestyle="--", zorder=0)
         axd["res"].legend(loc=(0, 1), ncol=2, frameon=False)
 
