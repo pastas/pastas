@@ -227,20 +227,18 @@ class TimeSeries:
 
         # Update the settings with user-provided values, if any.
         if settings:
-            from pastas._options import options
-
             if isinstance(settings, str):
-                if settings in options.timeseries.keys():
-                    settings: StressSettingsDict | OseriesSettingsDict = (
-                        options.timeseries[settings]
-                    )
+                if settings in SETTINGS.keys():
+                    settings: StressSettingsDict | OseriesSettingsDict = SETTINGS[
+                        settings
+                    ]
                 else:
                     msg = (
-                        "Settings shortcut code '%s' is not in the options.timeseries "
-                        "settings options. Please choose from %s.",
+                        "Settings shortcut code '%s' is not in the timeseries.SETTINGS "
+                        "dictionary. Please choose from %s.",
                     )
 
-                    raise KeyError(msg, settings, options.timeseries.keys())
+                    raise KeyError(msg, settings, SETTINGS.keys())
             self._update_settings(**settings)
 
         # Make sure we have a workable Pandas Series, depends on type of time series

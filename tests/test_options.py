@@ -96,42 +96,6 @@ class TestGlobalSettings:
         assert options.parallel is False
         assert hasattr(options, "timeseries")
 
-    def test_options_timeseries_structure(self):
-        """Test that timeseries settings have expected structure."""
-        from pastas._options import options
-
-        timeseries = options.timeseries
-        assert isinstance(timeseries, dict)
-
-        # Check expected stress types exist
-        expected_types = {
-            "oseries",
-            "prec",
-            "evap",
-            "well",
-            "waterlevel",
-            "level",
-            "flux",
-            "quantity",
-        }
-        assert set(timeseries.keys()) == expected_types
-
-        # Check prec has expected keys
-        prec = timeseries["prec"]
-        expected_prec_keys = {
-            "sample_up",
-            "sample_down",
-            "fill_nan",
-            "fill_before",
-            "fill_after",
-        }
-        assert set(prec.keys()) == expected_prec_keys
-
-        # Check oseries has expected keys
-        oseries = timeseries["oseries"]
-        expected_oseries_keys = {"fill_nan", "sample_down"}
-        assert set(oseries.keys()) == expected_oseries_keys
-
     def test_options_mutability(self):
         """Test that options can be modified."""
         from pastas._options import options
@@ -157,13 +121,3 @@ class TestOptionsGlobalSettingsLink:
             assert options.cache is True
         finally:
             options.cache = original_cache
-
-    def test_timeseries_is_dict(self):
-        """Test that timeseries is a dictionary."""
-        from pastas._options import options
-
-        # Check it's a dict
-        assert isinstance(options.timeseries, dict)
-        # Check it has the expected keys
-        assert "prec" in options.timeseries
-        assert "evap" in options.timeseries
