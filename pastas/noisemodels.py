@@ -148,7 +148,8 @@ class ArNoiseModel(NoiseModelBase):
     def __init__(self, model: Model, name: str = "noise", norm: bool = True) -> None:
         super().__init__(model=model, name=name, norm=norm)
         self.set_init_parameters()
-        self.model._add_noisemodel(self)
+        if model is not None:
+            self.model._add_noisemodel(self)
 
     def set_init_parameters(self, oseries: Series | None = None) -> None:
         """Set initial parameters for the noise model.
