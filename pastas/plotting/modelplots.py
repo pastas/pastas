@@ -137,7 +137,7 @@ class Plotting:
         all_responses: bool = False,
         adjust_height: bool = True,
         return_warmup: bool = False,
-        add_ylabels: bool = False,
+        add_ylabels: bool = True,
         block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
         max_plot_gap: Timedelta | float = np.inf,
