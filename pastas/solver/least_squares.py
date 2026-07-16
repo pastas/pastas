@@ -715,8 +715,6 @@ class LeastSquares(LeastSquaresBase):
         max_nfev: int | None = None,
         diff_step: float | ArrayLike | None = None,
         tr_solver: Literal["exact", "lsmr"] | None = None,
-        tr_options: dict | None = None,
-        callback: Callable | None = None,
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
@@ -733,8 +731,6 @@ class LeastSquares(LeastSquaresBase):
         self.max_nfev = max_nfev
         self.diff_step = diff_step
         self.tr_solver = tr_solver
-        self.tr_options = tr_options
-        self.callback = callback
 
     def objfunction(
         self,
