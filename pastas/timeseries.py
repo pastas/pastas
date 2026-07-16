@@ -34,7 +34,7 @@ from .utils import validate_name
 
 logger = getLogger(__name__)
 
-DEFAULT_SETTINGS = {
+SETTINGS = {
     "oseries": OseriesSettingsDict(
         fill_nan="drop",
         sample_down="drop",
@@ -103,7 +103,7 @@ class TimeSeries:
         to derive the name from the series.
     settings: str or dict, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dictionary (defined in ps.timeseries.DEFAULT_SETTINGS), or a dictionary with
+        settings dictionary (defined in ps.timeseries.SETTINGS), or a dictionary with
         the settings to apply. For more information refer to Time series settings
         section below.
     metadata: dict, optional
@@ -161,7 +161,7 @@ class TimeSeries:
     To obtain the predefined TimeSeries settings, you can run the following line of
     code:
 
-    >>> ps.timeseries.DEFAULT_SETTINGS
+    >>> ps.timeseries.SETTINGS
 
     See Also
     --------
