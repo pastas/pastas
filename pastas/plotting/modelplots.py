@@ -140,7 +140,7 @@ class Plotting:
         add_ylabels: bool = False,
         block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
-        max_plot_gap: Timedelta | float = 0.0,
+        max_plot_gap: Timedelta | float = np.inf,
         return_dict: bool = False,
         **kwargs,
     ) -> dict[str, Axes] | list[Axes]:
@@ -176,7 +176,7 @@ class Plotting:
         max_plot_gap: Timedelta | float,
             Timedelta or float with the maximum gap in the residuals or noise. If
             the gap between two consecutive residuals or noise is larger than
-            this value, a gap is inserted in the plot. Default is 0.0.
+            this value, a gap is inserted in the plot. Default is infinity.
         return_dict: bool, optional
             If True, a dictionary with the axes is returned. If False, a list of
             axes is returned. Default is False.

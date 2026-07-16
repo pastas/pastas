@@ -101,7 +101,7 @@ def share_yaxes(axes: list[Axes]) -> None:
 
 def plot_series_with_gaps(
     series: Series,
-    gap: Timedelta | float = 0.0,
+    gap: Timedelta | float = np.inf,
     ax: Axes | None = None,
     **kwargs,
 ) -> Axes:
@@ -111,10 +111,10 @@ def plot_series_with_gaps(
     ----------
     series: pd.Series
         The series to plot.
-    gap: Timedelta | float = 0.0
+    gap: Timedelta | float
         Timedelta or float to be considered as a gap. If the difference between two
         consecutive index values is larger than gap, a gap is inserted in the
-        plot. Default is 0.0.
+        plot. Default is infinity.
     ax: Axes | None
         The axes to plot on. if None, a new figure is created.
     kwargs: dict
@@ -124,7 +124,10 @@ def plot_series_with_gaps(
         _, ax = plt.subplots()
 
     td_diff = series.index[1:] - series.index[:-1]
-    gap = Timedelta(gap, "D")
+    if isinstance(gap, float) and np.isinf(gap):
+        gap = max(td_diff) + Timedelta(1, unit="D")
+    else:
+        gap = Timedelta(gap, unit="D")
     s_split = np.append(0.0, np.cumsum(td_diff >= gap))
 
     series.name = kwargs.pop("label") if "label" in kwargs else series.name
