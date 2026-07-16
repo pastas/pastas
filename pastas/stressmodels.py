@@ -503,7 +503,8 @@ class StressModel(StressModelBase):
         )
         self.gain_scale_factor = gain_scale_factor
         self.set_init_parameters()
-        self.model._add_stressmodel(self)
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> TimeSeries:
@@ -692,7 +693,8 @@ class StepModel(StressModelBase):
         )
         self.tstart = Timestamp(tstart)
         self.set_init_parameters()
-        self.model._add_stressmodel(self)
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stresses(self) -> tuple:
@@ -841,7 +843,8 @@ class LinearTrend(StressModelBase):
         self.tstart = tstart
         self.tend = tend
         self.set_init_parameters()
-        self.model._add_stressmodel(self)
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stresses(self) -> tuple:
@@ -955,7 +958,8 @@ class Constant(StressModelBase):
         super().__init__(model=model, name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.initial = initial
         self.set_init_parameters()
-        self.model._add_constant(self)
+        if self.model is not None:
+            self.model._add_constant(self)
 
     @property
     def stresses(self) -> tuple:
@@ -1164,7 +1168,8 @@ class WellModel(StressModelBase):
 
         self.rfunc.set_distances(self.distances.values)
         self.set_init_parameters()
-        self.model._add_stressmodel(self)
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> tuple[TimeSeries, ...]:
@@ -1791,7 +1796,8 @@ class RechargeModel(StressModelBase):
         )
 
         self.set_init_parameters()
-        self.model._add_stressmodel(self)
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
         # Check if precipitation is likely in mm/d and not m/d. If the maximum
         # value of the annual sums is smaller than 12 (m), the highest annual
@@ -2335,7 +2341,8 @@ class TarsoModel(RechargeModel):
         super().__init__(
             model=model, prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs
         )
-        self.model._add_stressmodel(self)
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def nsplit(self) -> int:
@@ -2637,7 +2644,8 @@ class ChangeModel(StressModelBase):
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
         self.set_init_parameters()
-        self.model._add_stressmodel(self)
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> TimeSeries:

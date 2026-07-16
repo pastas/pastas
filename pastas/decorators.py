@@ -130,18 +130,15 @@ def check_argument_model(function: Callable) -> Callable:
 
     @wraps(function)
     def _make_model_component(self, *args, **kwargs):
-        if args:
-            from pastas.model import Model
-
-            ml = args[0]
-            if not isinstance(ml, Model):
-                msg = "Since Pastas 2.0, the first argument of a stress model needs to be a Pastas Model instance to which the stress model is added. Please provide the model is the first argument: %s(model=ml, ...)"
-                logger.error(msg % self._name)
-                raise KeyError(msg % self._name)
-            else:
-                return function(self, *args, **kwargs)
-        else:
+        if "model" in kwargs:
             return function(self, *args, **kwargs)
+        from pastas.model import Model
+
+        if args and isinstance(args[0], Model):
+            return function(self, *args, **kwargs)
+        msg = "From Pastas 2.3, the first argument of %s needs to be a Pastas Model. Please provide the model as the first argument: %s(model=ml, ...)."  # From Pastas 2.3 the workflow with ml.add_xxx() will cease to function.
+        logger.warning(msg % (self._name, self._name))
+        return function(self, None, *args, **kwargs)
 
     return _make_model_component
 

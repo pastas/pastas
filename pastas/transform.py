@@ -64,7 +64,13 @@ class ThresholdTransform:
         self.name = validate_name(name)
         self._nparam = nparam
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
-        self.model._add_transform(self)
+        if self.model is not None:
+            self.model._add_transform(self)
+            self.set_init_parameters()
+
+    def set_model(self, ml: Model) -> None:
+        """Set model observations and initialize parameters."""
+        self.model = ml
         self.set_init_parameters()
 
     @property
