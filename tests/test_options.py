@@ -19,7 +19,6 @@ class TestOptionsAPI:
         assert options.cache is False
         assert options.numba is True
         assert options.parallel is False
-        assert hasattr(options, "timeseries")
 
     def test_attribute_style_set(self):
         """Test attribute-style access for setting values."""
@@ -54,7 +53,6 @@ class TestOptionsAPI:
         assert hasattr(options, "cache")
         assert hasattr(options, "numba")
         assert hasattr(options, "parallel")
-        assert hasattr(options, "timeseries")
         assert not hasattr(options, "nonexistent")
 
     def test_repr(self):
@@ -65,7 +63,6 @@ class TestOptionsAPI:
         assert "cache" in repr_str
         assert "numba" in repr_str
         assert "parallel" in repr_str
-        assert "timeseries" in repr_str
 
     def test_dir(self):
         """Test __dir__ method."""
@@ -75,7 +72,6 @@ class TestOptionsAPI:
         assert "cache" in keys
         assert "numba" in keys
         assert "parallel" in keys
-        assert "timeseries" in keys
 
 
 class TestGlobalSettings:
@@ -94,7 +90,6 @@ class TestGlobalSettings:
         assert options.cache is False
         assert options.numba is True
         assert options.parallel is False
-        assert hasattr(options, "timeseries")
 
     def test_options_mutability(self):
         """Test that options can be modified."""
