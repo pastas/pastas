@@ -479,10 +479,10 @@ def timestep_weighted_resample(
         # set values after the end of the original series to NaN
         s_new[s_new.index > series.index[-1]] = np.nan
     else:
-        t_e = series.index.view("int64")
+        t_e = _index_to_int64(series.index)
         t_s = t_e - dt
         v = series.values
-        t_new = index.view("int64")
+        t_new = _index_to_int64(index)
         v_new = _ts_resample_slow(t_s, t_e, v, t_new)
         s_new = Series(v_new, index)
 
@@ -490,7 +490,7 @@ def timestep_weighted_resample(
 
 
 def _get_dt_array(index):
-    dt = np.diff(index.view("int64"))
+    dt = np.diff(_index_to_int64(index))
     # assume the first value has an equal timestep as the second value
     dt = np.hstack((dt[0], dt))
     return dt
@@ -703,23 +703,23 @@ def get_equidistant_series_nearest(
 
     # get linear interpolated index from original series
     fl = interpolate.interp1d(
-        series.index.view("int64"),
+        _index_to_int64(series.index),
         np.arange(0, series.index.size),
         kind="linear",
         bounds_error=False,
         fill_value="extrapolate",
     )
-    ind_linear = fl(idx.view("int64"))
+    ind_linear = fl(_index_to_int64(idx))
 
     # get the nearest index from original series
     f = interpolate.interp1d(
-        series.index.view("int64"),
+        _index_to_int64(series.index),
         np.arange(0, series.index.size),
         kind="nearest",
         bounds_error=False,
         fill_value="extrapolate",
     )
-    ind = f(idx.view("int64")).astype(int)
+    ind = f(_index_to_int64(idx)).astype(int)
 
     # create a new equidistant series
     s = Series(index=idx, data=np.nan)
@@ -898,3 +898,12 @@ def resample(
 
     """
     return series.resample(freq, closed=closed, label=label, **kwargs)
+
+
+def _index_to_int64(index: DatetimeIndex) -> np.ndarray:
+    """Convert a pandas index to int64 representation."""
+    if hasattr(index, "as_unit"):  # pandas >= 3.0
+        # In pandas 3.0, the default resolution for newly created datetime-like objects
+        # is datetime64[us] (microseconds)
+        index = index.as_unit("us")
+    return index.view("int64")

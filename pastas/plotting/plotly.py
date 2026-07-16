@@ -22,6 +22,7 @@ from pastas.plotting.plotutil import (
     _table_formatter_stderr,
 )
 from pastas.rfunc import HantushWellModel
+from pastas.timeseries_utils import _index_to_int64
 from pastas.stats import acf
 
 
@@ -537,9 +538,9 @@ class Plotly:
 
         if self._model._interpolate_simulation:
             sim_interpolated = np.interp(
-                series.index.view("int64"),
-                sim.index.view("int64"),
-                sim.to_numpy(copy=True),
+                _index_to_int64(series.index),
+                _index_to_int64(sim.index),
+                sim.to_numpy(),
             )
             sim = pd.Series(index=series.index, data=sim_interpolated)
 
