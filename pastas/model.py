@@ -1000,7 +1000,7 @@ class Model:
             logger.warning(msg)
             if self.solver is None or self.solver._name != solver._name:
                 logger.info("Setting solver to `%s`." % solver._name)
-                self.add_solver(solver=solver)
+                self._add_solver(solver=solver)
             else:
                 logger.info("Keeping original solver `%s`." % self.solver._name)
 
