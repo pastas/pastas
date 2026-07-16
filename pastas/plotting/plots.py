@@ -368,7 +368,7 @@ def diagnostics(
     bins: int = 50,
     acf_options: dict | None = None,
     heteroscedasicity: bool = True,
-    max_plot_gap: Timedelta | float | None = None,
+    max_plot_gap: Timedelta | float = 0.0,
     **kwargs,
 ) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
@@ -389,10 +389,10 @@ def diagnostics(
     heteroscedasicity: bool, optional
         Create two additional subplots to check for heteroscedasticity. If true,
         a simulated time series has to be provided with the sim argument.
-    max_plot_gap: Timedelta | float | None, optional
+    max_plot_gap: Timedelta | float = 0.0
         Maximum gap to be considered as a gap. If the difference between two
         consecutive index values is larger than max_plot_gap, a gap is inserted in the
-        plot. Default is None.
+        plot. Default is 0.0.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 

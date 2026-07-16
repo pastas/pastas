@@ -140,7 +140,7 @@ class Plotting:
         add_ylabels: bool = False,
         block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
-        max_plot_gap: Timedelta | float | None = None,
+        max_plot_gap: Timedelta | float = 0.0,
         return_dict: bool = False,
         **kwargs,
     ) -> dict[str, Axes] | list[Axes]:
@@ -173,10 +173,10 @@ class Plotting:
             Plot the block- or step-response on the right. Default is 'step'.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
-        max_plot_gap: Timedelta | float | None = None,
+        max_plot_gap: Timedelta | float,
             Timedelta or float with the maximum gap in the residuals or noise. If
             the gap between two consecutive residuals or noise is larger than
-            this value, a gap is inserted in the plot. Default is None.
+            this value, a gap is inserted in the plot. Default is 0.0.
         return_dict: bool, optional
             If True, a dictionary with the axes is returned. If False, a list of
             axes is returned. Default is False.
