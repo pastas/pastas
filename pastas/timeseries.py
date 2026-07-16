@@ -34,6 +34,62 @@ from .utils import validate_name
 
 logger = getLogger(__name__)
 
+DEFAULT_SETTINGS = {
+    "oseries": OseriesSettingsDict(
+        fill_nan="drop",
+        sample_down="drop",
+    ),
+    "prec": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_nan=0.0,
+        fill_before="mean",
+        fill_after="mean",
+    ),
+    "evap": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "well": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_nan=0.0,
+        fill_before=0.0,
+        fill_after=0.0,
+    ),
+    "waterlevel": StressSettingsDict(
+        sample_up="interpolate",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "level": StressSettingsDict(
+        sample_up="interpolate",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "flux": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan=0.0,
+    ),
+    "quantity": StressSettingsDict(
+        sample_up="divide",
+        sample_down="sum",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan=0.0,
+    ),
+}
+
 
 class TimeSeries:
     """Class that deals with all user-provided time series.
@@ -47,7 +103,7 @@ class TimeSeries:
         to derive the name from the series.
     settings: str or dict, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dictionary (defined in ps.options.timeseries), or a dictionary with
+        settings dictionary (defined in ps.timeseries.DEFAULT_SETTINGS), or a dictionary with
         the settings to apply. For more information refer to Time series settings
         section below.
     metadata: dict, optional
@@ -105,7 +161,7 @@ class TimeSeries:
     To obtain the predefined TimeSeries settings, you can run the following line of
     code:
 
-    >>> ps.options.timeseries
+    >>> ps.timeseries.DEFAULT_SETTINGS
 
     See Also
     --------
