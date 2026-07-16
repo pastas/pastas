@@ -64,8 +64,9 @@ class ThresholdTransform:
         self.name = validate_name(name)
         self._nparam = nparam
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
-        self.model._add_transform(self)
-        self.set_init_parameters()
+        if self.model is not None:
+            self.model._add_transform(self)
+            self.set_init_parameters()
 
     @property
     def nparam(self) -> int:

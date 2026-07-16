@@ -174,6 +174,20 @@ class TestModelComponents:
         # Check that it was replaced with the new one
         assert ml_solved.stressmodels[first_sm_name].rfunc._name == "Gamma"
 
+    def test_add_stressmodel_indirectly(
+        self, ml_basic: ps.Model, prec: pd.Series
+    ) -> None:
+        """Test adding a stress model using ml.add_stressmodel(), allowed until pastas 2.3."""
+        sm = ps.StressModel(
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="precipitation",
+        )
+        ml_basic.add_stressmodel(sm)
+
+        assert "precipitation" in ml_basic.stressmodels
+        assert ml_basic.stressmodels["precipitation"] is sm
+
     def test_del_stressmodel(self, ml_solved: ps.Model) -> None:
         """Test deleting a stress model."""
         # Get the first stressmodel name

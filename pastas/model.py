@@ -225,12 +225,26 @@ class Model:
         )
 
     @PastasDeprecationWarning(
-        version="2.0",
+        version="2.3.0",
         reason="Stressmodels are now added by adding the Pastas Model as the first argument during stressmodel initialization (i.e., ps.Stressmodel(model=ml, *args))",
     )
-    def add_stressmodel(*args, **kwargs):
+    def add_stressmodel(
+        self, stressmodel: StressModel | list[StressModel], replace: bool = True
+    ):
         """Add a stressmodel to the model (Deprecated)."""
-        pass
+        # Method can take multiple stressmodels at once through args
+        if isinstance(stressmodel, list):
+            for sm in stressmodel:
+                self.add_stressmodel(sm)
+        elif (stressmodel.name in self.stressmodels.keys()) and not replace:
+            msg = (
+                "The name for the stressmodel you are trying to add already exists "
+                "for this model. Select another name."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+        else:
+            self._add_stressmodel(stressmodel)
 
     def _add_stressmodel(self, stressmodel: StressModel) -> None:
         """Add a stressmodel to the main model.
@@ -268,12 +282,12 @@ class Model:
         self._check_stressmodel_compatibility()
 
     @PastasDeprecationWarning(
-        version="2.0",
+        version="2.3.0",
         reason="Constants are now added by adding the Pastas Model as the first argument during initialization (i.e., ps.Constant(model=ml, *args))",
     )
-    def add_constant(*args, **kwargs):
+    def add_constant(self, constant: Constant) -> None:
         """Add a constant to the model (Deprecated)."""
-        pass
+        self._add_constant(constant)
 
     def _add_constant(self, constant: Constant) -> None:
         """Add a Constant to the time series Model.
@@ -289,14 +303,15 @@ class Model:
         self._check_stressmodel_compatibility()
 
     @PastasDeprecationWarning(
-        version="2.0",
+        version="2.3.0",
         reason="Transforms are now added by adding the Pastas Model as the first "
         "argument during Transform initialization (i.e., ps.ThresholdTransform"
         "(model=ml, *args))",
     )
-    def add_transform(*args, **kwargs):
+    def add_transform(self, transform: ThresholdTransform):
         """Add a Transform to the model (Deprecated)."""
-        pass
+        transform.set_model(self)
+        self._add_transform(transform)
 
     def _add_transform(self, transform: ThresholdTransform):
         """Add a Transform to the time series Model.
@@ -315,14 +330,14 @@ class Model:
         self._check_stressmodel_compatibility()
 
     @PastasDeprecationWarning(
-        version="2.0",
+        version="2.3.0",
         reason="Noise models are now added by adding the Pastas Model as the first "
         "argument during noise model initialization (i.e., ps.ArNoiseModel"
         "(model=ml, *args))",
     )
-    def add_noisemodel(*args, **kwargs):
+    def add_noisemodel(self, noisemodel: NoiseModelType) -> None:
         """Add a noisemodel to the model (Deprecated)."""
-        pass
+        self._add_noisemodel(noisemodel)
 
     def _add_noisemodel(self, noisemodel: NoiseModelType) -> None:
         """Add a noisemodel to the time series Model.
@@ -349,14 +364,14 @@ class Model:
         self._parameters = self.get_init_parameters(initial=False)
 
     @PastasDeprecationWarning(
-        version="2.0",
+        version="2.3.0",
         reason="Solvers are now added by adding the Pastas Model as the first "
         "argument during solver initialization (i.e.,  ps.solver.LeastSquares"
         "(model=ml, *args))",
     )
-    def add_solver(*args, **kwargs):
+    def add_solver(self, solver: Solver) -> None:
         """Add a solver to the model (Deprecated)."""
-        pass
+        self._add_solver(solver)
 
     def _add_solver(self, solver: Solver) -> None:
         """Add a solver to the model.
@@ -836,7 +851,7 @@ class Model:
             If None, the solver from `ml.solver` is used. If `solver` and `ml.solver`
             are both None, the default ps.solver.LeastSquares() is used.
 
-            .. deprecated:: 2.0.0
+            .. deprecated:: 2.3.0
                 The solver argument is deprecated in favor of adding a solver using the `ps.solver.LeastSquares(model=ml)` pattern.
 
         report: bool | Literal["full"] | dict, optional
@@ -981,9 +996,13 @@ class Model:
 
         # Check if the solver is provided, deprecated with Pastas 2.0
         if solver is not None:  # add solver if provided
-            msg = "solver argument is deprecated since Pastas 2.0. Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
-            logger.error(msg)
-            raise KeyError(msg)
+            msg = "solver argument is deprecated and will be removed in Pastas 2.3.0. Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
+            logger.warning(msg)
+            if self.solver is None or self.solver._name != solver._name:
+                logger.info("Setting solver to `%s`." % solver._name)
+                self.add_solver(solver=solver)
+            else:
+                logger.info("Keeping original solver `%s`." % self.solver._name)
 
         # Add default solver if none is provided
         if self.solver is None:  # add scipy least_squares if no solver provided
