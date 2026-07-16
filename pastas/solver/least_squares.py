@@ -834,8 +834,6 @@ class LeastSquares(LeastSquaresBase):
             max_nfev=self.max_nfev,
             diff_step=self.diff_step,
             tr_solver=self.tr_solver,
-            tr_options=self.tr_options,
-            callback=self.callback,
             **kwargs,
         )
 
@@ -1073,7 +1071,6 @@ class LeastSquares(LeastSquaresBase):
             "max_nfev": self.max_nfev,
             "diff_step": self.diff_step,
             "tr_solver": self.tr_solver,
-            "tr_options": self.tr_options,
         }
         return settings
 
