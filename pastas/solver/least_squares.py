@@ -739,6 +739,7 @@ class LeastSquares(LeastSquaresBase):
         weights: Series | None,
         initial: ArrayLike,
         vary: ArrayLike,
+        callback: Callable | None = None,
     ) -> ArrayLike:
         """Objective function that is minimized by the least_squares solver.
 
@@ -763,7 +764,7 @@ class LeastSquares(LeastSquaresBase):
         par = initial
         par[vary] = p
         return misfit(
-            ml=self.ml, p=par, noise=noise, weights=weights, callback=self.callback
+            ml=self.ml, p=par, noise=noise, weights=weights, callback=callback
         )
 
     def solve(
@@ -817,6 +818,7 @@ class LeastSquares(LeastSquaresBase):
             weights=weights,
             initial=initial,
             vary=vary,
+            callback=kwargs.pop("callback", None),
         )
 
         self.result = least_squares(
