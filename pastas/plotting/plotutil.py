@@ -112,9 +112,9 @@ def plot_series_with_gaps(
     series: pd.Series
         The series to plot.
     gap: Timedelta | float
-        Timedelta or float to be considered as a gap. If the difference between two
-        consecutive index values is larger than gap, a gap is inserted in the
-        plot. Default is infinity.
+        Timedelta or float (in days) to be considered as a gap. If the difference
+        between two consecutive index values is larger than gap, a gap is inserted
+        in the plot. Default is infinity.
     ax: Axes | None
         The axes to plot on. if None, a new figure is created.
     kwargs: dict

@@ -390,9 +390,9 @@ def diagnostics(
         Create two additional subplots to check for heteroscedasticity. If true,
         a simulated time series has to be provided with the sim argument.
     max_plot_gap: Timedelta | float
-        Maximum gap to be considered as a gap. If the difference between two
-        consecutive index values is larger than max_plot_gap, a gap is inserted in the
-        plot. Default is infinity.
+        Timedelta or float (in days) with the maximum gap to be considered as a gap.
+        If the difference between two consecutive index values is larger than
+        max_plot_gap, a gap is inserted in the plot. Default is infinity.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
