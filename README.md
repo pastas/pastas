@@ -47,16 +47,20 @@ analysis tools.
 
 ## Quick installation guide
 
-To install Pastas, a working version of Python has to be installed on your computer.
-We recommend using the [Anaconda Distribution](https://www.continuum.io/downloads) as it
-includes most of the python package dependencies and the Jupyter Notebook software to
-run the notebooks. However, you are free to install any Python distribution you want.
+To install Pastas, a working version of Python 3.9 or higher has to be installed on
+your computer. We recommend using [uv](https://docs.astral.sh/uv/) to manage Python
+and your project dependencies. However, you are free to use any Python installation
+method you prefer.
 
 ### Stable version
 
 To get the latest stable version, use:
 
     pip install pastas
+
+Or with uv:
+
+    uv pip install pastas
 
 ### Update
 
