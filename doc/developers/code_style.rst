@@ -40,7 +40,7 @@ Private methods in Pastas are identified by a leading underscore. For example:
 >>> ml._get_response()
 
 This basically means that these methods may be removed or their behaviour may
-be changed without DeprecationWarning or any other form of notice.
+be changed without FutureWarning or any other form of notice.
 
 Logger Calls and Errors
 -----------------------

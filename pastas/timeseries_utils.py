@@ -521,7 +521,7 @@ def _ts_resample_slow(t_s, t_e, v, t_new):
 
 def time_weighted_resample(
     s: Series,
-    index: Index,
+    tindex: DatetimeIndex,
     method: str = "stepwise",
     add_first_index: bool = True,
     require_full_coverage: bool = False,
@@ -533,7 +533,7 @@ def time_weighted_resample(
     ----------
     s : pandas.Series
         Original time series with a datetime-like index.
-    index : pandas.Index
+    tindex : pandas.DatetimeIndex
         Target time index defining the boundaries of the new periods.
     method : {"linear", "stepwise", "state", "flux"}, optional
         Interpretation of the original series:
@@ -574,7 +574,7 @@ def time_weighted_resample(
         raise Exception("s cannot contain NaN values")
     if not s.index.is_monotonic_increasing:
         raise ValueError("Series index must be strictly increasing.")
-    if not index.is_monotonic_increasing:
+    if not tindex.is_monotonic_increasing:
         raise ValueError("Target index must be strictly increasing.")
 
     # Normalize method aliases
@@ -592,7 +592,7 @@ def time_weighted_resample(
     s_org = s.copy()
 
     # Ensure all target boundaries exist in the original series
-    missing = index.difference(s.index)
+    missing = tindex.difference(s.index)
     if not missing.empty:
         s = concat([s, Series(np.nan, index=missing)]).sort_index()
 
@@ -603,7 +603,7 @@ def time_weighted_resample(
         s = s.bfill()
 
     # Limit to resampling domain
-    s = s.loc[index[0] : index[-1]]
+    s = s.loc[tindex[0] : tindex[-1]]
 
     # Compute time differences in seconds
     dt = s.index.to_series().diff().iloc[1:].dt.total_seconds().values
@@ -623,32 +623,32 @@ def time_weighted_resample(
     duration[s_int.isna()] = 0
 
     # Aggregate to new periods
-    bins = cut(s_int.index, index, right=True)
+    bins = cut(s_int.index, tindex, right=True)
     s_new = (
         s_int.groupby(bins, observed=False).sum()
         / duration.groupby(bins, observed=False).sum()
     )
-    s_new.index = index[1:]
+    s_new.index = tindex[1:]
 
     if require_full_coverage:
         # Mask incomplete periods
-        mask = (index[:-1] < s_org.first_valid_index()) | (
-            index[1:] > s_org.last_valid_index()
+        mask = (tindex[:-1] < s_org.first_valid_index()) | (
+            tindex[1:] > s_org.last_valid_index()
         )
     else:
         # Mask periods completely outside the original data range
-        mask = (index[1:] < s_org.first_valid_index()) | (
-            index[:-1] > s_org.last_valid_index()
+        mask = (tindex[1:] < s_org.first_valid_index()) | (
+            tindex[:-1] > s_org.last_valid_index()
         )
     s_new[mask] = np.nan
 
     if add_first_index:
         # Add first index with NaN value
-        if require_full_coverage or index[0] < s_org.first_valid_index():
+        if require_full_coverage or tindex[0] < s_org.first_valid_index():
             first_value = np.nan
         else:
             first_value = s.iloc[0]
-        s_new = concat([Series(first_value, index=[index[0]]), s_new])
+        s_new = concat([Series(first_value, index=[tindex[0]]), s_new])
 
     # copy name and attributes from original series
     s_new.name = s_org.name
@@ -900,10 +900,10 @@ def resample(
     return series.resample(freq, closed=closed, label=label, **kwargs)
 
 
-def _index_to_int64(index: DatetimeIndex) -> np.ndarray:
+def _index_to_int64(tindex: DatetimeIndex) -> np.ndarray:
     """Convert a pandas index to int64 representation."""
-    if hasattr(index, "as_unit"):  # pandas >= 3.0
+    if hasattr(tindex, "as_unit"):  # pandas >= 3.0
         # In pandas 3.0, the default resolution for newly created datetime-like objects
         # is datetime64[us] (microseconds)
-        index = index.as_unit("us")
-    return index.view("int64")
+        tindex = tindex.as_unit("us")
+    return tindex.view("int64")
