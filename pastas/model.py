@@ -225,7 +225,7 @@ class Model:
         )
 
     @PastasDeprecationWarning(
-        version="2.3.0",
+        version="2.4.0",
         reason="Stressmodels are now added by adding the Pastas Model as the first argument during stressmodel initialization (i.e., ps.Stressmodel(model=ml, *args))",
     )
     def add_stressmodel(
@@ -283,7 +283,7 @@ class Model:
         self._check_stressmodel_compatibility()
 
     @PastasDeprecationWarning(
-        version="2.3.0",
+        version="2.4.0",
         reason="Constants are now added by adding the Pastas Model as the first argument during initialization (i.e., ps.Constant(model=ml, *args))",
     )
     def add_constant(self, constant: Constant) -> None:
@@ -305,7 +305,7 @@ class Model:
         self._check_stressmodel_compatibility()
 
     @PastasDeprecationWarning(
-        version="2.3.0",
+        version="2.4.0",
         reason="Transforms are now added by adding the Pastas Model as the first "
         "argument during Transform initialization (i.e., ps.ThresholdTransform"
         "(model=ml, *args))",
@@ -332,7 +332,7 @@ class Model:
         self._check_stressmodel_compatibility()
 
     @PastasDeprecationWarning(
-        version="2.3.0",
+        version="2.4.0",
         reason="Noise models are now added by adding the Pastas Model as the first "
         "argument during noise model initialization (i.e., ps.ArNoiseModel"
         "(model=ml, *args))",
@@ -367,7 +367,7 @@ class Model:
         self._parameters = self.get_init_parameters(initial=False)
 
     @PastasDeprecationWarning(
-        version="2.3.0",
+        version="2.4.0",
         reason="Solvers are now added by adding the Pastas Model as the first "
         "argument during solver initialization (i.e.,  ps.solver.LeastSquares"
         "(model=ml, *args))",
@@ -392,7 +392,7 @@ class Model:
             Different solver objects are available to estimate parameters.
         """
         self.solver = solver
-        if not hasattr(self.solver, "ml") or self.solver.ml is None:
+        if not hasattr(self.solver, "model") or self.solver.model is None:
             self.solver.set_model(self)
 
         self._parameters = self.get_init_parameters(initial=False)
@@ -855,7 +855,7 @@ class Model:
             If None, the solver from `ml.solver` is used. If `solver` and `ml.solver`
             are both None, the default ps.solver.LeastSquares() is used.
 
-            .. deprecated:: 2.3.0
+            .. deprecated:: 2.4.0
                 The solver argument is deprecated in favor of adding a solver using the `ps.solver.LeastSquares(model=ml)` pattern.
 
         report: bool | Literal["full"] | dict, optional
@@ -1000,7 +1000,7 @@ class Model:
 
         # Check if the solver is provided, deprecated with Pastas 2.0
         if solver is not None:  # add solver if provided
-            msg = "solver argument is deprecated and will be removed in Pastas 2.3.0. Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
+            msg = "solver argument is deprecated and will be removed in Pastas 2.4.0. Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
             logger.warning(msg)
             if self.solver is None or self.solver._name != solver._name:
                 logger.info("Setting solver to `%s`." % solver._name)

@@ -168,12 +168,16 @@ class Emcee(SolverBase):
     ) -> tuple[bool, DataFrame]:
         """Solve the model using MCMC."""
         # Store initial parameters
-        self.initial = self.ml.parameters.initial.to_numpy(dtype=float)
-        self.vary = self.ml.parameters.vary.to_numpy(dtype=bool)
+        self.initial = self.model.parameters.initial.to_numpy(dtype=float)
+        self.vary = self.model.parameters.vary.to_numpy(dtype=bool)
 
         # Set lower and upper bounds
-        lb = self.ml.parameters[self.ml.parameters.vary].pmin.to_numpy(dtype=float)
-        ub = self.ml.parameters[self.ml.parameters.vary].pmax.to_numpy(dtype=float)
+        lb = self.model.parameters[self.model.parameters.vary].pmin.to_numpy(
+            dtype=float
+        )
+        ub = self.model.parameters[self.model.parameters.vary].pmax.to_numpy(
+            dtype=float
+        )
         self.bounds = np.vstack([lb, ub]).T
 
         # Set priors
@@ -239,7 +243,7 @@ class Emcee(SolverBase):
                 # "Q025": TODO: compute credible intervals
                 # "Q975": TODO: compute credible intervals
             },
-            index=self.ml.parameters.index,
+            index=self.model.parameters.index,
             dtype=float,
         )
         return success, result
@@ -321,7 +325,7 @@ class Emcee(SolverBase):
         rv = misfit(
             p=p,
             noise=noise,
-            ml=self.ml,
+            ml=self.model,
             weights=weights,
             callback=callback,
             returnseparate=False,
@@ -369,7 +373,9 @@ class Emcee(SolverBase):
         cols = ["initial", "pmin", "pmax", "sigma", "dist"]
 
         # Set the priors for the parameters that are varied from the model
-        for _, p in self.ml.parameters.loc[self.ml.parameters.vary, cols].iterrows():
+        for _, p in self.model.parameters.loc[
+            self.model.parameters.vary, cols
+        ].iterrows():
             prior = self._get_prior(
                 dist=p["dist"],
                 loc=p["initial"],
@@ -455,29 +461,29 @@ class Emcee(SolverBase):
         model = {
             "nwalkers": self.nwalkers,
             "nsteps": self.nsteps,
-            "nobs": self.ml.observations().index.size,
-            "tmin": str(self.ml.settings["tmin"]),
-            "tmax": str(self.ml.settings["tmax"]),
-            "freq": self.ml.settings["freq"],
-            "freq_obs": str(self.ml.settings["freq_obs"]),
-            "warmup": str(self.ml.settings["warmup"]),
+            "nobs": self.model.observations().index.size,
+            "tmin": str(self.model.settings["tmin"]),
+            "tmax": str(self.model.settings["tmax"]),
+            "freq": self.model.settings["freq"],
+            "freq_obs": str(self.model.settings["freq_obs"]),
+            "warmup": str(self.model.settings["warmup"]),
             "solver": self._name,
         }
         fit = {
-            "EVP": f"{self.ml.stats.evp():.2f}",
-            "R2": f"{self.ml.stats.rsq():.2f}",
-            "RMSE": f"{self.ml.stats.rmse():.2f}",
-            "AICc": f"{self.ml.stats.aicc():.2f}",
-            "BIC": f"{self.ml.stats.bic():.2f}",
+            "EVP": f"{self.model.stats.evp():.2f}",
+            "R2": f"{self.model.stats.rsq():.2f}",
+            "RMSE": f"{self.model.stats.rmse():.2f}",
+            "AICc": f"{self.model.stats.aicc():.2f}",
+            "BIC": f"{self.model.stats.bic():.2f}",
             "Obj": f"{obj_func:.2f}",
             "___": "",
-            "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
+            "Interp.": "Yes" if self.model._interpolate_simulation else "No",
         }
 
         if full_output:
             warnings = True
 
-        parameters = self.ml._parameters.loc[
+        parameters = self.model._parameters.loc[
             :, ["optimal", "initial", "vary", "sigma", "dist"]
         ].copy()
 
@@ -497,7 +503,7 @@ class Emcee(SolverBase):
         wspace = max(width - (11 + 14 + len(self.name)), 1)
         mspace = width - wspace - (11 + 14)
         header = (
-            f"Fit report {self.name:<{mspace}.{mspace}}"
+            f"Fit report {self.model.name:<{mspace}.{mspace}}"
             f"{string.format('', fill=' ', align='>', width=wspace)}"
             f"Fit Statistics\n"
             f"{string.format('', fill='=', align='>', width=width)}\n"
@@ -518,7 +524,7 @@ class Emcee(SolverBase):
 
         warnings_rep = ""
         if warnings:
-            msg = self.ml._generate_warnings_report(log=False, solve_success=True)
+            msg = self.model._generate_warnings_report(log=False, solve_success=True)
 
             # create message
             if len(msg) > 0:

@@ -204,9 +204,7 @@ class TestLinearTrend:
     def test_deprecated_arguments(self) -> None:
         """Test that deprecated 'start' and 'end' arguments raise warnings."""
         # Test deprecated 'start' argument
-        with pytest.warns(
-            FutureWarning, match="start.*deprecated|deprecated.*start"
-        ):
+        with pytest.warns(FutureWarning, match="start.*deprecated|deprecated.*start"):
             sm = LinearTrend(
                 model=_component_model(),
                 start="2001-01-01",
