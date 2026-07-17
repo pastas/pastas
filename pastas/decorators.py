@@ -136,7 +136,7 @@ def check_argument_model(function: Callable) -> Callable:
 
         if args and isinstance(args[0], Model):
             return function(self, *args, **kwargs)
-        msg = "From Pastas 2.3, the first argument of %s needs to be a Pastas Model. Please provide the model as the first argument: %s(model=ml, ...)."  # From Pastas 2.3 the workflow with ml.add_xxx() will cease to function.
+        msg = "From Pastas 2.4, the first argument of %s needs to be a Pastas Model. Please provide the model as the first argument: %s(model=ml, ...)."  # From Pastas 2.4 the workflow with ml.add_xxx() will cease to function.
         warn(message=msg % (self._name, self._name), category=FutureWarning)
         return function(self, None, *args, **kwargs)
 
