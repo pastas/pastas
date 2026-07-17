@@ -31,12 +31,13 @@ class SolverBase(ABC):
 
     """
 
-    def __init__(self, name: str = "solver", **kwargs: Any) -> None:
+    def __init__(self, model: Model, name: str = "solver", **kwargs: Any) -> None:
+        self.model = model
         self.name = name
         self.kwargs = kwargs
-        self.ml: Model | None = None
         self.parameters: pd.DataFrame | None = None
         self.set_init_parameters()  # adds self.Parameters DataFrame
+        self.model._add_solver(self)
 
     def get_init_parameters(self, name: str) -> pd.DataFrame:
         """Get initial parameters of the solver.
@@ -53,6 +54,12 @@ class SolverBase(ABC):
             columns=["initial", "pmin", "pmax", "vary", "name"],
         )
         return parameters
+
+    @property
+    @PastasDeprecationWarning(version="2.4.0", reason="Use 'solver.model' instead.")
+    def ml(self):
+        """Get the Pastas Model instance (Deprecated)."""
+        return self.model
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
@@ -116,12 +123,12 @@ class SolverBase(ABC):
         ml: pastas.Model instance
 
         """
-        if self.ml is not None:
+        if self.model is not None:
             raise UserWarning(
                 "This solver instance is already used by another model. Please create "
                 "a separate solver instance for each Pastas Model."
             )
-        self.ml = ml
+        self.model = ml
 
     @abstractmethod
     def fit_report(self, full_output=False) -> str:

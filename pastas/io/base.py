@@ -116,8 +116,7 @@ def _load_model(data: dict) -> Model:
     # Add stressmodels
     rfunc_one_sm_names = []
     for name, smdata in data["stressmodels"].items():
-        sm = _load_stressmodel(smdata, data)
-        ml.add_stressmodel(sm)
+        sm = _load_stressmodel(smdata, model=ml)
         if sm.rfunc is not None and sm.rfunc._name == "One":
             rfunc_one_sm_names.append(name)
 
@@ -147,9 +146,10 @@ def _load_model(data: dict) -> Model:
                     ),
                 )
                 file_parameters = file_parameters.rename(index=rename_map)
+
         transform = getattr(ps.transform, data["transform"].pop("class"))
+        data["transform"]["model"] = ml
         transform = transform(**data["transform"])
-        ml.add_transform(transform)
 
     # Add noisemodel if present
     if "noisemodel" in data.keys():
@@ -159,8 +159,8 @@ def _load_model(data: dict) -> Model:
             data["noisemodel"]["class"] = "ArNoiseModel"
         elif data["noisemodel"]["class"] == "ArmaModel":
             data["noisemodel"]["class"] = "ArmaNoiseModel"
-        n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
-        ml.add_noisemodel(n)
+        data["noisemodel"]["model"] = ml
+        getattr(ps.noisemodels, data["noisemodel"].pop("class"))(**data["noisemodel"])
 
     solver_name = None
     for solver_key in ("fit", "solver"):
@@ -176,8 +176,9 @@ def _load_model(data: dict) -> Model:
         solver_name = data[solver_key].pop("class")
         solver_name = "Lmfit" if solver_name == "LmfitSolve" else solver_name
         solver_name = "Emcee" if solver_name == "EmceeSolve" else solver_name
-        solver = getattr(ps.solver, solver_name)
-        ml.add_solver(solver(**data[solver_key]))
+
+        data[solver_key]["model"] = ml
+        getattr(ps.solver, solver_name)(**data[solver_key])
 
     # Fix old parameter names for One response functions to match the naming convention from Pastas 2.0
     # TODO: Deprecate if pas-files < 2.0 are no longer supported
@@ -225,7 +226,7 @@ def _load_model(data: dict) -> Model:
     return ml
 
 
-def _load_stressmodel(ts, data):
+def _load_stressmodel(ts, model):
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts.pop("class"))
 
@@ -281,6 +282,8 @@ def _load_stressmodel(ts, data):
         ts["metadata"] = metadata if len(metadata) > 1 else metadata[0]
     if settings:
         ts["settings"] = settings if len(settings) > 1 else settings[0]
+    if "model" not in ts.keys():
+        ts["model"] = model
 
     sm = stressmodel(**ts)
     return sm

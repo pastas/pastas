@@ -17,7 +17,7 @@ head = pd.read_csv(
 
 # Create the time series model
 ml = ps.Model(head, name="head")
-ml.add_noisemodel(ps.ArNoiseModel())
+ps.ArNoiseModel(model=ml)
 
 # read weather data
 rain = pd.read_csv(
@@ -28,15 +28,25 @@ evap = pd.read_csv(
 ).squeeze("columns")
 
 # Create stress
-rm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential(), name="recharge")
-ml.add_stressmodel(rm)
+rm = ps.RechargeModel(
+    model=ml,
+    prec=rain,
+    evap=evap,
+    rfunc=ps.Exponential(),
+    name="recharge",
+)
 
 well = (
     pd.read_csv("data_notebook_5/well_wellex.csv", index_col="Date", parse_dates=True)
     / 1e6
 ).squeeze("columns")
-sm = ps.StressModel(well, rfunc=ps.Exponential(), name="well", up=False)
-ml.add_stressmodel(sm)
+sm = ps.StressModel(
+    model=ml,
+    stress=well,
+    rfunc=ps.Exponential(),
+    name="well",
+    up=False,
+)
 
 # Solve
 ml.solve()
