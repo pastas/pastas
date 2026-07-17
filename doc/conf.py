@@ -193,14 +193,11 @@ rtds_action_path = ".."
 rtds_action_artifact_prefix = "notebooks-for-"
 
 # Get GitHub token from environment variable
-# When using the ReadTheDocs GitHub App, the token is provided automatically
-# The rtds_action extension requires this to download artifacts from GitHub Actions
-# Try multiple possible environment variable names for compatibility
-rtds_action_github_token = (
-    os.environ.get("READTHEDOCS_TOKEN")
-    or os.environ.get("GITHUB_TOKEN")
-    or os.environ.get("READTHEDOCS_GITHUB_TOKEN")
-)
+# IMPORTANT: You must add a GitHub Personal Access Token (PAT) with 'repo' scope
+# to ReadTheDocs as an environment variable named GITHUB_TOKEN.
+# Go to: https://readthedocs.org/projects/pastas/admin/environment-variables/
+# The ReadTheDocs GitHub App does NOT provide access to Actions artifacts.
+rtds_action_github_token = os.environ.get("GITHUB_TOKEN")
 
 # Whether or not to raise an error on Read the Docs if the artifact can't be downloaded
 # Set to False for now to allow local builds without the artifact
