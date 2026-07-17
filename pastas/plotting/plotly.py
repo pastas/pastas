@@ -1,4 +1,4 @@
-"""This module contains interactive Plotly plots for Pastas models.
+"""Module containing interactive Plotly plots for Pastas models.
 
 Examples
 --------
@@ -23,6 +23,7 @@ from pastas.plotting.plotutil import (
 )
 from pastas.rfunc import HantushWellModel
 from pastas.stats import acf
+from pastas.timeseries_utils import _index_to_int64
 
 
 @register_model_accessor("plotly")
@@ -48,7 +49,7 @@ class Plotly:
         self._model = model
 
     def plot(self, tmin=None, tmax=None):
-        """Plotly version of pastas.Model.plot().
+        """Create Plotly version of pastas.Model.plot().
 
         Parameters
         ----------
@@ -68,7 +69,6 @@ class Plotly:
         fig : plotly.Figure
             plotly Figure showing oseries and model simulation
         """
-
         traces = []
 
         o = self._model.observations()
@@ -135,7 +135,7 @@ class Plotly:
         return go.Figure(data=traces, layout=go.Layout(layout))
 
     def results(self, tmin=None, tmax=None, stderr=False):
-        """Plotly version of pastas.Model.plots.results().
+        """Create Plotly version of pastas.Model.plots.results().
 
         Parameters
         ----------
@@ -511,7 +511,7 @@ class Plotly:
         return fig
 
     def diagnostics(self):
-        """Plotly version of pastas.Model.plots.diagnostics().
+        """Create Plotly version of pastas.Model.plots.diagnostics().
 
         Parameters
         ----------
@@ -538,9 +538,9 @@ class Plotly:
 
         if self._model._interpolate_simulation:
             sim_interpolated = np.interp(
-                series.index.view("int64"),
-                sim.index.view("int64"),
-                sim.to_numpy(copy=True),
+                _index_to_int64(series.index),
+                _index_to_int64(sim.index),
+                sim.to_numpy(),
             )
             sim = pd.Series(index=series.index, data=sim_interpolated)
 

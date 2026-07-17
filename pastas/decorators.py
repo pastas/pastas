@@ -1,4 +1,4 @@
-"""This module contains decorators and utility functions for Pastas models.
+"""Module containing decorators and utility functions for Pastas models.
 
 Includes decorators for caching, configuring global settings, deprecation warnings,
 and other convenient methods for handling time, numba compiled code, etc.
@@ -66,6 +66,22 @@ def get_use_cache() -> bool:
 
 
 def set_parameter(function: Callable) -> Callable:
+    """Validate and set parameter values.
+
+    This decorator checks if the parameter name exists in the parameters DataFrame
+    before calling the wrapped function.
+
+    Parameters
+    ----------
+    function : Callable
+        The function to wrap.
+
+    Returns
+    -------
+    Callable
+        The wrapped function with parameter validation.
+    """
+
     @wraps(function)
     def _set_parameter(self, name: str, value: float, **kwargs):
         if name not in self.parameters.index:
@@ -79,6 +95,21 @@ def set_parameter(function: Callable) -> Callable:
 
 
 def get_stressmodel(function: Callable) -> Callable:
+    """Validate and retrieve stressmodel by name.
+
+    This decorator checks if the stressmodel name exists before calling the wrapped function.
+
+    Parameters
+    ----------
+    function : Callable
+        The function to wrap.
+
+    Returns
+    -------
+    Callable
+        The wrapped function with stressmodel validation.
+    """
+
     @wraps(function)
     def _get_stressmodel(self, name: str, **kwargs):
         if name not in self.stressmodels.keys():
@@ -94,7 +125,40 @@ def get_stressmodel(function: Callable) -> Callable:
     return _get_stressmodel
 
 
+def check_argument_model(function: Callable) -> Callable:
+    """Check if the first argument is a pastas Model."""
+
+    @wraps(function)
+    def _make_model_component(self, *args, **kwargs):
+        if "model" in kwargs:
+            return function(self, *args, **kwargs)
+        from pastas.model import Model
+
+        if args and isinstance(args[0], Model):
+            return function(self, *args, **kwargs)
+        msg = "From Pastas 2.4, the first argument of %s needs to be a Pastas Model. Please provide the model as the first argument: %s(model=ml, ...)."  # From Pastas 2.4 the workflow with ml.add_xxx() will cease to function.
+        warn(message=msg % (self._name, self._name), category=FutureWarning)
+        return function(self, None, *args, **kwargs)
+
+    return _make_model_component
+
+
 def model_tmin_tmax(function: Callable) -> Callable:
+    """Use model tmin and tmax settings as default values.
+
+    This decorator uses the model's tmin and tmax settings if they are not provided.
+
+    Parameters
+    ----------
+    function : Callable
+        The function to wrap.
+
+    Returns
+    -------
+    Callable
+        The wrapped function with default tmin/tmax from model settings.
+    """
+
     @wraps(function)
     def _model_tmin_tmax(
         self,
@@ -103,10 +167,8 @@ def model_tmin_tmax(function: Callable) -> Callable:
         *args,
         **kwargs,
     ):
-        if tmin is None:
-            tmin = self.ml.settings["tmin"]
-        if tmax is None:
-            tmax = self.ml.settings["tmax"]
+        tmin = self.ml.settings["tmin"] if tmin is None else Timestamp(tmin)
+        tmax = self.ml.settings["tmax"] if tmax is None else Timestamp(tmax)
 
         return function(self, tmin, tmax, *args, **kwargs)
 
@@ -148,10 +210,10 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
                     f"{name} is deprecated and will not be available "
                     f"from Pastas version >= {VERSION}. {reason}"
                 )
-                warn(message=msg, category=DeprecationWarning)
+                warn(message=msg, category=FutureWarning)
             else:
                 msg = (
-                    f"module has no attribute '{name}'"
+                    f"Module has no attribute '{name}'. "
                     f"{name} is deprecated and is not available since"
                     f" Pastas version {VERSION}. {reason}"
                 )
@@ -186,7 +248,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
 
     Raises
     ------
-    DeprecationWarning
+    FutureWarning
         If current version < version and the argument is used.
     TypeError
         If current version >= version and the argument is used.
@@ -197,10 +259,10 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
             f"The {name} argument is deprecated and will not be available"
             f" from Pastas version >= {VERSION}. {reason}"
         )
-        warn(message=msg, category=DeprecationWarning)
+        warn(message=msg, category=FutureWarning)
     else:
         msg = (
-            f"got an unexpected keyword argument {name}"
+            f"Got an unexpected keyword argument {name}. "
             f"The {name} argument is deprecated and is not available"
             f" since Pastas version {VERSION}. {reason}"
         )
@@ -208,6 +270,21 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
 
 
 def njit(function: Callable | None = None, **kwargs) -> Callable:
+    """Apply numba's njit to a function if numba is available.
+
+    Parameters
+    ----------
+    function : callable, optional
+        The function to decorate.
+    **kwargs
+        Additional keyword arguments passed to numba.njit.
+
+    Returns
+    -------
+    callable
+        The decorated function, or the original function if numba is not available.
+    """
+
     def njit_decorator(f: Callable) -> Callable:
         try:
             if not USE_NUMBA:
@@ -231,17 +308,15 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
     reason="latexify was archived and is no longer maintained. This decorator will be removed in a future release.",
 )
 def latexfun(**kwargs) -> None:
-    """Decorator to render functions using LaTeX formatting.
+    """Use deprecated latexify functionality.
 
-    .. deprecated:: 2.0.0
-        The ``latexify`` package was archived and is no longer maintained.
-        This function will be removed in a future release.
+    This decorator is deprecated and will be removed in a future release.
     """
     pass
 
 
 def conditional_cachedmethod(cache_getter):
-    """Decorator to conditionally cache a method using cachetools.cachedmethod.
+    """Conditionally cache a method using cachetools.cachedmethod.
 
     This decorator checks the global USE_CACHE flag and only applies caching when
     both cachetools is available and caching is enabled.

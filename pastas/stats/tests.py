@@ -31,7 +31,7 @@ __all__ = [
 
 
 def durbin_watson(series: Series) -> float:
-    """Durbin-Watson test for autocorrelation.
+    r"""Durbin-Watson test for autocorrelation.
 
     Parameters
     ----------
@@ -99,7 +99,7 @@ def durbin_watson(series: Series) -> float:
 def ljung_box(
     series: Series, lags: int = 15, nparam: int = 0, full_output: bool = False
 ) -> tuple[float, float]:
-    """Ljung-box test for autocorrelation.
+    r"""Test for autocorrelation using the Ljung-Box test.
 
     Parameters
     ----------
@@ -194,7 +194,7 @@ def ljung_box(
 
 
 def runs_test(series: Series, cutoff: str = "median") -> tuple[float, float]:
-    """Runs test for autocorrelation.
+    r"""Test for autocorrelation using the runs test.
 
     Parameters
     ----------
@@ -295,7 +295,7 @@ def stoffer_toloi(
     freq: str = "D",
     snap_to_equidistant_timestamps: bool = False,
 ) -> tuple[float, float]:
-    """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
+    r"""Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
     ----------
@@ -486,7 +486,6 @@ def diagnostics(
     In this example, the Null-hypothesis is not rejected and the data may be assumed
     to be white noise.
     """
-
     cols = ["Checks", "Statistic", "P-value"]
     df = DataFrame(index=stats, columns=cols)
 

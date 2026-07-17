@@ -1,5 +1,4 @@
-"""The following methods may be used to describe the fit between the model simulation
-and the observations.
+"""The following methods may be used to describe the fit between the model simulation and the observations.
 
 Examples
 --------
@@ -19,6 +18,7 @@ This returns a Series containing the statistics::
 from numpy import interp, nan
 from pandas import DataFrame, Series, Timestamp
 
+from pastas.timeseries_utils import _index_to_int64
 from pastas.typing import Model
 
 from .decorators import model_tmin_tmax
@@ -26,7 +26,7 @@ from .stats import diagnostics, metrics
 
 
 class Statistics:
-    """This class provides statistics to pastas Model class.
+    """Class providing statistics to pastas Model class.
 
     Parameters
     ----------
@@ -60,7 +60,14 @@ class Statistics:
         # Save a reference to the model.
         self.ml = ml
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return string representation of the Statistics object.
+
+        Returns
+        -------
+        str
+            String representation of the Statistics object.
+        """
         msg = """This module contains all the statistical functions included in Pastas.
 
         To obtain a list of all statistics that are included type:
@@ -142,7 +149,7 @@ class Statistics:
     def sse(
         self, tmin: Timestamp | str | None = None, tmax: Timestamp | str | None = None
     ) -> float:
-        """Sum of the squares of the error (SSE)
+        """Sum of the squares of the error (SSE).
 
         Parameters
         ----------
@@ -232,7 +239,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Nash-Sutcliffe Efficiency for model fit .
+        """Calculate Nash-Sutcliffe Efficiency for model fit.
 
         Parameters
         ----------
@@ -264,7 +271,7 @@ class Statistics:
         weighted: bool = False,
         **kwargs,
     ) -> float:
-        """Normalized Nash-Sutcliffe Efficiency for model fit .
+        """Calculate normalized Nash-Sutcliffe Efficiency for model fit.
 
         Parameters
         ----------
@@ -424,9 +431,9 @@ class Statistics:
             # interpolate simulation to times of observations
             sim_interpolated = Series(
                 interp(
-                    obs.index.view("int64"),
-                    sim.index.view("int64"),
-                    sim.to_numpy(copy=True),
+                    _index_to_int64(obs.index),
+                    _index_to_int64(sim.index),
+                    sim.to_numpy(),
                 ),
                 index=obs.index,
             )
@@ -571,7 +578,7 @@ class Statistics:
         tmax: Timestamp | str | None = None,
         stats: list[str] | None = None,
     ) -> DataFrame:
-        """Returns a Pandas DataFrame with goodness-of-fit metrics.
+        """Return a Pandas DataFrame with goodness-of-fit metrics.
 
         Parameters
         ----------
@@ -594,14 +601,12 @@ class Statistics:
 
         Examples
         --------
-
         >>> ml.stats.summary()
 
         or
 
         >>> ml.stats.summary(stats=["mae", "rmse"])
         """
-
         if stats is None:
             stats_to_compute = self.ops
         else:
@@ -628,8 +633,9 @@ class Statistics:
         stats: tuple = (),
         float_fmt: str = "{0:.2f}",
     ) -> DataFrame:
-        """Methods to compute various diagnostics checks for the noise time series. If
-        no NoiseModel is used, the diagnostics are computed on the model residuals.
+        """Compute various diagnostics checks for the noise time series.
+
+        If no NoiseModel is used, the diagnostics are computed on the model residuals.
 
         Parameters
         ----------

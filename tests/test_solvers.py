@@ -1,5 +1,6 @@
 """Tests for the solver module in Pastas."""
 
+import logging
 from functools import partial
 
 import numpy as np
@@ -9,15 +10,18 @@ from scipy.optimize._numdiff import approx_derivative
 
 import pastas as ps
 from pastas.solver import EmceeSolve, LmfitSolve
+from pastas.solver.objective_function import misfit
 
 
 # Existing integration tests with real models
 def test_least_squares(ml_recharge: ps.Model) -> None:
-    ml_recharge.solve(solver=ps.LeastSquares())
+    ps.solver.LeastSquares(model=ml_recharge)
+    ml_recharge.solve()
 
 
 def test_least_squares_lm(ml_recharge: ps.Model) -> None:
-    ml_recharge.solve(solver=ps.LeastSquares(), method="lm")
+    ps.solver.LeastSquares(model=ml_recharge)
+    ml_recharge.solve(method="lm")
     assert ml_recharge.parameters.loc[ml_recharge.parameters.vary, "pmin"].isna().all()
 
 
@@ -33,7 +37,8 @@ def test_no_noise(ml_recharge: ps.Model) -> None:
 def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
     """Verify weighted least-squares uses weights on residual terms."""
     ml_recharge.del_noisemodel()
-    ml_recharge.solve(solver=ps.LeastSquares(), report=False)
+    ps.solver.LeastSquares(model=ml_recharge)
+    ml_recharge.solve(report=False)
 
     p = ml_recharge.get_parameters()
     residuals = ml_recharge.residuals(p)
@@ -41,7 +46,7 @@ def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
     weights = pd.Series(1.0, index=residuals.index)
     weights.iloc[::5] = 0.25
 
-    misfit = ml_recharge.solver.misfit(p=p, noise=False, weights=weights)
+    misfit = ps.solver.misfit(ml=ml_recharge, p=p, noise=False, weights=weights)
     expected = (residuals * weights).values
 
     np.testing.assert_allclose(misfit, expected)
@@ -82,12 +87,20 @@ def test_ci_contribution(ml_solved: ps.Model) -> None:
 # Test the EmceeSolver
 def test_emcee(ml_recharge: ps.Model) -> None:
     try:
-        ml_recharge.solve(solver=ps.LeastSquares())
+        ps.solver.LeastSquares(model=ml_recharge)
+        ml_recharge.solve()
         ml_recharge.del_noisemodel()
+
+        ps.solver.Emcee(model=ml_recharge, nwalkers=10)
+
+        ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)
+
+        for name in ml_recharge.parameters.index:
+            ml_recharge.set_parameter(name, dist="uniform")
+
         ml_recharge.solve(
-            solver=ps.EmceeSolve(nwalkers=10),
             initial=False,
-            fit_constant=False,
+            fit_constant=True,
             steps=2,
         )
     except ImportError:
@@ -97,41 +110,53 @@ def test_emcee(ml_recharge: ps.Model) -> None:
 class TestOptionalSolvers:
     """Tests for solvers that depend on optional dependencies."""
 
-    def test_lmfit_solve_init(self) -> None:
+    def test_lmfit_solve_init(self, ml_recharge: ps.Model) -> None:
         """Test LmfitSolve initialization."""
         try:
-            solver = LmfitSolve()
-            assert solver._name == "LmfitSolve"
+            solver = LmfitSolve(model=ml_recharge)
+            assert solver._name == "Lmfit"
         except ImportError:
             pytest.skip("lmfit not installed")
 
-    def test_emcee_solve_init(self) -> None:
+    def test_emcee_solve_init(self, ml_recharge: ps.Model) -> None:
         """Test EmceeSolve initialization."""
         try:
-            solver = EmceeSolve()
-            assert solver._name == "EmceeSolve"
+            solver = EmceeSolve(model=ml_recharge)
+            assert solver._name == "Emcee"
             assert solver.nwalkers == 20
             assert solver.progress_bar is True
         except ImportError:
             pytest.skip("emcee not installed")
 
-    def test_emcee_to_dict_raises(self) -> None:
-        """Test that EmceeSolve.to_dict raises NotImplementedError."""
+    def test_emcee_to_dict_warning(self, ml_recharge: ps.Model, caplog) -> None:
+        """Test that EmceeSolve.to_dict caplogs a logger.warning."""
         try:
-            solver = EmceeSolve()
-            with pytest.raises(NotImplementedError):
+            solver = EmceeSolve(model=ml_recharge)
+            with caplog.at_level(logging.WARNING, logger="pastas.solver.mcmc"):
                 solver.to_dict()
+                assert (
+                    "Note that the EmceeSolve class is not fully reproducible."
+                    in caplog.text
+                )
         except ImportError:
             pytest.skip("emcee not installed")
 
 
-def test_leastsquares_covariance_scenarios(head, prec, evap):
+def test_leastsquares_covariance_scenarios(
+    head: pd.Series, prec: pd.Series, evap: pd.Series
+) -> None:
+    """Test the covariance matrix calculation in LeastSquares solver under different scenarios.
+
+    This test verifies that the internal SVD method for calculating the covariance matrix is
+    consistent with manual calculations using the Jacobian and residuals, both in weighted and
+    unweighted scenarios. It also checks the behavior when absolute_sigma=True.
+
+    """
     # 1. Setup Data & Model
     # Using small subset for speed
 
     ml = ps.Model(head)
-    rm = ps.RechargeModel(prec, evap, name="rch")
-    ml.add_stressmodel(rm)
+    ps.RechargeModel(model=ml, prec=prec, evap=evap, name="rch")
 
     weights_random = pd.Series(
         np.random.RandomState(seed=0).rand(len(head)), index=head.index
@@ -155,7 +180,7 @@ def test_leastsquares_covariance_scenarios(head, prec, evap):
     # We use the solver's Jacobian (which is weighted) and cost.
     # To use manual_pcov with a weighted Jacobian, we pass weights=ones.
     nobs, npar = ml.solver.result.jac.shape
-    res_weighted = ml.solver.misfit(p_opt, weights=weights_random_root, noise=False)
+    res_weighted = misfit(ml=ml, p=p_opt, noise=False, weights=weights_random_root)
     pcov_manual_weighted = manual_pcov(
         ml.solver.result.jac, res_weighted, np.ones(nobs), nobs, npar
     )
@@ -166,13 +191,14 @@ def test_leastsquares_covariance_scenarios(head, prec, evap):
 
     # --- SCENARIO B: Verify Pure Reconstruction ---
     # Get unweighted (pure) components
-    res_pure = ml.solver.misfit(p_opt, weights=None, noise=False)
+    res_pure = misfit(ml=ml, p=p_opt, noise=False, weights=None)
 
     fun_pure = partial(
         ml.solver.objfunction,
+        initial=ml.parameters.initial.to_numpy(dtype=float, copy=True),
+        vary=ml.parameters.vary.to_numpy(dtype=bool, copy=True),
         weights=None,
         noise=False,
-        callback=None,
     )
     # Using same 2-point precision to match scipy.least_squares default
     jac_pure = approx_derivative(fun_pure, x0=p_opt, method=jac_method)

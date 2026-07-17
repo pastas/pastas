@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy.integrate import quad
 
 import pastas as ps
 
@@ -396,6 +397,99 @@ def test_hantush_approximate_tmax_to_dict_roundtrip() -> None:
         assert tmax1 == tmax2, f"tmax values differ after roundtrip: {tmax1} vs {tmax2}"
 
 
+@pytest.mark.parametrize("approximate_tmax", [True, False])
+def test_fourparam_approximate_tmax_parameter(approximate_tmax: bool) -> None:
+    """Test that FourParam approximate_tmax parameter works and is preserved."""
+    rfunc = ps.FourParam(approximate_tmax=approximate_tmax)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    tmax = rfunc.get_tmax(p)
+    assert np.isfinite(tmax) and tmax > 0, f"Invalid tmax: {tmax}"
+
+    data = rfunc.to_dict()
+    assert data["approximate_tmax"] == approximate_tmax
+
+
+def test_fourparam_get_tmax_matches_normalized_step_cutoff() -> None:
+    """Regression test for FourParam tmax clipping at hard-coded search limits."""
+    cutoff = 0.999
+    p = [2.0, 1.0, 50.0, 100.0]
+    rfunc_approx = ps.FourParam(approximate_tmax=True)
+    rfunc_exact = ps.FourParam(approximate_tmax=False)
+
+    tmax_approx = rfunc_approx.get_tmax(p, cutoff=cutoff)
+    tmax_exact = rfunc_exact.get_tmax(p, cutoff=cutoff)
+
+    total = quad(rfunc_exact.impulse, 0, np.inf, args=p)[0]
+    reached_approx = quad(rfunc_exact.impulse, 0, tmax_approx, args=p)[0] / total
+    reached_exact = quad(rfunc_exact.impulse, 0, tmax_exact, args=p)[0] / total
+
+    assert reached_approx >= cutoff, (
+        f"Approximate FourParam tmax ({tmax_approx}) should be conservative for "
+        f"cutoff ({cutoff}), got {reached_approx:.6f}"
+    )
+    assert abs(reached_exact - cutoff) < 1e-6, (
+        f"Exact FourParam tmax ({tmax_exact}) should satisfy cutoff equation. "
+        f"Expected {cutoff:.6f}, got {reached_exact:.6f}"
+    )
+
+
+def test_fourparam_tmax_negative_n_does_not_hit_hard_limit() -> None:
+    """Regression test for low-n FourParam cases that used to return huge tmax."""
+    p = [1.0, -10.0, 0.01, 1e-6]
+    cutoffs = [0.1, 0.5, 0.9, 0.99, 0.999]
+
+    rfunc_approx = ps.FourParam(approximate_tmax=True)
+    rfunc_exact = ps.FourParam(approximate_tmax=False)
+
+    previous_exact = 0.0
+    for cutoff in cutoffs:
+        tmax_approx = rfunc_approx.get_tmax(p, cutoff=cutoff)
+        tmax_exact = rfunc_exact.get_tmax(p, cutoff=cutoff)
+
+        assert tmax_approx < 1e5, (
+            f"Approximate tmax should not hit hard search limits, got {tmax_approx}"
+        )
+        assert tmax_exact < 1e5, (
+            f"Exact tmax should not hit hard search limits, got {tmax_exact}"
+        )
+
+        assert tmax_approx >= tmax_exact, (
+            f"Approximate tmax should be conservative (>= exact), "
+            f"approx={tmax_approx}, exact={tmax_exact}"
+        )
+
+        assert tmax_exact >= previous_exact, (
+            f"tmax should be non-decreasing with cutoff, got {tmax_exact} "
+            f"after {previous_exact}"
+        )
+        previous_exact = tmax_exact
+
+
+def test_fourparam_approximate_tmax_to_dict_roundtrip() -> None:
+    """Test that approximate_tmax survives to_dict/from_dict roundtrip for FourParam."""
+    for use_exact in [True, False]:
+        rfunc1 = ps.FourParam(approximate_tmax=not use_exact, cutoff=0.95)
+
+        data = rfunc1.to_dict()
+
+        rfunc_class = data.pop("class")
+        rfunc_up = data.pop("up", None)
+        rfunc_gsf = data.pop("gain_scale_factor", None)
+        rfunc2 = getattr(ps.rfunc, rfunc_class)(**data)
+        rfunc2.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
+
+        assert rfunc2.approximate_tmax == rfunc1.approximate_tmax, (
+            f"approximate_tmax not preserved: {rfunc1.approximate_tmax} vs {rfunc2.approximate_tmax}"
+        )
+
+        p = [2.0, 1.0, 50.0, 100.0]
+        tmax1 = rfunc1.get_tmax(p)
+        tmax2 = rfunc2.get_tmax(p)
+
+        assert tmax1 == tmax2, f"tmax values differ after roundtrip: {tmax1} vs {tmax2}"
+
+
 # Tests for HantushWellModel approximate_tmax and log_b options
 @pytest.mark.parametrize("log_b", [True, False])
 @pytest.mark.parametrize("approximate_tmax", [True, False])
@@ -437,3 +531,31 @@ def test_hantush_well_model_variance_gain(log_b: bool) -> None:
     )
     assert np.isfinite(vg)
     assert vg >= 0.0
+
+
+# Test for Gamma complex_step
+@pytest.mark.parametrize("complex_step", [True, False])
+def test_gamma_complex_step(complex_step: bool) -> None:
+    """Test Gamma with complex step."""
+    rfunc = ps.Gamma(complex_step=complex_step)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Step response works (real)
+    step = rfunc.step(p)
+    assert len(step) > 0
+    assert step.dtype == np.float64
+
+    # Step response works when complex_step is True (complex) and raises when False
+    if complex_step:
+        step = rfunc.step(p + 1e10j)
+        assert len(step) > 0
+        assert step.dtype == np.complex128
+    else:
+        with pytest.raises(
+            TypeError, match="Gamma.step does not support complex-step "
+        ):
+            rfunc.step(p + 1e10j)
+
+    # to_dict works
+    data = rfunc.to_dict()
+    assert data["complex_step"] is complex_step

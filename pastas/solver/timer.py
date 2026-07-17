@@ -1,4 +1,4 @@
-"""This module contains a timer for model optimization.
+"""Module containing a timer for model optimization.
 
 The timer prints the time elapsed and number of iterations. Optionally, a maximum solve
 time can be specified, to abort long optimizations. This class is not automatically
@@ -19,11 +19,11 @@ This will print the following to the console::
 
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pastas.decorators import PastasDeprecationWarning
 from pastas.stats import metrics
-from pastas.typing import Model
+from pastas.typing import ArrayLike, Model
 
 
 @PastasDeprecationWarning(
@@ -31,6 +31,8 @@ from pastas.typing import Model
     reason="The ExceededMaxSolveTime exception has been renamed to TimeoutError.",
 )
 class ExceededMaxSolveTime(Exception):
+    """Exception raised when the maximum solve time is exceeded."""
+
     pass
 
 
@@ -62,7 +64,9 @@ class SolveTimer(tqdm):
     updated quite as nicely.
     """
 
-    def __init__(self, *args, max_time: float | None = None, **kwargs) -> None:
+    def __init__(
+        self, *args: Any, max_time: float | None = None, **kwargs: Any
+    ) -> None:
         """Initialize SolveTimer.
 
         Parameters
@@ -78,8 +82,18 @@ class SolveTimer(tqdm):
         self.max_time = max_time
         super().__init__(*args, **kwargs)
 
-    def timer(self, _, n: int = 1):
-        """Callback method for ps.Model.solve()."""
+    def timer(self, p: ArrayLike, n: int = 1):
+        """Timer callback for ps.solver.LeastSquares.solve().
+
+        Parameters
+        ----------
+        p : array-like
+            The parameters passed by the callback, which are ignored here.
+        n : int, optional
+            The iteration number passed by the callback, which is used to update
+            the progress bar, by default 1.
+        """
+        _ = p
         displayed = super().update(n)
         if self.max_time is not None:
             if self.format_dict["elapsed"] > self.max_time:
@@ -90,30 +104,30 @@ class SolveTimer(tqdm):
 
 
 class StatTimer(SolveTimer):
-    """StatTimer that updates a user-specified solve statistic every N iterations."""
+    """StatTimer that updates a user-specified solve statistic every N iterations.
+
+    Parameters
+    ----------
+    ml : pastas.Model
+        The model being solved, used to compute residuals.
+    statistic : str, optional
+        The statistic to compute and display, by default "rmse". Must be a valid
+        statistic in pastas.stats.metrics that accepts ``res=`` as an argument.
+    update_interval : int, optional
+        Number of iterations between RMSE updates. If None (default), the
+        RMSE is updated when iteration % number of varying parameters == 0.
+    """
 
     def __init__(
         self,
         ml: Model,
-        *args,
+        *args: Any,
         statistic: Literal[
             "rmse", "sse", "mae", "rsq", "evp", "nse", "nnse", "aic", "aicc", "bic"
         ] = "rmse",
         update_interval: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
-        """
-        Parameters
-        ----------
-        ml : pastas.Model
-            The model being solved, used to compute residuals.
-        statistic : str, optional
-            The statistic to compute and display, by default "rmse". Must be a valid
-            statistic in pastas.stats.metrics that accepts ``res=`` as an argument.
-        update_interval : int, optional
-            Number of iterations between RMSE updates. If None (default), the
-            RMSE is updated when iteration % number of varying parameters == 0.
-        """
         self.ml = ml
         if update_interval is not None:
             self.update_interval = update_interval
@@ -123,8 +137,8 @@ class StatTimer(SolveTimer):
         self.func = getattr(metrics, self.statistic)
         super().__init__(*args, **kwargs)
 
-    def timer(self, p, n: int = 1):
-        """Callback method that updates RMSE in the progress bar."""
+    def timer(self, p: ArrayLike, n: int = 1):
+        """Update RMSE in the progress bar."""
         # extra overhead to compute residuals again, though with caching
         # this will be faster
         if (self.n % self.update_interval) == 0:

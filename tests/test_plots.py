@@ -5,7 +5,8 @@ import pytest
 from pandas import Series
 
 from pastas import Model
-from pastas.plotting.plots import TrackSolve, compare, pairplot
+from pastas.plotting.plots import compare, pairplot
+from pastas.solver.trackers import TrackSolve
 
 # mpl.use("Agg")  # prevent _tkinter.TclError: Can't find a usable tk.tcl error
 
@@ -26,7 +27,7 @@ def test_decomposition_kwargs(ml_noisemodel: Model) -> None:
 
 
 def test_decomposition_split_deprecation(ml_noisemodel: Model) -> None:
-    with pytest.warns(DeprecationWarning, match="split"):
+    with pytest.warns(FutureWarning, match="split"):
         _ = ml_noisemodel.plots.decomposition(split=True)
     plt.close()
 
@@ -48,7 +49,7 @@ def test_results_kwargs(ml_noisemodel: Model) -> None:
 
 
 def test_results_kwargs_split_deprecation(ml_noisemodel: Model) -> None:
-    with pytest.warns(DeprecationWarning, match="split"):
+    with pytest.warns(FutureWarning, match="split"):
         _ = ml_noisemodel.plots.results(split=True)
     plt.close()
 
@@ -173,13 +174,13 @@ def test_standalone_series(prec: Series, evap: Series, head: Series) -> None:
     from pastas.plotting.plots import series
 
     # Basic usage with head only
-    axes = series(head=head)
+    axes = series(oseries=head)
     assert axes is not None
     plt.close()
 
     # With stresses
     stresses = [prec, evap]
-    axes = series(head=head, stresses=stresses)
+    axes = series(oseries=head, stresses=stresses)
     assert axes is not None
     plt.close()
 
@@ -204,18 +205,18 @@ def test_standalone_cum_frequency(head: Series) -> None:
     from pastas.plotting.plots import cum_frequency
 
     # Basic usage
-    ax = cum_frequency(obs=head)
+    ax = cum_frequency(oseries=head)
     assert ax is not None
     plt.close()
 
     # With simulation series
     sim = head + 0.1  # Create a simple sim series
-    ax = cum_frequency(obs=head, sim=sim)
+    ax = cum_frequency(oseries=head, sim=sim)
     assert ax is not None
     plt.close()
 
     # With custom figure size
-    ax = cum_frequency(obs=head, figsize=(8, 4))
+    ax = cum_frequency(oseries=head, figsize=(8, 4))
     assert ax is not None
     plt.close()
 

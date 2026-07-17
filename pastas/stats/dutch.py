@@ -1,21 +1,19 @@
-"""The following methods are descriptive statistics commonly used to describe
-groundwater time series in the Netherlands.
+"""Descriptive Dutch statistics.
 
-.. codeauthor:: R. Calje, T. van Steijn and R. Collenteur
+Commonly used to describe groundwater time series in the Netherlands.
+
+Code authors: R. Calje, T. van Steijn and R. Collenteur.
+
 """
 
 from collections.abc import Callable
 
 from numpy import nan
-from packaging.version import parse as parse_version
 from pandas import Series, Timedelta, Timestamp, concat, date_range
-from pandas import __version__ as pd_version
 
 from pastas.timeseries_utils import get_sample
 
-pandas_version = parse_version(pd_version)
-
-year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
+year_offset = "YE"
 
 
 def q_ghg(
@@ -25,7 +23,9 @@ def q_ghg(
     q: float = 0.94,
     by_year: bool = True,
 ) -> Series:
-    """Gemiddeld Hoogste Grondwaterstand (GHG) also called MHGL (Mean High GW Level).
+    """Quantiles for the Gemiddeld Hoogste Grondwaterstand.
+
+    GHG is also called MHGL (Mean High Groundwater Level).
 
     Parameters
     ----------
@@ -34,6 +34,7 @@ def q_ghg(
     tmin, tmax: pandas.Timestamp or str, optional
         A string or pandas.Timestamp with the start and end dates for the
         period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
+        If None, the entire series is used.
     q : float, optional
         quantile fraction of exceedance (default 0.94)
     by_year: bool, optional
@@ -55,8 +56,9 @@ def q_glg(
     q: float = 0.06,
     by_year: bool = True,
 ) -> Series:
-    """Gemiddeld Laagste Grondwaterstand (GLG) also called MLGL (Mean Low
-    Groundwater Level).
+    """Quantiles for the Gemiddeld Laagste Grondwaterstand (GLG).
+
+    GLG is also called MLGL (Mean Low Groundwater Level).
 
     Parameters
     ----------
@@ -65,6 +67,7 @@ def q_glg(
     tmin, tmax: pandas.Timestamp or str, optional
         A string or pandas.Timestamp with the start and end dates for the
         period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
+        If None, the entire series is used.
     q : float, optional
         quantile, fraction of exceedance (default 0.06)
     by_year: bool, optional
@@ -85,7 +88,9 @@ def q_gvg(
     tmax: Timestamp | str | None = None,
     by_year: bool = True,
 ) -> Series:
-    """Gemiddeld Voorjaarsgrondwaterstand (GVG) also called MSGL (Mean Spring GW Level).
+    """Quantiles for the Gemiddeld Voorjaarsgrondwaterstand (GVG).
+
+    GVG is also called MSGL (Mean Spring Groundwater Level).
 
     Parameters
     ----------
@@ -94,6 +99,7 @@ def q_gvg(
     tmin, tmax: pandas.Timestamp or str, optional
         A string or pandas.Timestamp with the start and end dates for the
         period (E.g. '1980-01-01 00:00:00' and '2020-01-01 00:00:00').
+        If None, the entire series is used.
     by_year: bool, optional
         Take average over quantiles per year (default True)
 
@@ -129,8 +135,9 @@ def ghg(
     min_n_years: int = 8,
     year_offset: str = year_offset + "-MAR",
 ) -> Series | float:
-    """Calculate the 'Gemiddelde Hoogste Grondwaterstand' (Average High
-    Groundwater Level)
+    """Calculate the Gemiddelde Hoogste Grondwaterstand.
+
+    GHG is also called MHGL (Mean High Groundwater Level).
 
     Parameters
     ----------
@@ -139,13 +146,15 @@ def ghg(
     tmin: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+        If None, the entire series is used.
     tmax: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The highest index to take into account (E.g. '2020-01-01 00:00:00').
+        If None, the entire series is used.
     fill_method : str
         see .. :mod: pastas.stats.dutch._gxg
-    limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to fill nothing.
+    limit : int, optional
+        Maximum number of days to fill using fill method. Use 0 to not fill.
     output : str, optional
         output type
         * 'mean' (default) : for mean of yearly values.
@@ -219,7 +228,9 @@ def glg(
     min_n_years: int = 8,
     year_offset: str = year_offset + "-MAR",
 ) -> Series | float:
-    """Calculate the 'Gemiddelde Laagste Grondwaterstand' (Average Low GW Level).
+    """Calculate the Gemiddelde Laagste Grondwaterstand.
+
+    GLG is also called MLGL (Mean Low Groundwater Level).
 
     Parameters
     ----------
@@ -228,13 +239,15 @@ def glg(
     tmin: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+        If None, the entire series is used.
     tmax: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The highest index to take into account (E.g. '2020-01-01 00:00:00').
+        If None, the entire series is used.
     fill_method : str, optional
         see .. :mod: pastas.stats.dutch._gxg
-    limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to fill nothing.
+    limit : int, optional
+        Maximum number of days to fill using fill method. Use 0 to not fill.
     output : str, optional
         output type
         * 'mean' (default) : for mean of yearly values.
@@ -308,7 +321,9 @@ def gvg(
     min_n_years: int = 8,
     year_offset: str = year_offset,
 ) -> Series | float:
-    """Calculate the 'Gemiddelde Voorjaars Grondwaterstand' (Average Spring GW Level).
+    """Calculate the Gemiddelde Voorjaars Grondwaterstand.
+
+    GVG is also called MSGL (Mean Spring Groundwater Level).
 
     Parameters
     ----------
@@ -317,13 +332,15 @@ def gvg(
     tmin: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+        If None, the entire series is used.
     tmax: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The highest index to take into account (E.g. '2020-01-01 00:00:00').
+        If None, the entire series is used.
     fill_method : str, optional
         see .. :mod: pastas.stats.dutch._gxg
-    limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to fill nothing.
+    limit : int, optional
+        Maximum number of days to fill using fill method. Use 0 to not fill.
     output : str, optional
         output type
         * 'mean' (default) : for mean of yearly values.
@@ -385,7 +402,9 @@ def gg(
     min_n_years: int = 8,
     year_offset: str = year_offset + "-MAR",
 ) -> Series | float:
-    """Calculate the 'Gemiddelde Grondwaterstand' (Average Groundwater Level).
+    """Calculate the Gemiddelde Grondwaterstand.
+
+    GG is also called MGL (Mean Groundwater Level).
 
     Parameters
     ----------
@@ -394,13 +413,15 @@ def gg(
     tmin: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+        If None, the entire series is used.
     tmax: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The highest index to take into account (E.g. '2020-01-01 00:00:00').
+        If None, the entire series is used.
     fill_method : str, optional
         see .. :mod: pastas.stats.dutch._gxg
-    limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to fill nothing.
+    limit : int, optional
+        Maximum number of days to fill using fill method. Use 0 to not fill.
     output : str, optional
         output type
         * 'mean' (default) : for mean of yearly values.
@@ -446,10 +467,8 @@ def gg(
 
 
 # Helper functions
-
-
 def _get_spring(series: Series, min_n_meas: int) -> float:
-    """Internal method to get values of time series values in spring.
+    """Get values of time series values in spring.
 
     Part of year aggregator function for gvg method.
 
@@ -471,7 +490,9 @@ def _get_spring(series: Series, min_n_meas: int) -> float:
 
 
 def _in_spring(series: Series) -> Series:
-    """Internal method to test if time series index is between 14 March and 15 April.
+    """Test if time series index is in spring.
+
+    Spring defined between 14 March and 15 April.
 
     Parameters
     ----------
@@ -502,8 +523,10 @@ def _gxg(
     min_n_years: int,
     year_offset: str,
 ) -> Series | float:
-    """Internal method for classic GXG statistics. Resampling the series to every
-    14th and 28th of the month. Taking the mean of aggregated values per year.
+    """Perform computation for classic GXG statistics.
+
+    Resampling the series to every 14th and 28th of the month.
+    Taking the mean of aggregated values per year.
 
     Parameters
     ----------
@@ -514,13 +537,15 @@ def _gxg(
     tmin: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The lowest index to take into account (E.g. '1980-01-01 00:00:00').
+        If None, the entire series is used.
     tmax: pandas.Timestamp or str, optional
         A Timestamp or str is expected.
         The highest index to take into account (E.g. '2020-01-01 00:00:00').
+        If None, the entire series is used.
     fill_method : str
         see notes below.
-    limit : int or None, optional
-        Maximum number of days to fill using fill method, use None to fill nothing.
+    limit : int, optional
+        Maximum number of days to fill using fill method. Use 0 or None to not fill.
     output : str
         output type
         * 'mean' (default) : for mean of yearly values
@@ -531,10 +556,9 @@ def _gxg(
         Minimum number of measurements per year.
     min_n_years: int
         Minimum number of years.
-    year_offset: string
+    year_offset: str
         resampling offset. Use "YE" for calendar years (jan 1 to dec 31) and
-        'YE-MAR' for hydrological years (apr 1 to mar 31)
-
+        'YE-MAR' for hydrological years (apr 1 to mar 31).
 
     Returns
     -------
@@ -654,10 +678,11 @@ def _q_gxg(
     tmax: Timestamp | str | None = None,
     by_year: bool = True,
 ) -> Series:
-    """Dutch groundwater statistics GHG and GLG approximated by taking quantiles of
-    the time series values per year and taking the mean of the quantiles.
+    """Calculate Dutch groundwater statistics GHG and GLG.
 
-    The series is first resampled to daily values.
+    Approximated by taking quantiles of the time series values
+    per year and taking the mean of the quantiles. The series
+    is first resampled to daily values.
 
     Parameters
     ----------
@@ -668,11 +693,11 @@ def _q_gxg(
     tmin: pandas.Timestamp or str, optional
         A string or pandas.Timestamp with the start date for the period
         (E.g. '1980-01-01 00:00:00'). Strings are converted to
-    pandas.Timestamp internally.
+        pandas.Timestamp internally. If None, the entire series is used.
     tmax: pandas.Timestamp or str, optional
         A string or pandas.Timestamp with the end date for the period
         (E.g. '2020-01-01 00:00:00'). Strings are converted to
-    pandas.Timestamp internally.
+        pandas.Timestamp internally. If None, the entire series is used.
     by_year: bool, optional
         Take average over quantiles per year (default True).
     """

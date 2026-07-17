@@ -23,6 +23,14 @@ def stress_model(ml_sm: ps.Model) -> StressModel:
     return ml_sm.stressmodels["prec"]
 
 
+def _component_model(index: pd.Index | None = None) -> ps.Model:
+    """Create a model instance that can own stress model components."""
+    if index is None:
+        index = pd.date_range(start="2000-01-01", periods=365, freq="D")
+    obs = pd.Series(np.zeros(len(index)), index=index, name="head")
+    return ps.Model(obs)
+
+
 class TestStressModelBase:
     """Test StressModelBase methods."""
 
@@ -53,18 +61,29 @@ class TestStressModelBase:
         assert stress_limited.index[0] >= pd.Timestamp(tmin)
         assert stress_limited.index[-1] <= pd.Timestamp(tmax)
 
+    def test_freq_deprecated(self, stress_model: StressModel) -> None:
+        """Test that the freq attribute raises an AttributeError."""
+        with pytest.raises(AttributeError, match="freq"):
+            _ = stress_model.freq
+
 
 class TestStressModel:
     """Test StressModel."""
 
     def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
-        sm = StressModel(stress=prec, rfunc=ps.Exponential(), name="test")
+        sm = StressModel(
+            model=_component_model(prec.index),
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="test",
+        )
         assert sm.name == "test"
         assert isinstance(sm.rfunc, ps.Exponential)
 
         # Test with different settings
         sm = StressModel(
+            model=_component_model(prec.index),
             stress=prec,
             rfunc=ps.Exponential(),
             name="test",
@@ -104,7 +123,7 @@ class TestStepModel:
 
     def test_init(self) -> None:
         """Test initialization."""
-        sm = StepModel(tstart="2001-01-01", name="step1")
+        sm = StepModel(model=_component_model(), tstart="2001-01-01", name="step1")
         assert sm.name == "step1"
         assert sm.tstart == pd.Timestamp("2001-01-01")
 
@@ -114,7 +133,7 @@ class TestStepModel:
 
     def test_simulate(self) -> None:
         """Test simulate method."""
-        sm = StepModel(tstart="2001-01-01", name="step1")
+        sm = StepModel(model=_component_model(), tstart="2001-01-01", name="step1")
 
         # Get parameters
         p = sm.parameters.initial.values
@@ -138,14 +157,24 @@ class TestLinearTrend:
 
     def test_init(self) -> None:
         """Test initialization."""
-        sm = LinearTrend(tstart="2001-01-01", tend="2002-01-01", name="trend1")
+        sm = LinearTrend(
+            model=_component_model(),
+            tstart="2001-01-01",
+            tend="2002-01-01",
+            name="trend1",
+        )
         assert sm.name == "trend1"
         assert sm.tstart == "2001-01-01"
         assert sm.tend == "2002-01-01"
 
     def test_simulate(self) -> None:
         """Test simulate method."""
-        sm = LinearTrend(tstart="2001-01-01", tend="2002-01-01", name="trend1")
+        sm = LinearTrend(
+            model=_component_model(),
+            tstart="2001-01-01",
+            tend="2002-01-01",
+            name="trend1",
+        )
 
         # Set positive trend
         p = sm.parameters.loc[:, "initial"].to_numpy(copy=True)
@@ -175,20 +204,33 @@ class TestLinearTrend:
     def test_deprecated_arguments(self) -> None:
         """Test that deprecated 'start' and 'end' arguments raise warnings."""
         # Test deprecated 'start' argument
-        with pytest.warns(
-            DeprecationWarning, match="start.*deprecated|deprecated.*start"
-        ):
-            sm = LinearTrend(start="2001-01-01", tend="2002-01-01", name="trend1")
+        with pytest.warns(FutureWarning, match="start.*deprecated|deprecated.*start"):
+            sm = LinearTrend(
+                model=_component_model(),
+                start="2001-01-01",
+                tend="2002-01-01",
+                name="trend1",
+            )
         assert sm.tstart == "2001-01-01"
 
         # Test deprecated 'end' argument
-        with pytest.warns(DeprecationWarning, match="end.*deprecated|deprecated.*end"):
-            sm = LinearTrend(tstart="2001-01-01", end="2002-01-01", name="trend1")
+        with pytest.warns(FutureWarning, match="end.*deprecated|deprecated.*end"):
+            sm = LinearTrend(
+                model=_component_model(),
+                tstart="2001-01-01",
+                end="2002-01-01",
+                name="trend1",
+            )
         assert sm.tend == "2002-01-01"
 
         # Test both deprecated arguments
-        with pytest.warns(DeprecationWarning):
-            sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        with pytest.warns(FutureWarning):
+            sm = LinearTrend(
+                model=_component_model(),
+                start="2001-01-01",
+                end="2002-01-01",
+                name="trend1",
+            )
         assert sm.tstart == "2001-01-01"
         assert sm.tend == "2002-01-01"
 
@@ -198,7 +240,7 @@ class TestConstant:
 
     def test_init(self) -> None:
         """Test initialization."""
-        sm = Constant(name="constant", initial=5.0)
+        sm = Constant(model=_component_model(), name="constant", initial=5.0)
         assert sm.name == "constant"
         assert sm.initial == 5.0
 
@@ -207,7 +249,7 @@ class TestConstant:
 
     def test_simulate(self) -> None:
         """Test simulate method."""
-        sm = Constant(name="constant", initial=5.0)
+        sm = Constant(model=_component_model(), name="constant", initial=5.0)
 
         # Test simulation (static value)
         result = sm.simulate(p=5.0)
@@ -239,6 +281,7 @@ class TestRechargeModel:
     def test_init_linear(self) -> None:
         """Test initialization with Linear recharge model."""
         rm = RechargeModel(
+            model=_component_model(self.prec.index),
             prec=self.prec,
             evap=self.evap,
             name="rech1",
@@ -251,6 +294,7 @@ class TestRechargeModel:
     def test_init_flex(self) -> None:
         """Test initialization with FlexModel recharge model."""
         rm = RechargeModel(
+            model=_component_model(self.prec.index),
             prec=self.prec,
             evap=self.evap,
             name="rech2",
@@ -266,6 +310,7 @@ class TestRechargeModel:
 
         with pytest.raises(TypeError) as e:
             RechargeModel(
+                model=_component_model(self.prec.index),
                 prec=self.prec,
                 evap=self.evap,
                 name="rech_error",
@@ -278,6 +323,7 @@ class TestRechargeModel:
 
         # Create recharge model that needs temperature
         rm = RechargeModel(
+            model=_component_model(self.prec.index),
             prec=self.prec,
             evap=self.evap,
             name="rech_temp",
@@ -294,6 +340,7 @@ class TestRechargeModel:
     def test_get_stress(self) -> None:
         """Test get_stress method."""
         rm = RechargeModel(
+            model=_component_model(self.prec.index),
             prec=self.prec,
             evap=self.evap,
             name="rech_stress",
@@ -337,6 +384,7 @@ class TestWellModel:
     def test_init(self) -> None:
         """Test initialization."""
         wm = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells",
             distances=self.distances,
@@ -347,6 +395,7 @@ class TestWellModel:
 
         # Test with sorting
         wm_sorted = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells_sorted",
             distances=self.distances,
@@ -358,6 +407,7 @@ class TestWellModel:
         """Test error when number of stresses and distances don't match."""
         with pytest.raises(ValueError) as e:
             WellModel(
+                model=_component_model(self.well1.index),
                 stress=[self.well1, self.well2],
                 name="wells_error",
                 distances=[100, 200, 300],
@@ -370,6 +420,7 @@ class TestWellModel:
     def test_get_distances(self) -> None:
         """Test get_distances method."""
         wm = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells_dist",
             distances=self.distances,
@@ -394,6 +445,7 @@ class TestWellModel:
     def test_simulate(self) -> None:
         """Test simulate method."""
         wm = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells_sim",
             distances=self.distances,
@@ -418,6 +470,7 @@ class TestWellModel:
     def test_set_stress(self) -> None:
         """Test set_stress method."""
         wm = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells_set",
             distances=self.distances,
@@ -443,6 +496,7 @@ class TestWellModel:
     def test_set_stress_error(self) -> None:
         """Test error when setting stress with incorrect number of series."""
         wm = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells_set_error",
             distances=self.distances,
@@ -487,6 +541,7 @@ class TestChangeModel:
     def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
         cm = ChangeModel(
+            model=_component_model(prec.index),
             stress=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),
@@ -501,6 +556,7 @@ class TestChangeModel:
     def test_simulate(self, prec: pd.Series) -> None:
         """Test simulate method."""
         cm = ChangeModel(
+            model=_component_model(prec.index),
             stress=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),

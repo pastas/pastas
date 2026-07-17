@@ -1,4 +1,4 @@
-"""This module provides functions for checking Pastas models and their components.
+"""Functions for checking Pastas models and their components.
 
 This can be useful to define checks that can be applied to multiple models to ensure
 they meet certain criteria.
@@ -67,6 +67,7 @@ from matplotlib.colors import rgb2hex
 from pandas import DataFrame, Series, Timedelta, concat
 
 from pastas.stats import tests as diagnostic_tests
+from pastas.timeseries_utils import _index_to_int64
 from pastas.typing import Model
 
 logger = logging.getLogger(__name__)
@@ -103,7 +104,7 @@ def _value_ufunc_threshold(
     threshold: float,
     label: str,
 ):
-    """Generic function to compare a value with a threshold using a ufunc.
+    """Compare a value with a threshold using a ufunc.
 
     Parameters
     ----------
@@ -133,8 +134,9 @@ def stat_ufunc_threshold(
     ufunc: Callable,
     statistic: str,
     threshold: float,
+    **kwargs,
 ):
-    """Generic function to compare a model statistic with a threshold using a ufunc.
+    """Compare a model statistic with a threshold using a ufunc.
 
     Parameters
     ----------
@@ -147,17 +149,19 @@ def stat_ufunc_threshold(
         Name of the statistic to be compared.
     threshold: float
         Threshold value for the statistic.
+    **kwargs
+        Additional keyword arguments to pass to the statistic function.
 
     Returns
     -------
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    val = getattr(ml.stats, statistic)()
+    val = getattr(ml.stats, statistic)(**kwargs)
     return _value_ufunc_threshold(val, ufunc, threshold, statistic)
 
 
-def rsq_geq_threshold(ml: Model, threshold: float = 0.7):
+def rsq_geq_threshold(ml: Model, threshold: float = 0.7, **kwargs):
     """Check R^2 >= threshold.
 
     Parameters
@@ -166,13 +170,16 @@ def rsq_geq_threshold(ml: Model, threshold: float = 0.7):
         Pastas model instance.
     threshold: float
         Threshold value for the R^2 statistic.
+    **kwargs
+        Additional keyword arguments to pass to the statistic function.
+
 
     Returns
     -------
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    return stat_ufunc_threshold(ml, np.greater_equal, "rsq", threshold)
+    return stat_ufunc_threshold(ml, np.greater_equal, "rsq", threshold, **kwargs)
 
 
 def _response_memory(
@@ -241,10 +248,12 @@ def _response_memory(
                     "",
                 ]
         else:
-            if sm.rfunc._name == "Hantush":
-                # get_tmax for Hantush has an approximation which can be overridden
+            if sm.rfunc._name in ("Hantush", "FourParam"):
+                # get_tmax for Hantush and FourParam has an approximation which
+                # can be overridden by setting approximate_tmax=False
                 rfunc = type(sm.rfunc)(quad=sm.rfunc.quad, approximate_tmax=False)
-                p = ml.get_parameters(sm_name)[0:3]
+                p = ml.get_parameters(sm_name)
+                p = p[0:3] if sm.rfunc._name == "Hantush" else p[0:4]
                 tmem = rfunc.get_tmax(p, cutoff=cutoff)
             else:
                 # for response functions where get_tmax is exact
@@ -365,7 +374,7 @@ def parameter_ufunc_threshold(
     ufunc: Callable,
     threshold: float,
 ):
-    """Generic function to compare a model statistic with a threshold using a ufunc.
+    """Compare a model statistic with a threshold using a ufunc.
 
     Parameters
     ----------
@@ -509,9 +518,14 @@ def uncertainty_parameters(
 
     """
     if parameters is None:
-        parameters = ml.parameters.index.tolist()
+        mask_vary = ml.parameters["vary"]
+        parameters = ml.parameters.loc[mask_vary].index.tolist()
     elif isinstance(parameters, str):
-        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
+        parameters = [
+            iparam
+            for iparam in ml.parameters.index
+            if (parameters in iparam) and ml.parameters.loc[iparam, "vary"]
+        ]
 
     # loop through parameters
     results = []
@@ -521,7 +535,7 @@ def uncertainty_parameters(
 
 
 def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
-    """Internal method to check if parameter value is larger than n_std * std.
+    """Check if parameter value is larger than n_std * std.
 
     Parameters
     ----------
@@ -548,12 +562,12 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
     if sm is not None and sm._name == "WellModel" and parameter.endswith("_A"):
         nwells = sm.distances.index.size
         for iw in range(nwells):
-            params = sm.get_parameters(model=ml, istress=iw)
-            p = sm.rfunc.gain(params)
+            p = sm.get_parameters(model=ml, istress=iw)
+            p = sm.rfunc.gain(p)
             std = sm.variance_gain(model=ml, istress=iw)
             check = np.abs(p) > (n_std * std)
             df.loc[f"|{parameter} ({sm.distances.index[iw]})| > {n_std}σ"] = [
-                p,
+                np.abs(p),
                 ">",
                 n_std * std,
                 guess_unit_or_dims(parameter),
@@ -565,7 +579,7 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
         std = ml.parameters.loc[parameter, "stderr"]
         check = np.abs(p) > (n_std * std)
         df.loc[f"|{parameter}| > {n_std}σ"] = [
-            p,
+            np.abs(p),
             ">",
             n_std * std,
             guess_unit_or_dims(parameter),
@@ -609,7 +623,7 @@ def guess_unit_or_dims(parameter: str, return_dims=True):
 
 
 def acf_runs_test(ml: Model, p_threshold: float = 0.05):
-    """Runs test to check if there is significant autocorrelation in the noise.
+    """Check if there is significant autocorrelation in the noise using runs test.
 
     Parameters
     ----------
@@ -627,7 +641,7 @@ def acf_runs_test(ml: Model, p_threshold: float = 0.05):
 
 
 def acf_stoffer_toloi_test(ml: Model, p_threshold: float = 0.05, **kwargs):
-    """Stoffer-Toloi test to check if there is significant autocorrelation in the noise.
+    """Check if there is significant autocorrelation in the noise using Stoffer-Toloi test.
 
     Parameters
     ----------
@@ -647,7 +661,7 @@ def acf_stoffer_toloi_test(ml: Model, p_threshold: float = 0.05, **kwargs):
 
 
 def acf_ljung_box_test(ml: Model, p_threshold: float = 0.05, **kwargs):
-    """Ljung-Box test to check if there is significant autocorrelation in the noise.
+    """Check check if there is significant autocorrelation in the noise.
 
     Parameters
     ----------
@@ -667,7 +681,7 @@ def acf_ljung_box_test(ml: Model, p_threshold: float = 0.05, **kwargs):
 
 
 def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
-    """Internal method to get the result of a diagnostic test.
+    """Get result of a diagnostic test.
 
     Parameters
     ----------
@@ -728,9 +742,9 @@ def correlation_sim_vs_res(ml: Model, threshold: float = 0.2):
     sim = Series(
         index=res.index,
         data=np.interp(
-            res.index.view("int64"),
-            sim.index.view("int64"),
-            sim.to_numpy(copy=True),
+            _index_to_int64(res.index),
+            _index_to_int64(sim.index),
+            sim.to_numpy(),
         ),
     )
     label = f"|corr(sim, res)| < {threshold}"
@@ -766,7 +780,6 @@ def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
     df: pandas.DataFrame
         DataFrame with the results of the checks.
     """
-
     results = []
     for check in checks:
         if isinstance(check, str):
@@ -782,6 +795,7 @@ def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
         else:
             raise TypeError("Check must be str, callable, or dict.")
     df = concat(results)
+    df.index.name = ml.name
     # deal with duplicated index labels by appending .1, .2, etc.
     if df.index.duplicated().any():
         new_index = []
@@ -812,7 +826,6 @@ def print_check_report(df: DataFrame):
 
     def boolean_row_styler(row, column):
         """Styler function to color rows based on the value in column."""
-
         colors = [""] * row.size
 
         # make result based on std deviation check yellow, because we cannot

@@ -18,7 +18,7 @@ __version__ = "2.0.0"
 
 
 def get_versions(optional: bool = False) -> dict[str, str]:
-    """Method to get the version of dependencies.
+    """Get version of dependencies.
 
     Parameters
     ----------
@@ -43,7 +43,11 @@ def get_versions(optional: bool = False) -> dict[str, str]:
         "numba",
     )
     for module in required_dependencies:
-        version_dict[module] = metadata.version(module)
+        try:
+            import_module(module)
+            version_dict[module] = metadata.version(module)
+        except ImportError:
+            version_dict[module] = "Not Installed"
 
     if optional:
         optional_dependencies = (
@@ -65,7 +69,7 @@ def get_versions(optional: bool = False) -> dict[str, str]:
 
 
 def show_versions(optional: bool = False) -> None:
-    """Method to print the version of dependencies.
+    """Print the version of dependencies.
 
     Parameters
     ----------

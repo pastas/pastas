@@ -1,5 +1,7 @@
-"""This module contains methods to compute the groundwater signatures. Part of the
-signatures selection is based on the work of :cite:t:`heudorfer_index-based_2019`.
+"""Module containing methods to compute the groundwater signatures.
+
+Part of the signatures selection is based on the
+work of :cite:t:`heudorfer_index-based_2019`.
 
 Examples
 --------
@@ -29,20 +31,15 @@ from numpy import (
     sqrt,
     where,
 )
-from packaging.version import parse as parse_version
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, concat, cut, to_datetime
-from pandas import __version__ as pd_version
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
 
 import pastas as ps
 from pastas.stats.core import acf
 
-pandas_version = parse_version(pd_version)
-
-year_offset = "YE" if pandas_version >= parse_version("2.2.0") else "A"
-
-month_offset = "ME" if pandas_version >= parse_version("2.2.0") else "M"
+year_offset = "YE"
+month_offset = "ME"
 
 __all__ = [
     "cv_period_mean",
@@ -145,8 +142,9 @@ def cv_period_mean(
 
 
 def _cv_date_min_max(series: Series, stat: Literal["min", "max"]) -> float:
-    """Method to compute the coefficient of variation of the date of annual
-    minimum or maximum head using circular statistics.
+    """Compute the coefficient of variation for dates.
+
+    The date of annual minimum or maximum head using circular statistics.
 
     Parameters
     ----------
@@ -330,7 +328,7 @@ def _parde_coefficients(series: Series, normalize: bool = True) -> Series:
 
 
 def _martens(series: Series, normalize: bool = False) -> tuple[Series, Series]:
-    """Function for the average seasonal fluctuation and interannual fluctuation.
+    """Compute average seasonal fluctuation and interannual fluctuation.
 
     Parameters
     ----------
@@ -397,7 +395,6 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
     positive, not as depth below the surface!
 
     """
-
     hl, hw = _martens(series, normalize=normalize)
     return (hw - hl).mean()
 
@@ -434,7 +431,6 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
     positive, not as depth below the surface!
 
     """
-
     hl, hw = _martens(series, normalize=normalize)
     return ((hw.max() - hw.min()) + (hl.max() - hl.min())) / 2
 
@@ -446,8 +442,9 @@ def _colwell_components(
     method: Literal["mean"] = "mean",
     normalize: bool = True,
 ) -> tuple[float, float, float]:
-    """Colwell's predictability, constant, and contingency
-    :cite:t:`colwell_predictability_1974`.
+    """Colwell's predictability, constant, and contingency.
+
+    After :cite:t:`colwell_predictability_1974`.
 
     Parameters
     ----------
@@ -564,7 +561,7 @@ def colwell_contingency(
     method: Literal["mean"] = "mean",
     normalize: bool = True,
 ) -> tuple[float, float, float]:
-    """Colwell's contingency :cite:t:`colwell_predictability_1974`
+    """Colwell's contingency :cite:t:`colwell_predictability_1974`.
 
     Parameters
     ----------
@@ -783,7 +780,7 @@ def high_pulse_duration(
 
 
 def _get_differences(series: Series, normalize: bool = False) -> Series:
-    """Get the changes in the time series.
+    """Get changes in the time series.
 
     Parameters
     ----------
@@ -954,8 +951,10 @@ def cv_fall_rate(
 
 
 def magnitude(series: Series) -> float:
-    """Difference between the minimum and maximum heads, divided by the minimum head
-    adapted after :cite:t:`hannah_approach_2000`.
+    """Calculate the magnitude of head variability.
+
+    Difference between the minimum and maximum heads, divided by the
+    minimum head. Adapted after :cite:t:`hannah_approach_2000`.
 
     Parameters
     ----------
@@ -977,7 +976,6 @@ def magnitude(series: Series) -> float:
     The higher the magnitude, the more variable the head is, and vice versa.
 
     """
-
     return (series.max() - series.min()) / series.min()
 
 
@@ -1151,7 +1149,7 @@ def _get_events_binned(
     min_event_length: int = 10,
     min_n_events: int = 2,
 ) -> Series:
-    """Get the recession or recovery events and bin them.
+    """Get recession or recovery events and bin them.
 
     Parameters
     ----------
@@ -1381,8 +1379,10 @@ def duration_curve_slope(
     u: float = 0.9,
     normalize: bool = False,
 ) -> float:
-    """Slope of the head duration curve between percentile l and u after
-    :cite:t:`oudin_are_2010`.
+    """Slope of the head duration curve.
+
+    Computed between percentile l and u.
+    After :cite:t:`oudin_are_2010`.
 
     Parameters
     ----------
@@ -1431,8 +1431,10 @@ def duration_curve_ratio(
     u: float = 0.9,
     normalize: bool = True,
 ) -> float:
-    """Ratio of the head duration curve between the percentile l and u after
-    :cite:t:`richards_measures_1990`.
+    """Ratio of the head duration curve.
+
+    Computed between the percentile l and u.
+    After :cite:t:`richards_measures_1990`.
 
     Parameters
     ----------
@@ -1463,8 +1465,9 @@ def duration_curve_ratio(
 
 
 def richards_pathlength(series: Series, normalize: bool = True) -> float:
-    """The path length of the time series, standardized by time series length after
-    :cite:t:`baker_new_2004`.
+    """Compute the path length of the time series, standardized by time series length.
+
+    After :cite:t:`baker_new_2004`.
 
     Parameters
     ----------
@@ -1549,7 +1552,9 @@ def _baselevel(
 def baselevel_index(
     series: Series, normalize: bool = True, period: str = "30D"
 ) -> float:
-    """Base level index (BLI) adapted after :cite:t:`organization_manual_2008`.
+    """Compute Base level index (BLI).
+
+    Adapted after :cite:t:`organization_manual_2008`.
 
     Parameters
     ----------
@@ -1575,7 +1580,6 @@ def baselevel_index(
     heads by interpolation for consistency.
 
     """
-
     series, ht = _baselevel(series, normalize=normalize, period=period)
     return ht.sum() / series.sum()
 
@@ -1609,7 +1613,6 @@ def baselevel_stability(
     base level.
 
     """
-
     _, ht = _baselevel(series, normalize=normalize, period=period)
 
     return ht.resample(year_offset).mean().max() - ht.resample(year_offset).mean().min()
@@ -1759,7 +1762,7 @@ def summary(
     data: DataFrame | Series,
     signatures: list[str] | None = None,
 ) -> DataFrame:
-    """Method to get many signatures for a time series.
+    """Get many signatures for a time series.
 
     Parameters
     ----------

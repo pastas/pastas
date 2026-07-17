@@ -1,4 +1,4 @@
-"""This module contains plotting methods for Pastas."""
+"""Module containing plotting methods for Pastas."""
 
 import logging
 
@@ -8,15 +8,23 @@ import numpy as np
 from pandas import DataFrame, Series, Timestamp, concat
 from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
+from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 from pastas.plotting.modelcompare import CompareModels
 from pastas.plotting.plotutil import plot_series_with_gaps, share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
-from pastas.stats.metrics import evp, rmse
-from pastas.typing import ArrayLike, Axes, Figure, Model
+from pastas.typing import Axes, Model
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency", "TrackSolve"]
+__all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency"]
+
+
+@PastasDeprecationWarning(
+    version="2.0.0",
+    reason="The TrackSolve class has been moved to pastas.solver.trackers.TrackSolve.",
+)
+class TrackSolve:
+    pass
 
 
 def compare(
@@ -26,7 +34,7 @@ def compare(
     tmin: Timestamp | str | None = None,
     tmax: Timestamp | str | None = None,
     **kwargs,
-) -> dict:
+) -> dict[str, Axes]:
     """Plot multiple Pastas models in one figure to visually compare models.
 
     Notes
@@ -59,7 +67,7 @@ def compare(
 
     Returns
     -------
-    matplotlib.axes
+        dict[str, matplotlib.axes.Axes]
     """
     mc = CompareModels(models, names=names, tmin=tmin, tmax=tmax)
     mc.plot(adjust_height=adjust_height, **kwargs)
@@ -67,7 +75,7 @@ def compare(
 
 
 def series(
-    head: Series | None = None,
+    oseries: Series | None = None,
     stresses: list[Series] | None = None,
     hist: bool = True,
     kde: bool = False,
@@ -77,14 +85,14 @@ def series(
     tmax: Timestamp | str | None = None,
     colors_stresses: list[str] | None = None,
     labels: list[str] | None = None,
-    figsize: tuple = (10, 5),
+    figsize: tuple = (8.0, 4.0),
     **kwargs,
 ) -> Axes:
     """Plot all the input time Series in a single plot.
 
     Parameters
     ----------
-    head: pd.Series
+    oseries: pd.Series
         Pandas time series with DatetimeIndex.
     stresses: list of pd.Series
         List with Pandas time series with DatetimeIndex.
@@ -116,11 +124,22 @@ def series(
     -------
     matplotlib.Axes
     """
+    if "head" in kwargs:
+        deprecate_args_or_kwargs(
+            name="head",
+            version="2.3.0",
+            reason="Please use `oseries` instead of `head`.",
+        )
+        if oseries is None:
+            oseries = kwargs.pop("head")
+        else:
+            kwargs.pop("head")
+
     nrows = 0
-    if head is not None:
+    if oseries is not None:
         nrows += 1
-        tmin = head.index[0] if tmin is None else tmin
-        tmax = head.index[-1] if tmax is None else tmax
+        tmin = oseries.index[0] if tmin is None else tmin
+        tmax = oseries.index[-1] if tmax is None else tmax
     if stresses is not None:
         nrows += len(stresses)
     if colors_stresses is None:
@@ -155,48 +174,48 @@ def series(
         axes[-1, 1].set_xlabel("Frequency [%]")
     if kde:
         axes[-1, 1].set_xlabel("Density [-]")
-    if head is not None:
-        head = head.loc[tmin:tmax].dropna()
-        head.plot(
+    if oseries is not None:
+        oseries = oseries.loc[tmin:tmax].dropna()
+        oseries.plot(
             ax=axes[0, 0], marker=".", linestyle=" ", color="k", xlabel="", **kwargs
         )
         if titles:
-            axes[0, 0].set_title(head.name)
+            axes[0, 0].set_title(oseries.name)
         if labels is not None:
             axes[0, 0].set_ylabel(labels[0])
         if hist:
-            weights = None if kde else np.ones(len(head)) / len(head) * 100
-            head.hist(
+            weights = None if kde else np.ones(len(oseries)) / len(oseries) * 100
+            oseries.hist(
                 ax=axes[0, 1],
                 orientation="horizontal",
                 color="k",
                 weights=weights,
-                bins=int(np.ceil(1 + np.log2(len(head)))),
+                bins=int(np.ceil(1 + np.log2(len(oseries)))),
                 grid=False,
                 density=kde,
             )
         if kde:
-            gkde = gaussian_kde(head, bw_method="scott")
-            sample_range = np.max(head) - np.min(head)
+            gkde = gaussian_kde(oseries, bw_method="scott")
+            sample_range = np.max(oseries) - np.min(oseries)
             ind = np.linspace(
-                np.min(head) - 0.1 * sample_range,
-                np.max(head) + 0.1 * sample_range,
+                np.min(oseries) - 0.1 * sample_range,
+                np.max(oseries) + 0.1 * sample_range,
                 1000,
             )
             color = "darkgrey" if hist else "k"
             axes[0, 1].plot(gkde.evaluate(ind), ind, color=color)
         if table:
             # stats table
-            head_stats = [
-                ["Count", f"{head.count():0.0f}"],
-                ["Mean", f"{head.mean():0.2f}"],
-                ["Max", f"{head.max():0.2f}"],
-                ["Min", f"{head.min():0.2f}"],
-                ["Skew", f"{head.skew():0.2f}"],
-                ["Kurtosis", f"{head.kurtosis():0.2f}"],
+            oseries_stats = [
+                ["Count", f"{oseries.count():0.0f}"],
+                ["Mean", f"{oseries.mean():0.2f}"],
+                ["Max", f"{oseries.max():0.2f}"],
+                ["Min", f"{oseries.min():0.2f}"],
+                ["Skew", f"{oseries.skew():0.2f}"],
+                ["Kurtosis", f"{oseries.kurtosis():0.2f}"],
             ]
             axes[0, 2].table(
-                bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1), cellText=head_stats
+                bbox=(0.0, 0.0, 1, 1), colWidths=(1.5, 1), cellText=oseries_stats
             )
             axes[0, 2].axis("off")
 
@@ -259,7 +278,7 @@ def acf(
     smooth_conf: bool = True,
     color: str = "k",
     ax: Axes | None = None,
-    figsize: tuple = (5, 2),
+    **kwargs,
 ) -> Axes:
     """Plot of the autocorrelation function of a time series.
 
@@ -281,9 +300,8 @@ def acf(
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to plot the ACF on. A new Figure and Axes is created
         when no value for ax is provided.
-    figsize: tuple, optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax is also
-        provided.
+    **kwargs: dict, optional
+        Optional keyword arguments, passed on to plt.subplots.
 
     Returns
     -------
@@ -301,7 +319,9 @@ def acf(
     will still run when dealing with many models.
 
     """
+    kwargs = {} or kwargs
     if ax is None:
+        figsize = kwargs.pop("figsize", (5.0, 3.0))
         _, ax = plt.subplots(1, 1, figsize=figsize)
 
     # Plot the autocorrelation
@@ -347,8 +367,6 @@ def diagnostics(
     alpha: float = 0.05,
     bins: int = 50,
     acf_options: dict | None = None,
-    figsize: tuple = (10, 5),
-    fig: Figure | None = None,
     heteroscedasicity: bool = True,
     **kwargs,
 ) -> Axes:
@@ -367,10 +385,6 @@ def diagnostics(
         Number of bins used for the histogram. 50 is default.
     acf_options: dict, optional
         Dictionary with keyword arguments passed on to pastas.stats.acf.
-    figsize: tuple, optional
-        Tuple with the height and width of the figure in inches.
-    fig: Matplotib.Figure instance, optional
-        Optionally provide a Matplotib.Figure instance to plot onto.
     heteroscedasicity: bool, optional
         Create two additional subplots to check for heteroscedasticity. If true,
         a simulated time series has to be provided with the sim argument.
@@ -399,85 +413,99 @@ def diagnostics(
     scipy.stats.probplot
         Method use to plot the probability plot.
     """
+    if heteroscedasicity and sim is None:
+        msg = (
+            "A simulated time series has to be provided to make plots to "
+            "diagnose heteroscedasticity. Provide 'sim' argument."
+        )
+        logger.error(msg=msg)
+        raise KeyError(msg)
+
     # Create the figure and axes
-    if fig is None:
-        fig = plt.figure(figsize=figsize, constrained_layout=True, **kwargs)
-
+    kwargs = {} or kwargs
+    figsize = kwargs.pop("figsize", (8.0, 4.0))
+    layout = kwargs.pop("layout", "constrained")
     if heteroscedasicity:
-        if sim is None:
-            msg = (
-                "A simulated time series has to be provided to make plots to "
-                "diagnose heteroscedasticity. Provide 'sim' argument."
-            )
-            logger.error(msg=msg)
-            raise KeyError(msg)
-
-        gs = fig.add_gridspec(ncols=3, nrows=2, width_ratios=[3, 1, 1])
-        ax4 = fig.add_subplot(gs[0, 2])
-        ax5 = fig.add_subplot(gs[1, 2])
+        mosaic = [["series", "hist", "het_res"], ["acf", "qq", "het_sqrt"]]
+        width_ratios = kwargs.pop("width_ratios", [3, 1, 1])
     else:
-        gs = fig.add_gridspec(ncols=2, nrows=2, width_ratios=[3, 1])
-    ax = fig.add_subplot(gs[0, 0])
-    ax2 = fig.add_subplot(gs[0, 1])
-    ax1 = fig.add_subplot(gs[1, 0])
-    ax3 = fig.add_subplot(gs[1, 1])
+        mosaic = [["series", "hist"], ["acf", "qq"]]
+        width_ratios = kwargs.pop("width_ratios", [3, 1])
+
+    fig = kwargs.pop("fig", None)
+    if fig is None:
+        fig, axd = plt.subplot_mosaic(
+            mosaic=mosaic,
+            figsize=figsize,
+            width_ratios=width_ratios,
+            layout=layout,
+            **kwargs,
+        )
+    else:
+        axd = fig.subplot_mosaic(
+            mosaic=mosaic,
+            width_ratios=width_ratios,
+            **kwargs,
+        )
 
     # Plot the residuals or noise series
-    ax.axhline(0, c="k")
-    ax = plot_series_with_gaps(series, ax=ax)
-    ax.set_ylabel(series.name)
-    ax.set_xlim(series.index.min(), series.index.max())
-    ax.set_title(f"{series.name} (n={series.size:.0f}, $\\mu$={series.mean():.2f})")
-    ax.grid()
-    ax.tick_params(axis="x", labelrotation=0)
-    for label in ax.get_xticklabels():
+    axd["series"].axhline(0, c="k")
+    axd["series"] = plot_series_with_gaps(series, ax=axd["series"])
+    axd["series"].set_ylabel(series.name)
+    axd["series"].set_xlim(series.index.min(), series.index.max())
+    axd["series"].set_title(
+        f"{series.name} (n={series.size:.0f}, $\\mu$={series.mean():.2f})"
+    )
+    axd["series"].grid(True)
+    axd["series"].tick_params(axis="x", labelrotation=0)
+    for label in axd["series"].get_xticklabels():
         label.set_horizontalalignment("center")
 
     # Plot the autocorrelation
-    acf(series, alpha=alpha, acf_options=acf_options, ax=ax1)
-    ax1.set_title(None)
+    acf(series, alpha=alpha, acf_options=acf_options, ax=axd["acf"])
+    axd["acf"].set_title(None)
 
     # Plot the histogram for normality and add a 'best fit' line
-    _, bins, _ = ax2.hist(series.values, bins=bins, density=True)
+    _, bins, _ = axd["hist"].hist(series.values, bins=bins, density=True)
     y = norm.pdf(bins, series.mean(), series.std())
-    ax2.plot(bins, y, "k--")
-    ax2.set_ylabel("Probability density")
-    ax2.set_title("Histogram")
+    axd["hist"].plot(bins, y, "k--")
+    axd["hist"].set_ylabel("Probability density")
+    axd["hist"].set_title("Histogram")
 
     # Plot the probability plot
-    _, (_, _, r) = probplot(series, plot=ax3, dist="norm", rvalue=False)
-    c = ax.get_lines()[1].get_color()
-    ax3.get_lines()[0].set_color(c)
-    ax3.get_lines()[1].set_color("k")
+    _, (_, _, r) = probplot(series, plot=axd["qq"], dist="norm", rvalue=False)
+    c = axd["series"].get_lines()[1].get_color()
+    axd["qq"].get_lines()[0].set_color(c)
+    axd["qq"].get_lines()[1].set_color("k")
 
     # Plot R2 here because probplot has suboptimal positioning
-    ax3.text(0.5, 0.1, "$R^2={:.2f}$".format(r**2), transform=ax3.transAxes)
+    axd["qq"].text(0.5, 0.1, "$R^2={:.2f}$".format(r**2), transform=axd["qq"].transAxes)
 
     if heteroscedasicity and sim is not None:
         # Plot residuals vs. simulation
         # interpolate simulation to times of observations
         sim = sim.loc[series.index]
-        ax4.plot(sim, series, marker=".", linestyle=" ", color=c, alpha=0.7)
-        ax4.grid()
-        ax4.set_xlabel("Simulated values")
-        ax4.set_ylabel("Residuals")
+        axd["het_res"].plot(sim, series, marker=".", linestyle=" ", color=c, alpha=0.7)
+        axd["het_res"].grid(True)
+        axd["het_res"].set_xlabel("Simulated values")
+        axd["het_res"].set_ylabel("Residuals")
 
         # Plot residuals vs. simulation
-        ax5.plot(
+        axd["het_sqrt"].plot(
             sim, np.sqrt(series.abs()), marker=".", linestyle=" ", color=c, alpha=0.7
         )
-        ax5.set_xlabel("Simulated values")
-        ax5.set_ylabel("$\\sqrt{|Residuals|}$")
-        ax5.grid()
+        axd["het_sqrt"].set_xlabel("Simulated values")
+        axd["het_sqrt"].set_ylabel("$\\sqrt{|Residuals|}$")
+        axd["het_sqrt"].grid(True)
 
     return fig.axes
 
 
 def cum_frequency(
-    obs: Series,
+    oseries: Series | None = None,
     sim: Series | None = None,
     ax: Axes | None = None,
-    figsize: tuple = (5, 2),
+    **kwargs,
 ) -> Axes:
     """Plot of the cumulative frequency of a time Series.
 
@@ -485,14 +513,13 @@ def cum_frequency(
     ----------
     sim: pandas.Series
         Series with the simulated values.
-    obs: pandas.Series
+    oseries: pandas.Series
         The pandas Series with the observed values.
     ax: matplotlib.axes.Axes, optional
         Matplotlib Axes instance to create the plot on. A new Figure and Axes is
         created when no value for ax is provided.
-    figsize: tuple, optional
-        2-D Tuple to determine the size of the figure created. Ignored if ax is also
-        provided.
+    **kwargs: dict, optional
+        Optional keyword arguments, passed on to plt.subplots.
 
     Returns
     -------
@@ -500,16 +527,32 @@ def cum_frequency(
 
     Examples
     --------
-    >>> obs = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.normal(0, 1, 1000))
-    >>> ps.stats.plot_cum_frequency(obs)
+    >>> oseries = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                     data=np.random.normal(0, 1, 1000))
+    >>> ps.stats.plot_cum_frequency(oseries)
     """
+    if "obs" in kwargs:
+        deprecate_args_or_kwargs(
+            name="obs",
+            version="2.3.0",
+            reason="Please use `oseries` instead of `obs`.",
+        )
+        if oseries is None:
+            oseries = kwargs.pop("obs")
+        else:
+            kwargs.pop("obs")
+
+    if oseries is None:
+        raise TypeError("cum_frequency() missing required argument: 'oseries'")
+
+    kwargs = {} or kwargs
     if ax is None:
-        _, ax = plt.subplots(1, 1, figsize=figsize)
+        figsize = kwargs.pop("figsize", (5.0, 3.0))
+        _, ax = plt.subplots(1, 1, figsize=figsize, **kwargs)
 
     ax.plot(
-        obs.sort_values(),
-        np.arange(0, obs.size) / obs.size * 100,
+        oseries.sort_values(),
+        np.arange(0, oseries.size) / oseries.size * 100,
         color="k",
         marker=".",
         linestyle=" ",
@@ -523,419 +566,6 @@ def cum_frequency(
     plt.tight_layout()
 
     return ax
-
-
-class TrackSolve:
-    """Track and/or visualize optimization progress for Pastas models.
-
-    Parameters
-    ----------
-    ml : pastas.model.Model
-        pastas Model to track
-    tmin: pandas.Timestamp or str, optional
-        start time for simulation, by default None which defaults to first index in
-        ml.oseries.series
-    tmax: pandas.Timestamp or str, optional
-        end time for simulation, by default None which defaults to last index in
-        ml.oseries.series
-    update_iter : int, optional
-        if visualizing optimization progress, update plot every update_iter
-        iterations, by default nparam
-
-    Notes
-    -----
-    Interactive plotting of optimization progress requires a matplotlib backend that
-    supports interactive plotting, e.g. `mpl.use("TkAgg")` and `mpl.interactive(
-    True)`. Some possible speedups on the matplotlib side include:
-    - mpl.style.use("fast")
-    - mpl.rcParams['path.simplify_threshold'] = 1.0
-
-    Examples
-    --------
-    Set matplotlib backend and interactive mode (put this at the top of your script)::
-
-        import matplotlib as mpl
-        mpl.use("TkAgg")
-        import matplotlib.pyplot as plt
-        plt.ion()
-
-    Create a TrackSolve object for your model::
-
-        track = TrackSolve(ml)
-
-    Solve model and store intermediate optimization results::
-
-        ml.solve(callback=track.track_solve)
-
-    Calculated parameters per iteration are stored in a pandas.DataFrame::
-
-        track.parameters
-
-    Other stored statistics include `track.evp` (explained variance percentage),
-    `track.rmse_res` (root-mean-squared error of the residuals), `track.rmse_noise` (
-    root mean squared error of the noise, only if a noisemodel is present).
-
-    To interactively plot model optimization progress while solving pass
-    `track.plot_track_solve` as callback function::
-
-        ml.solve(callback=track.plot_track_solve)
-
-    Access the resulting figure through `track.fig`.
-    """
-
-    def __init__(
-        self,
-        ml: Model,
-        tmin: Timestamp | str | None = None,
-        tmax: Timestamp | str | None = None,
-        update_iter: int | None = None,
-        pause: float = 1e-10,
-    ) -> None:
-        logger.warning(
-            "TrackSolve feature under development. If you find any bugs please post "
-            "an issue on GitHub: https://github.com/pastas/pastas/issues"
-        )
-
-        self.ml = ml
-        self.viewlim = 75  # no of iterations on axes by default
-        if update_iter is None:
-            self.update_iter = len(
-                self.ml.parameters.loc[self.ml.parameters.vary].index
-            )
-        else:
-            self.update_iter = update_iter  # update plot every update_iter
-        self.pause = pause  # pause time for plot update, set to 0 for no pause
-
-        # get tmin/tmax
-        if tmin is None:
-            self.tmin = self.ml.oseries.series.index[0]
-        else:
-            self.tmin = Timestamp(tmin)
-
-        if tmax is None:
-            self.tmax = self.ml.oseries.series.index[-1]
-        else:
-            self.tmax = Timestamp(tmax)
-
-        # parameters
-        self.parameters = DataFrame(columns=self.ml.parameters.index)
-        self.parameters.loc[0] = self.ml.parameters.initial.values
-
-        # iteration counter
-        self.itercount = 0
-
-        # calculate RMSE residuals
-        res = self._residuals(self.ml.parameters.initial.values)
-        self.rmse_res = np.array([rmse(res=res)])
-
-        # calculate RMSE noise
-        if self.ml.noisemodel is not None:
-            noise = self._noise(self.ml.parameters.initial.values)
-            self.rmse_noise = np.array([rmse(res=noise)])
-
-        # get observations
-        self.obs = self.ml.observations(tmin=self.tmin, tmax=self.tmax)
-        # calculate EVP
-        self.evp = np.array([evp(obs=self.obs, res=res)])
-
-    def track_solve(self, params: ArrayLike) -> None:
-        """Append parameters to self.parameters DataFrame and update itercount,
-        rmse values and evp.
-
-        Parameters
-        ----------
-        params : array_like
-            array containing parameters.
-        """
-        # update tmin/tmax and freq once after starting solve
-        if self.itercount == 0:
-            self._update_settings()
-
-        # update itercount
-        self.itercount += 1
-
-        # add parameters to DataFrame
-        self.parameters.loc[self.itercount, self.ml.parameters.index] = params.copy()
-
-        # calculate new RMSE values
-        r_res = self._residuals(params)
-        self.rmse_res = np.r_[self.rmse_res, rmse(res=r_res)]
-
-        if self.ml.noisemodel is not None:
-            n_res = self._noise(params)
-            self.rmse_noise = np.r_[self.rmse_noise, rmse(res=n_res)]
-
-        # recalculate EVP
-        self.evp = np.r_[self.evp, evp(obs=self.obs, res=r_res)]
-
-    def _update_axes(self) -> None:
-        """extend xlim if number of iterations exceeds current window."""
-        for iax in self.axes[1:]:
-            iax.set_xlim(right=self.viewlim)
-            self.fig.canvas.draw()
-
-    def _update_settings(self) -> None:
-        self.tmin = self.ml.settings["tmin"]
-        self.tmax = self.ml.settings["tmax"]
-        self.freq = self.ml.settings["freq"]
-
-    def _noise(self, params: ArrayLike) -> ArrayLike:
-        """get noise.
-
-        Parameters
-        ----------
-        params: array_like
-            array containing parameters.
-
-        Returns
-        -------
-        noise: array_like
-            array containing noise.
-        """
-        noise = self.ml.noise(p=params, tmin=self.tmin, tmax=self.tmax)
-        return noise
-
-    def _residuals(self, params: ArrayLike) -> ArrayLike:
-        """calculate residuals.
-
-        Parameters
-        ----------
-        params: np.array
-            array containing parameters.
-
-        Returns
-        -------
-        res: array_like
-            array containing residuals.
-        """
-        res = self.ml.residuals(p=params, tmin=self.tmin, tmax=self.tmax)
-        return res
-
-    def _simulate(self) -> Series:
-        """simulate model with last entry in self.parameters.
-
-        Returns
-        -------
-        sim: pd.Series
-            Series containing model evaluation.
-        """
-        sim = self.ml.simulate(
-            p=self.parameters.iloc[-1, :].values,
-            tmin=self.tmin,
-            tmax=self.tmax,
-            freq=self.ml.settings["freq"],
-        )
-        return sim
-
-    def initialize_figure(
-        self, figsize: tuple[int] = (10, 8), dpi: int = 100
-    ) -> Figure:
-        """Initialize figure for plotting optimization progress.
-
-        Parameters
-        ----------
-        figsize : tuple, optional
-            figure size, passed to plt.subplots(), by default (10, 8).
-        dpi : int, optional
-            dpi of the figure passed to plt.subplots(), by default 100.
-
-        Returns
-        -------
-        fig : matplotlib.pyplot.Figure
-            handle to the figure.
-        """
-        # create plot
-        self.fig, self.axes = plt.subplots(3, 1, figsize=figsize, dpi=dpi)
-        self.ax0, self.ax1, self.ax2 = self.axes
-
-        # share x-axes between 2nd and 3rd axes
-        self.ax1.sharex(self.ax2)
-        for t in self.ax1.get_xticklabels():
-            t.set_visible(False)
-
-        # plot oseries
-        self.ax0.plot(
-            self.obs.index,
-            self.obs,
-            marker=".",
-            ls="none",
-            label="observations",
-            color="k",
-            ms=4,
-        )
-
-        # plot simulation
-        sim = self._simulate()
-        (self.simplot,) = self.ax0.plot(sim.index, sim, label="simulation")
-        self.ax0.set_ylabel("head")
-        self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
-        )
-        self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
-        omax = self.obs.max()
-        omin = self.obs.min()
-        vspace = 0.05 * (omax - omin)
-        self.ax0.set_ylim(bottom=omin - vspace, top=omax + vspace)
-
-        # plot RMSE (residuals and/or residuals)
-        plt.sca(self.ax1)
-        plt.yscale("log")
-        legend_handles = []
-        (self.r_rmse_plot_line,) = self.ax1.plot(
-            [0], self.rmse_res[0:1], c="k", ls="solid", label="residuals"
-        )
-        (self.r_rmse_plot_dot,) = self.ax1.plot(
-            self.itercount, self.rmse_res[-1], c="k", marker="o", ls="none"
-        )
-        legend_handles.append(self.r_rmse_plot_line)
-        self.ax1.set_xlim(0, self.viewlim)
-        self.ax1.set_ylim(1e-2, 2 * self.rmse_res[-1])
-        self.ax1.set_ylabel("RMSE")
-
-        if self.ml.noisemodel is not None:
-            (self.n_rmse_plot_line,) = self.ax1.plot(
-                [0], self.rmse_noise[0:1], c="C0", ls="solid", label="noise"
-            )
-            (self.n_rmse_plot_dot,) = self.ax1.plot(
-                self.itercount, self.rmse_res[-1], c="C0", marker="o", ls="none"
-            )
-            legend_handles.append(self.n_rmse_plot_line)
-        legend_labels = [i.get_label() for i in legend_handles]
-        self.ax1.legend(
-            legend_handles, legend_labels, loc=(0, 1), frameon=False, ncol=2
-        )
-
-        # plot parameters values on semilogy
-        plt.sca(self.ax2)
-        plt.yscale("log")
-        self.param_plot_handles = []
-        legend_handles = []
-        for pname, row in self.ml.parameters.iterrows():
-            if pname.startswith("noise"):
-                if self.ml.noisemodel is None:
-                    continue
-            (pa,) = self.ax2.plot(
-                [0], np.abs(row.initial), marker=".", ls="none", label=pname
-            )
-            (pb,) = self.ax2.plot(
-                [0], np.abs(row.initial), ls="solid", c=pa.get_color()
-            )
-            self.param_plot_handles.append((pa, pb))
-            legend_handles.append(pa)
-
-        legend_labels = [i.get_label() for i in legend_handles]
-        self.ax2.legend(
-            legend_handles, legend_labels, loc=(0, 1), ncol=6, frameon=False
-        )
-        self.ax2.set_xlim(0, self.viewlim)
-        self.ax2.set_ylim(1e-3, 1e4)
-        self.ax2.set_ylabel("Parameter values")
-        self.ax2.set_xlabel("Iteration")
-
-        # set grid for each plot
-        for iax in [self.ax0, self.ax1, self.ax2]:
-            iax.grid(visible=True)
-
-        self.fig.align_ylabels()
-        self.fig.tight_layout()
-        return self.fig
-
-    def plot_track_solve(self, params: ArrayLike) -> None:
-        """Method to plot model simulation while model is being solved.
-
-        Parameters
-        ----------
-        params : array_like
-            array containing parameters
-
-        Examples
-        --------
-        Pass
-        this method to ml.solve(), e.g.:
-
-        >>> track = TrackSolve(ml)
-        >>> ml.solve(callback=track.plot_track_solve)
-
-        """
-        if not hasattr(self, "fig"):
-            self.initialize_figure()
-
-        # update parameters
-        self.track_solve(params)
-
-        # check if figure should be updated
-        if self.itercount % self.update_iter != 0:
-            return
-
-        # update view limits if needed
-        if self.itercount >= self.viewlim:
-            self.viewlim += 50
-            self._update_axes()
-
-        # update simulation
-        sim = self._simulate()
-        self.simplot.set_data(sim.index, sim.values)
-
-        # update rmse residuals
-        self.r_rmse_plot_line.set_data(
-            range(self.itercount + 1), np.array(self.rmse_res)
-        )
-        self.r_rmse_plot_dot.set_data(
-            np.array([self.itercount]), np.array([self.rmse_res[-1]])
-        )
-
-        if self.ml.noisemodel is not None:
-            # update rmse noise
-            self.n_rmse_plot_line.set_data(
-                range(self.itercount + 1), np.array(self.rmse_noise)
-            )
-            self.n_rmse_plot_dot.set_data(
-                np.array([self.itercount]), np.array([self.rmse_noise[-1]])
-            )
-
-        # update parameter plots
-        for j, (p1, p2) in enumerate(self.param_plot_handles):
-            p1.set_data(
-                np.array([self.itercount]), np.abs([self.parameters.iloc[-1, j]])
-            )
-            p2.set_data(
-                range(self.itercount + 1), self.parameters.iloc[:, j].abs().values
-            )
-
-        # update title
-        self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
-        )
-        plt.pause(self.pause)
-        self.fig.canvas.draw()
-
-    def plot_track_solve_history(self, fig: Figure | None = None) -> list[Axes]:
-        """Plot optimization history.
-
-        Parameters
-        ----------
-        fig : matplotlib.pyplot.Figure, optional
-            figure handle, by default None, which constructs a new figure with
-            `self.initialize_figure()`.
-
-        Returns
-        -------
-        axes : list of matplotlib.pyplot.Axes
-            list of axes handles in figure.
-        """
-
-        if fig is None:
-            fig = self.initialize_figure()
-        self.plot_track_solve(self.ml.parameters.optimal.values)
-
-        self.fig.axes[1].autoscale(tight=False, axis="both")
-        self.fig.axes[2].autoscale(tight=False, axis="both")
-
-        self.fig.axes[1].set_xlim(left=0)
-        # because of bug with autoscaling log axis?
-        self.fig.axes[1].set_ylim(top=1.05 * self.rmse_res.max())
-
-        return fig.axes
 
 
 def pairplot(
