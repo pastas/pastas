@@ -6,7 +6,7 @@ that. See the Examples section for some example-code.
 
 Installing Python
 -----------------
-To install Pastas, a working version of Python 3.9 or higher has to be
+To install Pastas, a working version of Python has to be
 installed on your computer. We recommend using `uv <https://docs.astral.sh/uv/>`_
 to manage Python and your project dependencies. However, you are free to use
 any Python installation method you prefer.
