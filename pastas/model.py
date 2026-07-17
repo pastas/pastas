@@ -1011,7 +1011,7 @@ class Model:
         # Add default solver if none is provided
         if self.solver is None:  # add scipy least_squares if no solver provided
             logger.debug("Adding LeastSquares as default solver.")
-            self._add_solver(solver=LeastSquares(model=self))
+            LeastSquares(model=self)
 
         # Solve model
         solve_success, result = self.solver.solve(weights=weights, **kwargs)
