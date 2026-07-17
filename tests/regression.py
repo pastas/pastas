@@ -7,7 +7,7 @@ from uvtrick import Env
 def bench():
     import warnings
 
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=FutureWarning)
 
     from platform import python_version
 

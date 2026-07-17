@@ -607,7 +607,7 @@ class TestModelContributions:
 
     def test_get_output_series_split_deprecation(self, ml_noisemodel: ps.Model) -> None:
         """Test deprecated split keyword for get_output_series."""
-        with pytest.warns(DeprecationWarning, match="split"):
+        with pytest.warns(FutureWarning, match="split"):
             df = ml_noisemodel.get_output_series(split=False)
 
         assert isinstance(df, pd.DataFrame)

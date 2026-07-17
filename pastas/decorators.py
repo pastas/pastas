@@ -209,7 +209,7 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
                     f"{name} is deprecated and will not be available "
                     f"from Pastas version >= {VERSION}. {reason}"
                 )
-                warn(message=msg, category=DeprecationWarning)
+                warn(message=msg, category=FutureWarning)
             else:
                 msg = (
                     f"Module has no attribute '{name}'. "
@@ -247,7 +247,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
 
     Raises
     ------
-    DeprecationWarning
+    FutureWarning
         If current version < version and the argument is used.
     TypeError
         If current version >= version and the argument is used.
@@ -258,7 +258,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
             f"The {name} argument is deprecated and will not be available"
             f" from Pastas version >= {VERSION}. {reason}"
         )
-        warn(message=msg, category=DeprecationWarning)
+        warn(message=msg, category=FutureWarning)
     else:
         msg = (
             f"Got an unexpected keyword argument {name}. "
