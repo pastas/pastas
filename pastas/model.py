@@ -244,6 +244,7 @@ class Model:
             logger.error(msg)
             raise ValueError(msg)
         else:
+            stressmodel._set_model(self)
             self._add_stressmodel(stressmodel)
 
     def _add_stressmodel(self, stressmodel: StressModel) -> None:
@@ -287,6 +288,7 @@ class Model:
     )
     def add_constant(self, constant: Constant) -> None:
         """Add a constant to the model (Deprecated)."""
+        constant._set_model(self)
         self._add_constant(constant)
 
     def _add_constant(self, constant: Constant) -> None:
@@ -337,6 +339,7 @@ class Model:
     )
     def add_noisemodel(self, noisemodel: NoiseModelType) -> None:
         """Add a noisemodel to the model (Deprecated)."""
+        noisemodel._set_model(self)
         self._add_noisemodel(noisemodel)
 
     def _add_noisemodel(self, noisemodel: NoiseModelType) -> None:
@@ -371,6 +374,7 @@ class Model:
     )
     def add_solver(self, solver: Solver) -> None:
         """Add a solver to the model (Deprecated)."""
+        solver.set_model(self)
         self._add_solver(solver)
 
     def _add_solver(self, solver: Solver) -> None:

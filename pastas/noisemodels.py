@@ -102,6 +102,10 @@ class NoiseModelBase(ABC):
         """
         self.parameters.at[name, "vary"] = value
 
+    def _set_model(self, model: Model) -> None:
+        """Set the Pastas Model for the noise model."""
+        self.model = model
+
     def to_dict(self) -> dict:
         """Return a dict to store the noise model."""
         return {"class": self._name, "norm": self.norm}

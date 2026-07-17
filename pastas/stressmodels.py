@@ -366,6 +366,10 @@ class StressModelBase(ABC):
         ]
         return responses
 
+    def _set_model(self, model: Model) -> None:
+        """Set the Pastas Model for the stressmodel."""
+        self.model = model
+
     def to_dict(self, series: bool = False) -> dict[str, Any]:
         """Export the stress model to a dictionary.
 

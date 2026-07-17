@@ -123,6 +123,7 @@ class SolverBase(ABC):
                 "This solver instance is already used by another model. Please create "
                 "a separate solver instance for each Pastas Model."
             )
+        self.model = ml
         self.ml = ml
 
     @abstractmethod
