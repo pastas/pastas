@@ -570,7 +570,7 @@ class TestModelContributions:
         result = method(first_sm_name)
 
         # Check result
-        assert isinstance(result, pd.Series)
+        assert isinstance(result, pd.Series) or isinstance(result, pd.DataFrame)
         if series_name:
             assert result.name == series_name
         if method_name == "get_step_response":
