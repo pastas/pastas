@@ -125,6 +125,24 @@ def get_stressmodel(function: Callable) -> Callable:
     return _get_stressmodel
 
 
+def check_argument_model(function: Callable) -> Callable:
+    """Check if the first argument is a pastas Model."""
+
+    @wraps(function)
+    def _make_model_component(self, *args, **kwargs):
+        if "model" in kwargs:
+            return function(self, *args, **kwargs)
+        from pastas.model import Model
+
+        if args and isinstance(args[0], Model):
+            return function(self, *args, **kwargs)
+        msg = "From Pastas 2.4, the first argument of %s needs to be a Pastas Model. Please provide the model as the first argument: %s(model=ml, ...)."  # From Pastas 2.4 the workflow with ml.add_xxx() will cease to function.
+        warn(message=msg % (self._name, self._name), category=FutureWarning)
+        return function(self, None, *args, **kwargs)
+
+    return _make_model_component
+
+
 def model_tmin_tmax(function: Callable) -> Callable:
     """Use model tmin and tmax settings as default values.
 
@@ -191,7 +209,7 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
                     f"{name} is deprecated and will not be available "
                     f"from Pastas version >= {VERSION}. {reason}"
                 )
-                warn(message=msg, category=DeprecationWarning)
+                warn(message=msg, category=FutureWarning)
             else:
                 msg = (
                     f"Module has no attribute '{name}'. "
@@ -229,7 +247,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
 
     Raises
     ------
-    DeprecationWarning
+    FutureWarning
         If current version < version and the argument is used.
     TypeError
         If current version >= version and the argument is used.
@@ -240,7 +258,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
             f"The {name} argument is deprecated and will not be available"
             f" from Pastas version >= {VERSION}. {reason}"
         )
-        warn(message=msg, category=DeprecationWarning)
+        warn(message=msg, category=FutureWarning)
     else:
         msg = (
             f"Got an unexpected keyword argument {name}. "

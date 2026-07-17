@@ -8,7 +8,7 @@ ps.set_log_level("ERROR")
 # read observations and create the time series model
 obs = pd.read_csv("data/head_nb1.csv", index_col=0, parse_dates=True).squeeze("columns")
 ml = ps.Model(obs, name="groundwater_head")
-ml.add_noisemodel(ps.ArNoiseModel())
+ps.ArNoiseModel(model=ml)
 
 # read weather data and create stressmodel
 rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True).squeeze(
@@ -17,8 +17,13 @@ rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True).squeeze(
 evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True).squeeze(
     "columns"
 )
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential(), name="recharge")
-ml.add_stressmodel(sm)
+sm = ps.RechargeModel(
+    model=ml,
+    prec=rain,
+    evap=evap,
+    rfunc=ps.Exponential(),
+    name="recharge",
+)
 
 # Solve
 ml.solve()

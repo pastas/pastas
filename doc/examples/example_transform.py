@@ -12,6 +12,6 @@ ml.solve()
 ax = ml.plots.decomposition()
 
 # then solve and plot with a ThresholdTransform
-ml.add_transform(ps.ThresholdTransform())
+ps.ThresholdTransform(model=ml)
 ml.solve()
 ax = ml.plots.decomposition()

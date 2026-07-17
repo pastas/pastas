@@ -27,26 +27,23 @@ evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True).squeeze(
 # Solve with an Exponential response function
 ml1 = ps.Model(obs, name="Exp")
 if noise:
-    ml1.add_noisemodel(ps.ArNoiseModel())
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Exponential())
-ml1.add_stressmodel(sm)
+    ps.ArNoiseModel(model=ml1)
+sm = ps.RechargeModel(model=ml1, prec=rain, evap=evap, rfunc=ps.Exponential())
 ml1.solve(fit_constant=fit_constant)
 
 # Solve with a Gamma response function
 ml2 = ps.Model(obs, name="Gamma")
 if noise:
-    ml2.add_noisemodel(ps.ArNoiseModel())
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=ps.Gamma())
-ml2.add_stressmodel(sm)
+    ps.ArNoiseModel(model=ml2)
+sm = ps.RechargeModel(model=ml2, prec=rain, evap=evap, rfunc=ps.Gamma())
 ml2.solve(fit_constant=fit_constant)
 
 # Solve with a Spline response function
 ml3 = ps.Model(obs, name="Spline")
 if noise:
-    ml3.add_noisemodel(ps.ArNoiseModel())
+    ps.ArNoiseModel(model=ml3)
 rfunc = ps.Spline(t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024])
-sm = ps.RechargeModel(prec=rain, evap=evap, rfunc=rfunc)
-ml3.add_stressmodel(sm)
+sm = ps.RechargeModel(model=ml3, prec=rain, evap=evap, rfunc=rfunc)
 ml3.solve(fit_constant=fit_constant)
 
 # Compare both models
