@@ -192,8 +192,15 @@ rtds_action_path = ".."
 # The "prefix" used in the `upload-artifact` step of the action
 rtds_action_artifact_prefix = "notebooks-for-"
 
-# Get GitHub token from environment variable (set by RTD)
-rtds_action_github_token = os.environ.get("GITHUB_TOKEN")
+# Get GitHub token from environment variable
+# When using the ReadTheDocs GitHub App, the token is provided automatically
+# The rtds_action extension requires this to download artifacts from GitHub Actions
+# Try multiple possible environment variable names for compatibility
+rtds_action_github_token = (
+    os.environ.get("READTHEDOCS_TOKEN")
+    or os.environ.get("GITHUB_TOKEN")
+    or os.environ.get("READTHEDOCS_GITHUB_TOKEN")
+)
 
 # Whether or not to raise an error on Read the Docs if the artifact can't be downloaded
 # Set to False for now to allow local builds without the artifact
