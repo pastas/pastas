@@ -425,6 +425,9 @@ class Plotting:
                 responses.index[0] if block_or_step == "step" else responses.index[1]
             )
             xlim_right = responses.index[-1]
+            if xlim_left == xlim_right:
+                xlim_left = responses.index[0]
+                xlim_right = responses.index[-1] + 1
 
             for i, name in enumerate(responses.columns):
                 response = responses.loc[:, name]
