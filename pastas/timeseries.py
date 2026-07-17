@@ -195,7 +195,7 @@ class TimeSeries:
 
         # for pandas 3.0, make sure the unit of the datetime index is in microseconds
         # as this is the default for pandas 3.0 (and therefore used for the simulation)
-        # for pandas 2.x, the unit is allways nanoseconds, and cannot be changed
+        # for pandas 2.x, the unit is always nanoseconds, and cannot be changed
         if hasattr(series.index, "as_unit"):  # pandas >= 3.0
             series.index = series.index.as_unit("us")
 
