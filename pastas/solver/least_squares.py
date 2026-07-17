@@ -770,7 +770,7 @@ class LeastSquares(LeastSquaresBase):
         par = initial
         par[vary] = p
         return misfit(
-            ml=self.model, p=par, noise=noise, weights=weights, callback=self.callback
+            ml=self.model, p=par, noise=noise, weights=weights, callback=callback
         )
 
     def solve(
