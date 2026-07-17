@@ -15,7 +15,7 @@ obs["2007":] = obs["2007":] + 1.5
 
 # Create the time series model
 ml = ps.Model(obs)
-ml.add_noisemodel(ps.ArNoiseModel())
+ps.ArNoiseModel(model=ml)
 
 # read weather data
 rain = pd.read_csv("data/rain_nb1.csv", index_col=0, parse_dates=True).squeeze(
@@ -27,13 +27,16 @@ evap = pd.read_csv("data/evap_nb1.csv", index_col=0, parse_dates=True).squeeze(
 
 # create stress
 sm = ps.RechargeModel(
-    rain, evap, rfunc=ps.Exponential(), recharge=ps.rch.Linear(), name="recharge"
+    model=ml,
+    prec=rain,
+    evap=evap,
+    rfunc=ps.Exponential(),
+    recharge=ps.rch.Linear(),
+    name="recharge",
 )
-ml.add_stressmodel(sm)
 
 # add a stepmodel with an exponential response
-sm = ps.stressmodels.StepModel("2007", name="step", rfunc=ps.One())
-ml.add_stressmodel(sm)
+sm = ps.stressmodels.StepModel(model=ml, tstart="2007", name="step", rfunc=ps.One())
 
 # solve
 ml.solve()
