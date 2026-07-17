@@ -22,21 +22,21 @@ tmax = "2018"
 
 ml = ps.Model(head)
 sm = ps.RechargeModel(
-    prec,
-    evap,
+    model=ml,
+    prec=prec,
+    evap=evap,
     recharge=ps.rch.FlexModel(snow=True),
     rfunc=ps.Gamma(),
     name="rch",
     temp=temp,
 )
-ml.add_stressmodel(sm)
 
 # In case of the non-linear model, change some parameter settings
 ml.set_parameter("rch_kv", vary=False)
 
 # Solve the Pastas model
 ml.solve(tmin=tmin, tmax=tmax, fit_constant=False, report=False)
-ml.add_noisemodel(ps.ArNoiseModel())
+ps.ArNoiseModel(model=ml)
 ml.set_parameter("rch_ks", vary=False)
 ml.solve(tmin=tmin, tmax=tmax, fit_constant=False, initial=False)
 

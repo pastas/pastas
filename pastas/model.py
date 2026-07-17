@@ -126,9 +126,8 @@ class Model:
         self.noisemodel: NoiseModelType | None = None
         self.solver: Any = None
         if constant:
-            self.add_constant(
-                constant=Constant(initial=self.oseries.series.mean(), name="constant")
-            )
+            Constant(model=self, initial=self.oseries.series.mean(), name="constant")
+
         else:
             self.constant = None
 
@@ -225,41 +224,14 @@ class Model:
             "like ml.solve() and ml.set_settings()."
         )
 
+    @PastasDeprecationWarning(
+        version="2.4.0",
+        reason="Stressmodels are now added by adding the Pastas Model as the first argument during stressmodel initialization (i.e., ps.Stressmodel(model=ml, *args))",
+    )
     def add_stressmodel(
         self, stressmodel: StressModel | list[StressModel], replace: bool = True
-    ) -> None:
-        """Add a stressmodel to the main model.
-
-        Parameters
-        ----------
-        stressmodel: pastas.stressmodel or list of pastas.stressmodel
-            instance of a pastas.stressmodel class. Multiple stress models can be
-            provided (e.g., ml.add_stressmodel([sm1, sm2]) in one call.
-        replace: bool, optional
-            force replace the stressmodel if a stressmodel with the same name already
-            exists. Not recommended but useful at times. Default is True.
-
-        Notes
-        -----
-        To obtain a list of the stressmodel names, type:
-
-        >>> ml.get_stressmodel_names()
-
-        Examples
-        --------
-        >>> sm = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress")
-        >>> ml.add_stressmodel(sm)
-
-        To add multiple stress models at once you can do the following:
-
-        >>> sm1 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress1")
-        >>> sm2 = ps.StressModel(stress, rfunc=ps.Gamma(), name="stress2")
-        >>> ml.add_stressmodel([sm1, sm2])
-
-        See Also
-        --------
-        pastas.stressmodels
-        """
+    ):
+        """Add a stressmodel to the model (Deprecated)."""
         # Method can take multiple stressmodels at once through args
         if isinstance(stressmodel, list):
             for sm in stressmodel:
@@ -271,27 +243,55 @@ class Model:
             )
             logger.error(msg)
             raise ValueError(msg)
-
         else:
-            if stressmodel.name in self.stressmodels.keys():
-                logger.warning(
-                    "The name for the stressmodel you are trying to add already "
-                    "exists for this model. The stressmodel is replaced."
-                )
-            self.stressmodels[stressmodel.name] = stressmodel
-            self._parameters = self.get_init_parameters(initial=False)
-            stressmodel.update_stress(freq=self.settings["freq"])
+            stressmodel._set_model(self)
+            self._add_stressmodel(stressmodel)
 
-            # Check if stress overlaps with oseries, if not give a warning
-            if (stressmodel.tmin > self.oseries.series.index.max()) or (
-                stressmodel.tmax < self.oseries.series.index.min()
-            ):
-                logger.warning(
-                    "The stress of the stressmodel has no overlap with ml.oseries."
-                )
+    def _add_stressmodel(self, stressmodel: StressModel) -> None:
+        """Add a stressmodel to the main model.
+
+        Parameters
+        ----------
+        stressmodel: pastas.stressmodel
+            instance of a pastas.stressmodel class that is added
+
+        Notes
+        -----
+        This method is internally used by the stressmodels to add
+
+        See Also
+        --------
+        pastas.stressmodels
+        """
+        # Method can take multiple stressmodels at once through args
+        if stressmodel.name in self.stressmodels.keys():
+            logger.warning(
+                "The name for the stressmodel you are trying to add already "
+                "exists for this model. The stressmodel is replaced."
+            )
+        self.stressmodels[stressmodel.name] = stressmodel
+        self._parameters = self.get_init_parameters(initial=False)
+        stressmodel.update_stress(freq=self.settings["freq"])
+
+        # Check if stress overlaps with oseries, if not give a warning
+        if (stressmodel.tmin > self.oseries.series.index.max()) or (
+            stressmodel.tmax < self.oseries.series.index.min()
+        ):
+            logger.warning(
+                "The stress of the stressmodel has no overlap with ml.oseries."
+            )
         self._check_stressmodel_compatibility()
 
+    @PastasDeprecationWarning(
+        version="2.4.0",
+        reason="Constants are now added by adding the Pastas Model as the first argument during initialization (i.e., ps.Constant(model=ml, *args))",
+    )
     def add_constant(self, constant: Constant) -> None:
+        """Add a constant to the model (Deprecated)."""
+        constant._set_model(self)
+        self._add_constant(constant)
+
+    def _add_constant(self, constant: Constant) -> None:
         """Add a Constant to the time series Model.
 
         Parameters
@@ -299,16 +299,23 @@ class Model:
         constant: pastas.stressmodels.Constant
             Pastas constant instance.
 
-        Examples
-        --------
-        >>> d = ps.Constant()
-        >>> ml.add_constant(d)
         """
         self.constant = constant
         self._parameters = self.get_init_parameters(initial=False)
         self._check_stressmodel_compatibility()
 
+    @PastasDeprecationWarning(
+        version="2.4.0",
+        reason="Transforms are now added by adding the Pastas Model as the first "
+        "argument during Transform initialization (i.e., ps.ThresholdTransform"
+        "(model=ml, *args))",
+    )
     def add_transform(self, transform: ThresholdTransform):
+        """Add a Transform to the model (Deprecated)."""
+        transform.set_model(self)
+        self._add_transform(transform)
+
+    def _add_transform(self, transform: ThresholdTransform):
         """Add a Transform to the time series Model.
 
         Parameters
@@ -316,32 +323,32 @@ class Model:
         transform: ps.ThresholdTransform
             An instance of a pastas.transform class.
 
-        Examples
-        --------
-        >>> tt = ps.ThresholdTransform()
-        >>> ml.add_transform(tt)
-
         See Also
         --------
         pastas.transform
         """
-        transform.set_model(self)
         self.transform = transform
         self._parameters = self.get_init_parameters(initial=False)
         self._check_stressmodel_compatibility()
 
+    @PastasDeprecationWarning(
+        version="2.4.0",
+        reason="Noise models are now added by adding the Pastas Model as the first "
+        "argument during noise model initialization (i.e., ps.ArNoiseModel"
+        "(model=ml, *args))",
+    )
     def add_noisemodel(self, noisemodel: NoiseModelType) -> None:
+        """Add a noisemodel to the model (Deprecated)."""
+        noisemodel._set_model(self)
+        self._add_noisemodel(noisemodel)
+
+    def _add_noisemodel(self, noisemodel: NoiseModelType) -> None:
         """Add a noisemodel to the time series Model.
 
         Parameters
         ----------
         noisemodel: NoiseModelType
             Instance of a noise model class.
-
-        Examples
-        --------
-        >>> n = ps.ArNoiseModel()
-        >>> ml.add_noisemodel(n)
 
         Notes
         -----
@@ -359,7 +366,18 @@ class Model:
 
         self._parameters = self.get_init_parameters(initial=False)
 
+    @PastasDeprecationWarning(
+        version="2.4.0",
+        reason="Solvers are now added by adding the Pastas Model as the first "
+        "argument during solver initialization (i.e.,  ps.solver.LeastSquares"
+        "(model=ml, *args))",
+    )
     def add_solver(self, solver: Solver) -> None:
+        """Add a solver to the model (Deprecated)."""
+        solver.set_model(self)
+        self._add_solver(solver)
+
+    def _add_solver(self, solver: Solver) -> None:
         """Add a solver to the model.
 
         Parameters
@@ -374,7 +392,7 @@ class Model:
             Different solver objects are available to estimate parameters.
         """
         self.solver = solver
-        if not hasattr(self.solver, "ml") or self.solver.ml is None:
+        if not hasattr(self.solver, "model") or self.solver.model is None:
             self.solver.set_model(self)
 
         self._parameters = self.get_init_parameters(initial=False)
@@ -836,6 +854,10 @@ class Model:
             solver for the options. The solver is stored in the `ml.solver` attribute.
             If None, the solver from `ml.solver` is used. If `solver` and `ml.solver`
             are both None, the default ps.solver.LeastSquares() is used.
+
+            .. deprecated:: 2.4.0
+                The solver argument is deprecated in favor of adding a solver using the `ps.solver.LeastSquares(model=ml)` pattern.
+
         report: bool | Literal["full"] | dict, optional
             Print a report to the screen after optimization finished. Set to
             True (default) to print a standard report, set to "full" to print a
@@ -976,16 +998,20 @@ class Model:
             logger.error(msg)
             raise ValueError(msg)
 
-        # Check if the solver is already added to the model, if not add the default least squares solver
+        # Check if the solver is provided, deprecated with Pastas 2.0
         if solver is not None:  # add solver if provided
+            msg = "solver argument is deprecated and will be removed in Pastas 2.4.0. Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
+            logger.warning(msg)
             if self.solver is None or self.solver._name != solver._name:
                 logger.info("Setting solver to `%s`." % solver._name)
-                self.add_solver(solver=solver)
+                self._add_solver(solver=solver)
             else:
                 logger.info("Keeping original solver `%s`." % self.solver._name)
-        elif self.solver is None:  # add scipy least_squares if no solver provided
+
+        # Add default solver if none is provided
+        if self.solver is None:  # add scipy least_squares if no solver provided
             logger.debug("Adding LeastSquares as default solver.")
-            self.add_solver(solver=LeastSquares())
+            LeastSquares(model=self)
 
         # Solve model
         solve_success, result = self.solver.solve(weights=weights, **kwargs)

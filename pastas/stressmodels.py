@@ -37,6 +37,7 @@ from pastas.typing import (
 
 from .decorators import (
     PastasDeprecationWarning,
+    check_argument_model,
     conditional_cachedmethod,
     deprecate_args_or_kwargs,
     njit,
@@ -74,6 +75,8 @@ class StressModelBase(ABC):
 
     Attributes
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which this stressmodel is added.
     name: str
         Name of this stressmodel object. Used as prefix for the parameters.
     parameters: pandas.DataFrame
@@ -83,6 +86,7 @@ class StressModelBase(ABC):
 
     def __init__(
         self,
+        model: Model,
         name: str,
         tmin: Timestamp | str,
         tmax: Timestamp | str,
@@ -91,6 +95,8 @@ class StressModelBase(ABC):
         gain_scale_factor: float = 1.0,
         max_cache_size: int | None = 32,
     ) -> None:
+        self.model = model
+
         self.name = validate_name(name)
         self.tmin = tmin
         self.tmax = tmax
@@ -393,6 +399,10 @@ class StressModelBase(ABC):
         responses = DataFrame(data=response, columns=[self.stress.name])
         return responses
 
+    def _set_model(self, model: Model) -> None:
+        """Set the Pastas Model for the stressmodel."""
+        self.model = model
+
     def to_dict(self, series: bool = False) -> dict[str, Any]:
         """Export the stress model to a dictionary.
 
@@ -408,10 +418,7 @@ class StressModelBase(ABC):
 
         """
         _ = series
-        settings = {
-            "class": self._name,
-            "name": self.name,
-        }
+        settings = {"class": self._name, "name": self.name}
         return settings
 
 
@@ -420,6 +427,8 @@ class StressModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the stress model is added.
     stress: pandas.Series
         pandas.Series with pandas.DatetimeIndex containing the stress.
     rfunc: pastas.rfunc instance
@@ -500,8 +509,10 @@ class StressModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
+        model: Model,
         stress: Series,
         rfunc: RFunc,
         name: str,
@@ -514,6 +525,7 @@ class StressModel(StressModelBase):
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
         super().__init__(
+            model=model,
             name=name,
             tmin=self.stress.series.index.min(),
             tmax=self.stress.series.index.max(),
@@ -528,6 +540,8 @@ class StressModel(StressModelBase):
         )
         self.gain_scale_factor = gain_scale_factor
         self.set_init_parameters()
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> TimeSeries:
@@ -673,6 +687,8 @@ class StepModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the step model is added.
     tstart: str or Timestamp
         String with the start date of the step, e.g. '2018-01-01'. This value is
         fixed by default. Use ml.set_parameter("step_tstart", vary=True) to vary the
@@ -693,8 +709,10 @@ class StepModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
+        model: Model,
         tstart: Timestamp | str,
         rfunc: RFunc | None = None,
         name: str = "step",
@@ -702,6 +720,7 @@ class StepModel(StressModelBase):
         max_cache_size: int | None = None,
     ) -> None:
         super().__init__(
+            model=model,
             name=name,
             tmin=Timestamp.min,
             tmax=Timestamp.max,
@@ -711,6 +730,8 @@ class StepModel(StressModelBase):
         )
         self.tstart = Timestamp(tstart)
         self.set_init_parameters()
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stresses(self) -> tuple:
@@ -839,6 +860,8 @@ class LinearTrend(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the linear trend is added.
     tstart: str or Timestamp
         String with a date to start the trend (e.g., "2018-01-01"), will be
         transformed to an ordinal number internally.
@@ -856,8 +879,10 @@ class LinearTrend(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
+        model: Model,
         tstart: Timestamp | str | None = None,
         tend: Timestamp | str | None = None,
         name: str = "trend",
@@ -890,10 +915,12 @@ class LinearTrend(StressModelBase):
         if tend is None:
             raise TypeError("LinearTrend.__init__() missing required argument: 'tend'")
 
-        super().__init__(name=name, tmin=Timestamp.min, tmax=Timestamp.max)
+        super().__init__(model=model, name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.tstart = tstart
         self.tend = tend
         self.set_init_parameters()
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stresses(self) -> tuple:
@@ -990,6 +1017,8 @@ class Constant(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the constant is added.
     initial: float, optional
         Initial estimate of the parameter value. For example, the minimum of the
         observed series.
@@ -998,10 +1027,15 @@ class Constant(StressModelBase):
 
     """
 
-    def __init__(self, initial: float = 0.0, name: str = "constant") -> None:
-        super().__init__(name=name, tmin=Timestamp.min, tmax=Timestamp.max)
+    @check_argument_model
+    def __init__(
+        self, model: Model, initial: float = 0.0, name: str = "constant"
+    ) -> None:
+        super().__init__(model=model, name=name, tmin=Timestamp.min, tmax=Timestamp.max)
         self.initial = initial
         self.set_init_parameters()
+        if self.model is not None:
+            self.model._add_constant(self)
 
     @property
     def stresses(self) -> tuple:
@@ -1053,6 +1087,8 @@ class WellModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the well model is added.
     stress: list
         list containing the stresses time series
     rfunc: pastas.rfunc instance, optional
@@ -1132,8 +1168,10 @@ class WellModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
+        model: Model,
         stress: Iterable[Series],
         rfunc: HantushWellModel | None = None,
         name: str = "well",
@@ -1194,6 +1232,7 @@ class WellModel(StressModelBase):
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
 
         super().__init__(
+            model=model,
             name=name,
             tmin=tmin,
             tmax=tmax,
@@ -1205,6 +1244,8 @@ class WellModel(StressModelBase):
 
         self.rfunc.set_distances(self.distances.values)
         self.set_init_parameters()
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> tuple[TimeSeries, ...]:
@@ -1693,6 +1734,8 @@ class RechargeModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the recharge model is added.
     prec: pandas.Series
         pandas.Series with pandas.DatetimeIndex containing the precipitation series.
         The precipitation series should be provided in mm/day when a nonlinear model is
@@ -1801,8 +1844,10 @@ class RechargeModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
+        model: Model,
         prec: Series,
         evap: Series,
         rfunc: RFunc | None = None,
@@ -1863,6 +1908,7 @@ class RechargeModel(StressModelBase):
         ).std()
 
         super().__init__(
+            model=model,
             name=name,
             tmin=index.min(),
             tmax=index.max(),
@@ -1873,6 +1919,8 @@ class RechargeModel(StressModelBase):
         )
 
         self.set_init_parameters()
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
         # Check if precipitation is likely in mm/d and not m/d. If the maximum
         # value of the annual sums is smaller than 12 (m), the highest annual
@@ -2377,6 +2425,8 @@ class TarsoModel(RechargeModel):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the Tarso model is added.
     prec: pandas.Series
         pandas.Series with pandas.DatetimeIndex containing the precipitation series.
     evap: pandas.Series
@@ -2422,8 +2472,10 @@ class TarsoModel(RechargeModel):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
+        model: Model,
         prec: Series,
         evap: Series,
         rfunc: Exponential | None = None,
@@ -2448,7 +2500,11 @@ class TarsoModel(RechargeModel):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
         self.dmin = dmin
         self.dmax = dmax
-        super().__init__(prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs)
+        super().__init__(
+            model=model, prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs
+        )
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def nsplit(self) -> int:
@@ -2668,6 +2724,8 @@ class ChangeModel(StressModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the change model is added.
     stress: pandas.Series
         pandas Series object containing the stress.
     rfunc1: pastas.rfunc instance
@@ -2738,8 +2796,10 @@ class ChangeModel(StressModelBase):
 
     """
 
+    @check_argument_model
     def __init__(
         self,
+        model: Model,
         stress: Series,
         rfunc1: RFunc,
         rfunc2: RFunc,
@@ -2751,8 +2811,8 @@ class ChangeModel(StressModelBase):
     ) -> None:
         self.set_stress(stress, settings=settings, metadata=metadata)
 
-        StressModelBase.__init__(
-            self,
+        super().__init__(
+            model=model,
             name=name,
             rfunc=None,
             tmin=self.stress.series.index.min(),
@@ -2766,6 +2826,8 @@ class ChangeModel(StressModelBase):
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
         self.set_init_parameters()
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> TimeSeries:
