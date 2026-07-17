@@ -9,6 +9,9 @@ build:
   os: ubuntu-26.04
   tools:
     python: "3.14"
+  # Set environment variables for rtds_action
+  env:
+    GITHUB_TOKEN: ${GITHUB_TOKEN}
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
@@ -31,3 +34,4 @@ python:
       extra_requirements:
         - ci
         - rtd
+        - rtds_action

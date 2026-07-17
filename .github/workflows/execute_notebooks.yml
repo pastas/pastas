@@ -1,0 +1,95 @@
+name: Execute Notebooks
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  execute-notebooks:
+    name: Execute notebooks
+    runs-on: ubuntu-latest
+    env:
+      # Color Output
+      FORCE_COLOR: 1
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # Need full history for rtds-action
+
+      - name: Set up uv with Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: false
+
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install pastas[ci]
+
+      - name: Execute example notebooks
+        run: |
+          cd doc/examples
+          # Create a temporary directory for executed notebooks
+          mkdir -p executed_temp
+          # Execute all notebooks
+          for nb in *.ipynb; do
+            echo "Executing $nb..."
+            jupyter nbconvert \
+              --ExecutePreprocessor.timeout=600 \
+              --to notebook \
+              --execute "$nb" \
+              --output-dir executed_temp \
+              --output "${nb%.ipynb}" || echo "Failed to execute $nb"
+          done
+          # Also copy any data directories
+          for dir in data data_* groundwater_paper; do
+            if [ -d "$dir" ]; then
+              cp -r "$dir" executed_temp/
+            fi
+          done
+
+      - name: Execute benchmark notebooks
+        run: |
+          cd doc/benchmarks
+          # Create a temporary directory for executed notebooks
+          mkdir -p executed_temp
+          # Execute all notebooks
+          for nb in *.ipynb; do
+            echo "Executing $nb..."
+            jupyter nbconvert \
+              --ExecutePreprocessor.timeout=600 \
+              --to notebook \
+              --execute "$nb" \
+              --output-dir executed_temp \
+              --output "${nb%.ipynb}" || echo "Failed to execute $nb"
+          done
+
+      - name: Prepare artifact structure
+        run: |
+          # Create the final artifact structure
+          mkdir -p executed_notebooks/doc/examples
+          mkdir -p executed_notebooks/doc/benchmarks
+          # Copy executed example notebooks
+          cp doc/examples/executed_temp/*.ipynb executed_notebooks/doc/examples/
+          cp -r doc/examples/executed_temp/data* executed_notebooks/doc/examples/ 2>/dev/null || true
+          cp -r doc/examples/executed_temp/groundwater_paper executed_notebooks/doc/examples/ 2>/dev/null || true
+          # Copy executed benchmark notebooks
+          cp doc/benchmarks/executed_temp/*.ipynb executed_notebooks/doc/benchmarks/
+
+      - name: Upload executed notebooks as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: notebooks-for-${{ github.sha }}
+          path: executed_notebooks/
+          retention-days: 7
