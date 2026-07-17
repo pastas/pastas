@@ -35,10 +35,12 @@ jobs:
       - name: Install dependencies
         run: |
           uv venv
+          source .venv/bin/activate
           uv pip install pastas[ci]
 
       - name: Execute example notebooks
         run: |
+          source .venv/bin/activate
           cd doc/examples
           # Create a temporary directory for executed notebooks
           mkdir -p executed_temp
@@ -61,6 +63,7 @@ jobs:
 
       - name: Execute benchmark notebooks
         run: |
+          source .venv/bin/activate
           cd doc/benchmarks
           # Create a temporary directory for executed notebooks
           mkdir -p executed_temp
@@ -81,11 +84,11 @@ jobs:
           mkdir -p executed_notebooks/doc/examples
           mkdir -p executed_notebooks/doc/benchmarks
           # Copy executed example notebooks
-          cp doc/examples/executed_temp/*.ipynb executed_notebooks/doc/examples/
+          cp doc/examples/executed_temp/*.ipynb executed_notebooks/doc/examples/ || true
           cp -r doc/examples/executed_temp/data* executed_notebooks/doc/examples/ 2>/dev/null || true
           cp -r doc/examples/executed_temp/groundwater_paper executed_notebooks/doc/examples/ 2>/dev/null || true
           # Copy executed benchmark notebooks
-          cp doc/benchmarks/executed_temp/*.ipynb executed_notebooks/doc/benchmarks/
+          cp doc/benchmarks/executed_temp/*.ipynb executed_notebooks/doc/benchmarks/ || true
 
       - name: Upload executed notebooks as artifact
         uses: actions/upload-artifact@v4
