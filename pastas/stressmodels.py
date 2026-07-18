@@ -2485,26 +2485,29 @@ class TarsoModel(RechargeModel):
         dmax: float | None = None,
         **kwargs,
     ) -> None:
-        if oseries is not None:
-            if dmin is not None or dmax is not None:
-                msg = "Please specify either oseries or dmin and dmax"
-                raise ValueError(msg)
-            dmin = oseries.min()
-            dmax = oseries.max()
-        elif dmin is None or dmax is None:
-            msg = "Please specify either oseries or dmin and dmax"
-            raise ValueError(msg)
         if rfunc is None:
             rfunc = Exponential()
         if not isinstance(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
-        self.dmin = dmin
-        self.dmax = dmax
+
         super().__init__(
             model=model, prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs
         )
         if self.model is not None:
             self.model._add_stressmodel(self)
+
+        if oseries is not None:
+            msg = (
+                "TarsoModel does not support oseries anymore. "
+                "The initial parameters are estimated from the model.observations(). "
+            )
+            deprecate_args_or_kwargs("oseries", version="2.0.0", reason=msg)
+        elif dmin is not None or dmax is not None:
+            msg = (
+                "TarsoModel does not support dmin and dmax. "
+                "The initial parameters are estimated from the model.observations(). "
+            )
+            deprecate_args_or_kwargs("dmin and dmax", version="2.0.0", reason=msg)
 
     @property
     def nsplit(self) -> int:
