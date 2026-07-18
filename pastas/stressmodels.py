@@ -2613,13 +2613,13 @@ class TarsoModel(RechargeModel):
         Parameters
         ----------
         p : array_like
-            Array with parameter values ``[d1, A0, a0, A1, a1, d0]``.
+            Array with parameter values ``[A0, a0, A1, a1, d1, d0]``.
         r : array_like
             Array with recharge values.
         dt : float
             Timestep for the simulation.
         """
-        d1, A0, a0, A1, a1, d0 = p
+        A0, a0, A1, a1, d1, d0 = p
 
         # calculate physical meaning of these parameters
         S0 = a0 / A0
@@ -2695,7 +2695,7 @@ class TarsoModel(RechargeModel):
             ``istress`` is None or "all", or a Series for a single index.
 
         """
-        A0, a0, _, A1, a1, _, _ = p
+        _, A0, a0, A1, a1, _ = p
         resp_fcn = getattr(self.rfunc, block_or_step)
 
         response0 = resp_fcn(p=[A0, a0], dt=dt)
