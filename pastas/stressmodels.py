@@ -2491,7 +2491,13 @@ class TarsoModel(RechargeModel):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
 
         super().__init__(
-            model=model, prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs
+            model=model,
+            prec=prec,
+            evap=evap,
+            rfunc=rfunc,
+            name=name,
+            recharge=Linear(),
+            **kwargs,
         )
         if self.model is not None:
             self.model._add_stressmodel(self)
@@ -2520,6 +2526,9 @@ class TarsoModel(RechargeModel):
         dmin = oseries.min()
         dmax = oseries.max()
 
+        # parameters for the recharge-method
+        pr = self.recharge.get_init_parameters(self.name)
+
         # the upper drainage level
         tarso_d = (
             Series(
@@ -2544,11 +2553,8 @@ class TarsoModel(RechargeModel):
         p1 = self.rfunc.get_init_parameters(self.name)
         p1.index = [f"{x}1" for x in p1.index]
 
-        # parameters for the recharge-method
-        pr = self.recharge.get_init_parameters(self.name)
-
         # combine all parameters
-        self.parameters = concat([tarso_d, p0, p1, pr])
+        self.parameters = concat([pr, p0, p1, tarso_d])
 
     def simulate(
         self,
@@ -2581,11 +2587,31 @@ class TarsoModel(RechargeModel):
     ) -> Series:
         _ = istress  # istress is not used for TarsoModel
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
-        h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(), dt)
+
+        # Fetch the current constant parameter from the global model
+        if getattr(self.model, "constant", None) is not None:
+            p_const = self.model.get_parameters("constant")
+            constant_d = p_const[0] if p_const is not None else 0.0
+        else:
+            constant_d = 0.0
+
+        # Append constant_d as the lower drainage level (d0)
+        # p[self.recharge.nparam :] contains [A0, a0, A1, a1, d1]
+        # p_tarso becomes [A0, a0, A1, a1, d1, d0]
+        p_tarso = np.append(p[self.recharge.nparam :], constant_d)
+
+        # Simulate the physics (this returns the absolute head)
+        h = self.tarso(p_tarso, stress.to_numpy(dtype=float), dt)
+
         # Strip imaginary part when not doing complex-step Jacobian
         if not np.iscomplexobj(p):
             h = h.real
-        sim = Series(h, name=self.name, index=stress.index)
+
+        # Pastas expects relative contributions from stress models.
+        # By subtracting it here, Model.simulate() can safely add the constant
+        # back globally without double-counting your base level.
+        sim = Series(h - constant_d, name=self.name, index=stress.index)
+
         return sim
 
     @staticmethod
