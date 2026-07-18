@@ -2516,41 +2516,39 @@ class TarsoModel(RechargeModel):
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
-        # parameters for the first drainage level
-        p0 = self.rfunc.get_init_parameters(self.name)
-        initial = self.dmin + 0.5 * (self.dmax - self.dmin)
-        pd0 = Series(
-            {
-                "initial": initial,
-                "pmin": np.nan,
-                "pmax": np.nan,
-                "vary": True,
-                "name": self.name,
-            }
+        oseries = self.model.observations()
+        dmin = oseries.min()
+        dmax = oseries.max()
+
+        # the upper drainage level
+        tarso_d = (
+            Series(
+                {
+                    "initial": dmin + 0.75 * (dmax - dmin),
+                    "pmin": dmin,
+                    "pmax": dmax,
+                    "vary": True,
+                    "name": self.name,
+                },
+                name=f"{self.name}_d",
+            )
+            .to_frame()
+            .T
         )
-        p0.loc[f"{self.name}_d"] = pd0
+
+        # paramters for the response of the first drainage level
+        p0 = self.rfunc.get_init_parameters(self.name)
         p0.index = [f"{x}0" for x in p0.index]
 
-        # parameters for the second drainage level
+        # parameters for the response of the second drainage level
         p1 = self.rfunc.get_init_parameters(self.name)
-        initial = self.dmin + 0.75 * (self.dmax - self.dmin)
-        pd1 = Series(
-            {
-                "initial": initial,
-                "pmin": self.dmin,
-                "pmax": self.dmax,
-                "vary": True,
-                "name": self.name,
-            }
-        )
-        p1.loc[f"{self.name}_d"] = pd1
         p1.index = [f"{x}1" for x in p1.index]
 
         # parameters for the recharge-method
         pr = self.recharge.get_init_parameters(self.name)
 
         # combine all parameters
-        self.parameters = concat([p0, p1, pr])
+        self.parameters = concat([tarso_d, p0, p1, pr])
 
     def simulate(
         self,
@@ -2599,8 +2597,8 @@ class TarsoModel(RechargeModel):
         )
         if len(ml.stressmodels) > 1:
             logger.warning(msg, "other stressmodels", "stressmodels")
-        if ml.constant is not None:
-            logger.warning(msg, "a constant", "constant")
+        # if ml.constant is not None:
+        #     logger.warning(msg, "a constant", "constant")
         if ml.transform is not None:
             logger.warning(msg, "a transform", "transform")
 
@@ -2611,8 +2609,17 @@ class TarsoModel(RechargeModel):
 
         Based on exponential decay of the previous timestep and
         recharge, using two thresholds.
+
+        Parameters
+        ----------
+        p : array_like
+            Array with parameter values ``[d1, A0, a0, A1, a1, d0]``.
+        r : array_like
+            Array with recharge values.
+        dt : float
+            Timestep for the simulation.
         """
-        A0, a0, d0, A1, a1, d1 = p
+        d1, A0, a0, A1, a1, d0 = p
 
         # calculate physical meaning of these parameters
         S0 = a0 / A0
@@ -2718,7 +2725,7 @@ class TarsoModel(RechargeModel):
         dict
             A dictionary containing the information of the stressmodel.
         """
-        data = super().to_dict(series=series) | {"dmin": self.dmin, "dmax": self.dmax}
+        data = super().to_dict(series=series)
         return data
 
 
