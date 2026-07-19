@@ -13,7 +13,7 @@ on:
 concurrency:
   # Group by workflow name and ref (branch or pull request ref).
   # For pushes the ref is the branch (refs/heads/<branch>).
-  # For PR events the ref is refs/pull/<number>/merge  same across commits for that PR.
+  # For PR events the ref is refs/pull/<number>/merge same across commits for that PR.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
