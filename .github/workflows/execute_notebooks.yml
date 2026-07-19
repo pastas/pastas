@@ -19,12 +19,17 @@ jobs:
     name: Execute notebooks
     runs-on: ubuntu-latest
     env:
+      CI_PASFILES: "0" # do not generate pas files for these tests
       # Color Output
       FORCE_COLOR: 1
+      # Tox
+      PY_COLORS: 1
+      # Pytest
+      PYTEST_ADDOPTS: "--color=yes"
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0  # Need full history for rtds-action
+          fetch-depth: 0
 
       - name: Set up uv with Python
         uses: astral-sh/setup-uv@v7
@@ -35,60 +40,27 @@ jobs:
       - name: Install dependencies
         run: |
           uv venv
-          source .venv/bin/activate
-          uv pip install pastas[ci]
+          uv pip install tox-uv
 
-      - name: Execute example notebooks
-        run: |
-          source .venv/bin/activate
-          cd doc/examples
-          # Create a temporary directory for executed notebooks
-          mkdir -p executed_temp
-          # Execute all notebooks
-          for nb in *.ipynb; do
-            echo "Executing $nb..."
-            jupyter nbconvert \
-              --ExecutePreprocessor.timeout=600 \
-              --to notebook \
-              --execute "$nb" \
-              --output-dir executed_temp \
-              --output "${nb%.ipynb}" || echo "Failed to execute $nb"
-          done
-          # Also copy any data directories
-          for dir in data data_* groundwater_paper; do
-            if [ -d "$dir" ]; then
-              cp -r "$dir" executed_temp/
-            fi
-          done
+      - name: Setup tox environment
+        run: uv run tox -e notebooks --notest
 
-      - name: Execute benchmark notebooks
-        run: |
-          source .venv/bin/activate
-          cd doc/benchmarks
-          # Create a temporary directory for executed notebooks
-          mkdir -p executed_temp
-          # Execute all notebooks
-          for nb in *.ipynb; do
-            echo "Executing $nb..."
-            jupyter nbconvert \
-              --ExecutePreprocessor.timeout=600 \
-              --to notebook \
-              --execute "$nb" \
-              --output-dir executed_temp \
-              --output "${nb%.ipynb}" || echo "Failed to execute $nb"
-          done
+      - name: Execute example notebooks (tox environment)
+        run: .tox/notebooks/bin/pytest tests -m notebooks
+
+      - name: Execute benchmark notebooks (tox environment)
+        run: .tox/notebooks/bin/pytest tests -m bnotebooks
 
       - name: Prepare artifact structure
         run: |
           # Create the final artifact structure
           mkdir -p executed_notebooks/doc/examples
           mkdir -p executed_notebooks/doc/benchmarks
-          # Copy executed example notebooks
-          cp doc/examples/executed_temp/*.ipynb executed_notebooks/doc/examples/ || true
-          cp -r doc/examples/executed_temp/data* executed_notebooks/doc/examples/ 2>/dev/null || true
-          cp -r doc/examples/executed_temp/groundwater_paper executed_notebooks/doc/examples/ 2>/dev/null || true
-          # Copy executed benchmark notebooks
-          cp doc/benchmarks/executed_temp/*.ipynb executed_notebooks/doc/benchmarks/ || true
+          # Tests write executed notebooks to build/ directories.
+          cp doc/examples/build/*.ipynb executed_notebooks/doc/examples/ || true
+          cp -r doc/examples/data* executed_notebooks/doc/examples/ 2>/dev/null || true
+          cp -r doc/examples/groundwater_paper executed_notebooks/doc/examples/ 2>/dev/null || true
+          cp doc/benchmarks/build/*.ipynb executed_notebooks/doc/benchmarks/ || true
 
       - name: Upload executed notebooks as artifact
         uses: actions/upload-artifact@v4
