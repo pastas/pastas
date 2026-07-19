@@ -43,13 +43,10 @@ jobs:
           uv pip install tox-uv
 
       - name: Setup tox environment
-        run: uv run tox -e notebooks --notest
+        run: uv run tox -e execute_notebooks --notest
 
-      - name: Execute example notebooks (tox environment)
-        run: .tox/notebooks/bin/pytest tests -m notebooks
-
-      - name: Execute benchmark notebooks (tox environment)
-        run: .tox/notebooks/bin/pytest tests -m bnotebooks
+      - name: Test
+        run: uv run tox -e execute_notebooks --skip-pkg-install
 
       - name: Prepare artifact structure
         run: |

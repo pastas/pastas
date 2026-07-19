@@ -161,6 +161,14 @@ description = "run the benchmark notebooks"
 extras = ["ci"]
 commands = [["pytest", "tests", "-m", "bnotebooks"]]
 
+[tool.tox.env.execute_notebooks]
+description = "run the example and benchmark notebooks"
+extras = ["ci"]
+commands = [
+    ["pytest", "tests", "-m", "notebooks"],
+    ["pytest", "tests", "-m", "bnotebooks"],
+]
+
 [tool.tox.env.ruff]
 description = "run ruff checks"
 extras = ["ruffing"]
