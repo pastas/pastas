@@ -710,19 +710,17 @@ class LeastSquares(LeastSquaresBase):
         self,
         model: Model,
         name: str = "solver",
-        jac: Literal["2-point", "3-point", "cs"] = "2-point",
+        jac: Literal["2-point", "3-point", "cs"] = "3-point",
         method: Literal["trf", "dogbox", "lm"] = "trf",
         ftol: float = 1e-8,
         xtol: float = 1e-8,
         gtol: float = 1e-8,
-        x_scale: float | Literal["jac"] | None = None,
+        x_scale: float | Literal["jac"] | None = "jac",
         loss: Literal["linear", "soft_l1", "huber", "cauchy", "arctan"] = "linear",
         f_scale: float = 1.0,
         max_nfev: int | None = None,
         diff_step: float | ArrayLike | None = None,
         tr_solver: Literal["exact", "lsmr"] | None = None,
-        tr_options: dict | None = None,
-        callback: Callable | None = None,
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
@@ -739,8 +737,6 @@ class LeastSquares(LeastSquaresBase):
         self.max_nfev = max_nfev
         self.diff_step = diff_step
         self.tr_solver = tr_solver
-        self.tr_options = tr_options
-        self.callback = callback
 
     def objfunction(
         self,
@@ -749,6 +745,7 @@ class LeastSquares(LeastSquaresBase):
         weights: Series | None,
         initial: ArrayLike,
         vary: ArrayLike,
+        callback: Callable | None = None,
     ) -> ArrayLike:
         """Objective function that is minimized by the least_squares solver.
 
@@ -773,7 +770,7 @@ class LeastSquares(LeastSquaresBase):
         par = initial
         par[vary] = p
         return misfit(
-            ml=self.model, p=par, noise=noise, weights=weights, callback=self.callback
+            ml=self.model, p=par, noise=noise, weights=weights, callback=callback
         )
 
     def solve(
@@ -827,6 +824,7 @@ class LeastSquares(LeastSquaresBase):
             weights=weights,
             initial=initial,
             vary=vary,
+            callback=kwargs.pop("callback", None),
         )
 
         self.result = least_squares(
@@ -844,8 +842,6 @@ class LeastSquares(LeastSquaresBase):
             max_nfev=self.max_nfev,
             diff_step=self.diff_step,
             tr_solver=self.tr_solver,
-            tr_options=self.tr_options,
-            callback=self.callback,
             **kwargs,
         )
 
@@ -1083,7 +1079,6 @@ class LeastSquares(LeastSquaresBase):
             "max_nfev": self.max_nfev,
             "diff_step": self.diff_step,
             "tr_solver": self.tr_solver,
-            "tr_options": self.tr_options,
         }
         return settings
 

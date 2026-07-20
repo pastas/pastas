@@ -19,6 +19,7 @@ from bokeh.models import (
     TableColumn,
 )
 from bokeh.plotting import figure, show
+from pandas import Series
 
 from pastas.extensions import register_model_accessor
 
@@ -309,7 +310,11 @@ class Bokeh:
 
             contrib_plot.line("index", smname, source=source)
             response = self._model.get_step_response(smname)
-            rfunc_plot.line(response.index, response.values)
+            if isinstance(response, Series):
+                rfunc_plot.line(response.index, response.values)
+            else:
+                for name in response.columns:
+                    rfunc_plot.line(response.index, response[name].values)
 
             left_column.append(contrib_plot)
             right_column.append(rfunc_plot)
