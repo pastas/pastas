@@ -330,6 +330,10 @@ def get_sample_for_freq(
 ):
     """Sample a pandas Series or DataFrame so that the frequency is not higher than a supplied frequency.
 
+    .. versionchanged:: 2.3.0
+        The ``s`` parameter was renamed to ``series``. Passing ``s`` still works
+        but raises a deprecation warning.
+
     Parameters
     ----------
     series : pandas.Series or pandas.DataFrame
@@ -533,6 +537,9 @@ def time_weighted_resample(
     Time-weighted resampling of a time series to arbitrary periods.
 
     .. versionadded:: 2.0.0
+
+    .. versionchanged:: 2.4.0
+        The ``index`` parameter was renamed to ``tindex``.
 
     Parameters
     ----------
