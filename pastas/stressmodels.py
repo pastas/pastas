@@ -2490,18 +2490,8 @@ class TarsoModel(RechargeModel):
         if not isinstance(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
 
-        super().__init__(
-            model=model,
-            prec=prec,
-            evap=evap,
-            rfunc=rfunc,
-            name=name,
-            recharge=Linear(),
-            **kwargs,
-        )
-        if self.model is not None:
-            self.model._add_stressmodel(self)
-            oseries = self.model.observations()
+        if model is not None:
+            oseries = model.observations()
             dmin = oseries.min()
             dmax = oseries.max()
         elif oseries is not None:
@@ -2517,6 +2507,19 @@ class TarsoModel(RechargeModel):
 
         self.dmin = float(dmin)
         self.dmax = float(dmax)
+
+        super().__init__(
+            model=model,
+            prec=prec,
+            evap=evap,
+            rfunc=rfunc,
+            name=name,
+            recharge=Linear(),
+            **kwargs,
+        )
+
+        if self.model is not None:
+            self.model._add_stressmodel(self)
 
     @property
     def nsplit(self) -> int:
