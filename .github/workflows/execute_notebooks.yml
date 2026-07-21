@@ -85,6 +85,6 @@ jobs:
           RTD_VERSION_SLUG: ${{ vars.RTD_VERSION_SLUG || 'latest' }}
         run: |
           curl -sS -f -X POST \
-            -H "Authorization: Token $RTDS_TOKEN" \
+            -H "Authorization: Token ${{ secrets.RTDS_TOKEN }}" \
             -H "Content-Type: application/json" \
             "https://readthedocs.org/api/v3/projects/$RTD_PROJECT_SLUG/versions/$RTD_VERSION_SLUG/builds/"
