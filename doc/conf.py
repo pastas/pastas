@@ -201,4 +201,4 @@ rtds_action_github_token = os.environ.get("GITHUB_RTDS_TOKEN")
 
 # Whether or not to raise an error on Read the Docs if the artifact can't be downloaded
 # Set to False for now to allow local builds without the artifact
-rtds_action_error_if_missing = False
+rtds_action_error_if_missing = True

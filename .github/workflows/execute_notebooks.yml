@@ -78,14 +78,13 @@ jobs:
           retention-days: 7
 
       - name: Trigger Read the Docs build via API
-        if: github.event_name == 'workflow_dispatch' && inputs.trigger_rtd
         env:
-          GITHUB_RTDS_TOKEN: ${{ secrets.RTDS_TOKEN }}
+          RTDS_TOKEN: ${{ secrets.RTDS_TOKEN }}
           RTD_PROJECT_SLUG: ${{ secrets.RTD_PROJECT_SLUG }}
           RTD_VERSION_SLUG: ${{ vars.RTD_VERSION_SLUG || 'latest' }}
         run: |
-          if [ -z "$GITHUB_RTDS_TOKEN" ]; then
-            echo "GITHUB_RTDS_TOKEN is not set."
+          if [ -z "$RTDS_TOKEN" ]; then
+            echo "RTDS_TOKEN is not set."
             exit 1
           fi
 
@@ -97,6 +96,6 @@ jobs:
           echo "Triggering Read the Docs build for project '$RTD_PROJECT_SLUG' version '$RTD_VERSION_SLUG'..."
 
           curl -sS -f -X POST \
-            -H "Authorization: Token $GITHUB_RTDS_TOKEN" \
+            -H "Authorization: Token $RTDS_TOKEN" \
             -H "Content-Type: application/json" \
             "https://readthedocs.org/api/v3/projects/$RTD_PROJECT_SLUG/versions/$RTD_VERSION_SLUG/builds/"
