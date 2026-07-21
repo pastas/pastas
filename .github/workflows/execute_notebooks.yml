@@ -82,9 +82,11 @@ jobs:
         env:
           RTDS_TOKEN: ${{ secrets.RTDS_TOKEN }}
           RTD_PROJECT_SLUG: pastas
-          RTD_VERSION_SLUG: ${{ vars.RTD_VERSION_SLUG || 'latest' }}
+          RTD_VERSION_SLUG: ${{ github.head_ref || github.ref_name }}
         run: |
+          RTD_VERSION_SLUG_ENCODED="$(python -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["RTD_VERSION_SLUG"], safe=""))')"
+
           curl -sS -f -X POST \
             -H "Authorization: Token ${{ secrets.RTDS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            "https://readthedocs.org/api/v3/projects/$RTD_PROJECT_SLUG/versions/$RTD_VERSION_SLUG/builds/"
+            "https://readthedocs.org/api/v3/projects/$RTD_PROJECT_SLUG/versions/$RTD_VERSION_SLUG_ENCODED/builds/"
