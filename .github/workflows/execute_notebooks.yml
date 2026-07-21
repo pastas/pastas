@@ -78,9 +78,10 @@ jobs:
           retention-days: 7
 
       - name: Trigger Read the Docs build via API
+        if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.trigger_rtd)
         env:
           RTDS_TOKEN: ${{ secrets.RTDS_TOKEN }}
-          RTD_PROJECT_SLUG: ${{ 'pastas' }}
+          RTD_PROJECT_SLUG: pastas
           RTD_VERSION_SLUG: ${{ vars.RTD_VERSION_SLUG || 'latest' }}
         run: |
           if [ -z "$RTDS_TOKEN" ]; then
