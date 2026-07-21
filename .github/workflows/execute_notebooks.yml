@@ -77,10 +77,13 @@ jobs:
           path: executed_notebooks/
           retention-days: 7
 
-      - name: Trigger RTDs build
+      - name: Trigger Read the Docs build via API
         if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.trigger_rtd)
-        uses: dfm/rtds-action@v1
-        with:
-          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
-          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-          commit_ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
+        env:
+          RTDS_TOKEN: ${{ secrets.RTDS_TOKEN }}
+          RTD_PROJECT_SLUG: pastas
+          RTD_VERSION_SLUG: ${{ vars.RTD_VERSION_SLUG || 'latest' }}
+        run: |
+          curl -X POST \
+            -H "Authorization: Token ${{ secrets.RTDS_TOKEN }}" \
+            https://readthedocs.org/api/v3/projects/pastas/builds
