@@ -2501,19 +2501,22 @@ class TarsoModel(RechargeModel):
         )
         if self.model is not None:
             self.model._add_stressmodel(self)
+            oseries = self.model.observations()
+            dmin = oseries.min()
+            dmax = oseries.max()
+        elif oseries is not None:
+            dmin = oseries.min()
+            dmax = oseries.max()
+        elif dmin is None and dmax is None:
+            msg = (
+                "Either model, oseries or both dmin and dmax must be provided to "
+                "initialize the TarsoModel."
+            )
+            logger.error(msg)
+            raise ValueError(msg)
 
-        if oseries is not None:
-            msg = (
-                "TarsoModel does not support oseries anymore. "
-                "The initial parameters are estimated from the model.observations(). "
-            )
-            deprecate_args_or_kwargs("oseries", version="2.0.0", reason=msg)
-        elif dmin is not None or dmax is not None:
-            msg = (
-                "TarsoModel does not support dmin and dmax. "
-                "The initial parameters are estimated from the model.observations(). "
-            )
-            deprecate_args_or_kwargs("dmin and dmax", version="2.0.0", reason=msg)
+        self.dmin = float(dmin)
+        self.dmax = float(dmax)
 
     @property
     def nsplit(self) -> int:
@@ -2522,10 +2525,6 @@ class TarsoModel(RechargeModel):
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
-        oseries = self.model.observations()
-        dmin = oseries.min()
-        dmax = oseries.max()
-
         # parameters for the recharge-method
         pr = self.recharge.get_init_parameters(self.name)
 
@@ -2533,9 +2532,9 @@ class TarsoModel(RechargeModel):
         tarso_d = (
             Series(
                 {
-                    "initial": dmin + 0.75 * (dmax - dmin),
-                    "pmin": dmin,
-                    "pmax": dmax,
+                    "initial": self.dmin + 0.75 * (self.dmax - self.dmin),
+                    "pmin": self.dmin,
+                    "pmax": self.dmax,
                     "vary": True,
                     "name": self.name,
                 },
@@ -2752,7 +2751,7 @@ class TarsoModel(RechargeModel):
             A dictionary containing the information of the stressmodel.
         """
         data = super().to_dict(series=series)
-        return data
+        return data | {"dmin": self.dmin, "dmax": self.dmax}
 
 
 class ChangeModel(StressModelBase):
