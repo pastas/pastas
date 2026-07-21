@@ -380,7 +380,7 @@ class Plotting:
                 elif k.startswith("con_"):
                     axd[k].set_ylabel("Rise")
                 elif k.startswith("rf_"):
-                    axd[k].set_ylabel("[unit head]/[unit stress]")
+                    axd[k].set_ylabel("[unit head]/\n[unit stress]")
 
         _ = self._plot_parameters_table(ax=axd["tab"], stderr=stderr)
 
