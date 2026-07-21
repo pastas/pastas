@@ -45,8 +45,12 @@ jobs:
       - name: Setup tox environment
         run: uv run tox -e execute_notebooks --notest
 
-      - name: Test
+      - name: Test example notebooks
         run: uv run tox -e execute_notebooks --skip-pkg-install
+
+      - name: Test benchmark notebooks
+        if: github.event_name == 'pull_request' && github.base_ref == 'master'
+        run: uv run tox -e notebooks --skip-pkg-install
 
       - name: Prepare artifact structure
         run: |

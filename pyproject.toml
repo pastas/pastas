@@ -162,11 +162,10 @@ extras = ["ci"]
 commands = [["pytest", "tests", "-m", "bnotebooks"]]
 
 [tool.tox.env.execute_notebooks]
-description = "run the example and benchmark notebooks"
+description = "run the example notebooks"
 extras = ["ci"]
 commands = [
     ["pytest", "tests", "-m", "notebooks"],
-    ["pytest", "tests", "-m", "bnotebooks"],
 ]
 
 [tool.tox.env.ruff]

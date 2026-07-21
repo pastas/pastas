@@ -1,0 +1,39 @@
+name: Trigger Read the Docs
+
+on:
+  workflow_run:
+    workflows: ["Execute Notebooks"]
+    types: [completed]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+  trigger-rtd:
+    name: Trigger RTD build
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Read the Docs build via API
+        env:
+          GITHUB_RTDS_TOKEN: ${{ secrets.RTDS_TOKEN }}
+          RTD_PROJECT_SLUG: ${{ secrets.RTD_PROJECT_SLUG }}
+          RTD_VERSION_SLUG: ${{ vars.RTD_VERSION_SLUG || 'latest' }}
+        run: |
+          if [ -z "$GITHUB_RTDS_TOKEN" ]; then
+            echo "GITHUB_RTDS_TOKEN is not set."
+            exit 1
+          fi
+
+          if [ -z "$RTD_PROJECT_SLUG" ]; then
+            echo "RTD_PROJECT_SLUG is not set."
+            exit 1
+          fi
+
+          echo "Triggering Read the Docs build for project '$RTD_PROJECT_SLUG' version '$RTD_VERSION_SLUG'..."
+
+          curl -sS -f -X POST \
+            -H "Authorization: Token $GITHUB_RTDS_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://readthedocs.org/api/v3/projects/$RTD_PROJECT_SLUG/versions/$RTD_VERSION_SLUG/builds/"
