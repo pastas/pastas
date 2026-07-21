@@ -80,7 +80,7 @@ jobs:
       - name: Trigger Read the Docs build via API
         env:
           RTDS_TOKEN: ${{ secrets.RTDS_TOKEN }}
-          RTD_PROJECT_SLUG: ${{ secrets.RTD_PROJECT_SLUG }}
+          RTD_PROJECT_SLUG: ${{ 'pastas' }}
           RTD_VERSION_SLUG: ${{ vars.RTD_VERSION_SLUG || 'latest' }}
         run: |
           if [ -z "$RTDS_TOKEN" ]; then
