@@ -1,7 +1,10 @@
 # Introducing Pastas 2.0
 
-Pastas 2.0 has several new features, but also some new syntax that replaces old syntax. The new syntax will make Pastas scripts shorter and, more importantly, will make it possible to implement some new features that are in our future plans. 
-This post introduces the most important changes and provides guidance for migrating your scripts to Pastas 2.0.
+Pastas 2.0 has several new features, but also some new syntax that replaces old syntax.
+The new syntax will make Pastas scripts shorter and, more importantly, will make it
+possible to implement some new features that are in our future plans. This post
+introduces the most important changes and provides guidance for migrating your scripts
+to Pastas 2.0.
 
 ## Contents
 
@@ -16,8 +19,10 @@ This post introduces the most important changes and provides guidance for migrat
 
 ## New syntax for adding components to Models
 
-The biggest change for users is that we are introducing a new method to
-add components to your model. Rather than first creating a `StressModel` and then adding it to the model with `add_stressmodel`, this is now done in one statement, where the model is provided as the first argument when creating a `StressModel`. The new syntax is:
+The biggest change for users is that we are introducing a new method to add components
+to your model. Rather than first creating a `StressModel` and then adding it to the
+model with `add_stressmodel`, this is now done in one statement, where the model is
+provided as the first argument when creating a `StressModel`. The new syntax is:
 
 ```python
 # Pastas 2.0
@@ -58,21 +63,30 @@ syntax.
 
 ### So why are we making this big change to the syntax?
 
-The main reason for this syntax change is that all objects (stress models, noise models, solvers, etc.) will know to which Model they are added. This will make it possible for each object to use information from the Model. For example,
-the head observations (`oseries`) may be used to set initial values of parameters. Another example is that for the development of new solvers for
-Pastas (inspired by PEST++), the solver classes need to be able to access the model in order to
-set up the solve. 
+The main reason for this syntax change is that all objects (stress models, noise
+models, solvers, etc.) will know to which Model they are added. This will make it
+possible for each object to use information from the Model. For example, the head
+observations (`oseries`) may be used to set initial values of parameters. Another
+example is that for the development of new solvers for Pastas (inspired by PEST++), the
+solver classes need to be able to access the model in order to set up the solve.
 
-Another reason for the syntax change has to do with the original Pastas design. One of the original design ideas was that a user could make a `StressModel`, for example to simulate the effect of rainfall, and then add this `StressModel` to multiple Pastas models, as several observation wells probably use the same weather data. But Pastas has evolved over the years, and nowadays this is not possible anymore. So if you cannot add the same `StressModel` to multiple Pastas models, the whole advantage of a separate `add_stressmodel` function has disappeared (and may even be confusing). 
+Another reason for the syntax change has to do with the original Pastas design. One of
+the original design ideas was that a user could make a `StressModel`, for example to
+simulate the effect of rainfall, and then add this `StressModel` to multiple Pastas
+models, as several observation wells probably use the same weather data. But Pastas has
+evolved over the years, and nowadays this is not possible anymore. So if you cannot add
+the same `StressModel` to multiple Pastas models, the whole advantage of a separate
+`add_stressmodel` function has disappeared (and may even be confusing).
 
 Some other smaller advantages of the new syntax are:
 
 - shorter scripts (no more `ml.add_stressmodels()`, etc.)
 - matches behavior in other packages frequently used by hydrologists, e.g. flopy:
-`flopy.mf6.Modflowgwfwel(gwf_model, ...)` and timflow `timflow.stead.Well(model, ...)`
+`flopy.mf6.Modflowgwfwel(gwf_model, ...)` and timflow `timflow.steady.Well(model, ...)`
 
 We are aware that syntax changes are annoying, and we did not make this change lightly.
-There was quite a bit of debate, but in the end we decided the benefits outweighed the (temporary) annoyance of getting used to a syntax change.
+There was quite a bit of debate, but in the end we decided the benefits outweighed the
+(temporary) annoyance of getting used to a syntax change.
 
 ## Changes in defaults
 
@@ -83,16 +97,17 @@ changes will generally result in better models.
 
 - The default arguments for `ps.solver.LeastSquares` have changed slightly. We now
 default to a more accurate 3-point method to compute the Jacobian `jac="3-point"`. The
-previous default was `jac="2-point"`. This change introduces a small extra computational
-effort but the advantage of a more accurate estimate of the Jacobian can lead to better
-performing models. Users can always go back to 2-point.
+previous default was `jac="2-point"`. This change introduces a small extra
+computational effort but the advantage of a more accurate estimate of the Jacobian can
+lead to better performing models. Users can always go back to 2-point.
 
 - The parameter update in `ps.solver.LeastSquares` is now controlled by `x_scale="jac"`
 which uses the Jacobian to determine the step change for each parameter during
 optimization. Using the Jacobian gives better parameter updates, especially when
 parameter scales are very different.
 
-- The order of arguments in `WellModel`, `TarsoModel`, `StepModel`, `LinearTrend`, and `ChangeModel` was adjusted to more closely match the other StressModels. All
+- The order of arguments in `WellModel`, `TarsoModel`, `StepModel`, `LinearTrend`, and
+`ChangeModel` was adjusted to more closely match the other StressModels. All
 StressModels now adhere to the following order: stress/time input, rfunc, name, etc. Be
 aware that old code that used positional arguments for these StressModels may be
 affected and result in errors when run with Pastas 2.0.
@@ -103,9 +118,9 @@ affected and result in errors when run with Pastas 2.0.
 values for parameter `b` in the optimization. This has now been updated to use log10
 scaling (which makes more sense), which can be controlled with the `log_b=True|False`
 keyword argument. The default is True, so this means any old Pastas models with a
-WellModel will yield somewhat different estimates of parameter `b` when solved with Pastas 2.0.
-Take care when loading older models, be sure to solve them again with Pastas 2.0 prior
-to doing any simulations.
+WellModel will yield somewhat different estimates of parameter `b` when solved with
+Pastas 2.0. Take care when loading older models, be sure to solve them again with
+Pastas 2.0 prior to doing any simulations.
 
 - Parameter `_d` was renamed to `_A` in the `ps.One()` response function.
 
@@ -114,11 +129,11 @@ to doing any simulations.
 We put a lot of effort into Pastas 2.0 to make the software more consistent and
 intuitive while maintaining ease of use. As a part of that effort, several classes were
 renamed and some were moved. Of course all these changes come with warnings, so the old
-methods will still work, but will generate warnings about future deprecations.
+methods will still work but will generate warnings about future deprecations.
 
 ### Solvers
 
-As part of a major internal refactor of the solver classes they were also renamed and
+As part of a major internal refactor of the solver classes they were renamed and
 moved to `ps.solvers`:
 
 - `ps.LeastSquares() --> ps.solvers.LeastSquares()`
@@ -145,11 +160,11 @@ The `ps.options` replaces the `ps.rcParams` module.
 ### Time series settings
 
 Pastas uses certain logic to fill gaps, extend time series into the future or past, or
-up- or downsample time series to other timesteps. These default settings were defined in
-`ps.rcParams["timeseries"]` which contained dictionaries containing default settings
+up- or downsample time series to other timesteps. These default settings were defined
+in `ps.rcParams["timeseries"]` which contained dictionaries containing default settings
 for precipitation (`"prec"`), evaporation (`"evap"`), waterlevels (`"waterlevel"`) and
-wells (`"well"`), etc. The placement of these settings within Pastas made them very
-hard to find, so it was moved to:
+wells (`"well"`), etc. The placement of these settings within Pastas made them hard to
+find, so they were moved to `ps.timeseries.settings`:
 
 ```python
 ps.timeseries.settings  # <-- see all settings
@@ -164,8 +179,8 @@ Among the many new features introduced by Pastas 2.0, these are some of the high
 
 - Use the impulse response instead of the block response to simulate heads. This can be
 set by adding `use_block=False` in the response function definitions. This is faster,
-since it avoids having to compute two step responses, and produces comparable
-results in our tests. Set with e.g. `ps.FourParam(use_block=False)`.
+since it avoids having to compute two step responses, and produces comparable results
+in our tests. Set with e.g. `ps.FourParam(use_block=False)`.
 
 - Use `jac="cs"` in `ps.solver.LeastSquares()` to compute the Jacobian using a complex
 step. This method is more accurate and more efficient than other jacobian estimation
@@ -175,8 +190,8 @@ accurate Jacobians are your thing, try this out.
 
 - The `tmax` estimates of the `Hantush` and `FourParam` response functions for a given
 `cutoff` can now be computed more accurately using fast numerical integration. This is
-slightly slower than the default conservative analytical approximations but can
-be used to avoid very long response function tails that sometimes crop up in models.
+slightly slower than the default conservative analytical approximations but can be used
+to avoid very long response function tails that sometimes crop up in models.
 
 ## Notable deprecations
 
@@ -193,11 +208,25 @@ whether it is appropriate to present their data this way.
 
 - `ps.stats.kge_2012` was removed. Use `ps.stats.kge(..., modified=True)` instead.
 
-- The specification of a Solver in the `solve` method of a Pastas model is deprecated. The solver must be defined prior to solving the model. So while it used to be possible to solve a model called `ml` with the Lmfit solver by typing `ml.solve(solver=ps.LmfitSolve())`, it now requires the specification of a solver first `ps.solvers.Lmfit(model=ml)`, after which a simple `ml.solve()` will solve the model with the specified solver. 
+- The specification of a Solver in the `solve` method of a Pastas model is deprecated.
+The solver must be defined prior to solving the model. So while it used to be possible
+to solve a model called `ml` with the Lmfit solver by typing
+`ml.solve(solver=ps.LmfitSolve())`, it now requires the specification of a solver first
+`ps.solvers.Lmfit(model=ml)`, after which a simple `ml.solve()` will solve the model
+with the specified solver.
 
 ## Pastas Sustaining Membership Program
 
 We are introducing the [Pastas Sustaining Membership
 Program](https://pastas.dev/about/support.html) to allow users to financially
-contribute to the development and upkeep of Pastas. To be clear, __Pastas will always
-remain open-source and free__! However, it is important to realize that a lot of the maintenance has historically been carried out on a voluntary basis by the Pastas development team. This includes investigating and solving bug reports, responding to questions on the Discussions page, requests for new features, etc. Mind you, the Pastas development team really enjoys (many of) these tasks, but time and budgets are limited. As the Pastas user base grows and the software becomes more capable, this maintenance requires additional resources. Yes, Pastas if free and open-source software. But that doesn't mean it doesn't cost any money to maintain. So if you or your company are frequent users of Pastas software, we kindly ask you to consider supporting Pastas financially. Check out the Sustainable Membership Program and join!
+contribute to the development and upkeep of Pastas. To be clear, **Pastas will always
+remain open-source and free**! However, it is important to realize that a lot of the
+maintenance has historically been carried out on a voluntary basis by the Pastas
+development team. This includes investigating and solving bug reports, responding to
+questions on the Discussions page, requests for new features, etc. Mind you, the Pastas
+development team really enjoys (many of) these tasks, but time and budgets are limited.
+As the Pastas user base grows and the software becomes more capable, this maintenance
+requires additional resources. Yes, Pastas is free and open-source software but that
+doesn't mean it doesn't cost any money to maintain. So if you or your company are
+frequent users of Pastas software, we kindly ask you to consider supporting Pastas
+financially. Check out the Sustainable Membership Program and join!
