@@ -31,4 +31,3 @@ python:
       extra_requirements:
         - ci
         - rtd
-        - rtds_action
