@@ -9,6 +9,7 @@ Create a TimeSeries object::
 
 """
 
+from copy import deepcopy
 from logging import getLogger
 from typing import Any, Self
 
@@ -169,7 +170,7 @@ class TimeSeries:
         For the individual options for the different settings.
     """
 
-    _timeseries_settings = settings
+    _timeseries_settings = deepcopy(settings)
 
     def __init__(
         self,
