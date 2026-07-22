@@ -45,7 +45,7 @@ from .decorators import (
 )
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
-from .timeseries import TimeSeries, _get_dt
+from .timeseries import TimeSeries
 from .utils import validate_name
 
 try:
@@ -352,18 +352,51 @@ class StressModelBase(ABC):
 
     def _get_responses(
         self,
-        ml: Model,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
-    ) -> list[Series]:
-        responses = [
-            ml._get_response(
-                block_or_step=block_or_step,
-                name=self.name,
-                add_0=True,
-                istress=istress,
-            )
-        ]
+        **kwargs,
+    ) -> DataFrame:
+        """Compute the block and step response.
+
+        Parameters
+        ----------
+        block_or_step: {"block", "step"}
+            String with "step" or "block".
+        p : array_like, optional
+            array_like object with the values as floats representing the model
+            parameters. See Model.get_parameters() for more info if parameters is None.
+        dt: float, optional
+            timestep for the response function.
+        istress: int, optional
+            When multiple stresses are present in a stressmodel, this keyword can be
+            used to obtain the response to an individual stress.
+        kwargs: dict, optional
+            Additional keyword arguments passed to rfunc.step() or rfunc.block().
+
+        Returns
+        -------
+        pandas.DataFrame | None
+            DataFrame with the response indexed by time and the stress name as column.
+            Returns None if the stressmodel has no response function (e.g., LinearTrend).
+
+        """
+        if self.rfunc is None:
+            return None
+
+        if block_or_step == "step":
+            resp_fcn = self.rfunc.step
+        else:
+            resp_fcn = self.rfunc.block
+
+        if istress is None or istress == "all":
+            istress = 0
+
+        response = resp_fcn(p=p, dt=dt, **kwargs)
+
+        # Make a DataFrame
+        responses = DataFrame(data=response, columns=[self.stress.name])
         return responses
 
     def _set_model(self, model: Model) -> None:
@@ -758,6 +791,45 @@ class StepModel(StressModelBase):
             name=self.name,
         )
         return h
+
+    def _get_responses(
+        self,
+        block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
+        istress: int | None = None,
+        **kwargs,
+    ) -> DataFrame:
+        """Compute the block or step response for the step model.
+
+        Parameters
+        ----------
+        block_or_step : {"block", "step"}, optional
+            String indicating whether to compute the block or step response.
+            Default is "step".
+        p : array_like, optional
+            Array with parameter values. The last parameter (tstart) is excluded when
+            computing the response. See Model.get_parameters() for more info.
+        dt : float, optional
+            Timestep for the response function.
+        istress : int, optional
+            Not used for StepModel. Kept for API consistency.
+        kwargs : dict
+            Additional keyword arguments passed to rfunc.step() or rfunc.block().
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with the response indexed by time and the stressmodel name as
+            column.
+
+        """
+        resp_fcn = self.rfunc.step if block_or_step == "step" else self.rfunc.block
+
+        response = resp_fcn(p=p[:-1], dt=dt, **kwargs)
+        response = DataFrame(data=response, columns=[self.name])
+
+        return response
 
     def to_dict(self, series: bool = False) -> dict:
         """Export the stressmodel to a dictionary.
@@ -1548,19 +1620,66 @@ class WellModel(StressModelBase):
 
     def _get_responses(
         self,
-        ml: Model,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
-    ) -> list[Series]:
-        if istress is None:
+        **kwargs,
+    ) -> DataFrame:
+        """Compute the block or step response for each well stress.
+
+        The response function is scaled per well using the distance between the well
+        and the observation point.
+
+        Parameters
+        ----------
+        block_or_step : {"block", "step"}, optional
+            String indicating whether to compute the block or step response.
+            Default is "step".
+        p : array_like
+            Array with parameter values. See Model.get_parameters() for more info.
+        dt : float
+            Timestep for the response function.
+        istress : int or None, optional
+            Index of the stress to compute the response for. If None or "all",
+            responses for all stresses are computed. Default is None.
+        kwargs : dict
+            Additional keyword arguments passed to rfunc.step() or rfunc.block().
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with the responses indexed by time, with one column per well.
+
+        """
+        if block_or_step == "step":
+            resp_fcn = self.rfunc.step
+        else:
+            resp_fcn = self.rfunc.block
+
+        if istress is None or istress == "all":
             istress = list(range(len(self.stresses)))
         else:
             istress = [istress]
+
+        distances = self.get_distances(istress=istress).values
+        p_with_r = np.concatenate(
+            [np.tile(p, (distances.size, 1)), distances[:, np.newaxis]],
+            axis=1,
+            dtype=float,
+        )
+
+        p = np.asarray(p_with_r, dtype=float)
+
         responses = []
-        for i in istress:
-            s = super()._get_responses(ml=ml, block_or_step=block_or_step, istress=i)[0]
-            s.name = self.stresses[i].name
-            responses.append(s)
+        names = []
+        for ip, i in enumerate(istress):
+            response = resp_fcn(p=p[ip], dt=dt, **kwargs)
+            names.append(self.stresses[i].name)
+            responses.append(response)
+
+        responses = DataFrame(data=responses, index=names).T
+
         return responses
 
     def dump_stress(self, series: bool = True) -> list:
@@ -1807,7 +1926,10 @@ class RechargeModel(StressModelBase):
         # value of the annual sums is smaller than 12 (m), the highest annual
         # precipitation in the world, then the precipitation is very likely in m/d
         # and not in mm/d. In this case a warning is given for nonlinear models.
-        if self.prec.series.resample("YE").sum().max() < 12:
+        if (
+            not isinstance(self.recharge, Linear)
+            and self.prec.series.resample("YE").sum().max() < 12
+        ):
             msg = (
                 "The maximum annual precipitation is smaller than 12 m. Please "
                 "double-check if the stresses are in mm/d and not in m/d."
@@ -2213,30 +2335,69 @@ class RechargeModel(StressModelBase):
 
     def _get_responses(
         self,
-        ml: Model,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
-    ) -> list[Series]:
-        if isinstance(self.recharge, Linear):
-            if istress is None:
-                istress = list(range(len(self.stresses)))
-            else:
-                istress = [istress]
-            responses = []
-            for i in istress:
-                response = ml._get_response(
-                    block_or_step=block_or_step,
-                    name=self.name,
-                    add_0=True,
-                    istress=i,
-                )
-                response.name = self.stresses[i].name
-                responses.append(response)
-            return responses
+    ) -> DataFrame:
+        """Compute the block or step response for the recharge model.
+
+        For Linear recharge, individual responses for precipitation and evaporation
+        can be returned when ``istress`` is specified.
+
+        Parameters
+        ----------
+        block_or_step : {"block", "step"}, optional
+            String indicating whether to compute the block or step response.
+            Default is "step".
+        p : array_like
+            Array with parameter values. See Model.get_parameters() for more info.
+        dt : float
+            Timestep for the response function.
+        istress : int or None, optional
+            Index of the stress to compute the response for. If None, a single
+            combined response is returned. If "all" or a list index, individual
+            per-stress responses are returned (only supported for Linear recharge).
+            Default is None.
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with the responses indexed by time, with one column per stress
+            (or a single column for non-Linear recharge models).
+
+        """
+        if block_or_step == "step":
+            resp_fcn = self.rfunc.step
         else:
-            return super()._get_responses(
-                ml, block_or_step=block_or_step, istress=istress
-            )
+            resp_fcn = self.rfunc.block
+
+        if isinstance(self.recharge, Linear) and istress is not None:
+            if istress == "all":
+                istress = list(range(len(self.stresses)))
+            elif not isinstance(istress, list):
+                istress = [istress]
+
+            responses = []
+            names = []
+            for i in istress:
+                # Figure out the parameters
+                if i == 0:
+                    pnew = p[:-1]
+                elif i == 1:
+                    pnew = p.copy()
+                    pnew[0] *= p[-1]
+                    pnew = pnew[:-1]
+
+                response = resp_fcn(p=pnew, dt=dt)
+                names.append(self.stresses[i].name)
+                responses.append(response)
+        else:
+            responses = [resp_fcn(p=p[: self.rfunc.nparam], dt=dt)]
+            names = [self.name]
+
+        responses = DataFrame(data=responses, index=names).T
+        return responses
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
@@ -2499,29 +2660,49 @@ class TarsoModel(RechargeModel):
 
     def _get_responses(
         self,
-        ml: Model,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
-    ) -> list[Series]:
-        dt = _get_dt(ml.settings["freq"])
-        parnames = list(self.rfunc.get_init_parameters(self.name).index)
-        response0 = getattr(self.rfunc, block_or_step)(
-            p=ml.parameters.loc[[f"{x}0" for x in parnames], "optimal"].values,
-            dt=dt,
-        )
-        response1 = getattr(self.rfunc, block_or_step)(
-            p=ml.parameters.loc[[f"{x}1" for x in parnames], "optimal"].values,
-            dt=dt,
-        )
-        responses = [
-            Series(
-                np.insert(response, 0, 0.0),
-                index=np.linspace(0, response.size * dt, response.size + 1),
-                name=f"{self.name}_rf{i}",
-            )
-            for i, response in enumerate([response0, response1])
-        ]
-        return responses
+    ) -> DataFrame | Series:
+        """Compute the block or step responses for both Tarso response functions.
+
+        Parameters
+        ----------
+        block_or_step : {"block", "step"}, optional
+            String indicating whether to compute the block or step response.
+            Default is "step".
+        p : array_like
+            Array with parameter values ``[A0, a0, d0, A1, a1, d1, delt]``.
+            See Model.get_parameters() for more info.
+        dt : float
+            Timestep for the response function.
+        istress : int or None, optional
+            Index of the response function to return (0 or 1). If None or "all",
+            both responses are returned. Default is None.
+
+        Returns
+        -------
+        pandas.DataFrame or pandas.Series
+            DataFrame with two columns (``{name}_rf0``, ``{name}_rf1``) when
+            ``istress`` is None or "all", or a Series for a single index.
+
+        """
+        A0, a0, _, A1, a1, _, _ = p
+        resp_fcn = getattr(self.rfunc, block_or_step)
+
+        response0 = resp_fcn(p=[A0, a0], dt=dt)
+        response1 = resp_fcn(p=[A1, a1], dt=dt)
+
+        responses = DataFrame(
+            data=[response0, response1],
+            index=[f"{self.name}_rf0", f"{self.name}_rf1"],
+        ).T
+
+        if istress is None or istress == "all":
+            return responses
+        else:
+            return responses.iloc[:, istress].squeeze()
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
@@ -2779,38 +2960,61 @@ class ChangeModel(StressModelBase):
 
     def _get_responses(
         self,
-        ml: Model,
         block_or_step: Literal["block", "step"] = "step",
+        p: ArrayLike | None = None,
+        dt: float | None = None,
         istress: int | None = None,
-    ) -> list[Series]:
-        dt = _get_dt(ml.settings["freq"])
-        parnames0 = [
-            x.split("_") for x in list(self.rfunc1.get_init_parameters(self.name).index)
-        ]
+    ) -> DataFrame | Series:
+        """Compute the block or step responses for both response functions.
+
+        Parameters
+        ----------
+        block_or_step : {"block", "step"}, optional
+            String indicating whether to compute the block or step response.
+            Default is "step".
+        p : array_like
+            Array with parameter values for both response functions concatenated.
+            See Model.get_parameters() for more info.
+        dt : float
+            Timestep for the response functions.
+        istress : int or None, optional
+            Column index (0 or 1) of the response to return. If None or "all",
+            both responses are returned. Default is None.
+
+        Returns
+        -------
+        pandas.DataFrame or pandas.Series
+            DataFrame with two columns (``{name}_rf0``, ``{name}_rf1``) when
+            ``istress`` is None or "all", or a Series for a single index.
+
+        """
         response0 = getattr(self.rfunc1, block_or_step)(
-            p=ml.parameters.loc[
-                [f"{x[0]}_1_{x[1]}" for x in parnames0], "optimal"
-            ].values,
+            p=p[: self.rfunc1.nparam],
             dt=dt,
         )
-        parnames1 = [
-            x.split("_") for x in list(self.rfunc2.get_init_parameters(self.name).index)
-        ]
         response1 = getattr(self.rfunc2, block_or_step)(
-            p=ml.parameters.loc[
-                [f"{x[0]}_2_{x[1]}" for x in parnames1], "optimal"
-            ].values,
+            p=p[self.rfunc1.nparam : self.rfunc1.nparam + self.rfunc2.nparam],
             dt=dt,
         )
-        responses = [
-            Series(
-                np.insert(response, 0, 0.0),
-                index=np.linspace(0, response.size * dt, response.size + 1),
-                name=f"{self.name}_rf{i}",
+        if len(response0) > len(response1):
+            response1 = np.append(
+                response1, np.full(len(response0) - len(response1), np.nan)
             )
-            for i, response in enumerate([response0, response1])
-        ]
-        return responses
+        elif len(response1) > len(response0):
+            response0 = np.append(
+                response0, np.full(len(response1) - len(response0), np.nan)
+            )
+        else:
+            pass
+        responses = DataFrame(
+            data=[response0, response1],
+            index=[f"{self.name}_rf0", f"{self.name}_rf1"],
+        ).T
+
+        if istress is None or istress == "all":
+            return responses
+        else:
+            return responses.iloc[:, istress]
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
