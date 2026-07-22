@@ -18,7 +18,7 @@ class TestOptionsAPI:
 
         assert options.cache is False
         assert options.numba is True
-        assert options.parallel is False
+        assert options.parallel is True
 
     def test_attribute_style_set(self):
         """Test attribute-style access for setting values."""
@@ -89,7 +89,7 @@ class TestGlobalSettings:
 
         assert options.cache is False
         assert options.numba is True
-        assert options.parallel is False
+        assert options.parallel is True
 
     def test_options_mutability(self):
         """Test that options can be modified."""
