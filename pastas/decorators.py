@@ -335,8 +335,11 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
             else:
                 from numba import njit
 
-                njit_partial = partial(njit, parallel=options.parallel)
-                return njit_partial(f, **kwargs)
+                local_kwargs = kwargs.copy()
+                if "parallel" in kwargs:
+                    local_kwargs["parallel"] = options.parallel
+                return njit(f, **local_kwargs)
+
         except ImportError:
             return f
 

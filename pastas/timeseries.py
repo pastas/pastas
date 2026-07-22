@@ -90,9 +90,6 @@ settings = {
     ),
 }
 
-# Alias used internally to avoid shadowing with the TimeSeries __init__ argument.
-timeseries_settings = settings
-
 
 class TimeSeries:
     """Class that deals with all user-provided time series.
@@ -172,6 +169,8 @@ class TimeSeries:
         For the individual options for the different settings.
     """
 
+    _timeseries_settings = settings
+
     def __init__(
         self,
         series: Series,
@@ -231,17 +230,17 @@ class TimeSeries:
         # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in timeseries_settings.keys():
-                    settings: StressSettingsDict | OseriesSettingsDict = timeseries_settings[
-                        settings
-                    ]
+                if settings in self._timeseries_settings.keys():
+                    settings: StressSettingsDict | OseriesSettingsDict = (
+                        self._timeseries_settings[settings]
+                    )
                 else:
                     msg = (
                         "Settings shortcut code '%s' is not in the timeseries.settings "
                         "dictionary. Please choose from %s.",
                     )
 
-                    raise KeyError(msg, settings, timeseries_settings.keys())
+                    raise KeyError(msg, settings, self._timeseries_settings.keys())
             self._update_settings(**settings)
 
         # Make sure we have a workable Pandas Series, depends on type of time series

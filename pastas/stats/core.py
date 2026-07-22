@@ -330,7 +330,7 @@ def _preprocess(
     return x, t, dt_mu
 
 
-@njit(nogil=True, cache=True)
+@njit(parallel=True, nogil=True, cache=True)  # parallel is controlled by ps.options
 def _compute_ccf_rectangle(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -366,7 +366,7 @@ def _compute_ccf_rectangle(
     return c, b
 
 
-@njit(nogil=True, cache=True)
+@njit(parallel=True, nogil=True, cache=True)  # parallel is controlled by ps.options
 def _compute_ccf_gaussian(
     lags: ArrayLike,
     t_x: ArrayLike,
