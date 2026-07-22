@@ -1826,7 +1826,7 @@ class Model:
         p: ArrayLike | None = None,
         dt: float | None = None,
         add_0: bool = False,
-        istress: int | None = None,
+        istress: int | None | Literal["all"] = None,
         **kwargs,
     ) -> Series | None:
         """Compute the block and step response.
@@ -1846,7 +1846,9 @@ class Model:
             Add a zero at t=0.
         istress: int, optional
             When multiple stresses are present in a stressmodel, this keyword can be
-            used to obtain the response to an individual stress.
+            used to obtain the response to an individual stress (an int for response to
+            the n-th stress in sm.stresses) or all stresses ("all"). If None, the default
+            for the stressmodel is returned, which is stressmodel dependent.
         kwargs: dict: passed to rfunc.step() or rfunc.block()
 
         Returns
@@ -1854,38 +1856,43 @@ class Model:
         response: pandas.Series or None
             Pandas.Series with the response, None if not present.
         """
-        rfunc = self.stressmodels[name].rfunc
-        if rfunc is None:
-            logger.warning("Stressmodel %s has no rfunc.", name)
-            return None
-        else:
-            block_or_step = getattr(rfunc, block_or_step)
+        sm = self.stressmodels[name]
 
-        p = self.get_parameters(name)[: rfunc.nparam] if p is None else p
+        if p is None:
+            p = self.get_parameters(name=name)
 
         dt = _get_dt(self.settings["freq"]) if dt is None else dt
 
-        if istress is not None and self.stressmodels[name].nsplit > 1:
-            p = self.stressmodels[name].get_parameters(model=self, istress=istress)
+        response = sm._get_responses(
+            block_or_step=block_or_step, p=p, dt=dt, istress=istress, **kwargs
+        )
 
-        response = block_or_step(p, dt, **kwargs)
+        if response is None:
+            return None
+
+        response.index = response.index + 1
 
         if add_0:
+            response.loc[0] = 0.0
+            response = response.sort_index()
+
             if isinstance(dt, np.ndarray):
                 t = dt
             else:
-                t = np.linspace(0, response.size * dt, response.size + 1)
-            response = np.insert(response, 0, 0.0)
+                t = np.linspace(0, response.index.size * dt, response.index.size)
         else:
             if isinstance(dt, np.ndarray):
                 t = dt
             else:
-                t = np.linspace(dt, response.size * dt, response.size)
+                t = np.linspace(dt, response.index.size * dt, response.index.size)
 
-        response = Series(response, index=t, name=name)
+        response.index = t
         response.index.name = "Time [days]"
 
-        return response
+        if isinstance(response, DataFrame):
+            return response.squeeze(axis=1)
+        else:
+            return response
 
     @get_stressmodel
     def get_block_response(
@@ -1894,6 +1901,7 @@ class Model:
         p: ArrayLike | None = None,
         add_0: bool = False,
         dt: float | None = None,
+        istress=None,
         **kwargs,
     ) -> Series | None:
         """Obtain the block response for a stressmodel.
@@ -1921,7 +1929,13 @@ class Model:
             frequency that is present in the model.settings.
         """
         return self._get_response(
-            block_or_step="block", name=name, dt=dt, p=p, add_0=add_0, **kwargs
+            block_or_step="block",
+            name=name,
+            dt=dt,
+            p=p,
+            add_0=add_0,
+            istress=istress,
+            **kwargs,
         )
 
     @get_stressmodel
@@ -1931,6 +1945,7 @@ class Model:
         p: ArrayLike | None = None,
         add_0: bool = False,
         dt: float | None = None,
+        istress=None,
         **kwargs,
     ) -> Series | None:
         """Obtain the step response for a stressmodel.
@@ -1958,7 +1973,13 @@ class Model:
             that is present in the model.settings.
         """
         return self._get_response(
-            block_or_step="step", name=name, dt=dt, p=p, add_0=add_0, **kwargs
+            block_or_step="step",
+            name=name,
+            dt=dt,
+            p=p,
+            add_0=add_0,
+            istress=istress,
+            **kwargs,
         )
 
     @get_stressmodel

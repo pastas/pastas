@@ -1125,7 +1125,6 @@ class Lmfit(LeastSquaresBase):
 
     def solve(
         self,
-        noise: bool = True,
         weights: Series | None = None,
         **kwargs,
     ) -> tuple[bool, DataFrame]:
@@ -1135,6 +1134,8 @@ class Lmfit(LeastSquaresBase):
         for k in init_kwargs:
             logger.info(f"Setting {k} to {kwargs[k]} for LmfitSolve solver.")
             setattr(self, k, kwargs.pop(k))
+
+        noise = self.ml.noisemodel is not None
 
         # Deal with the parameters
         parameters = lmfit.Parameters()

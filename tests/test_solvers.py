@@ -9,7 +9,6 @@ import pytest
 from scipy.optimize._numdiff import approx_derivative
 
 import pastas as ps
-from pastas.solver import EmceeSolve, LmfitSolve
 from pastas.solver.objective_function import misfit
 
 
@@ -113,7 +112,7 @@ class TestOptionalSolvers:
     def test_lmfit_solve_init(self, ml_recharge: ps.Model) -> None:
         """Test LmfitSolve initialization."""
         try:
-            solver = LmfitSolve(model=ml_recharge)
+            solver = ps.solver.Lmfit(model=ml_recharge)
             assert solver._name == "Lmfit"
         except ImportError:
             pytest.skip("lmfit not installed")
@@ -121,7 +120,7 @@ class TestOptionalSolvers:
     def test_emcee_solve_init(self, ml_recharge: ps.Model) -> None:
         """Test EmceeSolve initialization."""
         try:
-            solver = EmceeSolve(model=ml_recharge)
+            solver = ps.solver.Emcee(model=ml_recharge)
             assert solver._name == "Emcee"
             assert solver.nwalkers == 20
             assert solver.progress_bar is True
@@ -131,7 +130,7 @@ class TestOptionalSolvers:
     def test_emcee_to_dict_warning(self, ml_recharge: ps.Model, caplog) -> None:
         """Test that EmceeSolve.to_dict caplogs a logger.warning."""
         try:
-            solver = EmceeSolve(model=ml_recharge)
+            solver = ps.solver.Emcee(model=ml_recharge)
             with caplog.at_level(logging.WARNING, logger="pastas.solver.mcmc"):
                 solver.to_dict()
                 assert (
