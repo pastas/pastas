@@ -34,7 +34,7 @@ from .utils import validate_name
 
 logger = getLogger(__name__)
 
-SETTINGS = {
+settings = {
     "oseries": OseriesSettingsDict(
         fill_nan="drop",
         sample_down="drop",
@@ -90,6 +90,9 @@ SETTINGS = {
     ),
 }
 
+# Alias used internally to avoid shadowing with the TimeSeries __init__ argument.
+timeseries_settings = settings
+
 
 class TimeSeries:
     """Class that deals with all user-provided time series.
@@ -103,7 +106,7 @@ class TimeSeries:
         to derive the name from the series.
     settings: str or dict, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dictionary (defined in ps.timeseries.SETTINGS), or a dictionary with
+        settings dictionary (defined in ps.timeseries.settings), or a dictionary with
         the settings to apply. For more information refer to Time series settings
         section below.
     metadata: dict, optional
@@ -161,7 +164,7 @@ class TimeSeries:
     To obtain the predefined TimeSeries settings, you can run the following line of
     code:
 
-    >>> ps.timeseries.SETTINGS
+    >>> ps.timeseries.settings
 
     See Also
     --------
@@ -228,17 +231,17 @@ class TimeSeries:
         # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in SETTINGS.keys():
-                    settings: StressSettingsDict | OseriesSettingsDict = SETTINGS[
+                if settings in timeseries_settings.keys():
+                    settings: StressSettingsDict | OseriesSettingsDict = timeseries_settings[
                         settings
                     ]
                 else:
                     msg = (
-                        "Settings shortcut code '%s' is not in the timeseries.SETTINGS "
+                        "Settings shortcut code '%s' is not in the timeseries.settings "
                         "dictionary. Please choose from %s.",
                     )
 
-                    raise KeyError(msg, settings, SETTINGS.keys())
+                    raise KeyError(msg, settings, timeseries_settings.keys())
             self._update_settings(**settings)
 
         # Make sure we have a workable Pandas Series, depends on type of time series
