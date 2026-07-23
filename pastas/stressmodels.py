@@ -2523,13 +2523,7 @@ class TarsoModel(RechargeModel):
 
         if self.model is not None:
             self.model._add_stressmodel(self)
-            if self.model.constant is not None:
-                msg = (
-                    "The TarsoModel is additive and the model has a constant. This will "
-                    "result in double-counting the base level. Please remove the constant "
-                    "from the model."
-                )
-                logger.warning(msg)
+            self._check_stressmodel_compatibility(self.model)
 
     @property
     def nsplit(self) -> int:
