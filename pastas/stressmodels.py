@@ -2488,24 +2488,35 @@ class TarsoModel(RechargeModel):
         dmax: float | None = None,
         **kwargs,
     ) -> None:
-        if oseries is not None:
-            if dmin is not None or dmax is not None:
-                msg = "Please specify either oseries or dmin and dmax"
-                raise ValueError(msg)
-            dmin = oseries.min()
-            dmax = oseries.max()
-        elif dmin is None or dmax is None:
-            msg = "Please specify either oseries or dmin and dmax"
-            raise ValueError(msg)
         if rfunc is None:
             rfunc = Exponential()
         if not isinstance(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
-        self.dmin = dmin
-        self.dmax = dmax
+
+        # Determine dmin and dmax from arguments, model.oseries, or oseries
+        if dmin is not None and dmax is not None:
+            self.dmin = float(dmin)
+            self.dmax = float(dmax)
+        else:
+            series = model.oseries.series if model is not None else oseries
+            if series is not None:
+                self.dmin = float(series.min())
+                self.dmax = float(series.max())
+            else:
+                msg = "Either model, oseries or both dmin and dmax must be provided to initialize the TarsoModel."
+                logger.error(msg)
+                raise ValueError(msg)
+
         super().__init__(
-            model=model, prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs
+            model=model,
+            prec=prec,
+            evap=evap,
+            rfunc=rfunc,
+            name=name,
+            recharge=kwargs.pop("recharge", Linear()),
+            **kwargs,
         )
+
         if self.model is not None:
             self.model._add_stressmodel(self)
 
