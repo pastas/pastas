@@ -8,16 +8,12 @@ Examples
 --------
 A noise model can be added to a Pastas model.::
 
-    n = ps.ArmaNoiseModel()
-    ml.add_noisemodel(n)
+    n = ps.ArmaNoiseModel(model=ml)
 
 Or delete the noise model from the model::
 
     ml.del_noisemodel()
 
-See Also
---------
-pastas.model.Model.add_noisemodel
 """
 
 from abc import ABC, abstractmethod
@@ -26,10 +22,11 @@ from logging import getLogger
 import numpy as np
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 
-from pastas.typing import ArrayLike
+from pastas.typing import ArrayLike, Model
 
 from .decorators import (
     PastasDeprecationWarning,
+    check_argument_model,
     njit,
     set_parameter,
 )
@@ -42,7 +39,8 @@ __all__ = ["ArNoiseModel", "ArmaNoiseModel"]
 class NoiseModelBase(ABC):
     """Base class for noise models."""
 
-    def __init__(self, name: str, norm: bool | None = None) -> None:
+    def __init__(self, model: Model, name: str, norm: bool | None = None) -> None:
+        self.model = model
         self.name = name
         self.norm = norm
         self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
@@ -104,6 +102,10 @@ class NoiseModelBase(ABC):
         """
         self.parameters.at[name, "vary"] = value
 
+    def _set_model(self, model: Model) -> None:
+        """Set the Pastas Model for the noise model."""
+        self.model = model
+
     def to_dict(self) -> dict:
         """Return a dict to store the noise model."""
         return {"class": self._name, "norm": self.norm}
@@ -118,6 +120,8 @@ class ArNoiseModel(NoiseModelBase):
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the noise model is added.
     name: str, optional
         Name of the noise model. Default is "noise".
     norm: boolean, optional
@@ -144,9 +148,12 @@ class ArNoiseModel(NoiseModelBase):
     optional.
     """
 
-    def __init__(self, name: str = "noise", norm: bool = True) -> None:
-        super().__init__(name=name, norm=norm)
+    @check_argument_model
+    def __init__(self, model: Model, name: str = "noise", norm: bool = True) -> None:
+        super().__init__(model=model, name=name, norm=norm)
         self.set_init_parameters()
+        if model is not None:
+            self.model._add_noisemodel(self)
 
     def set_init_parameters(self, oseries: Series | None = None) -> None:
         """Set initial parameters for the noise model.
@@ -318,9 +325,11 @@ class ArmaNoiseModel(NoiseModelBase):
     irregular time steps yet.
     """
 
-    def __init__(self, name: str = "noise", norm: bool = True) -> None:
-        super().__init__(name=name, norm=norm)
+    @check_argument_model
+    def __init__(self, model: Model, name: str = "noise", norm: bool = True) -> None:
+        super().__init__(model=model, name=name, norm=norm)
         self.set_init_parameters()
+        self.model._add_noisemodel(self)
 
     @property
     def nparam(self) -> int:

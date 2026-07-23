@@ -134,7 +134,7 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         split_contributions: bool = False,
-        all_responses: bool = False,
+        all_responses: bool | None = None,
         adjust_height: bool = True,
         return_warmup: bool = False,
         add_ylabels: bool = True,
@@ -159,9 +159,10 @@ class Plotting:
         split_contributions: bool, optional
             Split the contributions in multiple stresses when possible. Default is
             False.
-        all_responses: bool, optional
+        all_responses: bool | None, optional
             Plot all responses if True. If False, only the first response per
-            contribution is plotted. Default is False.
+            contribution is plotted. Default is None, which means the behavior
+            is determined by the individual stress model defaults.
         adjust_height: bool, optional
             Adjust the height of the graphs, so that the vertical scale of all the
             subplots on the left is equal. Default is True.
@@ -349,7 +350,9 @@ class Plotting:
                 block_or_step=block_or_step,
                 ax=axd[rf_key],
                 istress=(
-                    istress if split_contributions else (None if all_responses else 0)
+                    istress
+                    if split_contributions
+                    else ("all" if all_responses else None)
                 ),
             )
 
@@ -384,7 +387,7 @@ class Plotting:
                 elif k.startswith("con_"):
                     axd[k].set_ylabel("Rise")
                 elif k.startswith("rf_"):
-                    axd[k].set_ylabel("[unit head]/[unit stress]")
+                    axd[k].set_ylabel("[unit head]/\n[unit stress]")
 
         _ = self._plot_parameters_table(ax=axd["tab"], stderr=stderr)
 
@@ -413,33 +416,36 @@ class Plotting:
         istress: int | None = None,
     ):
         """Plot the response of a Stressmodel in the results-plot."""
-        responses = sm._get_responses(
-            self.ml, block_or_step=block_or_step, istress=istress
+        responses = self.ml._get_response(
+            block_or_step=block_or_step, name=sm.name, istress=istress
         )
-        responses = [x for x in responses if x is not None]
-        if responses:
+
+        if responses is not None:
+            if not isinstance(responses, DataFrame):
+                responses = responses.to_frame()
             # Keep the first cycle color for a single response, but reserve it
             # when plotting multiple responses.
-            if len(responses) > 1:
+            if responses.columns.size > 1:
                 ax._get_lines.get_next_color()
 
-            xlim_left = min(
-                [
-                    x.index[0] if block_or_step == "step" else x.index[1]
-                    for x in responses
-                    if x is not None
-                ]
+            xlim_left = (
+                responses.index[0] if block_or_step == "step" else responses.index[1]
             )
-            xlim_right = max([x.index[-1] for x in responses])
-            for i, response in enumerate(responses):
+            xlim_right = responses.index[-1]
+            if xlim_left == xlim_right:
+                xlim_left = responses.index[0]
+                xlim_right = responses.index[-1] + 1
+
+            for i, name in enumerate(responses.columns):
+                response = responses.loc[:, name]
                 if i == 0 and block_or_step == "block":
                     ax.set_xscale("log")
                     ax.xaxis.set_major_formatter(LogFormatter())
 
-                if len(responses) == 1:
+                if responses.columns.size == 1:
                     label = f"{block_or_step.capitalize()} response"
                 else:
-                    label = response.name
+                    label = name
                 ax.plot(
                     response.index,
                     response.values,
@@ -793,6 +799,7 @@ class Plotting:
         stressmodels: list[str] | None = None,
         ax: Axes | None = None,
         legend: bool = True,
+        all_responses: bool = True,
         **kwargs,
     ) -> Axes:
         """Plot the block response for a specific stressmodels.
@@ -807,6 +814,8 @@ class Plotting:
             Tuple with the height and width of the figure in inches.
         legend: bool, optional
             Boolean to determine to show the legend. Default is True.
+        all_responses: bool, optional
+            Optional to show all the step responses from the stressmodel(s)
 
         Returns
         -------
@@ -823,9 +832,11 @@ class Plotting:
 
         legend = []
 
+        istress = "all" if all_responses else None
+
         for name in stressmodels:
             if hasattr(self.ml.stressmodels[name], "rfunc"):
-                self.ml.get_block_response(name).plot(ax=ax)
+                self.ml.get_block_response(name, istress=istress).plot(ax=ax)
                 legend.append(name)
             else:
                 logger.warning("Stressmodel %s not in stressmodels list.", name)
@@ -842,6 +853,7 @@ class Plotting:
         ax: Axes | None = None,
         figsize: tuple[float, float] | None = None,
         legend: bool = True,
+        all_responses: bool = True,
         **kwargs,
     ) -> Axes:
         """Plot the step response for a specific stressmodels.
@@ -856,6 +868,8 @@ class Plotting:
             Tuple with the height and width of the figure in inches.
         legend: bool, optional
             Boolean to determine to show the legend. Default is True.
+        all_responses: bool, optional
+            Optional to show all the step responses from the stressmodel(s).
 
         Returns
         -------
@@ -870,9 +884,11 @@ class Plotting:
 
         legend = []
 
+        istress = "all" if all_responses else None
+
         for name in stressmodels:
             if hasattr(self.ml.stressmodels[name], "rfunc"):
-                self.ml.get_step_response(name).plot(ax=ax)
+                self.ml.get_step_response(name, istress=istress).plot(ax=ax)
                 legend.append(name)
             else:
                 logger.warning("Stressmodel %s not in stressmodels list.", name)
@@ -1095,24 +1111,18 @@ class Plotting:
                 elif not isinstance(stackcolors, dict):
                     raise TypeError("stackcolors must be None, list, or dict.")
                 if sm.nsplit > 1:
-                    axd[f"rf_{sm_name}"].lines[
-                        0
-                    ].remove()  # remove step response for r=1 m
                     for istress in range(len(sm.stresses)):
                         h = self.ml.get_contribution(
                             sm_name, istress=istress, tmin=tmin, tmax=tmax
                         )
-                        name = sm.stresses[istress].name
-                        name = sm if name is None else name
+                        name = (
+                            sm if (name := sm.stresses[istress].name) is None else name
+                        )
                         contributions[name] = h
 
-                        # plot step responses for each well, scaled with distance
-                        p = sm.get_parameters(model=self.ml, istress=istress)
-                        step = self.ml.get_step_response(sm_name, p=p)
-                        axd[f"rf_{sm_name}"].plot(
-                            step.index, step, c=stackcolors[name], label=name
-                        )
-                        axd[f"rf_{sm_name}"].relim()
+                        axd[f"rf_{sm_name}"].lines[istress].set_color(
+                            stackcolors[name]
+                        )  # change color of existing line
                 else:
                     contributions[sm_name] = self.ml.get_contribution(
                         sm_name, tmin=tmin, tmax=tmax

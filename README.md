@@ -32,7 +32,7 @@ analysis tools.
 -   A list of publications that use Pastas is available in a
     [dedicated Zotero group](https://www.zotero.org/groups/4846685/pastas/items/32FS5PTW/item-list)
 -   View and edit the example notebooks of Pastas in
-    [GitHub Codespaces](https://codespaces.new/pastas/pastas?quickstart=1))
+    [GitHub Codespaces](https://codespaces.new/pastas/pastas?quickstart=1)
 
 ## Get in Touch
 
@@ -47,16 +47,21 @@ analysis tools.
 
 ## Quick installation guide
 
-To install Pastas, a working version of Python has to be installed on your computer.
-We recommend using the [Anaconda Distribution](https://www.continuum.io/downloads) as it
-includes most of the python package dependencies and the Jupyter Notebook software to
-run the notebooks. However, you are free to install any Python distribution you want.
+To install Pastas, a working version of Python has to be installed on
+your computer. We recommend using [uv](https://docs.astral.sh/uv/) to manage Python
+and your project dependencies. However, you are free to use any Python installation
+method you prefer. The `Anaconda Distribution
+<https://www.anaconda.com/products/distribution>`_ is another popular option.
 
 ### Stable version
 
 To get the latest stable version, use:
 
     pip install pastas
+
+Or with uv:
+
+    uv pip install pastas
 
 ### Update
 

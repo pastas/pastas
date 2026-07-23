@@ -9,6 +9,7 @@ Create a TimeSeries object::
 
 """
 
+from copy import deepcopy
 from logging import getLogger
 from typing import Any, Self
 
@@ -34,7 +35,7 @@ from .utils import validate_name
 
 logger = getLogger(__name__)
 
-SETTINGS = {
+settings = {
     "oseries": OseriesSettingsDict(
         fill_nan="drop",
         sample_down="drop",
@@ -103,7 +104,7 @@ class TimeSeries:
         to derive the name from the series.
     settings: str or dict, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dictionary (defined in ps.timeseries.SETTINGS), or a dictionary with
+        settings dictionary (defined in ps.timeseries.settings), or a dictionary with
         the settings to apply. For more information refer to Time series settings
         section below.
     metadata: dict, optional
@@ -161,13 +162,15 @@ class TimeSeries:
     To obtain the predefined TimeSeries settings, you can run the following line of
     code:
 
-    >>> ps.timeseries.SETTINGS
+    >>> ps.timeseries.settings
 
     See Also
     --------
     pastas.timeseries.TimeSeries.update_series
         For the individual options for the different settings.
     """
+
+    _timeseries_settings = deepcopy(settings)
 
     def __init__(
         self,
@@ -195,7 +198,7 @@ class TimeSeries:
 
         # for pandas 3.0, make sure the unit of the datetime index is in microseconds
         # as this is the default for pandas 3.0 (and therefore used for the simulation)
-        # for pandas 2.x, the unit is allways nanoseconds, and cannot be changed
+        # for pandas 2.x, the unit is always nanoseconds, and cannot be changed
         if hasattr(series.index, "as_unit"):  # pandas >= 3.0
             series.index = series.index.as_unit("us")
 
@@ -228,17 +231,17 @@ class TimeSeries:
         # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in SETTINGS.keys():
-                    settings: StressSettingsDict | OseriesSettingsDict = SETTINGS[
-                        settings
-                    ]
+                if settings in self._timeseries_settings.keys():
+                    settings: StressSettingsDict | OseriesSettingsDict = (
+                        self._timeseries_settings[settings]
+                    )
                 else:
                     msg = (
-                        "Settings shortcut code '%s' is not in the timeseries.SETTINGS "
+                        "Settings shortcut code '%s' is not in the timeseries.settings "
                         "dictionary. Please choose from %s.",
                     )
 
-                    raise KeyError(msg, settings, SETTINGS.keys())
+                    raise KeyError(msg, settings, self._timeseries_settings.keys())
             self._update_settings(**settings)
 
         # Make sure we have a workable Pandas Series, depends on type of time series

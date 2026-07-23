@@ -80,16 +80,25 @@ class TestModelComponents:
     def test_add_stressmodel(self, ml_basic: ps.Model, prec: pd.Series) -> None:
         """Test adding a stress model."""
 
-        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
-        ml_basic.add_stressmodel(sm)
+        sm = ps.StressModel(
+            model=ml_basic,
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="precipitation",
+        )
 
         assert "precipitation" in ml_basic.stressmodels
         assert ml_basic.stressmodels["precipitation"] is sm
 
-    def test_stressmodel_params(self, prec: pd.Series) -> None:
+    def test_stressmodel_params(self, ml_basic: ps.Model, prec: pd.Series) -> None:
         """Test getting stress model parameters."""
 
-        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+        sm = ps.StressModel(
+            model=ml_basic,
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="precipitation",
+        )
 
         assert isinstance(sm.parameters, pd.DataFrame)
         assert (
@@ -130,10 +139,18 @@ class TestModelComponents:
     ) -> None:
         """Test adding multiple stress models at once."""
 
-        sm1 = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
-        sm2 = ps.StressModel(stress=evap, rfunc=ps.Exponential(), name="evaporation")
-
-        ml_basic.add_stressmodel([sm1, sm2])
+        ps.StressModel(
+            model=ml_basic,
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="precipitation",
+        )
+        ps.StressModel(
+            model=ml_basic,
+            stress=evap,
+            rfunc=ps.Exponential(),
+            name="evaporation",
+        )
 
         assert "precipitation" in ml_basic.stressmodels
         assert "evaporation" in ml_basic.stressmodels
@@ -146,17 +163,30 @@ class TestModelComponents:
         first_sm_name = list(ml_solved.stressmodels.keys())[0]
 
         # Create a new stress model with the same name but different response function
-        sm = ps.StressModel(stress=prec, rfunc=ps.Gamma(), name=first_sm_name)
+        ps.StressModel(
+            model=ml_solved,
+            stress=prec,
+            rfunc=ps.Gamma(),
+            name=first_sm_name,
+        )
 
         # Should replace the existing stress model and log a warning
-        ml_solved.add_stressmodel(sm)
-
         # Check that it was replaced with the new one
         assert ml_solved.stressmodels[first_sm_name].rfunc._name == "Gamma"
 
-        # With replace=False, should raise an error
-        with pytest.raises(ValueError):
-            ml_solved.add_stressmodel(sm, replace=False)
+    def test_add_stressmodel_indirectly(
+        self, ml_basic: ps.Model, prec: pd.Series
+    ) -> None:
+        """Test adding a stress model using ml.add_stressmodel(), allowed until pastas 2.3."""
+        sm = ps.StressModel(
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="precipitation",
+        )
+        ml_basic.add_stressmodel(sm)
+
+        assert "precipitation" in ml_basic.stressmodels
+        assert ml_basic.stressmodels["precipitation"] is sm
 
     def test_del_stressmodel(self, ml_solved: ps.Model) -> None:
         """Test deleting a stress model."""
@@ -176,8 +206,7 @@ class TestModelComponents:
         ml_basic.del_constant()
         assert ml_basic.constant is None
 
-        constant = ps.Constant(initial=10.0, name="constant")
-        ml_basic.add_constant(constant)
+        constant = ps.Constant(model=ml_basic, initial=10.0, name="constant")
 
         assert ml_basic.constant is constant
         assert ml_basic.constant.name == "constant"
@@ -189,16 +218,14 @@ class TestModelComponents:
 
     def test_add_transform(self, ml_recharge: ps.Model) -> None:
         """Test adding a transform."""
-        transform = ps.ThresholdTransform()
-        ml_recharge.add_transform(transform)
+        transform = ps.ThresholdTransform(model=ml_recharge)
 
         assert ml_recharge.transform is transform
 
     def test_del_transform(self, ml_recharge: ps.Model) -> None:
         """Test deleting a transform."""
         # First add a transform
-        transform = ps.ThresholdTransform()
-        ml_recharge.add_transform(transform)
+        ps.ThresholdTransform(model=ml_recharge)
 
         # Then delete it
         ml_recharge.del_transform()
@@ -206,16 +233,14 @@ class TestModelComponents:
 
     def test_add_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test adding a noise model."""
-        noise = ps.ArmaNoiseModel()
-        ml_basic.add_noisemodel(noise)
+        noise = ps.ArmaNoiseModel(model=ml_basic)
 
         assert ml_basic.noisemodel is noise
 
     def test_del_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test deleting a noise model."""
         # First add a noise model
-        noise = ps.ArmaNoiseModel()
-        ml_basic.add_noisemodel(noise)
+        ps.ArmaNoiseModel(model=ml_basic)
 
         # Then delete it
         ml_basic.del_noisemodel()
@@ -545,7 +570,7 @@ class TestModelContributions:
         result = method(first_sm_name)
 
         # Check result
-        assert isinstance(result, pd.Series)
+        assert isinstance(result, pd.Series) or isinstance(result, pd.DataFrame)
         if series_name:
             assert result.name == series_name
         if method_name == "get_step_response":
