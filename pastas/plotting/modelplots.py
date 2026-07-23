@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import DataFrame, Series, Timestamp, concat
+from pandas import DataFrame, Series, Timedelta, Timestamp, concat
 
 from pastas.decorators import (
     PastasDeprecationWarning,
@@ -140,6 +140,7 @@ class Plotting:
         add_ylabels: bool = True,
         block_or_step: Literal["block", "step"] = "step",
         stderr: bool = False,
+        max_plot_gap: Timedelta | float = np.inf,
         return_dict: bool = False,
         **kwargs,
     ) -> dict[str, Axes] | list[Axes]:
@@ -173,6 +174,10 @@ class Plotting:
             Plot the block- or step-response on the right. Default is 'step'.
         stderr : bool, optional
             If True the standard error of the parameter values are shown.
+        max_plot_gap: Timedelta | float,
+            Timedelta or float (in days) with the maximum gap in the residuals
+            or noise. If the gap between two consecutive residuals or noise is
+            larger than this value, a gap is inserted in the plot. Default is inf.
         return_dict: bool, optional
             If True, a dictionary with the axes is returned. If False, a list of
             axes is returned. Default is False.
@@ -311,10 +316,12 @@ class Plotting:
         axd["sim"].set_ylim(bottom=ylims["sim"][0], top=ylims["sim"][1])
 
         # plot residuals (and noise if present)
-        _ = plot_series_with_gaps(res, ax=axd["res"], color="k")
+        _ = plot_series_with_gaps(res, ax=axd["res"], color="k", gap=max_plot_gap)
         if self.ml.noisemodel is not None:
             noise = self.ml.noise(tmin=tmin, tmax=tmax)
-            _ = plot_series_with_gaps(noise, ax=axd["res"], color="C0")
+            _ = plot_series_with_gaps(
+                noise, ax=axd["res"], color="C0", gap=max_plot_gap
+            )
         axd["res"].axhline(0.0, color="k", linestyle="--", zorder=0)
         axd["res"].legend(loc=(0, 1), ncol=2, frameon=False)
 
