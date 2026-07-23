@@ -10,6 +10,7 @@ from pandas import DataFrame, Series
 from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 from pastas.typing import ArrayLike, CallBack, Model
 
+from .._options import options
 from .base import SolverBase
 from .likelihood import GaussianLikelihood, GaussianLikelihoodAr1
 from .objective_function import misfit
@@ -43,7 +44,8 @@ class Emcee(SolverBase):
         the MCMC approach. One of the Moves classes from Emcee has to be provided.
         See Emcee documentation for more information.
     parallel: bool, optional
-        Run the sampler in parallel or not.
+        Run the sampler in parallel or not. By default, the parallel option is set
+        to the value of the global Pastas option.
     progress_bar: bool, optional
         Show the progress bar or not. Requires the `tqdm` package to be installed.
     **kwargs, optional
@@ -98,7 +100,7 @@ class Emcee(SolverBase):
         nwalkers: int = 20,
         backend: Any | None = None,
         moves: Any | None = None,
-        parallel: bool = False,
+        parallel: bool | None = None,
         progress_bar: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -120,7 +122,7 @@ class Emcee(SolverBase):
         self.sampler: Any | None = None
         self.backend = backend
         self.moves = moves
-        self.parallel = parallel
+        self.parallel = options.parallel if parallel is None else parallel
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
         self.nsteps: int | None = None

@@ -11,9 +11,8 @@ import numpy as np
 from pandas import DataFrame, DatetimeIndex, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
-from pastas.typing import ArrayLike
-
 from ..decorators import deprecate_args_or_kwargs, njit
+from ..typing import ArrayLike
 
 try:
     from numba import prange
@@ -331,7 +330,7 @@ def _preprocess(
     return x, t, dt_mu
 
 
-@njit(parallel=True, nogil=True, cache=True)
+@njit(parallel=True, nogil=True, cache=True)  # parallel is controlled by ps.options
 def _compute_ccf_rectangle(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -367,7 +366,7 @@ def _compute_ccf_rectangle(
     return c, b
 
 
-@njit(parallel=True, nogil=True, cache=True)
+@njit(parallel=True, nogil=True, cache=True)  # parallel is controlled by ps.options
 def _compute_ccf_gaussian(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -384,6 +383,7 @@ def _compute_ccf_gaussian(
     den1 = -2 * bin_width**2  # denominator 1
     den2 = np.sqrt(2 * np.pi * bin_width)  # denominator 2
     six_den2 = 6 * den2  # six std. dev.
+
     for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
