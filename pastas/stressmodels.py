@@ -2483,7 +2483,6 @@ class TarsoModel(RechargeModel):
         evap: Series,
         rfunc: Exponential | None = None,
         name: str = "tarso",
-        additive: bool = False,
         oseries: Series | None = None,
         dmin: float | None = None,
         dmax: float | None = None,
