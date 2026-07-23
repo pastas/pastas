@@ -73,8 +73,7 @@ ml.plots.results()
 To install Pastas, a working version of Python has to be installed on
 your computer. We recommend using [uv](https://docs.astral.sh/uv/) to manage Python
 and your project dependencies. However, you are free to use any Python installation
-method you prefer. The `Anaconda Distribution
-<https://www.anaconda.com/products/distribution>`_ is another popular option.
+method you prefer. The [Anaconda Distribution](https://www.anaconda.com/products/distribution) is another popular option.
 
 ### Stable version
 
