@@ -2511,7 +2511,6 @@ class TarsoModel(RechargeModel):
 
         self.dmin = float(dmin)
         self.dmax = float(dmax)
-        self.additive = additive
 
         super().__init__(
             model=model,
@@ -2525,14 +2524,13 @@ class TarsoModel(RechargeModel):
 
         if self.model is not None:
             self.model._add_stressmodel(self)
-
-        if not additive and self.model.constant is not None:
-            msg = (
-                "The TarsoModel is additive and the model has a constant. This will "
-                "result in double-counting the base level. Please remove the constant "
-                "from the model."
-            )
-            logger.warning(msg)
+            if self.model.constant is not None:
+                msg = (
+                    "The TarsoModel is additive and the model has a constant. This will "
+                    "result in double-counting the base level. Please remove the constant "
+                    "from the model."
+                )
+                logger.warning(msg)
 
     @property
     def nsplit(self) -> int:
