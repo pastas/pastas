@@ -2480,6 +2480,7 @@ class TarsoModel(RechargeModel):
         evap: Series,
         rfunc: Exponential | None = None,
         name: str = "tarso",
+        additive: bool = False,
         oseries: Series | None = None,
         dmin: float | None = None,
         dmax: float | None = None,
@@ -2507,6 +2508,7 @@ class TarsoModel(RechargeModel):
 
         self.dmin = float(dmin)
         self.dmax = float(dmax)
+        self.additive = additive
 
         super().__init__(
             model=model,
@@ -2521,6 +2523,14 @@ class TarsoModel(RechargeModel):
         if self.model is not None:
             self.model._add_stressmodel(self)
 
+        if not additive and self.model.constant is not None:
+            msg = (
+                "The TarsoModel is additive and the model has a constant. This will "
+                "result in double-counting the base level. Please remove the constant "
+                "from the model."
+            )
+            logger.warning(msg)
+
     @property
     def nsplit(self) -> int:
         """Number of time series the contribution can be split in."""
@@ -2529,7 +2539,20 @@ class TarsoModel(RechargeModel):
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
         # parameters for the recharge-method
-        pr = self.recharge.get_init_parameters(self.name)
+
+        parameters = []
+
+        parameters.append(self.recharge.get_init_parameters(self.name))
+
+        # paramters for the response of the first drainage level
+        p0 = self.rfunc.get_init_parameters(self.name)
+        p0.index = [f"{x}0" for x in p0.index]
+        parameters.append(p0)
+
+        # parameters for the response of the second drainage level
+        p1 = self.rfunc.get_init_parameters(self.name)
+        p1.index = [f"{x}1" for x in p1.index]
+        parameters.append(p1)
 
         # the upper drainage level
         tarso_d = (
@@ -2546,17 +2569,23 @@ class TarsoModel(RechargeModel):
             .to_frame()
             .T
         )
+        parameters.append(tarso_d)
 
-        # paramters for the response of the first drainage level
-        p0 = self.rfunc.get_init_parameters(self.name)
-        p0.index = [f"{x}0" for x in p0.index]
-
-        # parameters for the response of the second drainage level
-        p1 = self.rfunc.get_init_parameters(self.name)
-        p1.index = [f"{x}1" for x in p1.index]
+        if not self.additive:
+            constant_d = Series(
+                {
+                    "initial": (self.dmax - self.dmin) / 2,
+                    "pmin": np.nan,
+                    "pmax": np.nan,
+                    "vary": True,
+                    "name": self.name,
+                },
+                name = "constant_d"
+            ).to_frame().T
+            parameters.append(constant_d)
 
         # combine all parameters
-        self.parameters = concat([pr, p0, p1, tarso_d])
+        self.parameters = concat(parameters)
 
     def simulate(
         self,
@@ -2590,16 +2619,12 @@ class TarsoModel(RechargeModel):
         _ = istress  # istress is not used for TarsoModel
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
 
-        # Fetch the current constant parameter from the global model
-        if getattr(self.model, "constant", None) is not None:
-            p_const = self.model.get_parameters("constant")
-            constant_d = p_const[0] if p_const is not None else 0.0
-        else:
+        # transform d1 to d1 - d0
+        if self.additive:
             constant_d = 0.0
+        else:
+            constant_d = p[-1]
 
-        # Append constant_d as the lower drainage level (d0)
-        # p[self.recharge.nparam :] contains [A0, a0, A1, a1, d1]
-        # p_tarso becomes [A0, a0, A1, a1, d1, d0]
         p_tarso = np.append(p[self.recharge.nparam :], constant_d)
 
         # Simulate the physics (this returns the absolute head)
@@ -2612,7 +2637,7 @@ class TarsoModel(RechargeModel):
         # Pastas expects relative contributions from stress models.
         # By subtracting it here, Model.simulate() can safely add the constant
         # back globally without double-counting your base level.
-        sim = Series(h - constant_d, name=self.name, index=stress.index)
+        sim = Series(h, name=self.name, index=stress.index)
 
         return sim
 
@@ -2641,13 +2666,14 @@ class TarsoModel(RechargeModel):
         Parameters
         ----------
         p : array_like
-            Array with parameter values ``[A0, a0, A1, a1, d1, d0]``.
+            Array with parameter values ``[A0, a0, d0, A1, a1, d1]``.
         r : array_like
             Array with recharge values.
         dt : float
             Timestep for the simulation.
         """
-        A0, a0, A1, a1, d1, d0 = p
+
+        A0, a0, d0, A1, a1, d1 = p
 
         # calculate physical meaning of these parameters
         S0 = a0 / A0
