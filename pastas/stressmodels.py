@@ -440,8 +440,8 @@ class StressModel(StressModelBase):
         you don't want to define if response is positive or negative.
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary with
-        the settings to apply. For more information refer to time series settings
+        settings dictionary (defined in ps.timeseries.settings), or a dictionary
+        with the settings to apply. For more information refer to time series settings
         section below.
     metadata: dict, optional
         dictionary containing metadata about the stress. This is passed onto the
@@ -568,7 +568,7 @@ class StressModel(StressModelBase):
             pastas TimeSeries object.
         settings: dict or str, optional
             The settings of the stress. This can be a string referring to a predefined
-            settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary
+            settings dictionary (defined in ps.timeseries.settings), or a dictionary
             with the settings to apply. For more information refer to time series
             settings section on class initialization.
         metadata: dict, optional
@@ -1107,7 +1107,7 @@ class WellModel(StressModelBase):
     settings: str, list of dict, optional
         The settings of the stress. By default this is "well". This can be a string
         referring to a predefined settings dictionary (defined in
-        ps.rcParams["timeseries"]), or a dictionary with the settings to apply. For more
+        ps.timeseries.settings), or a dictionary with the settings to apply. For more
         information, refer to Time series settings section below.
     sort_wells: bool, optional
         sort wells from closest to furthest, by default True.
@@ -1356,7 +1356,7 @@ class WellModel(StressModelBase):
             pastas TimeSeries object.
         settings: dict or str, optional
             The settings of the stress. This can be a string referring to a predefined
-            settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary
+            settings dictionary (defined in ps.timeseries.settings), or a dictionary
             with the settings to apply. For more information refer to time series
             settings section on class initialization.
         metadata: dict, optional
@@ -1759,7 +1759,7 @@ class RechargeModel(StressModelBase):
     settings: tuple of str or dict, optional
         The settings of the precipitation, evaporation and optionally temperature time
         series, in this order. By default ("prec", "evap", "evap"). This can be a string
-        referring to a predefined settings dict (defined in ps.rcParams["timeseries"]),
+        referring to a predefined settings dict (defined in ps.timeseries.settings),
         or a dict with the settings to apply. For more information refer to Time Series
         Settings section below for more information.
     metadata: tuple of dict or None, optional
@@ -1926,7 +1926,10 @@ class RechargeModel(StressModelBase):
         # value of the annual sums is smaller than 12 (m), the highest annual
         # precipitation in the world, then the precipitation is very likely in m/d
         # and not in mm/d. In this case a warning is given for nonlinear models.
-        if self.prec.series.resample("YE").sum().max() < 12:
+        if (
+            not isinstance(self.recharge, Linear)
+            and self.prec.series.resample("YE").sum().max() < 12
+        ):
             msg = (
                 "The maximum annual precipitation is smaller than 12 m. Please "
                 "double-check if the stresses are in mm/d and not in m/d."
@@ -2025,7 +2028,7 @@ class RechargeModel(StressModelBase):
         settings : str or dict, optional
             The settings of the time series. By default this is None. This can be a
             string referring to a predefined settings dict (defined in
-            ps.rcParams["timeseries"]), or a dict with the settings to apply. For more
+            ps.timeseries.settings), or a dict with the settings to apply. For more
             information refer to time series settings section on class initialization
             for more information.
         metadata : dict, optional
@@ -2538,54 +2541,41 @@ class TarsoModel(RechargeModel):
 
     def set_init_parameters(self) -> None:
         """Set the initial parameters (back) to their default values."""
-        # parameters for the recharge-method
-
-        parameters = []
-
-        parameters.append(self.recharge.get_init_parameters(self.name))
-
-        # paramters for the response of the first drainage level
+        # parameters for the first drainage level
         p0 = self.rfunc.get_init_parameters(self.name)
-        p0.index = [f"{x}0" for x in p0.index]
-        parameters.append(p0)
-
-        # parameters for the response of the second drainage level
-        p1 = self.rfunc.get_init_parameters(self.name)
-        p1.index = [f"{x}1" for x in p1.index]
-        parameters.append(p1)
-
-        # the upper drainage level
-        tarso_d = (
-            Series(
-                {
-                    "initial": self.dmin + 0.75 * (self.dmax - self.dmin),
-                    "pmin": self.dmin,
-                    "pmax": self.dmax,
-                    "vary": True,
-                    "name": self.name,
-                },
-                name=f"{self.name}_d",
-            )
-            .to_frame()
-            .T
+        initial = self.dmin + 0.5 * (self.dmax - self.dmin)
+        pd0 = Series(
+            {
+                "initial": initial,
+                "pmin": np.nan,
+                "pmax": np.nan,
+                "vary": True,
+                "name": self.name,
+            }
         )
-        parameters.append(tarso_d)
+        p0.loc[f"{self.name}_d"] = pd0
+        p0.index = [f"{x}0" for x in p0.index]
 
-        if not self.additive:
-            constant_d = Series(
-                {
-                    "initial": (self.dmax - self.dmin) / 2,
-                    "pmin": np.nan,
-                    "pmax": np.nan,
-                    "vary": True,
-                    "name": self.name,
-                },
-                name = "constant_d"
-            ).to_frame().T
-            parameters.append(constant_d)
+        # parameters for the second drainage level
+        p1 = self.rfunc.get_init_parameters(self.name)
+        initial = self.dmin + 0.75 * (self.dmax - self.dmin)
+        pd1 = Series(
+            {
+                "initial": initial,
+                "pmin": self.dmin,
+                "pmax": self.dmax,
+                "vary": True,
+                "name": self.name,
+            }
+        )
+        p1.loc[f"{self.name}_d"] = pd1
+        p1.index = [f"{x}1" for x in p1.index]
+
+        # parameters for the recharge-method
+        pr = self.recharge.get_init_parameters(self.name)
 
         # combine all parameters
-        self.parameters = concat(parameters)
+        self.parameters = concat([p0, p1, pr])
 
     def simulate(
         self,
@@ -2618,27 +2608,11 @@ class TarsoModel(RechargeModel):
     ) -> Series:
         _ = istress  # istress is not used for TarsoModel
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
-
-        # transform d1 to d1 - d0
-        if self.additive:
-            constant_d = 0.0
-        else:
-            constant_d = p[-1]
-
-        p_tarso = np.append(p[self.recharge.nparam :], constant_d)
-
-        # Simulate the physics (this returns the absolute head)
-        h = self.tarso(p_tarso, stress.to_numpy(dtype=float), dt)
-
+        h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(), dt)
         # Strip imaginary part when not doing complex-step Jacobian
         if not np.iscomplexobj(p):
             h = h.real
-
-        # Pastas expects relative contributions from stress models.
-        # By subtracting it here, Model.simulate() can safely add the constant
-        # back globally without double-counting your base level.
         sim = Series(h, name=self.name, index=stress.index)
-
         return sim
 
     @staticmethod
@@ -2650,8 +2624,8 @@ class TarsoModel(RechargeModel):
         )
         if len(ml.stressmodels) > 1:
             logger.warning(msg, "other stressmodels", "stressmodels")
-        # if ml.constant is not None:
-        #     logger.warning(msg, "a constant", "constant")
+        if ml.constant is not None:
+            logger.warning(msg, "a constant", "constant")
         if ml.transform is not None:
             logger.warning(msg, "a transform", "transform")
 
@@ -2662,17 +2636,7 @@ class TarsoModel(RechargeModel):
 
         Based on exponential decay of the previous timestep and
         recharge, using two thresholds.
-
-        Parameters
-        ----------
-        p : array_like
-            Array with parameter values ``[A0, a0, d0, A1, a1, d1]``.
-        r : array_like
-            Array with recharge values.
-        dt : float
-            Timestep for the simulation.
         """
-
         A0, a0, d0, A1, a1, d1 = p
 
         # calculate physical meaning of these parameters
@@ -2749,7 +2713,7 @@ class TarsoModel(RechargeModel):
             ``istress`` is None or "all", or a Series for a single index.
 
         """
-        _, A0, a0, A1, a1, _ = p
+        A0, a0, _, A1, a1, _, _ = p
         resp_fcn = getattr(self.rfunc, block_or_step)
 
         response0 = resp_fcn(p=[A0, a0], dt=dt)
@@ -2779,8 +2743,8 @@ class TarsoModel(RechargeModel):
         dict
             A dictionary containing the information of the stressmodel.
         """
-        data = super().to_dict(series=series)
-        return data | {"dmin": self.dmin, "dmax": self.dmax}
+        data = super().to_dict(series=series) | {"dmin": self.dmin, "dmax": self.dmax}
+        return data
 
 
 class ChangeModel(StressModelBase):
@@ -2805,7 +2769,7 @@ class ChangeModel(StressModelBase):
         you don't want to define if response is positive or negative.
     settings: dict or str, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dict (defined in ps.rcParams["timeseries"]), or a dict with the
+        settings dict (defined in ps.timeseries.settings), or a dict with the
         settings to apply. For more information, refer to the docs of pastas.Timeseries
         for further information.
     metadata: dict, optional
@@ -2918,7 +2882,7 @@ class ChangeModel(StressModelBase):
             pastas TimeSeries object.
         settings: dict or str, optional
             The settings of the stress. This can be a string referring to a predefined
-            settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary
+            settings dictionary (defined in ps.timeseries.settings), or a dictionary
             with the settings to apply. For more information refer to time series
             settings section on class initialization.
         metadata: dict, optional
