@@ -9,6 +9,7 @@ Create a TimeSeries object::
 
 """
 
+from copy import deepcopy
 from logging import getLogger
 from typing import Any, Self
 
@@ -20,7 +21,6 @@ from pandas.tseries.frequencies import to_offset
 from pastas.typing import OseriesSettingsDict, StressSettingsDict
 
 from .io.base import _unpack_series
-from .rcparams import rcParams
 from .timeseries_utils import (
     _get_dt,
     _get_sim_index,
@@ -35,6 +35,62 @@ from .utils import validate_name
 
 logger = getLogger(__name__)
 
+settings = {
+    "oseries": OseriesSettingsDict(
+        fill_nan="drop",
+        sample_down="drop",
+    ),
+    "prec": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_nan=0.0,
+        fill_before="mean",
+        fill_after="mean",
+    ),
+    "evap": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "well": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_nan=0.0,
+        fill_before=0.0,
+        fill_after=0.0,
+    ),
+    "waterlevel": StressSettingsDict(
+        sample_up="interpolate",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "level": StressSettingsDict(
+        sample_up="interpolate",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "flux": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan=0.0,
+    ),
+    "quantity": StressSettingsDict(
+        sample_up="divide",
+        sample_down="sum",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan=0.0,
+    ),
+}
+
 
 class TimeSeries:
     """Class that deals with all user-provided time series.
@@ -48,7 +104,7 @@ class TimeSeries:
         to derive the name from the series.
     settings: str or dict, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary with
+        settings dictionary (defined in ps.timeseries.settings), or a dictionary with
         the settings to apply. For more information refer to Time series settings
         section below.
     metadata: dict, optional
@@ -106,7 +162,7 @@ class TimeSeries:
     To obtain the predefined TimeSeries settings, you can run the following line of
     code:
 
-    >>> ps.rcParams["timeseries"]
+    >>> ps.timeseries.settings
 
     See Also
     --------
@@ -114,7 +170,7 @@ class TimeSeries:
         For the individual options for the different settings.
     """
 
-    _predefined_settings = rcParams["timeseries"]
+    _timeseries_settings = deepcopy(settings)
 
     def __init__(
         self,
@@ -175,15 +231,17 @@ class TimeSeries:
         # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in self._predefined_settings.keys():
-                    settings = self._predefined_settings[settings]
+                if settings in self._timeseries_settings.keys():
+                    settings: StressSettingsDict | OseriesSettingsDict = (
+                        self._timeseries_settings[settings]
+                    )
                 else:
                     msg = (
-                        "Settings shortcut code '%s' is not in the predefined "
-                        "settings options. Please choose from %s.",
+                        "Settings shortcut code '%s' is not in the timeseries.settings "
+                        "dictionary. Please choose from %s.",
                     )
 
-                    raise KeyError(msg, settings, self._predefined_settings.keys())
+                    raise KeyError(msg, settings, self._timeseries_settings.keys())
             self._update_settings(**settings)
 
         # Make sure we have a workable Pandas Series, depends on type of time series
