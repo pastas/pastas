@@ -2493,24 +2493,19 @@ class TarsoModel(RechargeModel):
         if not isinstance(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
 
-        # Logic to obtain dmin and dmax from the model, oseries or the provided values
+        # Determine dmin and dmax from arguments, model.oseries, or oseries
         if dmin is not None and dmax is not None:
             self.dmin = float(dmin)
             self.dmax = float(dmax)
-        elif model is not None:
-            oseries = model.oseries.series
-            self.dmin = float(oseries.min())
-            self.dmax = float(oseries.max())
-        elif oseries is not None:
-            self.dmin = float(oseries.min())
-            self.dmax = float(oseries.max())
-        elif dmin is None or dmax is None:
-            msg = (
-                "Either model, oseries or both dmin and dmax must be provided to "
-                "initialize the TarsoModel."
-            )
-            logger.error(msg)
-            raise ValueError(msg)
+        else:
+            series = model.oseries.series if model is not None else oseries
+            if series is not None:
+                self.dmin = float(series.min())
+                self.dmax = float(series.max())
+            else:
+                msg = "Either model, oseries or both dmin and dmax must be provided to initialize the TarsoModel."
+                logger.error(msg)
+                raise ValueError(msg)
 
         super().__init__(
             model=model,
