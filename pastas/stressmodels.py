@@ -2518,7 +2518,7 @@ class TarsoModel(RechargeModel):
             evap=evap,
             rfunc=rfunc,
             name=name,
-            recharge=Linear(),
+            recharge=kwargs.pop("recharge", Linear()),
             **kwargs,
         )
 
