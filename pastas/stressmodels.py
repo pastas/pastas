@@ -2495,7 +2495,7 @@ class TarsoModel(RechargeModel):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
 
         if model is not None:
-            oseries = model.observations()
+            oseries = model.oseries.series
             dmin = oseries.min()
             dmax = oseries.max()
         elif oseries is not None:
