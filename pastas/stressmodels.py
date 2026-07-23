@@ -2523,7 +2523,6 @@ class TarsoModel(RechargeModel):
 
         if self.model is not None:
             self.model._add_stressmodel(self)
-            self._check_stressmodel_compatibility(self.model)
 
     @property
     def nsplit(self) -> int:
