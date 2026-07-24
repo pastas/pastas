@@ -21,4 +21,5 @@ def test_notebook(file: Path) -> None:
         output_path=file,  # Overwrites file in-place
         execution_timeout=600,
         kernel_name="python3",
+        cwd=pathname
     )
