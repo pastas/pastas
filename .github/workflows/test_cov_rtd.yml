@@ -68,14 +68,14 @@ jobs:
                   message: ${{ steps.coverage.outputs.coverage }}%
 
             - name: Upload Executed Notebooks Artifact
-              if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+              if: github.event_name == 'pull_request' && github.ref == 'refs/heads/dev'
               uses: actions/upload-artifact@v4
               with:
                   name: notebooks-for-${{ github.sha }}
                   path: doc/
 
             - name: Trigger Read the Docs Build
-              if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+              if: github.event_name == 'pull_request' && github.ref == 'refs/heads/dev'
               uses: dfm/rtds-action@v1
               with:
                   webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
