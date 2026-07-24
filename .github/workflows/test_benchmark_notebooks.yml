@@ -1,4 +1,4 @@
-name: CI NB
+name: CI NOTEBOOKS BENCHMARK
 
 on:
   pull_request:
@@ -20,8 +20,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Test suite for benchmark Notebooks
-            toxenv: notebooks
+          - name: Test suite for benchmark notebooks
+            toxenv: notebooks_benchmark
     env:
       CI_PASFILES: "0" # do not generate pas files for these tests
       # Color Output

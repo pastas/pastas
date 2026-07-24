@@ -156,17 +156,15 @@ description = "test pas file I/O between pastas versions"
 extras = ["ci"]
 commands = [["pytest", "tests", "-m", "pasfiles"]]
 
-[tool.tox.env.notebooks]
+[tool.tox.env.notebooks_benchmark]
 description = "run the benchmark notebooks"
 extras = ["ci"]
 commands = [["pytest", "tests", "-m", "bnotebooks"]]
 
-[tool.tox.env.execute_notebooks]
+[tool.tox.env.run_notebooks]
 description = "run the example notebooks"
 extras = ["ci"]
-commands = [
-    ["pytest", "tests", "-m", "notebooks"],
-]
+commands = [["pytest", "tests", "-m", "notebooks"]]
 
 [tool.tox.env.ruff]
 description = "run ruff checks"
