@@ -5,7 +5,7 @@ import logging
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Series, Timestamp, concat
+from pandas import DataFrame, Series, Timedelta, Timestamp, concat
 from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
 from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
@@ -368,6 +368,7 @@ def diagnostics(
     bins: int = 50,
     acf_options: dict | None = None,
     heteroscedasicity: bool = True,
+    max_plot_gap: Timedelta | float = np.inf,
     **kwargs,
 ) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
@@ -388,6 +389,10 @@ def diagnostics(
     heteroscedasicity: bool, optional
         Create two additional subplots to check for heteroscedasticity. If true,
         a simulated time series has to be provided with the sim argument.
+    max_plot_gap: Timedelta | float
+        Timedelta or float (in days) with the maximum gap to be considered as a gap.
+        If the difference between two consecutive index values is larger than
+        max_plot_gap, a gap is inserted in the plot. Default is infinity.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -450,7 +455,7 @@ def diagnostics(
 
     # Plot the residuals or noise series
     axd["series"].axhline(0, c="k")
-    axd["series"] = plot_series_with_gaps(series, ax=axd["series"])
+    axd["series"] = plot_series_with_gaps(series, ax=axd["series"], gap=max_plot_gap)
     axd["series"].set_ylabel(series.name)
     axd["series"].set_xlim(series.index.min(), series.index.max())
     axd["series"].set_title(

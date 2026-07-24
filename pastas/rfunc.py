@@ -12,6 +12,7 @@ Use response functions in stress models::
 
 from abc import ABC, abstractmethod
 from logging import getLogger
+from typing import Any, Literal
 
 import numpy as np
 from numpy import pi
@@ -34,16 +35,7 @@ from scipy.special import (
     wrightomega,
 )
 
-from .decorators import njit
-
-try:
-    from numba import prange
-except ImportError:
-    prange = range
-
-from typing import Any, Literal
-
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import PastasDeprecationWarning, njit
 from pastas.stats import moment
 from pastas.typing import ArrayLike
 
