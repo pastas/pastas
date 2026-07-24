@@ -57,7 +57,7 @@ caching = ["cachetools"]
 codespelling = ["codespell[toml]"]
 mpmath = ["mpmath"]
 full = ["pastas[solvers,interactive,datasets,caching,mpmath]"]
-pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
+pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar", "papermill"]
 ci = [
     "pastas[pytesting,solvers,interactive,caching,mpmath]",
     "jupyter",
@@ -143,7 +143,7 @@ commands = [
         "pytest",
         "tests",
         "-m",
-        "not notebooks and not bnotebooks and not pasfiles",
+        "not bnotebooks and not pasfiles",
     ],
     [
         "coverage",
