@@ -34,6 +34,7 @@ extensions = [
     "myst_nb",
     "sphinxcontrib.bibtex",
     "sphinx_design",
+    "rtds_action",
 ]
 
 # -- General configuration ------------------------------------------------------------
@@ -45,7 +46,7 @@ root_doc = "index"  # The root toctree document.
 
 # General information about the project.
 project = "Pastas"
-copyright = "{}, The Pastas Team".format(year)
+copyright = f"{year}, The Pastas Team"
 author = "R.A. Collenteur, M. Bakker, R. Calje, F. Schaars"
 
 # The version.
@@ -172,7 +173,32 @@ intersphinx_mapping = {
 # -- myst_nb options ------------------------------------------------------------------
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
-nb_execution_mode = "auto"
+nb_execution_mode = "off"  # Disable execution in RTD, use pre-executed notebooks
 nb_merge_streams = True
 myst_enable_extensions = ["dollarmath", "amsmath"]
 myst_dmath_double_inline = True
+
+# -- rtds_action options --------------------------------------------------------------
+
+# Configuration for rtds_action extension to download executed notebooks from GitHub Actions
+# The GitHub repository
+rtds_action_github_repo = "pastas/pastas"
+
+# The path where the artifact should be extracted (relative to the conf.py file)
+# The artifact contains doc/examples/*.ipynb and doc/benchmarks/*.ipynb
+# So we extract to the root and it will overwrite the original notebooks
+rtds_action_path = "."
+
+# The "prefix" used in the `upload-artifact` step of the action
+rtds_action_artifact_prefix = "notebooks-for-"
+
+# Get GitHub token from environment variable
+# IMPORTANT: You must add a GitHub Personal Access Token (PAT) with 'repo' scope
+# to ReadTheDocs as an environment variable named GITHUB_TOKEN.
+# Go to: https://readthedocs.org/projects/pastas/admin/environment-variables/
+# The ReadTheDocs GitHub App does NOT provide access to Actions artifacts.
+rtds_action_github_token = os.environ.get("GITHUB_RTDS_TOKEN")
+
+# Whether or not to raise an error on Read the Docs if the artifact can't be downloaded
+# Set to False for now to allow local builds without the artifact
+rtds_action_error_if_missing = True

@@ -1,0 +1,92 @@
+name: CI NOTEBOOKS
+
+on:
+  workflow_dispatch:
+    inputs:
+      trigger_rtd:
+        description: "Also trigger Read the Docs build"
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  execute-notebooks:
+    name: Execute notebooks
+    runs-on: ubuntu-latest
+    env:
+      CI_PASFILES: "0" # do not generate pas files for these tests
+      # Color Output
+      FORCE_COLOR: 1
+      # Tox
+      PY_COLORS: 1
+      # Pytest
+      PYTEST_ADDOPTS: "--color=yes"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv with Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: false
+
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install tox-uv
+
+      - name: Setup tox environment
+        run: uv run tox -e notebooks --notest
+
+      - name: Test example notebooks
+        run: uv run tox -e notebooks --skip-pkg-install
+
+      - name: Test benchmark notebooks
+        if: github.event_name == 'pull_request' && github.base_ref == 'master'
+        run: uv run tox -e notebooks_benchmark --skip-pkg-install
+
+      - name: Prepare artifact structure
+        run: |
+          # Create the final artifact structure
+          mkdir -p executed_notebooks/doc/examples
+          mkdir -p executed_notebooks/doc/benchmarks
+          # Tests write executed notebooks to build/ directories.
+          cp doc/examples/build/*.ipynb executed_notebooks/doc/examples/ || true
+          cp -r doc/examples/data* executed_notebooks/doc/examples/ 2>/dev/null || true
+          cp -r doc/examples/groundwater_paper executed_notebooks/doc/examples/ 2>/dev/null || true
+          cp doc/benchmarks/build/*.ipynb executed_notebooks/doc/benchmarks/ || true
+
+      - name: Upload executed notebooks as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: notebooks-for-${{ github.sha }}
+          path: executed_notebooks/
+          retention-days: 7
+
+      - name: Trigger Read the Docs build via API
+        if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.trigger_rtd)
+        env:
+          RTDS_TOKEN: ${{ secrets.RTDS_TOKEN }}
+          RTD_PROJECT_SLUG: pastas
+          RTD_VERSION_SLUG: ${{ github.head_ref || github.ref_name }}
+        run: |
+          RTD_VERSION_SLUG_ENCODED="$(python -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["RTD_VERSION_SLUG"], safe=""))')"
+
+          curl -sS -f -X POST \
+            -H "Authorization: Token ${{ secrets.RTDS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://readthedocs.org/api/v3/projects/$RTD_PROJECT_SLUG/versions/$RTD_VERSION_SLUG_ENCODED/builds/"

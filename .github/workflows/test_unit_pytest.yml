@@ -13,7 +13,7 @@ on:
 concurrency:
   # Group by workflow name and ref (branch or pull request ref).
   # For pushes the ref is the branch (refs/heads/<branch>).
-  # For PR events the ref is refs/pull/<number>/merge — same across commits for that PR.
+  # For PR events the ref is refs/pull/<number>/merge same across commits for that PR.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -41,10 +41,6 @@ jobs:
           - name: Test suite with py314-ubuntu
             python: "3.14"
             toxenv: py314
-            experimental: false
-          - name: Test suite for all unit tests including Notebooks
-            python: "3.13"
-            toxenv: all
             experimental: false
     env:
       BADGE_GIST_COVERAGE_TOKEN: ${{ secrets.BADGE_GIST_COVERAGE_TOKEN }}
@@ -75,28 +71,3 @@ jobs:
 
       - name: Test
         run: uv run tox -e ${{ matrix.toxenv }} --skip-pkg-install
-
-      - name: Export Coverage Percent
-        if: matrix.toxenv == 'all'
-        id: coverage
-        run: |
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          data = json.loads(Path("coverage.json").read_text())
-          coverage = data["totals"]["percent_covered_display"]
-          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as fh:
-              fh.write(f"coverage={coverage}\n")
-          PY
-
-      - name: Update Coverage Badge
-        if: matrix.toxenv == 'all' && github.event_name == 'push' && env.BADGE_GIST_COVERAGE_TOKEN != ''
-        uses: Schneegans/dynamic-badges-action@v1.7.0
-        with:
-          auth: ${{ env.BADGE_GIST_COVERAGE_TOKEN }}
-          gistID: "02bcb92e1d487ffc9143752296b8db72"
-          filename: coverage.json
-          label: coverage
-          message: ${{ steps.coverage.outputs.coverage }}%

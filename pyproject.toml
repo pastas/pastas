@@ -57,7 +57,7 @@ caching = ["cachetools"]
 codespelling = ["codespell[toml]"]
 mpmath = ["mpmath"]
 full = ["pastas[solvers,interactive,datasets,caching,mpmath]"]
-pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
+pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar", "papermill"]
 ci = [
     "pastas[pytesting,solvers,interactive,caching,mpmath]",
     "jupyter",
@@ -77,6 +77,7 @@ rtd = [
     "sphinx-design",
     "myst_nb",
     "sphinx-autoapi",
+    "rtds_action",
 ]
 dev = ["tox-uv", "pre-commit", "pastas[ruffing,codespelling,ci,rtd]"]
 
@@ -132,7 +133,7 @@ commands = [
 ]
 
 [tool.tox.env.all]
-description = "run all unit tests and notebooks"
+description = "run all unit tests (excluding notebooks)"
 extras = ["ci"]
 commands = [
     [
@@ -155,10 +156,15 @@ description = "test pas file I/O between pastas versions"
 extras = ["ci"]
 commands = [["pytest", "tests", "-m", "pasfiles"]]
 
-[tool.tox.env.notebooks]
+[tool.tox.env.notebooks_benchmark]
 description = "run the benchmark notebooks"
 extras = ["ci"]
 commands = [["pytest", "tests", "-m", "bnotebooks"]]
+
+[tool.tox.env.run_notebooks]
+description = "run the example notebooks"
+extras = ["ci"]
+commands = [["pytest", "tests", "-m", "notebooks"]]
 
 [tool.tox.env.ruff]
 description = "run ruff checks"
