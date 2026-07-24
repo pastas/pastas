@@ -46,7 +46,7 @@ root_doc = "index"  # The root toctree document.
 
 # General information about the project.
 project = "Pastas"
-copyright = "{}, The Pastas Team".format(year)
+copyright = f"{year}, The Pastas Team"
 author = "R.A. Collenteur, M. Bakker, R. Calje, F. Schaars"
 
 # The version.
@@ -187,7 +187,7 @@ rtds_action_github_repo = "pastas/pastas"
 # The path where the artifact should be extracted (relative to the conf.py file)
 # The artifact contains doc/examples/*.ipynb and doc/benchmarks/*.ipynb
 # So we extract to the root and it will overwrite the original notebooks
-rtds_action_path = ".."
+rtds_action_path = "."
 
 # The "prefix" used in the `upload-artifact` step of the action
 rtds_action_artifact_prefix = "notebooks-for-"
