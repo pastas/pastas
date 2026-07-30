@@ -100,7 +100,7 @@ class Model:
     >>> ml = Model(oseries)
     """
 
-    _accessors = set()
+    _accessors = set()  # noqa: RUF012
 
     def __init__(
         self,
@@ -166,13 +166,13 @@ class Model:
             cls=self.__class__.__name__,
             os=self.oseries.name,
             name=self.name,
-            const=True if self.constant else False,
-            noise=True if self.noisemodel else False,
+            const=bool(self.constant),
+            noise=bool(self.noisemodel),
         )
 
     @property
     def parameters(self) -> DataFrame:
-        """Get model parameters DataFrame.
+        """Model parameters DataFrame.
 
         Returns
         -------
@@ -180,15 +180,15 @@ class Model:
             DataFrame containing the model parameters. This is a read-only view;
             modifications to this DataFrame will not affect the model.
 
-        Notes
-        -----
-        The parameters attribute is read-only. To modify parameter properties,
-        use the set_parameter method instead.
-
         See Also
         --------
         set_parameter
             Method to change parameter properties.
+
+        Notes
+        -----
+        The parameters attribute is read-only. To modify parameter properties,
+        use the set_parameter method instead.
 
         """
         return self._parameters.copy(deep=True)
@@ -203,7 +203,7 @@ class Model:
 
     @property
     def settings(self) -> dict[str, Any]:
-        """Get model settings dictionary.
+        """Model settings dictionary.
 
         Returns
         -------
@@ -239,7 +239,7 @@ class Model:
         if isinstance(stressmodel, list):
             for sm in stressmodel:
                 self.add_stressmodel(sm)
-        elif (stressmodel.name in self.stressmodels.keys()) and not replace:
+        elif (stressmodel.name in self.stressmodels) and not replace:
             msg = (
                 "The name for the stressmodel you are trying to add already exists "
                 "for this model. Select another name."
@@ -258,16 +258,16 @@ class Model:
         stressmodel: pastas.stressmodel
             instance of a pastas.stressmodel class that is added
 
-        Notes
-        -----
-        This method is internally used by the stressmodels to add
-
         See Also
         --------
         pastas.stressmodels
+
+        Notes
+        -----
+        This method is internally used by the stressmodels to add
         """
         # Method can take multiple stressmodels at once through args
-        if stressmodel.name in self.stressmodels.keys():
+        if stressmodel.name in self.stressmodels:
             logger.warning(
                 "The name for the stressmodel you are trying to add already "
                 "exists for this model. The stressmodel is replaced."
@@ -829,7 +829,6 @@ class Model:
 
         Deprecated: This method is no longer needed. Use `set_settings` instead.
         """
-        pass
 
     def solve(
         self,
@@ -875,7 +874,8 @@ class Model:
             are both None, the default ps.solver.LeastSquares() is used.
 
             .. deprecated:: 2.4.0
-                The solver argument is deprecated in favor of adding a solver using the `ps.solver.LeastSquares(model=ml)` pattern.
+                The solver argument is deprecated in favor of adding a solver using
+                the `ps.solver.LeastSquares(model=ml)` pattern.
 
         report: bool | Literal["full"] | dict, optional
             Print a report to the screen after optimization finished. Set to
@@ -933,18 +933,19 @@ class Model:
             All keyword arguments will be passed onto minimization method from the
             solver. It depends on the solver used which arguments can be used.
 
-        Notes
-        -----
-        - The solver instance including some results are stored as ml.solver. From here
-          one can access the specific attributes from the solver (i.e., the covariance matrix(ml.solver.pcov) for the LeastSquaresSolve).
-        - Each solver returns a number of results after optimization. These solver
-          specific results are stored in ml.solver.result and can be accessed from
-          there.
-
         See Also
         --------
         pastas.solver
             Different solver objects are available to estimate parameters.
+
+        Notes
+        -----
+        - The solver instance including some results are stored as ml.solver. From here
+          one can access the specific attributes from the solver (i.e., the covariance
+          matrix (ml.solver.pcov) for the LeastSquaresSolve).
+        - Each solver returns a number of results after optimization. These solver
+          specific results are stored in ml.solver.result and can be accessed from
+          there.
         """
         if noise is not None:
             if noise is True:
@@ -973,7 +974,10 @@ class Model:
             deprecate_args_or_kwargs(
                 "initialize",
                 version="2.0.0",
-                reason="The initialize method is not needed anymore in favor of the `set_settings` method.",
+                reason=(
+                    "The initialize method is not needed anymore "
+                    "in favor of the `set_settings` method."
+                ),
             )
 
         self.reset_settings() if reset_settings else None
@@ -1026,13 +1030,16 @@ class Model:
 
         # Check if the solver is provided, deprecated with Pastas 2.0
         if solver is not None:  # add solver if provided
-            msg = "solver argument is deprecated and will be removed in Pastas 2.4.0. Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
+            msg = (
+                "solver argument is deprecated and will be removed in Pastas 2.4.0. "
+                "Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
+            )
             logger.warning(msg)
             if self.solver is None or self.solver._name != solver._name:
-                logger.info("Setting solver to `%s`." % solver._name)
+                logger.info(f"Setting solver to `{solver._name}`.")
                 self._add_solver(solver=solver)
             else:
-                logger.info("Keeping original solver `%s`." % self.solver._name)
+                logger.info(f"Keeping original solver `{self.solver._name}`.")
 
         # Add default solver if none is provided
         if self.solver is None:  # add scipy least_squares if no solver provided
@@ -1089,9 +1096,7 @@ class Model:
             fit_constant=True,
         )
         self._settings["freq_obs"] = None
-        logger.debug(
-            "Resetting model settings to default settings: {}.", self._settings
-        )
+        logger.debug("Resetting model settings to default settings: %s", self._settings)
 
     def set_settings(
         self,
@@ -1132,27 +1137,28 @@ class Model:
 
         Notes
         -----
-        This method is used to change the model settings. It is called by the solve method, but can also be triggered manually.
+        This method is used to change the model settings. It is called by the solve
+        method, but can also be triggered manually.
 
         """
         if tmin is not None:
-            logger.debug("Updating model setting tmin to %s." % tmin)
+            logger.debug(f"Updating model setting tmin to {tmin}.")
             self._settings["tmin"] = self.get_tmin(tmin)
 
         if tmax is not None:
-            logger.debug("Updating model setting tmax to %s." % tmax)
+            logger.debug(f"Updating model setting tmax to {tmax}.")
             self._settings["tmax"] = self.get_tmax(tmax)
 
         if freq is not None:
-            logger.debug("Updating model setting freq to %s." % freq)
+            logger.debug(f"Updating model setting freq to {freq}.")
             self._settings["freq"] = _frequency_is_supported(freq)
 
         if warmup is not None:
-            logger.debug("Updating model setting warmup to %s." % warmup)
+            logger.debug(f"Updating model setting warmup to {warmup}.")
             self._settings["warmup"] = _parse_warmup(warmup)
 
         if fit_constant is not None:
-            logger.debug("Updating model setting fit_constant to %s." % fit_constant)
+            logger.debug(f"Updating model setting fit_constant to {fit_constant}.")
             self._settings["fit_constant"] = fit_constant
             # Prepare model if not fitting the constant as a parameter
             if not self.settings["fit_constant"]:
@@ -1166,14 +1172,14 @@ class Model:
                 self._parameters.at["constant_d", "vary"] = True
 
         if freq_obs is not None:
-            logger.debug("Updating model setting freq_obs to %s." % freq_obs)
+            logger.debug(f"Updating model setting freq_obs to {freq_obs}.")
             self._settings["freq_obs"] = _frequency_is_supported(freq_obs)
         elif freq_obs is None and self.settings["freq_obs"] is not None:
             logger.info(
-                (
-                    "Cannot update freq_obs to 'None'."
-                    "Please use `self._settings['freq_obs'] = None` or "
-                    "ml.reset_settings()."
+                "Cannot update freq_obs to 'None'."
+                "Please use `self._settings['freq_obs'] = None` or "
+                "ml.reset_settings()."
+            )
         # always clear the _sim_index after set_settings
         self._sim_index = None
 
@@ -1211,17 +1217,16 @@ class Model:
             These keyword arguments can be used to change any other parameter
             properties that are present in the parameters DataFrame, such as "dist".
 
-
-        Examples
-        --------
-        >>> ml.set_parameter(name="constant_d", initial=10, vary=True,
-        >>>                  pmin=-10, pmax=20)
-
         Notes
         -----
         It is highly recommended to use this method to set parameter properties.
         Changing the parameter properties directly in the parameter `DataFrame` may
         not work as expected.
+
+        Examples
+        --------
+        >>> ml.set_parameter(name="constant_d", initial=10, vary=True,
+        >>>                  pmin=-10, pmax=20)
         """
         if name not in self._parameters.index:
             msg = "parameter %s is not present in the model"
@@ -1237,7 +1242,7 @@ class Model:
         # Get the model component for the parameter
         cat = self._parameters.at[name, "name"]
 
-        if cat in self.stressmodels.keys():
+        if cat in self.stressmodels:
             obj = self.stressmodels[cat]
         elif cat == noisemodel:
             obj = self.noisemodel
@@ -1328,8 +1333,6 @@ class Model:
                 raise ValueError(
                     f"Initial value ({curr_initial}) of parameter {name} cannot be greater than upper bound (pmax={curr_pmax})"
                 )
-
-        return
 
     def set_oseries(
         self,
@@ -1522,8 +1525,7 @@ class Model:
         elif use_stresses:
             ts_tmin = Timestamp.max
             for stressmodel in self.stressmodels.values():
-                if stressmodel.tmin < ts_tmin:
-                    ts_tmin = stressmodel.tmin
+                ts_tmin = min(ts_tmin, stressmodel.tmin)
         # Get tmin and tmax from user provided values
         else:
             ts_tmin = Timestamp(tmin)
@@ -1589,8 +1591,7 @@ class Model:
         elif use_stresses:
             ts_tmax = Timestamp.min
             for stressmodel in self.stressmodels.values():
-                if stressmodel.tmax > ts_tmax:
-                    ts_tmax = stressmodel.tmax
+                ts_tmax = max(ts_tmax, stressmodel.tmax)
         # Get tmax from user provided values
         else:
             ts_tmax = Timestamp(tmax)
@@ -1668,7 +1669,9 @@ class Model:
         """
         # select parameters from appropriate stressmodel or noisemodel
         parameters = (
-            self._parameters.query("name == @name") if name else self._parameters
+            self._parameters.loc[self._parameters["name"] == name]
+            if name
+            else self._parameters
         )
         if parameters.loc[:, "optimal"].hasnans:
             logger.warning("Model is not optimized yet, initial parameters are used.")
@@ -1898,8 +1901,7 @@ class Model:
             contribs = self.get_contributions(
                 tmin=tmin, tmax=tmax, split=split_contributions
             )
-            for contrib in contribs:
-                df.append(contrib)
+            df += contribs
 
         df = concat(df, axis=1, sort=True)
         return df
@@ -2202,7 +2204,7 @@ class Model:
 
         try:
             file_info["owner"] = getlogin()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.debug(e)
             file_info["owner"] = "Unknown"
 
@@ -2389,7 +2391,7 @@ class Model:
             "oseries": self.oseries.to_dict(series=series),
             "parameters": self._parameters,
             "settings": self.settings,
-            "stressmodels": dict(),
+            "stressmodels": {},
         }
 
         # Stressmodels
