@@ -772,7 +772,8 @@ class LeastSquares(LeastSquaresBase):
             function that is called after each iteration. the parameters are
             provided to the func.
         """
-        par = initial
+        # set dtype complex for jac='cs'
+        par = np.array(initial, copy=True, dtype=np.asarray(p).dtype)
         par[vary] = p
         return misfit(
             ml=self.model, p=par, noise=noise, weights=weights, callback=callback
