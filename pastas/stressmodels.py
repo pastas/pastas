@@ -68,6 +68,11 @@ __all__ = [
     "WellModel",
 ]
 
+# Define namedtuples at the module level to make them picklable
+StressTuple = namedtuple("StressesTuple", ("stress",))
+PrecEvapTuple = namedtuple("StressesTuple", ("prec", "evap"))
+PrecEvapTempTuple = namedtuple("StressesTuple", ("prec", "evap", "temp"))
+
 
 class StressModelBase(ABC):
     """StressModel Base class called by each StressModel object.
@@ -535,7 +540,6 @@ class StressModel(StressModelBase):
         )
         self.gain_scale_factor = gain_scale_factor
         self.set_init_parameters()
-        self._nt = namedtuple("StressesTuple", ["stress"])
         if self.model is not None:
             self.model._add_stressmodel(self)
 
@@ -584,7 +588,7 @@ class StressModel(StressModelBase):
     @property
     def stresses(self) -> tuple[TimeSeries]:
         """All the stress time series in the stressmodel as a tuple."""
-        return self._nt(stress=self.stress)
+        return StressTuple(stress=self.stress)
 
     @property
     def nsplit(self) -> int:
@@ -1225,8 +1229,6 @@ class WellModel(StressModelBase):
 
         # parse stresses input
         self.set_stress(stress=stress, settings=settings, metadata=metadata)
-        self._nt = namedtuple("StressesTuple", [s.name for s in self._stress])
-
         super().__init__(
             model=model,
             name=name,
@@ -1421,7 +1423,11 @@ class WellModel(StressModelBase):
     @property
     def stresses(self) -> tuple[TimeSeries, ...]:
         """All the stress time series in the stressmodel as a tuple."""
-        return self._nt(*self._stress)
+        # define here because namedtuple is dynamically created based
+        # on the stress names. Cannot be stored in object to avoid issues
+        # with pickling.
+        nt = namedtuple("StressModelTuple", [s.name for s in self._stress])
+        return nt(*self._stress)
 
     @property
     def nsplit(self) -> int:
@@ -1891,14 +1897,12 @@ class RechargeModel(StressModelBase):
                 )
                 raise TypeError(msg)
             self._temp = None
-            self._nt = namedtuple("StressesTuple", ["prec", "evap"])
         else:
             if len(settings) < 3 or len(metadata) < 3:
                 msg = "Number of values for the settings and/or metadata is incorrect."
                 raise TypeError(msg)
 
             self.set_stress(temp=temp, settings=settings[2], metadata=metadata[2])
-            self._nt = namedtuple("StressesTuple", ["prec", "evap", "temp"])
 
         # Select indices from validated stress where both series are available.
         index = self.prec.series.index.intersection(self.evap.series.index)
@@ -2000,9 +2004,9 @@ class RechargeModel(StressModelBase):
     def stresses(self) -> tuple[TimeSeries, ...]:
         """All the stress time series in the stressmodel as a tuple."""
         if self.temp is None:
-            return self._nt(prec=self.prec, evap=self.evap)
+            return PrecEvapTuple(prec=self.prec, evap=self.evap)
         else:
-            return self._nt(prec=self.prec, evap=self.evap, temp=self.temp)
+            return PrecEvapTempTuple(prec=self.prec, evap=self.evap, temp=self.temp)
 
     @property
     def nsplit(self) -> int:
@@ -2845,7 +2849,6 @@ class ChangeModel(StressModelBase):
         self.rfunc2 = rfunc2
         self.tchange = Timestamp(tchange)
         self.set_init_parameters()
-        self._nt = namedtuple("StressesTuple", ["stress"])
         if self.model is not None:
             self.model._add_stressmodel(self)
 
@@ -2889,7 +2892,7 @@ class ChangeModel(StressModelBase):
     @property
     def stresses(self) -> tuple[TimeSeries]:
         """All the stress time series in the stressmodel as a tuple."""
-        return self._nt(stress=self.stress)
+        return StressTuple(stress=self.stress)
 
     @property
     def nsplit(self) -> int:
