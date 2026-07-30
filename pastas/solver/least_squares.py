@@ -179,7 +179,11 @@ class LeastSquaresBase(SolverBase):
         return pcor
 
     def get_parameter_sample(
-        self, name: str | None = None, n: int | None = None, max_iter: int = 10
+        self,
+        name: str | None = None,
+        n: int | None = None,
+        max_iter: int = 10,
+        seed: int | None = None,
     ) -> ArrayLike:
         """Obtain a parameter sets for monte carlo analyses.
 
@@ -195,6 +199,8 @@ class LeastSquaresBase(SolverBase):
             maximum number of iterations for truncated multivariate sampling, default
             is 10. Increase this value if number of accepted parameter samples is lower
             than n.
+        seed: int, optional
+            Seed for the random number generator.
 
         Returns
         -------
@@ -229,7 +235,7 @@ class LeastSquaresBase(SolverBase):
 
         # Start truncated multivariate sampling
         it = 0
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(seed=seed)
         while samples.shape[0] < n:
             s = rng.multivariate_normal(
                 mean=p, cov=pcov, size=(n,), check_valid="ignore"
