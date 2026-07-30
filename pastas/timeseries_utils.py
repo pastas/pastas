@@ -901,7 +901,7 @@ def resample(
 
 def _index_to_int64(tindex: DatetimeIndex) -> np.ndarray:
     """Convert a pandas index to int64 representation."""
-    if hasattr(tindex, "as_unit"):  # pandas >= 3.0
+    if hasattr(tindex, "as_unit") and tindex.unit != "us":  # pandas >= 3.0
         # In pandas 3.0, the default resolution for newly created datetime-like objects
         # is datetime64[us] (microseconds)
         tindex = tindex.as_unit("us")
