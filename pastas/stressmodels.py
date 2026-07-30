@@ -2604,9 +2604,6 @@ class TarsoModel(RechargeModel):
         _ = istress  # istress is not used for TarsoModel
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
         h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(), dt)
-        # Strip imaginary part when not doing complex-step Jacobian
-        if not np.iscomplexobj(p):
-            h = h.real
         sim = Series(h, name=self.name, index=stress.index)
         return sim
 
@@ -2633,6 +2630,7 @@ class TarsoModel(RechargeModel):
         recharge, using two thresholds.
         """
         A0, a0, d0, A1, a1, d1 = p
+        dtype = np.asarray(A0 + a0 + d0 + A1 + a1 + d1).dtype
 
         # calculate physical meaning of these parameters
         S0 = a0 / A0
@@ -2646,7 +2644,7 @@ class TarsoModel(RechargeModel):
         d_e = (c1 / (c0 + c1)) * d0 + (c0 / (c0 + c1)) * d1
         a_e = S1 * c_e
 
-        h = np.empty(len(r), dtype=np.complex128)
+        h = np.empty(len(r), dtype=dtype)
         for i in range(len(r)):
             if i == 0:
                 h0 = (d0 + d1) / 2
