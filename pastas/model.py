@@ -649,6 +649,7 @@ class Model:
     def noise(
         self,
         p: ArrayLike | None = None,
+        res: Series | None = None,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
@@ -680,6 +681,10 @@ class Model:
         noise : pandas.Series
             Pandas series of the noise.
 
+        Warnings
+        --------
+        This method returns None if no noise model is present in the model.
+
         Notes
         -----
         The noise are the time series that result when applying a noise model.
@@ -688,10 +693,6 @@ class Model:
 
             The noise is sometimes also referred to as the innovations in the
             literature.
-
-        Warnings
-        --------
-        This method returns None if no noise model is present in the model.
         """
         if self.noisemodel is None:
             raise ValueError(
@@ -703,7 +704,8 @@ class Model:
             p = self.get_parameters()
 
         # Calculate the residuals
-        res = self.residuals(p, tmin, tmax, freq, warmup)
+        if res is None:
+            res = self.residuals(p, tmin, tmax, freq, warmup)
         p = p[-self.noisemodel.nparam :]
 
         # Calculate the noise
@@ -713,6 +715,7 @@ class Model:
     def _noise_weights(
         self,
         p: list | None = None,
+        res: Series | None = None,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
@@ -724,7 +727,8 @@ class Model:
             p = self.get_parameters()
 
         # Calculate the residuals
-        res = self.residuals(p, tmin, tmax, freq, warmup)
+        if res is None:
+            res = self.residuals(p, tmin, tmax, freq, warmup)
 
         # Calculate the weights
         weights = self.noisemodel.weights(res, p[-self.noisemodel.nparam :])

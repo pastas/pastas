@@ -39,10 +39,9 @@ def misfit(
         The calculated residuals or noise, optionally with separate components.
     """
     # Get the residuals or the noise
+    rv = ml.residuals(p)
     if noise:
-        rv = ml.noise(p) * ml._noise_weights(p)
-    else:
-        rv = ml.residuals(p)
+        rv = ml.noise(p=p, res=rv) * ml._noise_weights(p=p, res=rv)
 
     # Apply weights if provided
     if weights is not None:
@@ -57,9 +56,9 @@ def misfit(
     # Return separate components if requested
     if returnseparate:
         return (
-            ml.residuals(p).to_numpy(copy=True),
-            ml.noise(p).to_numpy(copy=True),
-            ml._noise_weights(p).to_numpy(copy=True),
+            rv.to_numpy(copy=True),
+            ml.noise(p=p, res=rv).to_numpy(copy=True),
+            ml._noise_weights(p=p, res=rv).to_numpy(copy=True),
         )
 
     return rv.to_numpy(copy=True)
