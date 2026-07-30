@@ -395,19 +395,23 @@ class FlexModel(RechargeBase):
         lp_scaled = lp * srmax
 
         for t in range(n):
+            # Make sure the solution is larger than 0.0 and smaller than sr
             if sr[t].real > srmax.real:
-                q[t] = sr[t] - srmax
+                q[t] = sr[t] - srmax  # Surface runoff
                 sr[t] = srmax
             elif sr[t].real < 0.0:
                 sr[t] = 0.0
 
+            # Calculate evaporation from the root zone reservoir
             if (sr[t] / lp_scaled).real < 1.0:
                 ea[t] = ep[t] * sr[t] / lp_scaled
             else:
                 ea[t] = ep[t]
 
+            # Calculate the recharge flux
             recharge = ks * (sr[t] / srmax) ** gamma
 
+            # Update storage in the root zone
             if recharge.real < sr[t].real:
                 r[t] = recharge
             else:
@@ -481,7 +485,8 @@ class FlexModel(RechargeBase):
                 pe[t] = 0.0
             si[t + 1] = si[t + 1] - pe[t]
 
-        pi = pr - pe
+        pi = pr - pe  # Compute intercepted precipitation
+
         return si[:-1], -ei, pi
 
     @staticmethod
