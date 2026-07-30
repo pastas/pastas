@@ -489,19 +489,20 @@ class Model:
         looks with only the initial parameters and no calibration.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
+        settings = self._settings
         tmin = (
-            self.settings["tmin"]
+            settings["tmin"]
             if tmin is None
             else self.get_tmin(tmin=tmin, use_oseries=False, use_stresses=True)
         )
         tmax = (
-            self.settings["tmax"]
+            settings["tmax"]
             if tmax is None
             else self.get_tmax(tmax=tmax, use_oseries=False, use_stresses=True)
         )
 
-        freq = self.settings["freq"] if freq is None else freq
-        warmup = self.settings["warmup"] if warmup is None else _parse_warmup(warmup)
+        freq = settings["freq"] if freq is None else freq
+        warmup = settings["warmup"] if warmup is None else _parse_warmup(warmup)
 
         # Get the simulation index and the time step
         # Check if the requested index matches the model settings
@@ -602,14 +603,13 @@ class Model:
             pandas.Series with the residuals.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
-        tmin = self.settings["tmin"] if tmin is None else tmin
-        tmax = self.settings["tmax"] if tmax is None else tmax
-        freq = self.settings["freq"] if freq is None else freq
-        warmup = self.settings["warmup"] if warmup is None else warmup
-        freq = self.settings["freq"] if freq is None else freq
-        freq_obs = (
-            freq if self.settings["freq_obs"] is None else self.settings["freq_obs"]
-        )
+        settings = self._settings
+        tmin = settings["tmin"] if tmin is None else tmin
+        tmax = settings["tmax"] if tmax is None else tmax
+        freq = settings["freq"] if freq is None else freq
+        warmup = settings["warmup"] if warmup is None else warmup
+        freq = settings["freq"] if freq is None else freq
+        freq_obs = freq if settings["freq_obs"] is None else settings["freq_obs"]
 
         # simulate model
         sim = self.simulate(
@@ -781,25 +781,26 @@ class Model:
         oseries. In the `residuals` method, the simulation is interpolated to the
         observation-timestamps.
         """
-        if tmin is None and self.settings["tmin"]:
-            tmin = self.settings["tmin"]
+        settings = self._settings
+        if tmin is None and settings["tmin"]:
+            tmin = settings["tmin"]
         else:
             tmin = self.get_tmin(tmin, use_oseries=False, use_stresses=True)
-        if tmax is None and self.settings["tmax"]:
-            tmax = self.settings["tmax"]
+        if tmax is None and settings["tmax"]:
+            tmax = settings["tmax"]
         else:
             tmax = self.get_tmax(tmax, use_oseries=False, use_stresses=True)
         if freq is None:
-            if self.settings["freq_obs"] is None:
-                freq = self.settings["freq"]
+            if settings["freq_obs"] is None:
+                freq = settings["freq"]
             else:
-                freq = self.settings["freq_obs"]
+                freq = settings["freq_obs"]
 
         oseries = self.oseries
         if not update_observations and (
-            tmin != self.settings["tmin"]
-            or tmax != self.settings["tmax"]
-            or freq != self.settings["freq"]
+            tmin != settings["tmin"]
+            or tmax != settings["tmax"]
+            or freq != settings["freq"]
         ):
             # create a copy, so we do not alter the original self.oseries
             oseries = oseries.copy()
