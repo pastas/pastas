@@ -260,10 +260,9 @@ def _get_sim_index(
     sim_index: pandas.DatetimeIndex
         Pandas DatetimeIndex instance with the datetimes values for which the
         model is simulated.
-
     """
     tmin = tmin.floor(freq) + time_offset
-    sim_index = date_range(start=tmin, end=tmax, freq=freq)
+    sim_index = date_range(start=tmin, end=tmax, freq=freq, unit="us")
     return sim_index
 
 
