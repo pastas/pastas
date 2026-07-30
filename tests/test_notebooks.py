@@ -41,7 +41,7 @@ def test_notebook(file) -> None:
             assert os.path.isfile(os.path.join(testdir, file)), msg
             # Report success
             print(f"Notebook {file} ran successfully.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             os.chdir(cwd)
             raise RuntimeError(f"Could not run notebook {file}, error: {e}")
     os.chdir(cwd)

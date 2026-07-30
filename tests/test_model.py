@@ -160,7 +160,7 @@ class TestModelComponents:
     ) -> None:
         """Test adding a stress model with the same name."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_solved.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_solved.stressmodels.keys()))
 
         # Create a new stress model with the same name but different response function
         ps.StressModel(
@@ -191,7 +191,7 @@ class TestModelComponents:
     def test_del_stressmodel(self, ml_solved: ps.Model) -> None:
         """Test deleting a stress model."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_solved.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_solved.stressmodels.keys()))
 
         ml_solved.del_stressmodel(first_sm_name)
         assert first_sm_name not in ml_solved.stressmodels
@@ -563,14 +563,14 @@ class TestModelContributions:
     ) -> None:
         """Test various contribution-related methods."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_noisemodel.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_noisemodel.stressmodels.keys()))
 
         # Call the method
         method = getattr(ml_noisemodel, method_name)
         result = method(first_sm_name)
 
         # Check result
-        assert isinstance(result, pd.Series) or isinstance(result, pd.DataFrame)
+        assert isinstance(result, (pd.Series, pd.DataFrame))
         if series_name:
             assert result.name == series_name
         if method_name == "get_step_response":
@@ -615,7 +615,7 @@ class TestModelContributions:
     def test_get_response_tmax(self, ml_noisemodel: ps.Model) -> None:
         """Test getting response tmax."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_noisemodel.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_noisemodel.stressmodels.keys()))
 
         tmax = ml_noisemodel.get_response_tmax(first_sm_name)
 
@@ -625,7 +625,7 @@ class TestModelContributions:
     def test_get_stress(self, ml_noisemodel: ps.Model) -> None:
         """Test getting stress series."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_noisemodel.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_noisemodel.stressmodels.keys()))
 
         stress = ml_noisemodel.get_stress(first_sm_name)
 

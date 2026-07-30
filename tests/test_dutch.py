@@ -259,7 +259,7 @@ def test_fill_methods() -> None:
     # Verify that different methods give different results
     methods_with_values = [m for m in methods if not np.isnan(results[m])]
     if len(methods_with_values) > 1:
-        values_set = set([round(results[m], 5) for m in methods_with_values])
+        values_set = {round(results[m], 5) for m in methods_with_values}
         # At least some methods should produce different results
         assert len(values_set) > 1
 
