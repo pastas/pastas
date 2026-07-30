@@ -906,3 +906,41 @@ def _index_to_int64(tindex: DatetimeIndex) -> np.ndarray:
         # is datetime64[us] (microseconds)
         tindex = tindex.as_unit("us")
     return tindex.view("int64")
+
+
+def _get_interpolation_weights(
+    sim_index: DatetimeIndex, obs_index: DatetimeIndex
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Calculate indices and weights for linear interpolation.
+
+    This function computes the necessary indices and weights to interpolate values
+    from a simulation time grid (`sim_index`) to an observation time grid (`obs_index`).
+
+    Parameters
+    ----------
+    sim_index : pandas.DatetimeIndex
+        The time index of the simulation.
+    obs_index : pandas.DatetimeIndex
+        The time index of the observations.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        A tuple containing:
+        - indices (np.ndarray): An array of shape (n_obs, 2) with the indices
+          of the two simulation points surrounding each observation.
+        - weights (np.ndarray): An array of shape (n_obs, 2) with the
+          corresponding weights for interpolation.
+    """
+    sim_idx_int = _index_to_int64(sim_index)
+    obs_idx_int = _index_to_int64(obs_index)
+    indices = np.searchsorted(sim_idx_int, obs_idx_int, side="right") - 1
+    indices = np.vstack([indices, indices + 1]).T
+    np.clip(indices, a_min=0, a_max=len(sim_idx_int) - 1, out=indices)
+    # avoid division by zero for cases where obs index is on sim_index at start/end
+    num = obs_idx_int - sim_idx_int[indices[:, 0]]
+    den = sim_idx_int[indices[:, 1]] - sim_idx_int[indices[:, 0]]
+    weights = np.divide(num, den, out=np.zeros_like(num, dtype=float), where=den != 0)
+    weights = np.vstack([1 - weights, weights]).T
+    return indices, weights
