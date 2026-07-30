@@ -150,6 +150,7 @@ class Model:
         self._interpolation_indices_weights: tuple | None = None  # Interal variable
         self._fit_constant = None  # Internal variable used during solving
         self._sim_index: DatetimeIndex | None = None  # Internal variable during solving
+        self._time_offset: Timedelta | None = None  # Internal variable during solving
 
         # Load modules for statistics and plotting
         self.stats = Statistics(self)
@@ -283,6 +284,8 @@ class Model:
                 "The stress of the stressmodel has no overlap with ml.oseries."
             )
         self._check_stressmodel_compatibility()
+        # Reset time_offset to force recalculation when a new stressmodel is added
+        self._time_offset = None
 
     @PastasDeprecationWarning(
         version="2.4.0",
@@ -995,6 +998,9 @@ class Model:
             self.set_parameter(f"{self.constant.name}_d", initial=0.0, vary=False)
             self._fit_constant = False
 
+        # ensure time offset is reset and recomputed once in case freq is changed
+        self._time_offset = None
+
         # reset _interpolate simulation and _interpolation_indices_weights to None,
         # so they are recalculated once
         self._interpolate_simulation = None
@@ -1364,7 +1370,40 @@ class Model:
 
     @property
     def time_offset(self) -> Timedelta:
+        """Time offset."""
+        return (
+            self._get_time_offset(self.settings["freq"])
+            if self._time_offset is None
+            else self._time_offset
+        )
+
+    @time_offset.setter
+    def time_offset(self, _: Timedelta) -> None:
+        raise AttributeError("time_offset is a read-only property.")
+
+    def _get_time_offset(self, freq: str) -> Timedelta:
         """Property to get the time offset from the settings."""
+        if self._time_offset is None or freq != self._settings["freq"]:
+            time_offsets = set()
+            for stressmodel in self.stressmodels.values():
+                for st in stressmodel.stresses:
+                    if st.freq_original:
+                        # calculate the offset from the default frequency
+                        t = st.series_original.index
+                        base = t.min().ceil(freq)
+                        mask = t >= base
+                        if np.any(mask):
+                            time_offsets.add(_get_time_offset(t[mask][0], freq))
+            if len(time_offsets) > 1:
+                msg = "The time-offset with the frequency is not the same for all stresses."
+                logger.error(msg)
+                raise ValueError(msg)
+            if len(time_offsets) == 1:
+                t_offset = next(iter(time_offsets))
+            else:
+                t_offset = Timedelta(0)
+            self._time_offset = t_offset
+        return self._time_offset
 
     def _get_sim_index(
         self, tmin: Timestamp, tmax: Timestamp, freq: str, warmup: Timedelta
