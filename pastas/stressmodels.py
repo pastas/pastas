@@ -3,17 +3,16 @@
 Stressmodels are used to translate an input time series into contribution that
 explains (part of) the output series.
 
+See Also
+--------
+pastas.model.Model.add_stressmodel
+
 Examples
 --------
 Add a stress model to a Pastas model::
 
     sm = ps.StressModel(stress, rfunc=ps.Gamma(), name="sm1")
     ml.add_stressmodel(stressmodel=sm)
-
-See Also
---------
-pastas.model.Model.add_stressmodel
-
 """
 
 from abc import ABC, abstractmethod
@@ -59,14 +58,14 @@ except (ModuleNotFoundError, ImportError):
 logger = getLogger(__name__)
 
 __all__ = [
-    "StressModel",
+    "ChangeModel",
     "Constant",
-    "StepModel",
     "LinearTrend",
     "RechargeModel",
-    "WellModel",
+    "StepModel",
+    "StressModel",
     "TarsoModel",
-    "ChangeModel",
+    "WellModel",
 ]
 
 
@@ -135,7 +134,6 @@ class StressModelBase(ABC):
     @abstractmethod
     def nsplit(self) -> int:
         """Number of time series the contribution can be split in."""
-        pass
 
     @property
     @PastasDeprecationWarning(
@@ -241,7 +239,6 @@ class StressModelBase(ABC):
 
     def set_stress(self, *args, **kwargs) -> None:
         """Set the stress for the stress model."""
-        pass
 
     def get_stress(
         self,
@@ -290,15 +287,14 @@ class StressModelBase(ABC):
             String representing the desired frequency of the time series. Must be one
             of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
 
-        Notes
-        -----
-        For the individual options for the different settings please refer to the
-        docstring from the TimeSeries.update_series() method.
-
         See Also
         --------
         ps.timeseries.TimeSeries.update_series
 
+        Notes
+        -----
+        For the individual options for the different settings please refer to the
+        docstring from the TimeSeries.update_series() method.
         """
         for stress in self.stresses:
             stress.update_series(freq=freq, tmin=tmin, tmax=tmax)
@@ -495,18 +491,17 @@ class StressModel(StressModelBase):
            * `max`: resample time series with maximum value
            * `min`: resample time series with minimum value
 
+    See Also
+    --------
+    pastas.rfunc
+    pastas.timeseries.TimeSeries
+
     Examples
     --------
     >>> import pastas as ps
     >>> import pandas as pd
     >>> sm = ps.StressModel(stress=pd.Series(), rfunc=ps.Gamma(), name="Prec",
     >>>                     settings="prec")
-
-    See Also
-    --------
-    pastas.rfunc
-    pastas.timeseries.TimeSeries
-
     """
 
     @check_argument_model
@@ -546,7 +541,7 @@ class StressModel(StressModelBase):
 
     @property
     def stress(self) -> TimeSeries:
-        """Return the stress time series."""
+        """Stress time series."""
         return self._stress
 
     @stress.setter
@@ -1245,12 +1240,13 @@ class WellModel(StressModelBase):
 
         self.rfunc.set_distances(self.distances.values)
         self.set_init_parameters()
+
         if self.model is not None:
             self.model._add_stressmodel(self)
 
     @property
     def stress(self) -> tuple[TimeSeries, ...]:
-        """Return the stress time series."""
+        """Stress time series."""
 
         class TupleWithSetError(tuple):
             def __setitem__(self, *args, **kwargs):
@@ -1300,7 +1296,7 @@ class WellModel(StressModelBase):
         data = []
 
         # parse settings input
-        if settings is None or isinstance(settings, str) or isinstance(settings, dict):
+        if settings is None or isinstance(settings, (str, dict)):
             settings = len(stress) * [settings]
 
         # if metadata is passed as dict -> convert to list
@@ -1619,7 +1615,7 @@ class WellModel(StressModelBase):
 
         if istress is None and r is None:
             r = np.asarray(self.distances, dtype=float)
-        elif isinstance(istress, int) or isinstance(istress, list):
+        elif isinstance(istress, (int, list)):
             if r is not None:
                 logger.warning("kwarg 'r' is only used if istress is None!")
             r = self.distances.iloc[istress]
@@ -1737,7 +1733,7 @@ class WellModel(StressModelBase):
             "stress": self.dump_stress(series=series),
             "rfunc": self.rfunc.to_dict(),
             "distances": self.distances.to_list(),
-            "up": True if self.rfunc.up else False,
+            "up": bool(self.rfunc.up),
             "sort_wells": self.sort_wells,
         }
         return data
@@ -1783,62 +1779,47 @@ class RechargeModel(StressModelBase):
         Maximum size of the cache (in number of entries). Only used when cachetools is
         installed and caching is enabled (see ps.set_use_cache()).
 
-    Examples
-    --------
-    >>> sm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential(),
-    >>>                       recharge=ps.rch.FlexModel(), name="rch")
-    >>> ml.add_stressmodel(sm)
-
     Other Parameters
     ----------------
     Time series settings
 
     fill_nan : {"drop", "mean", "interpolate"} or float
         Method for filling NaNs.
-           * `drop`: drop NaNs from time series
-           * `mean`: fill NaNs with mean value of time series
-           * `interpolate`: fill NaNs by interpolating between finite values
-           * `float`: fill NaN with provided value, e.g. 0.0
+            * `drop`: drop NaNs from time series
+            * `mean`: fill NaNs with mean value of time series
+            * `interpolate`: fill NaNs by interpolating between finite values
+            * `float`: fill NaN with provided value, e.g. 0.0
     fill_before : {"mean", "bfill"} or float
         Method for extending time series into past.
-           * `mean`: extend time series into past with mean value of time series
-           * `bfill`: extend time series into past by back-filling first value
-           * `float`: extend time series into past with provided value, e.g. 0.0
+            * `mean`: extend time series into past with mean value of time series
+            * `bfill`: extend time series into past by back-filling first value
+            * `float`: extend time series into past with provided value, e.g. 0.0
     fill_after : {"mean", "ffill"} or float
         Method for extending time series into future.
-           * `mean`: extend time series into future with mean value of time series
-           * `ffill`: extend time series into future by forward-filling last value
-           * `float`: extend time series into future with provided value, e.g. 0.0
+            * `mean`: extend time series into future with mean value of time series
+            * `ffill`: extend time series into future by forward-filling last value
+            * `float`: extend time series into future with provided value, e.g. 0.0
     sample_up : {"mean", "interpolate", "divide"} or float
         Method for up-sampling time series (increasing frequency, e.g. going from weekly
         to daily values).
-           * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
-             values
-           * `ffill` or `pad`: fill up-sampled time steps by forward-filling current
-             values
-           * `mean`: fill up-sampled time steps with mean of timeseries
-           * `interpolate`: fill up-sampled time steps by interpolating between current
-             values
-           * `divide`: fill up-sampled steps with current value divided by length of
-             current time steps (i.e. spread value over new time steps).
+            * `bfill` or `backfill`: fill up-sampled time steps by back-filling current
+                values
+            * `ffill` or `pad`: fill up-sampled time steps by forward-filling current
+                values
+            * `mean`: fill up-sampled time steps with mean of timeseries
+            * `interpolate`: fill up-sampled time steps by interpolating between current
+                values
+            * `divide`: fill up-sampled steps with current value divided by length of
+                current time steps (i.e. spread value over new time steps).
     sample_down : {"mean", "drop", "sum", "min", "max"}
         Method for down-sampling time series (decreasing frequency, e.g. going from
         daily to weekly values).
-           * `mean`: resample time series by taking the mean
-           * `drop`: resample the time series by taking the mean, dropping any
-             NaN-values
-           * `sum`: resample time series by summing values
-           * `max`: resample time series with maximum value
-           * `min`: resample time series with minimum value
-
-    Notes
-    -----
-    This stress model computes the contribution of precipitation and potential
-    evaporation in two steps. In the first step a recharge flux is computed by a
-    model determined by the input argument `recharge`. In the second step this
-    recharge flux is convolved with a response function to obtain the contribution
-    of recharge to the groundwater levels. If a nonlinear recharge model is used, the
-    precipitation should be in mm/d.
+            * `mean`: resample time series by taking the mean
+            * `drop`: resample the time series by taking the mean, dropping any
+                NaN-values
+            * `sum`: resample time series by summing values
+            * `max`: resample time series with maximum value
+            * `min`: resample time series with minimum value
 
     Warnings
     --------
@@ -1856,6 +1837,20 @@ class RechargeModel(StressModelBase):
     pastas.timeseries.TimeSeries
     pastas.recharge
 
+    Notes
+    -----
+    This stress model computes the contribution of precipitation and potential
+    evaporation in two steps. In the first step a recharge flux is computed by a
+    model determined by the input argument `recharge`. In the second step this
+    recharge flux is convolved with a response function to obtain the contribution
+    of recharge to the groundwater levels. If a nonlinear recharge model is used, the
+    precipitation should be in mm/d.
+
+    Examples
+    --------
+    >>> sm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential(),
+    >>>                       recharge=ps.rch.FlexModel(), name="rch")
+    >>> ml.add_stressmodel(sm)
     """
 
     @check_argument_model
@@ -1962,7 +1957,7 @@ class RechargeModel(StressModelBase):
         ),
     )
     def stress(self) -> None:
-        """Return the stress time series.
+        """Stress time series.
 
         .. deprecated:: 2.0.0
            The `stress` property is deprecated and will be removed in a future version. Use the
@@ -1970,11 +1965,10 @@ class RechargeModel(StressModelBase):
             call the `prec`, `evap` and `temp` attributes. Changing the stress can be done using
             the `set_stress` method.
         """
-        pass
 
     @property
     def prec(self) -> TimeSeries:
-        """Return the stress time series."""
+        """Precipitation time series."""
         return self._prec
 
     @prec.setter
@@ -1984,7 +1978,7 @@ class RechargeModel(StressModelBase):
 
     @property
     def evap(self) -> TimeSeries:
-        """Return the stress time series."""
+        """Evaporation time series."""
         return self._evap
 
     @evap.setter
@@ -1994,7 +1988,7 @@ class RechargeModel(StressModelBase):
 
     @property
     def temp(self) -> TimeSeries | None:
-        """Return the stress time series."""
+        """Temperature time series."""
         return self._temp
 
     @temp.setter
@@ -2223,7 +2217,7 @@ class RechargeModel(StressModelBase):
             if p is None:
                 p = self.parameters.loc[:, "initial"].to_numpy()
             stress = self.recharge.simulate(
-                prec=prec, evap=evap, p=p[-self.recharge.nparam :], **{"temp": temp}
+                prec=prec, evap=evap, p=p[-self.recharge.nparam :], temp=temp
             )
             return Series(
                 data=stress,
@@ -2272,15 +2266,15 @@ class RechargeModel(StressModelBase):
         wb: pandas.DataFrame
             Dataframe with the water balance components, both fluxes and states.
 
+        Warnings
+        --------
+        This is an experimental method and may change in the future.
+
         Notes
         -----
         This method return a data frame with all water balance components, fluxes and
         states. All ingoing fluxes have a positive sign (e.g., precipitation) and all
         outgoing fluxes have negative sign (e.g., recharge).
-
-        Warnings
-        --------
-        This is an experimental method and may change in the future.
 
         Examples
         --------
@@ -2857,7 +2851,7 @@ class ChangeModel(StressModelBase):
 
     @property
     def stress(self) -> TimeSeries:
-        """Return the stress time series."""
+        """Stress time series."""
         return self._stress
 
     @stress.setter
@@ -2906,8 +2900,8 @@ class ChangeModel(StressModelBase):
         """Set the initial parameters (back) to their default values."""
         self.parameters = concat(
             [
-                self.rfunc1.get_init_parameters("{}_1".format(self.name)),
-                self.rfunc2.get_init_parameters("{}_2".format(self.name)),
+                self.rfunc1.get_init_parameters(f"{self.name}_1"),
+                self.rfunc2.get_init_parameters(f"{self.name}_2"),
             ],
             axis=0,
         )
