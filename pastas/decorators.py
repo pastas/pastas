@@ -6,7 +6,7 @@ and other convenient methods for handling time, numba compiled code, etc.
 
 from collections.abc import Callable
 from contextlib import contextmanager
-from functools import partial, wraps
+from functools import wraps
 from logging import getLogger
 from typing import Any
 from warnings import warn
@@ -248,7 +248,7 @@ def get_stressmodel(function: Callable) -> Callable:
 
     @wraps(function)
     def _get_stressmodel(self, name: str, **kwargs):
-        if name not in self.stressmodels.keys():
+        if name not in self.stressmodels:
             msg = (
                 "The stressmodel name you provided is not in the stressmodels dict. "
                 "Please select from the following list: %s"
@@ -358,7 +358,6 @@ def latexfun(**kwargs) -> None:
 
     This decorator is deprecated and will be removed in a future release.
     """
-    pass
 
 
 def conditional_cachedmethod(cache_getter):
