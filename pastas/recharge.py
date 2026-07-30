@@ -934,7 +934,7 @@ class Peterson(RechargeBase):
             r[t] = r_val if r_val.real > sm[t + 1].real else sm[t + 1]
             sm_new = sm[t] + (pe[t] - ea[t] - r[t]) * dt
             if sm_new.real < 0.0:
-                sm[t + 1] = complex(0.0)
+                sm[t + 1] = 0.0
             elif sm_new.real > smsc.real:
                 sm[t + 1] = smsc
             else:
