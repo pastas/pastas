@@ -620,10 +620,9 @@ class LeastSquaresBase(SolverBase):
         len_param = len(parameters.to_string().split("\n")[1])
         width = max((len_fit + len_model + 8), len_param)
         string = "{:{fill}{align}{width}}"
-        string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
-        wspace = max(width - (11 + 14 + len(self.name)), 1)
+        wspace = max(width - (11 + 14 + len(self.model.name)), 1)
         mspace = width - wspace - (11 + 14)
         header = (
             f"Fit report {self.model.name:<{mspace}.{mspace}}"
