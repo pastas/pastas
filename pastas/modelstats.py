@@ -608,7 +608,7 @@ class Statistics:
         >>> ml.stats.summary(stats=["mae", "rmse"])
         """
         if stats is None:
-            stats_to_compute = self.ops
+            stats_to_compute = list(self.ops)
         else:
             stats_to_compute = stats
 

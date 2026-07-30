@@ -1902,15 +1902,15 @@ class Polder(RfuncBase):
         parameters : pandas.DataFrame
             The initial parameters and parameter bounds used by the solver.
         """
+        if self.up:
+            initial_A, pmin_A, pmax_A = 1.0, 0.0, 2.0
+        elif self.up is False:
+            initial_A, pmin_A, pmax_A = -1.0, -2.0, 0.0
+        else:  # self.up is None
+            initial_A, pmin_A, pmax_A = 1.0, np.nan, np.nan
         parameters = DataFrame(
             [
-                (
-                    1.0 if self.up else -1.0,
-                    0.0 if self.up else -2.0,
-                    2.0 if self.up else 0.0,
-                    True,
-                    name,
-                ),
+                (initial_A, pmin_A, pmax_A, True, name),
                 (10.0, 1e-2, 1e3, True, name),
                 (1.0, 1e-6, 25.0, True, name),
             ],
@@ -2149,7 +2149,7 @@ class One(RfuncBase):
                     if self.up is False
                     else self.gain_scale_factor,
                     0.0 if self.up else np.nan,
-                    np.nan if self.up else 0.0,
+                    np.nan if self.up else 0.0 if self.up is False else np.nan,
                     True,
                     name,
                 )
