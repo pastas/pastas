@@ -264,7 +264,7 @@ def test_fill_methods() -> None:
         assert len(values_set) > 1
 
 
-class TestGXG(object):
+class TestGXG:
     def test_ghg(self) -> None:
         idx = pd.to_datetime(["20160114", "20160115", "20160128", "20160214"])
         s = pd.Series([10.0, 3.0, 30.0, 20.0], index=idx)
@@ -336,7 +336,7 @@ class TestGXG(object):
         assert np.isnan(v)
 
 
-class TestQGXG(object):
+class TestQGXG:
     def test_q_ghg(self) -> None:
         n = 101
         idx = pd.date_range("20160101", freq="D", periods=n)

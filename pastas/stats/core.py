@@ -68,6 +68,11 @@ def acf(
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the ACF is returned.
 
+    See Also
+    --------
+    pastas.stats.ccf
+    statsmodels.api.tsa.acf
+
     Notes
     -----
     The ACF method primarily tries to estimate the autocorrelation using common
@@ -88,10 +93,6 @@ def acf(
 
     >>> acf = ps.stats.acf(series, lags=np.arange(1.0, 366.0, 2.0))
 
-    See Also
-    --------
-    pastas.stats.ccf
-    statsmodels.api.tsa.acf
     """
     if "x" in kwargs:
         deprecate_args_or_kwargs(
@@ -183,10 +184,6 @@ def ccf(
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the CCF is returned.
 
-    Examples
-    --------
-    >>> ccf = ps.stats.ccf(series_x, series_y, bin_method="gaussian")
-
     Notes
     -----
     The CCF method primarily tries to estimate the correlation using common
@@ -200,6 +197,9 @@ def ccf(
     on the data and the binning method and settings used, the correlation can be above
     1 or below -1. If this occurs, a warning is raised.
 
+    Examples
+    --------
+    >>> ccf = ps.stats.ccf(series_x, series_y, bin_method="gaussian")
     """
     if "x" in kwargs:
         deprecate_args_or_kwargs(

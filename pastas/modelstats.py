@@ -41,7 +41,7 @@ class Statistics:
     """
 
     # Save all statistics that can be calculated.
-    ops = [
+    ops = (
         "rmse",
         "rmsn",
         "sse",
@@ -54,7 +54,7 @@ class Statistics:
         "bic",
         "aic",
         "aicc",
-    ]
+    )
 
     def __init__(self, ml: Model):
         # Save a reference to the model.

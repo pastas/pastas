@@ -590,7 +590,7 @@ def _gxg(
         elif output == "mean":
             return nan
         else:
-            ValueError("{output:} is not a valid output option".format(output=output))
+            raise ValueError(f"{output} is not a valid output option")
 
     # resample the series to values at the 14th and 28th of every month
     # first generate a daily series by averaging multiple measurements during the day
@@ -657,9 +657,7 @@ def _gxg(
         yearly = concat(collect)
 
     # return statements
-    if output.startswith("year"):
-        return yearly
-    elif output == "g3":
+    if output.startswith("year") or output == "g3":
         return yearly
     elif output == "mean":
         if yearly.notna().sum() < min_n_years:
@@ -667,7 +665,7 @@ def _gxg(
         else:
             return yearly.mean()
     else:
-        msg = "{} is not a valid output option".format(output)
+        msg = f"{output} is not a valid output option"
         raise ValueError(msg)
 
 

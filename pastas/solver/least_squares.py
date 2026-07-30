@@ -56,7 +56,7 @@ class LeastSquaresBase(SolverBase):
             kwargs.pop("obj_func")
         super().__init__(model=model, name=name, **kwargs)
         self.pcov: DataFrame | None = pcov
-        self.result: OptimizeResult | "lmfit.minimize.MinimizerResult" | None = None
+        self.result: OptimizeResult | lmfit.minimize.MinimizerResult | None = None
 
     @property
     def pcor(self) -> DataFrame | None:
@@ -249,12 +249,12 @@ class LeastSquaresBase(SolverBase):
             suggestion = "You could try increasing 'max_iter'."
             if samples.shape[0] == 0:
                 raise RuntimeError(
-                    "No parameter samples were found within %s runs. " % max_iter
+                    f"No parameter samples were found within {max_iter} runs. "
                     + suggestion
                 )
             else:
                 logger.warning(
-                    "Parameter sample size is smaller than n: %s/%s. " % (max_iter, n)
+                    f"Parameter sample size is smaller than n: {max_iter}/{n}. "
                     + suggestion
                 )
         return samples[:n, :]
@@ -514,7 +514,6 @@ class LeastSquaresBase(SolverBase):
             contains at least the following columns: "optimal", "stderr"
 
         """
-        pass
 
     def fit_report(
         self,
@@ -551,23 +550,23 @@ class LeastSquaresBase(SolverBase):
         report: str
             String with the report.
 
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where possible.
+        If interpolation is used this means that the result may slightly differ
+        compared to using ml.simulate() and ml.observations().
+
         Examples
         --------
         This method is called by the solve method if report=True, but can also be
         called on its own::
 
         >>> print(ml.fit_report)
-
-        Notes
-        -----
-        The reported values for the fit use the residuals time series where possible.
-        If interpolation is used this means that the result may slightly differ
-        compared to using ml.simulate() and ml.observations().
         """
         model = {
             "nfev": self.result.nfev if self.result is not None else 0,
             "nobs": self.model.observations().index.size,
-            "noise": str(True if self.model.noisemodel else False),
+            "noise": str(bool(self.model.noisemodel)),
             "tmin": str(self.model.settings["tmin"]),
             "tmax": str(self.model.settings["tmax"]),
             "freq": self.model.settings["freq"],
@@ -605,11 +604,9 @@ class LeastSquaresBase(SolverBase):
             )
 
         # determine width of the fit_report
-        len_fit = max([len(v) for v in fit.values()]) + max(
-            [len(v) for v in fit.keys()]
-        )
-        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
-            [len(v) for v in model.keys()]
+        len_fit = max(len(v) for v in fit.values()) + max(len(v) for v in fit)
+        len_model = max(len(v) for v in model.values() if isinstance(v, str)) + max(
+            len(v) for v in model
         )
         len_param = len(parameters.to_string().split("\n")[1])
         width = max((len_fit + len_model + 8), len_param)
@@ -627,7 +624,7 @@ class LeastSquaresBase(SolverBase):
         )
 
         basic = ""
-        len_val4 = max([len(v) for v in fit.values()])
+        len_val4 = max(len(v) for v in fit.values())
         wspace = width - (9 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
@@ -668,8 +665,10 @@ class LeastSquaresBase(SolverBase):
             # create message
             if len(msg) > 0:
                 msg = [
-                    f"\n\nWarnings! ({len(msg)})\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
+                    (
+                        f"\n\nWarnings! ({len(msg)})\n"
+                        f"{string.format('', fill='=', align='>', width=width)}"
+                    )
                 ] + msg
                 warnings_rep += "\n".join(msg)
 
@@ -697,13 +696,13 @@ class LeastSquares(LeastSquaresBase):
     method. All kwargs provided to the Model.solve() method are forwarded to the
     solver. From there, they are forwarded to Scipy least_squares solver.
 
-    Examples
-    --------
-    >>> ml.solve(solver=ps.solver.LeastSquares())
-
     References
     ----------
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+
+    Examples
+    --------
+    >>> ml.solve(solver=ps.solver.LeastSquares())
     """
 
     def __init__(
@@ -1044,18 +1043,18 @@ class LeastSquares(LeastSquaresBase):
         report: str
             String with the report.
 
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where possible.
+        If interpolation is used this means that the result may slightly differ
+        compared to using ml.simulate() and ml.observations().
+
         Examples
         --------
         This method is called by the solve method if report=True, but can also be
         called on its own::
 
         >>> print(ml.fit_report)
-
-        Notes
-        -----
-        The reported values for the fit use the residuals time series where possible.
-        If interpolation is used this means that the result may slightly differ
-        compared to using ml.simulate() and ml.observations().
         """
         return super().fit_report(
             corr=corr,
@@ -1113,12 +1112,12 @@ class Lmfit(LeastSquaresBase):
         self._assert_lmfit_installation()
         super().__init__(model=model, name=name, pcov=pcov, **kwargs)
         self.method = method
-        self.result: "lmfit.minimize.MinimizerResult" | None = None
+        self.result: lmfit.minimize.MinimizerResult | None = None
 
     def _assert_lmfit_installation(self) -> None:
         try:
             global lmfit
-            import lmfit as lmfit  # Import Lmfit here, so it is no dependency
+            import lmfit  # Import Lmfit here, so it is no dependency
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg) from None

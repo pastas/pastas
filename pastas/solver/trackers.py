@@ -284,9 +284,7 @@ class TrackSolve:
         sim = self._simulate()
         (self.simplot,) = self.ax0.plot(sim.index, sim, label="simulation")
         self.ax0.set_ylabel("head")
-        self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
-        )
+        self.ax0.set_title(f"Iteration: {self.itercount} (EVP: {self.evp[-1]:.2f}%)")
         self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
         omax = self.obs.max()
         omin = self.obs.min()
@@ -327,9 +325,8 @@ class TrackSolve:
         self.param_plot_handles = []
         legend_handles = []
         for pname, row in self.ml.parameters.iterrows():
-            if pname.startswith("noise"):
-                if self.ml.noisemodel is None:
-                    continue
+            if pname.startswith("noise") and self.ml.noisemodel is None:
+                continue
             (pa,) = self.ax2.plot(
                 [0], np.abs(row.initial), marker=".", ls="none", label=pname
             )
@@ -427,9 +424,7 @@ class TrackSolve:
             )
 
         # update title
-        self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
-        )
+        self.ax0.set_title(f"Iteration: {self.itercount} (EVP: {self.evp[-1]:.2f}%)")
         plt.pause(self.pause)
         self.fig.canvas.draw()
 

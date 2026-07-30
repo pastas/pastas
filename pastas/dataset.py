@@ -94,7 +94,7 @@ def load_dataset(name: DATASET_NAMES) -> DataFrame | dict[str, DataFrame]:
     # Loop over the files in the folder
     rjson = r.json()
     read_csv_kwargs = requests.get(
-        [x for x in rjson if x["name"] == "settings.json"][0]["download_url"]
+        next(x for x in rjson if x["name"] == "settings.json")["download_url"]
     ).json()
     for file in rjson:
         fname = file["name"]
@@ -105,7 +105,7 @@ def load_dataset(name: DATASET_NAMES) -> DataFrame | dict[str, DataFrame]:
     # Return the data, if only one file is found return the dataframe, otherwise return
     # a dictionary with the dataframes
     if len(data) == 1:
-        return list(data.values())[0]
+        return next(iter(data.values()))
     elif len(data) > 1:
         return data
     else:

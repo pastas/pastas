@@ -66,7 +66,7 @@ register_matplotlib_converters()
     version="2.3.0",
     reason="The LmfitSolve class will be removed from the pastas module namespace. Please use ps.solver.Lmfit instead.",
 )
-def LmfitSolve(*args, **kwargs):  # noqa: F811
+def LmfitSolve(*args, **kwargs):
     """Use ps.solver.Lmfit instead (deprecated)."""
     return solver.Lmfit(*args, **kwargs)
 
@@ -75,7 +75,7 @@ def LmfitSolve(*args, **kwargs):  # noqa: F811
     version="2.3.0",
     reason="The EmceeSolve class will be removed from the pastas module namespace. Please use ps.solver.Emcee instead.",
 )
-def EmceeSolve(*args, **kwargs):  # noqa: F811
+def EmceeSolve(*args, **kwargs):
     """Use ps.solver.Emcee instead (deprecated)."""
     return solver.Emcee(*args, **kwargs)
 
@@ -84,6 +84,6 @@ def EmceeSolve(*args, **kwargs):  # noqa: F811
     version="2.3.0",
     reason="The LeastSquares class will be removed from the pastas module namespace. Please use ps.solver.LeastSquares instead.",
 )
-def LeastSquares(*args, **kwargs):  # noqa: F811
+def LeastSquares(*args, **kwargs):
     """Use ps.solver.LeastSquares instead (deprecated)."""
     return solver.LeastSquares(*args, **kwargs)
