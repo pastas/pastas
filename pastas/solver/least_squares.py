@@ -179,7 +179,11 @@ class LeastSquaresBase(SolverBase):
         return pcor
 
     def get_parameter_sample(
-        self, name: str | None = None, n: int | None = None, max_iter: int = 10
+        self,
+        name: str | None = None,
+        n: int | None = None,
+        max_iter: int = 10,
+        seed: int | None = None,
     ) -> ArrayLike:
         """Obtain a parameter sets for monte carlo analyses.
 
@@ -195,6 +199,8 @@ class LeastSquaresBase(SolverBase):
             maximum number of iterations for truncated multivariate sampling, default
             is 10. Increase this value if number of accepted parameter samples is lower
             than n.
+        seed: int, optional
+            Seed for the random number generator.
 
         Returns
         -------
@@ -229,7 +235,7 @@ class LeastSquaresBase(SolverBase):
 
         # Start truncated multivariate sampling
         it = 0
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(seed=seed)
         while samples.shape[0] < n:
             s = rng.multivariate_normal(
                 mean=p, cov=pcov, size=(n,), check_valid="ignore"
@@ -611,10 +617,9 @@ class LeastSquaresBase(SolverBase):
         len_param = len(parameters.to_string().split("\n")[1])
         width = max((len_fit + len_model + 8), len_param)
         string = "{:{fill}{align}{width}}"
-        string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
-        wspace = max(width - (11 + 14 + len(self.name)), 1)
+        wspace = max(width - (11 + 14 + len(self.model.name)), 1)
         mspace = width - wspace - (11 + 14)
         header = (
             f"Fit report {self.model.name:<{mspace}.{mspace}}"
@@ -766,7 +771,8 @@ class LeastSquares(LeastSquaresBase):
             function that is called after each iteration. the parameters are
             provided to the func.
         """
-        par = initial
+        # set dtype complex for jac='cs'
+        par = np.array(initial, copy=True, dtype=np.asarray(p).dtype)
         par[vary] = p
         return misfit(
             ml=self.model, p=par, noise=noise, weights=weights, callback=callback

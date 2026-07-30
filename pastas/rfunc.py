@@ -2594,8 +2594,6 @@ class FourParam(RfuncBase):
         **kwargs,
     ) -> ArrayLike:
         """Return the step function for FourParam response."""
-        impulse_integral = self._impulse_integral(p)
-
         if np.iscomplexobj(p) and self.use_block:
             raise NotImplementedError(
                 "FourParam does not support complex-step Jacobian evaluation "
@@ -2603,6 +2601,7 @@ class FourParam(RfuncBase):
                 "FourParam response function, or use a different Jacobian "
                 "method (e.g., jac='3-point' or jac='2-point')."
             )
+        impulse_integral = self._impulse_integral(p)
 
         if self.quad:
             t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
