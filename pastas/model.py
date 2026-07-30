@@ -149,6 +149,7 @@ class Model:
         self._interpolate_simulation: bool | None = None
         self._interpolation_indices_weights: tuple | None = None  # Interal variable
         self._fit_constant = None  # Internal variable used during solving
+        self._sim_index: DatetimeIndex | None = None  # Internal variable during solving
 
         # Load modules for statistics and plotting
         self.stats = Statistics(self)
@@ -501,22 +502,7 @@ class Model:
 
         # Get the simulation index and the time step
         # Check if the requested index matches the model settings
-        if (
-            tmin == self.settings["tmin"]
-            and tmax == self.settings["tmax"]
-            and freq == self.settings["freq"]
-            and warmup == self.settings["warmup"]
-        ):
-            sim_index = self.sim_index
-        else:
-            # simulate with the requested settings, but do not update
-            # the model settings, since this is just for one time
-            sim_index = _get_sim_index(
-                tmin=tmin - warmup,
-                tmax=tmax,
-                freq=freq,
-                time_offset=self.time_offset,
-            )
+        sim_index = self._get_sim_index(tmin=tmin, tmax=tmax, freq=freq, warmup=warmup)
         dt = _get_dt(freq)
 
         # Get parameters if none are provided
@@ -528,15 +514,29 @@ class Model:
         sim = Series(data=np.zeros(sim_index.size, dtype=float), index=sim_index)
 
         istart = 0  # Track parameters index to pass to stressmodel object
+        sim_index_min = sim_index.min()
+        sim_index_first = sim_index[0]
+        sim_index_last = sim_index[-1]
         for sm in self.stressmodels.values():
             contrib = sm.simulate(
                 p=p[istart : istart + sm.nparam],
-                tmin=sim_index.min(),
+                tmin=sim_index_min,
                 tmax=tmax,
                 freq=freq,
                 dt=dt,
             )
-            sim = sim.add(contrib)
+            same_grid = (
+                contrib.index.size == sim_index.size
+                and contrib.index.size > 0
+                and contrib.index[0] == sim_index_first
+                and contrib.index[-1] == sim_index_last
+            )
+            if not same_grid:
+                raise ValueError(
+                    f"Simulation of stressmodel {sm.name} does not match the simulation "
+                    "index. Check the settings of the stressmodel and/or the model "
+                    "settings."
+                )
             istart += sm.nparam
         if self.constant:
             sim = sim + self.constant.simulate(p[istart])
@@ -1162,8 +1162,8 @@ class Model:
                     "Cannot update freq_obs to 'None'."
                     "Please use `self._settings['freq_obs'] = None` or "
                     "ml.reset_settings()."
-                )
-            )
+        # always clear the _sim_index after set_settings
+        self._sim_index = None
 
     def set_parameter(
         self,
@@ -1365,33 +1365,15 @@ class Model:
     @property
     def time_offset(self) -> Timedelta:
         """Property to get the time offset from the settings."""
-        freq = self.settings["freq"]
-        time_offsets = set()
-        for stressmodel in self.stressmodels.values():
-            for st in stressmodel.stresses:
-                if st.freq_original:
-                    # calculate the offset from the default frequency
-                    t = st.series_original.index
-                    base = t.min().ceil(freq)
-                    mask = t >= base
-                    if np.any(mask):
-                        time_offsets.add(_get_time_offset(t[mask][0], freq))
-        if len(time_offsets) > 1:
-            msg = "The time-offset with the frequency is not the same for all stresses."
-            logger.error(msg)
-            raise ValueError(msg)
-        if len(time_offsets) == 1:
-            return next(iter(time_offsets))
-        else:
-            return Timedelta(0)
 
-    @property
-    def sim_index(self) -> DatetimeIndex:
-        """Property that returns the simulation index, including the warmup.
+    def _get_sim_index(
+        self, tmin: Timestamp, tmax: Timestamp, freq: str, warmup: Timedelta
+    ) -> DatetimeIndex:
+        """Get (and cache) the simulation index, including the warmup period.
 
-        Using the tmin, tmax, freq, and warmup from the model
-        settings, a DatetimeIndex is created that includes the warmup period.
-        This index is used for simulating the model and calculating the residuals.
+        A DatetimeIndex is created that includes the warmup period. This index is
+        used for simulating the model and calculating the residuals. If the tmin,
+        tmax, freq, and warmup match the model settings, the index is cached.
 
         Returns
         -------
@@ -1399,6 +1381,31 @@ class Model:
             Pandas DatetimeIndex instance with the datetimes values for which the
             model is simulated.
         """
+        settings_match = (tmin, tmax, freq, warmup) == (
+            self._settings["tmin"],
+            self._settings["tmax"],
+            self._settings["freq"],
+            self._settings["warmup"],
+        )
+
+        if settings_match and self._sim_index is not None:
+            return self._sim_index
+        else:
+            sim_index = _get_sim_index(
+                tmin=tmin - warmup, tmax=tmax, freq=freq, time_offset=self.time_offset
+            )
+            if settings_match:
+                self._sim_index = sim_index
+            return sim_index
+
+    @property
+    def sim_index(self) -> DatetimeIndex:
+        """Simulation index."""
+        return self._sim_index
+
+    @sim_index.setter
+    def sim_index(self, _: DatetimeIndex) -> None:
+        raise AttributeError("sim_index is a read-only property.")
 
     def _get_interpolation_indices_weights(self, sim_index, obs_index) -> Series:
         """Property that returns the interpolation weights for the simulation index.
