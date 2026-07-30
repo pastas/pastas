@@ -515,7 +515,9 @@ class Model:
         elif isinstance(p, Series):
             p = p.values
 
-        sim = Series(data=np.zeros(sim_index.size, dtype=float), index=sim_index)
+        sim_values = np.zeros(
+            sim_index.size, dtype=np.complex128 if np.iscomplexobj(p) else np.float64
+        )
 
         istart = 0  # Track parameters index to pass to stressmodel object
         sim_index_min = sim_index.min()
@@ -541,14 +543,17 @@ class Model:
                     "index. Check the settings of the stressmodel and/or the model "
                     "settings."
                 )
+            sim_values += contrib.to_numpy(copy=False)
             istart += sm.nparam
         if self.constant:
-            sim = sim + self.constant.simulate(p[istart])
+            sim_values += self.constant.simulate(p[istart])
             istart += 1
         if self.transform:
-            sim = self.transform.simulate(
-                sim, p[istart : istart + self.transform.nparam]
+            sim_values = self.transform.simulate(
+                sim_values, p[istart : istart + self.transform.nparam]
             )
+
+        sim = Series(data=sim_values, index=sim_index)
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
