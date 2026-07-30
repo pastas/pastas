@@ -51,9 +51,9 @@ from pastas.timeseries import ObservationSeries
 from pastas.timeseries_utils import (
     _frequency_is_supported,
     _get_dt,
+    _get_interpolation_weights,
     _get_sim_index,
     _get_time_offset,
-    _index_to_int64,
     _parse_warmup,
 )
 from pastas.transform import ThresholdTransform
@@ -147,6 +147,7 @@ class Model:
 
         # some _attributes simulation and solving
         self._interpolate_simulation: bool | None = None
+        self._interpolation_indices_weights: tuple | None = None  # Interal variable
         self._fit_constant = None  # Internal variable used during solving
 
         # Load modules for statistics and plotting
@@ -614,20 +615,25 @@ class Model:
 
         # Get the oseries calibration series
         obs = self.observations(tmin=tmin, tmax=tmax, freq=freq_obs)
+
         # Get simulation at the correct indices
-        if self._interpolate_simulation is None:
-            if obs.index.difference(sim.index).size != 0:
-                self._interpolate_simulation = True
+        if self._interpolate_simulation is None:  # if not set before
+            self._interpolate_simulation = obs.index.difference(sim.index).size != 0
+            if self._interpolate_simulation:
                 logger.info(
                     "There are observations between the simulation time steps. Linear "
                     "interpolation between simulated values is used."
                 )
         if self._interpolate_simulation:
-            # interpolate simulation to times of observations
-            sim_interpolated = np.interp(
-                _index_to_int64(obs.index),
-                _index_to_int64(sim.index),
-                sim.to_numpy(),
+            # Interpolate using pre-calculated weights and indices
+            sim_values = sim.to_numpy(copy=False)
+            indices, weights = self._get_interpolation_indices_weights(
+                sim.index,
+                obs.index,
+            )
+            sim_interpolated = (
+                sim_values[indices[:, 0]] * weights[:, 0]
+                + sim_values[indices[:, 1]] * weights[:, 1]
             )
         else:
             # All the observation indexes are in the simulation
@@ -989,10 +995,14 @@ class Model:
             self.set_parameter(f"{self.constant.name}_d", initial=0.0, vary=False)
             self._fit_constant = False
 
+        # reset _interpolate simulation and _interpolation_indices_weights to None,
+        # so they are recalculated once
+        self._interpolate_simulation = None
+        self._interpolation_indices_weights = None
+
         # make sure to update self.oseries.series by running self.observations
         # get tmin, tmax, freq, and freq_obs from self.settings
         self.observations(update_observations=True)
-        self._interpolate_simulation = None
 
         # Check if the oseries has data in the calibration period, if not raise an error
         if self.oseries.series.empty:
@@ -1031,6 +1041,9 @@ class Model:
             self._fit_constant = None
             residual_mean = np.mean(self.residuals())
             self._parameters.loc[f"{self.constant.name}_d", "optimal"] = residual_mean
+
+        # reset interpolation weights after solve
+        self._interpolation_indices_weights = None
 
         if report:
             if isinstance(report, str) and report == "full":
@@ -1386,12 +1399,28 @@ class Model:
             Pandas DatetimeIndex instance with the datetimes values for which the
             model is simulated.
         """
-        return _get_sim_index(
-            tmin=self.settings["tmin"] - self.settings["warmup"],
-            tmax=self.settings["tmax"],
-            freq=self.settings["freq"],
-            time_offset=self.time_offset,
-        )
+
+    def _get_interpolation_indices_weights(self, sim_index, obs_index) -> Series:
+        """Property that returns the interpolation weights for the simulation index.
+
+        Using the sim_index and obs_index, arrays are created that contain the indices
+        and the weights for interpolating the simulation to the observation timestamps.
+        The weights are used in the residuals method to calculate the residuals.
+
+        Returns
+        -------
+        interpolation_weights: pandas.Series
+            Pandas Series instance with the weights for interpolating the simulation
+            to the observation timestamps.
+        """
+        # check assumes that obs_index is the same if sim_index is the same
+        if self._interpolation_indices_weights is None or not sim_index.equals(
+            self._sim_index
+        ):
+            self._interpolation_indices_weights = _get_interpolation_weights(
+                sim_index, obs_index
+            )
+        return self._interpolation_indices_weights
 
     def get_tmin(
         self,
