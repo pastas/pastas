@@ -340,10 +340,10 @@ class FlexModel(RechargeBase):
     def get_root_zone_balance(
         pe: ArrayLike,
         ep: ArrayLike,
-        srmax: complex = 250.0,
-        lp: complex = 0.25,
-        ks: complex = 100.0,
-        gamma: complex = 4.0,
+        srmax: float | complex = 250.0,
+        lp: float | complex = 0.25,
+        ks: float | complex = 100.0,
+        gamma: float | complex = 4.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Compute the water balance of the root zone reservoir.
@@ -354,13 +354,13 @@ class FlexModel(RechargeBase):
             Effective precipitation flux in mm/d.
         ep: array_like
             Potential evaporation flux in mm/d.
-        srmax: complex or float, optional
+        srmax: float, optional
             Maximum storage capacity of the root zone.
-        lp: complex or float, optional
+        lp: float, optional
             Parameter determining when actual evaporation equals potential.
-        ks: complex or float, optional
+        ks: float, optional
             Saturated hydraulic conductivity in mm/d.
-        gamma: complex or float, optional
+        gamma: float, optional
             Parameter determining the nonlinearity of outflow / recharge.
         dt: float, optional
             time step for the calculation of the recharge. Only dt=1 is possible now.
@@ -422,7 +422,7 @@ class FlexModel(RechargeBase):
     def get_interception_balance(
         pr: ArrayLike,
         ep: ArrayLike,
-        simax: complex = 2.0,
+        simax: float | complex = 2.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
         r"""Compute the water balance of the interception reservoir.
@@ -489,8 +489,8 @@ class FlexModel(RechargeBase):
     def get_snow_balance(
         prec: ArrayLike,
         temp: ArrayLike,
-        tt: complex = 0.0,
-        k: complex = 2.0,
+        tt: float | complex = 0.0,
+        k: float | complex = 2.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
         r"""Compute the water balance of the snow reservoir.
 
@@ -730,13 +730,13 @@ class Berendrecht(RechargeBase):
     def get_recharge(
         prec: np.ndarray,
         evap: np.ndarray,
-        fi: complex = 1.0,
-        fc: complex = 1.0,
-        sr: complex = 0.5,
-        de: complex = 250.0,
-        l: complex = -2.0,
-        m: complex = 0.5,
-        ks: complex = 50.0,
+        fi: float | complex = 1.0,
+        fc: float | complex = 1.0,
+        sr: float | complex = 0.5,
+        de: float | complex = 250.0,
+        l: float | complex = -2.0,  # noqa: E741
+        m: float | complex = 0.5,
+        ks: float | complex = 50.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Calculate recharge flux sped up with numba."""
@@ -897,11 +897,11 @@ class Peterson(RechargeBase):
     def get_recharge(
         prec: ArrayLike,
         evap: ArrayLike,
-        scap: complex = 1.0,
-        alpha: complex = 1.0,
-        ksat: complex = 1.0,
-        beta: complex = 0.5,
-        gamma: complex = 1.0,
+        scap: float | complex = 1.0,
+        alpha: float | complex = 1.0,
+        ksat: float | complex = 1.0,
+        beta: float | complex = 0.5,
+        gamma: float | complex = 1.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Calculate recharge flux sped up with numba."""
