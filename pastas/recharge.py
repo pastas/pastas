@@ -728,8 +728,8 @@ class Berendrecht(RechargeBase):
     @staticmethod
     @njit
     def get_recharge(
-        prec: np.ndarray,
-        evap: np.ndarray,
+        prec: ArrayLike,
+        evap: ArrayLike,
         fi: float | complex = 1.0,
         fc: float | complex = 1.0,
         sr: float | complex = 0.5,
