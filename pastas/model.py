@@ -2171,7 +2171,7 @@ class Model:
 
         try:
             file_info["owner"] = getlogin()
-        except Exception as e:  # noqa: BLE001
+        except OSError as e:
             logger.debug(e)
             file_info["owner"] = "Unknown"
 
