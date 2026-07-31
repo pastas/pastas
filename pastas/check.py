@@ -327,7 +327,7 @@ def response_memory_vs_warmup(
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    warmup = m.settings["warmup"]
+    warmup = model.settings["warmup"]
     threshold = warmup.days if isinstance(warmup, Timedelta) else Timedelta(warmup).days
     label = "warmup"
     return _response_memory(model, threshold, label, cutoff=cutoff, names=names)
