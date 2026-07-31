@@ -75,7 +75,7 @@ class ThresholdTransform:
 
     @property
     def nparam(self) -> int:
-        """Return the number of parameters."""
+        """Number of parameters."""
         return self._nparam
 
     @nparam.setter
@@ -156,7 +156,10 @@ class ThresholdTransform:
         self.parameters.at[name] = str(value)
 
     def simulate(
-        self, series: Series | None = None, p: ArrayLike | None = None, **kwargs
+        self,
+        series: Series | ArrayLike | None = None,
+        p: ArrayLike | None = None,
+        **kwargs,
     ) -> Series:
         """Apply the threshold transform to the series.
 

@@ -92,7 +92,7 @@ def _frequency_is_supported(freq: str) -> str:
     offset = to_offset(freq)
     try:
         _offset_to_timedelta(offset)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         msg = "Frequency %s not supported."
         logger.error(msg, freq)
         logger.debug(e)
@@ -129,8 +129,8 @@ def _get_stress_dt(freq: str) -> float:
     offset = to_offset(freq)
     try:
         dt = _offset_to_timedelta(offset) / Timedelta(1, "D")
-    except Exception as e:
-        logging.debug(e)
+    except Exception as e:  # noqa: BLE001
+        logger.debug(e)
         num = offset.n
         freq = offset._prefix
         if freq in ["A", "Y", "AS", "YS", "YE", "BA", "BY", "BAS", "BYS"]:
@@ -155,12 +155,11 @@ def _get_stress_dt(freq: str) -> float:
             # hour
             dt = num * 1.0 / 24.0
         else:
-            raise (ValueError("freq of {} not supported".format(freq)))
+            raise (ValueError(f"freq of {freq} not supported"))
 
     # Check if dt can be an integer, if so convert to int
-    if not isinstance(dt, int):
-        if dt.is_integer():
-            dt = int(dt)
+    if not isinstance(dt, int) and dt.is_integer():
+        dt = int(dt)
 
     return dt
 
@@ -548,17 +547,17 @@ def time_weighted_resample(
         If True, periods that are not fully covered by the original data are masked with NaN. If False,
         only periods completely outside the range of the original data are masked. Default is False.
 
-    Raises
-    ------
-    ValueError
-        If `method` is not supported or input is not strictly increasing.
-
     Returns
     -------
     s_new : pandas.Series
         Resampled time series. Each value represents the time-weighted mean
         over the corresponding period. Periods not covered by the original
         data are NaN.
+
+    Raises
+    ------
+    ValueError
+        If `method` is not supported or input is not strictly increasing.
     """
     # Validate inputs
     if isinstance(s, DataFrame):
@@ -570,7 +569,7 @@ def time_weighted_resample(
             logger.error(msg)
             raise ValueError(msg)
     if s.isna().any():
-        raise Exception("s cannot contain NaN values")
+        raise ValueError("s cannot contain NaN values")
     if not s.index.is_monotonic_increasing:
         raise ValueError("Series index must be strictly increasing.")
     if not tindex.is_monotonic_increasing:

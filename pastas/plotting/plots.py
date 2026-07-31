@@ -16,7 +16,7 @@ from pastas.typing import Axes, Model
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency"]
+__all__ = ["acf", "compare", "cum_frequency", "diagnostics", "series"]
 
 
 @PastasDeprecationWarning(
@@ -36,11 +36,6 @@ def compare(
     **kwargs,
 ) -> dict[str, Axes]:
     """Plot multiple Pastas models in one figure to visually compare models.
-
-    Notes
-    -----
-    The models must have the same stressmodel names, otherwise the contributions will
-    not be plotted, and parameters table will not display nicely.
 
     Parameters
     ----------
@@ -68,6 +63,11 @@ def compare(
     Returns
     -------
         dict[str, matplotlib.axes.Axes]
+
+    Notes
+    -----
+    The models must have the same stressmodel names, otherwise the contributions will
+    not be plotted, and parameters table will not display nicely.
     """
     mc = CompareModels(models, names=names, tmin=tmin, tmax=tmax)
     mc.plot(adjust_height=adjust_height, **kwargs)
@@ -147,7 +147,7 @@ def series(
     gridspec_kw = {}
     cols = 1
     if table and not hist and not kde:
-        logging.info(
+        logger.info(
             "Plotting the table is not possible without hist=True or kde=True. Adding the histogram."
         )
         hist = True
@@ -307,17 +307,16 @@ def acf(
     -------
     ax: matplotlib.axes.Axes
 
-    Examples
-    --------
-    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.rand(1000))
-    >>> ps.plots.acf(res)
-
     Raises
     ------
     Warning if the ACF is empty. The plot will still be created to ensure that scripts
     will still run when dealing with many models.
 
+    Examples
+    --------
+    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                 data=np.random.rand(1000))
+    >>> ps.plots.acf(res)
     """
     kwargs = {} or kwargs
     if ax is None:
@@ -400,23 +399,23 @@ def diagnostics(
     -------
     axes: matplotlib.axes.Axes
 
-    Examples
-    --------
-    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.normal(0, 1, 1000))
-    >>> ps.stats.plot_diagnostics(res)
-
-    Notes
-    -----
-    The two right-hand side plots assume that the noise or residuals follow a Normal
-    distribution.
-
     See Also
     --------
     pastas.stats.acf
         Method that computes the autocorrelation.
     scipy.stats.probplot
         Method use to plot the probability plot.
+
+    Notes
+    -----
+    The two right-hand side plots assume that the noise or residuals follow a Normal
+    distribution.
+
+    Examples
+    --------
+    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                 data=np.random.normal(0, 1, 1000))
+    >>> ps.stats.plot_diagnostics(res)
     """
     if heteroscedasicity and sim is None:
         msg = (
@@ -484,7 +483,7 @@ def diagnostics(
     axd["qq"].get_lines()[1].set_color("k")
 
     # Plot R2 here because probplot has suboptimal positioning
-    axd["qq"].text(0.5, 0.1, "$R^2={:.2f}$".format(r**2), transform=axd["qq"].transAxes)
+    axd["qq"].text(0.5, 0.1, f"$R^2={r**2:.2f}$", transform=axd["qq"].transAxes)
 
     if heteroscedasicity and sim is not None:
         # Plot residuals vs. simulation

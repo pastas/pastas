@@ -58,7 +58,7 @@ class SolverBase(ABC):
     @property
     @PastasDeprecationWarning(version="2.4.0", reason="Use 'solver.model' instead.")
     def ml(self):
-        """Get the Pastas Model instance (Deprecated)."""
+        """Pastas Model instance (Deprecated)."""
         return self.model
 
     def set_init_parameters(self) -> None:
@@ -133,12 +133,10 @@ class SolverBase(ABC):
     @abstractmethod
     def fit_report(self, full_output=False) -> str:
         """Abstract method that has to be implemented by all solvers."""
-        pass
 
     @abstractmethod
     def solve(self) -> Any:
         """Solve method that has to be implemented by all solvers."""
-        pass
 
     @property
     def _name(self) -> str:

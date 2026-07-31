@@ -890,6 +890,20 @@ def get_checks_literature(
 ) -> list[str | Callable | dict]:
     """Get predefined checklists based on literature.
 
+    Parameters
+    ----------
+    author: str
+        Author of the checklist to retrieve. Must be one of
+        ["brakenhoff_2022", "zaadnoordijk_2019"].
+    recharge_model: str, optional
+        Name of the recharge model. Required for "zaadnoordijk_2019" checklist to
+        obtain parameters related to the recharge model.
+
+    Returns
+    -------
+    checks: list
+        Checklist based on Brakenhoff et al. (2022) or Zaadnoordijk et al. (2019).
+
     Notes
     -----
     These checklists are not exhaustive and were developed to address specific research
@@ -906,20 +920,6 @@ def get_checks_literature(
     parameters. Applicability is limited to recharge models with the Gamma or
     Exponential response functions. Checks contain duplicate checks with different
     thresholds for the different check levels (MODOK, REGIMEOK, NWARN).
-
-    Parameters
-    ----------
-    author: str
-        Author of the checklist to retrieve. Must be one of
-        ["brakenhoff_2022", "zaadnoordijk_2019"].
-    recharge_model: str, optional
-        Name of the recharge model. Required for "zaadnoordijk_2019" checklist to
-        obtain parameters related to the recharge model.
-
-    Returns
-    -------
-    checks: list
-        Checklist based on Brakenhoff et al. (2022) or Zaadnoordijk et al. (2019).
     """
     if author == "brakenhoff_2022":
         return checks_brakenhoff_2022

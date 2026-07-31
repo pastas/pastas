@@ -209,12 +209,12 @@ def test_njit_peterson_recharge(prec: Series, evap: Series) -> None:
     e = evap.to_numpy()
 
     # Test with default parameters
-    r, s, ea, pe = ps.rch.Peterson.get_recharge.py_func(prec=p, evap=e)
+    _r, s, _ea, _pe = ps.rch.Peterson.get_recharge.py_func(prec=p, evap=e)
     # Check that the final state is reasonable (not NaN or inf)
     assert isclose(s[-1], s[-1])  # Quick way to check for NaN
 
     # Test with custom parameters
-    r, s, ea, pe = ps.rch.Peterson.get_recharge(
+    _r, s, _ea, _pe = ps.rch.Peterson.get_recharge(
         prec=p, evap=e, scap=1.0, alpha=1.0, ksat=1.0, beta=0.5, gamma=1.0
     )
     # Check that the final state is reasonable (not NaN or inf)
