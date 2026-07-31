@@ -520,9 +520,7 @@ class Model:
         )
 
         istart = 0  # Track parameters index to pass to stressmodel object
-        sim_index_min = sim_index.min()
-        sim_index_first = sim_index[0]
-        sim_index_last = sim_index[-1]
+        sim_index_min = sim_index[0]
         for sm in self.stressmodels.values():
             contrib = sm.simulate(
                 p=p[istart : istart + sm.nparam],
@@ -531,12 +529,7 @@ class Model:
                 freq=freq,
                 dt=dt,
             )
-            same_grid = (
-                contrib.index.size == sim_index.size
-                and contrib.index.size > 0
-                and contrib.index[0] == sim_index_first
-                and contrib.index[-1] == sim_index_last
-            )
+            same_grid = sim_index.equals(contrib.index)
             if not same_grid:
                 raise ValueError(
                     f"Simulation of stressmodel {sm.name} does not match the simulation "
@@ -553,7 +546,7 @@ class Model:
                 sim_values, p[istart : istart + self.transform.nparam]
             )
 
-        sim = Series(data=sim_values, index=sim_index)
+        sim = Series(data=sim_values, index=sim_index, name="Simulation")
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
@@ -570,7 +563,6 @@ class Model:
             logger.error(msg)
             raise ValueError(msg)
 
-        sim.name = "Simulation"
         return sim
 
     def residuals(
