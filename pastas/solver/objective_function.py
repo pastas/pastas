@@ -8,7 +8,7 @@ from pastas.typing import ArrayLike, Model
 
 
 def misfit(
-    ml: Model,
+    model: Model,
     p: ArrayLike,
     noise: bool,
     weights: Series | None = None,
@@ -20,12 +20,12 @@ def misfit(
 
     Parameters
     ----------
+    model: object
+        The model instance containing residuals and noise methods.
     p: np.ndarray
         Array of parameter values.
     noise: bool
         If True, minimizes the sum of squared noise computed by the NoiseModel.
-    ml: object
-        The model instance containing residuals and noise methods.
     weights: pandas.Series, optional
         Weights to scale the residuals or noise.
     callback: Callable, optional

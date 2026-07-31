@@ -324,9 +324,9 @@ class Emcee(SolverBase):
         par[self.vary] = p
 
         res = misfit(
+            model=self.model,
             p=p,
             noise=noise,
-            ml=self.model,
             weights=weights,
             callback=callback,
             returnseparate=False,

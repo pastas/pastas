@@ -45,7 +45,7 @@ def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
     weights = pd.Series(1.0, index=residuals.index)
     weights.iloc[::5] = 0.25
 
-    misfit = ps.solver.misfit(ml=ml_recharge, p=p, noise=False, weights=weights)
+    misfit = ps.solver.misfit(model=ml_recharge, p=p, noise=False, weights=weights)
     expected = (residuals * weights).values
 
     np.testing.assert_allclose(misfit, expected)
@@ -179,7 +179,7 @@ def test_leastsquares_covariance_scenarios(
     # We use the solver's Jacobian (which is weighted) and cost.
     # To use manual_pcov with a weighted Jacobian, we pass weights=ones.
     nobs, npar = ml.solver.result.jac.shape
-    res_weighted = misfit(ml=ml, p=p_opt, noise=False, weights=weights_random_root)
+    res_weighted = misfit(model=ml, p=p_opt, noise=False, weights=weights_random_root)
     pcov_manual_weighted = manual_pcov(
         ml.solver.result.jac, res_weighted, np.ones(nobs), nobs, npar
     )
@@ -190,7 +190,7 @@ def test_leastsquares_covariance_scenarios(
 
     # --- SCENARIO B: Verify Pure Reconstruction ---
     # Get unweighted (pure) components
-    res_pure = misfit(ml=ml, p=p_opt, noise=False, weights=None)
+    res_pure = misfit(model=ml, p=p_opt, noise=False, weights=None)
 
     fun_pure = partial(
         ml.solver.objfunction,
