@@ -635,14 +635,19 @@ class Model:
         if self._interpolate_simulation:
             # Interpolate using pre-calculated weights and indices
             sim_values = sim.to_numpy(copy=False)
-            indices, weights = self._get_interpolation_indices_weights(
-                sim.index,
-                obs.index,
+            indices, weights = _get_interpolation_weights(
+                sim_tindex=sim.index,
+                obs_tindex=obs.index,
             )
             sim_interpolated = (
                 sim_values[indices[:, 0]] * weights[:, 0]
                 + sim_values[indices[:, 1]] * weights[:, 1]
             )
+            # check assumes that obs_index is the same if sim_index is the same
+            if self._interpolation_indices_weights is None or not sim.index.equals(
+                self._sim_index
+            ):
+                self._interpolation_indices_weights = (indices, weights)
         else:
             # All the observation indexes are in the simulation
             sim_interpolated = sim.reindex(obs.index)
@@ -1446,28 +1451,6 @@ class Model:
     def sim_index(self) -> DatetimeIndex | None:
         """Simulation index."""
         return self._sim_index
-
-    def _get_interpolation_indices_weights(self, sim_index, obs_index) -> Series:
-        """Property that returns the interpolation weights for the simulation index.
-
-        Using the sim_index and obs_index, arrays are created that contain the indices
-        and the weights for interpolating the simulation to the observation timestamps.
-        The weights are used in the residuals method to calculate the residuals.
-
-        Returns
-        -------
-        interpolation_weights: pandas.Series
-            Pandas Series instance with the weights for interpolating the simulation
-            to the observation timestamps.
-        """
-        # check assumes that obs_index is the same if sim_index is the same
-        if self._interpolation_indices_weights is None or not sim_index.equals(
-            self._sim_index
-        ):
-            self._interpolation_indices_weights = _get_interpolation_weights(
-                sim_index, obs_index
-            )
-        return self._interpolation_indices_weights
 
     def get_tmin(
         self,
