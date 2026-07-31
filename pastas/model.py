@@ -627,19 +627,21 @@ class Model:
         if self._interpolate_simulation:
             # Interpolate using pre-calculated weights and indices
             sim_values = sim.to_numpy(copy=False)
-            indices, weights = _get_interpolation_weights(
-                sim_tindex=sim.index,
-                obs_tindex=obs.index,
-            )
+            # check assumes that obs_index is the same if sim_index is the same
+            if self._interpolation_indices_weights is None or not sim.index.equals(
+                self._sim_index
+            ):
+                self._interpolation_indices_weights = _get_interpolation_weights(
+                    sim_tindex=sim.index,
+                    obs_tindex=obs.index,
+                )
+
+            indices, weights = self._interpolation_indices_weights
             sim_interpolated = (
                 sim_values[indices[:, 0]] * weights[:, 0]
                 + sim_values[indices[:, 1]] * weights[:, 1]
             )
             # check assumes that obs_index is the same if sim_index is the same
-            if self._interpolation_indices_weights is None or not sim.index.equals(
-                self._sim_index
-            ):
-                self._interpolation_indices_weights = (indices, weights)
         else:
             # All the observation indexes are in the simulation
             sim_interpolated = sim.reindex(obs.index)
