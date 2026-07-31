@@ -265,7 +265,7 @@ def _get_sim_index(
     return sim_index
 
 
-def _parse_warmup(warmup: Timedelta | float | int | str) -> Timedelta:
+def _parse_warmup(warmup: Timedelta | float | str) -> Timedelta:
     """Parse the warmup period to a pandas Timedelta.
 
     Parameters
