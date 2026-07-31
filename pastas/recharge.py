@@ -39,7 +39,7 @@ from typing import Any
 import numpy as np
 from numpy import (
     add,
-    complexfloating,
+    complex128,
     exp,
     multiply,
     nan_to_num,
@@ -341,10 +341,10 @@ class FlexModel(RechargeBase):
     def get_root_zone_balance(
         pe: ArrayLike,
         ep: ArrayLike,
-        srmax: float | complexfloating = 250.0,
-        lp: float | complexfloating = 0.25,
-        ks: float | complexfloating = 100.0,
-        gamma: float | complexfloating = 4.0,
+        srmax: float | complex128 = 250.0,
+        lp: float | complex128 = 0.25,
+        ks: float | complex128 = 100.0,
+        gamma: float | complex128 = 4.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Compute the water balance of the root zone reservoir.
@@ -427,7 +427,7 @@ class FlexModel(RechargeBase):
     def get_interception_balance(
         pr: ArrayLike,
         ep: ArrayLike,
-        simax: float | complexfloating = 2.0,
+        simax: float | complex128 = 2.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
         r"""Compute the water balance of the interception reservoir.
@@ -495,8 +495,8 @@ class FlexModel(RechargeBase):
     def get_snow_balance(
         prec: ArrayLike,
         temp: ArrayLike,
-        tt: float | complexfloating = 0.0,
-        k: float | complexfloating = 2.0,
+        tt: float | complex128 = 0.0,
+        k: float | complex128 = 2.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
         r"""Compute the water balance of the snow reservoir.
 
@@ -736,13 +736,13 @@ class Berendrecht(RechargeBase):
     def get_recharge(
         prec: ArrayLike,
         evap: ArrayLike,
-        fi: float | complexfloating = 1.0,
-        fc: float | complexfloating = 1.0,
-        sr: float | complexfloating = 0.5,
-        de: float | complexfloating = 250.0,
-        l: float | complexfloating = -2.0,
-        m: float | complexfloating = 0.5,
-        ks: float | complexfloating = 50.0,
+        fi: float | complex128 = 1.0,
+        fc: float | complex128 = 1.0,
+        sr: float | complex128 = 0.5,
+        de: float | complex128 = 250.0,
+        l: float | complex128 = -2.0,
+        m: float | complex128 = 0.5,
+        ks: float | complex128 = 50.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Calculate recharge flux sped up with numba."""
@@ -903,11 +903,11 @@ class Peterson(RechargeBase):
     def get_recharge(
         prec: ArrayLike,
         evap: ArrayLike,
-        scap: float | complexfloating = 1.0,
-        alpha: float | complexfloating = 1.0,
-        ksat: float | complexfloating = 1.0,
-        beta: float | complexfloating = 0.5,
-        gamma: float | complexfloating = 1.0,
+        scap: float | complex128 = 1.0,
+        alpha: float | complex128 = 1.0,
+        ksat: float | complex128 = 1.0,
+        beta: float | complex128 = 0.5,
+        gamma: float | complex128 = 1.0,
         dt: float = 1.0,
     ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
         """Calculate recharge flux sped up with numba."""
