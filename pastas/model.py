@@ -513,7 +513,7 @@ class Model:
         if p is None:
             p = self.get_parameters()
         elif isinstance(p, Series):
-            p = p.values
+            p = p.to_numpy()
 
         sim_values = np.zeros(
             sim_index.size, dtype=np.complex128 if np.iscomplexobj(p) else np.float64
@@ -522,21 +522,20 @@ class Model:
         istart = 0  # Track parameters index to pass to stressmodel object
         sim_index_min = sim_index[0]
         for sm in self.stressmodels.values():
+            p_sm = p[istart : istart + sm.nparam]
             contrib = sm.simulate(
-                p=p[istart : istart + sm.nparam],
+                p=p_sm,
                 tmin=sim_index_min,
                 tmax=tmax,
                 freq=freq,
                 dt=dt,
             )
-            same_grid = sim_index.equals(contrib.index)
-            if not same_grid:
-                raise ValueError(
-                    f"Simulation of stressmodel {sm.name} does not match the simulation "
-                    "index. Check the settings of the stressmodel and/or the model "
-                    "settings."
+            if contrib.hasnans:
+                logger.error(
+                    f"StressModel {sm.name} contribution simulation"
+                    f" with parameters {p_sm} contains NaN-values."
                 )
-            sim_values += contrib.to_numpy(copy=False)
+            sim_values += contrib.to_numpy()
             istart += sm.nparam
         if self.constant:
             sim_values += self.constant.simulate(p[istart])
@@ -555,10 +554,7 @@ class Model:
 
         if sim.hasnans:
             msg = (
-                f"Simulation with parameters {p} contains NaN"
-                "-values. Check the parameters and/or if the time "
-                "series settings are provided for each stress model "
-                "(e.g. `ps.StressModel(stress, settings='prec')`!"
+                f"Simulation with parameters {p} contains NaN-values."
             )
             logger.error(msg)
             raise ValueError(msg)
@@ -627,7 +623,7 @@ class Model:
 
         if self._interpolate_simulation:
             # Interpolate using pre-calculated weights and indices
-            sim_values = sim.to_numpy(copy=False)
+            sim_values = sim.to_numpy()
             # check assumes that obs_index is the same if sim_index is the same
             if self._interpolation_indices_weights is None or not sim.index.equals(
                 self._sim_index
