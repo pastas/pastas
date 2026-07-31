@@ -14,7 +14,7 @@ Run a checklist of standard checks on a Pastas model::
         {"func": parameter_bounds},
     ]
 
-    ps.check.checklist(ml, checks)
+    ps.check.checklist(model, checks)
 
 Or use a list of checks defined in literature. Note that these checks were derived for
 specific questions and hydrogeological contexts and are included as inspiration, but
@@ -23,7 +23,7 @@ are by no means exhaustive or applicable to all problems.
 Checklists can be obtained with::
 
     checks = ps.check.get_checks_literature("brakenhoff_2022")
-    ps.check.checklist(ml, checks=checks)
+    ps.check.checklist(model, checks=checks)
 
 
 Checks
@@ -130,7 +130,7 @@ def _value_ufunc_threshold(
 
 
 def stat_ufunc_threshold(
-    ml: Model,
+    model: Model,
     ufunc: Callable,
     statistic: str,
     threshold: float,
@@ -140,7 +140,7 @@ def stat_ufunc_threshold(
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     ufunc: callable
         Numpy ufunc (e.g. np.greater_than) to compare the model statistic with the
@@ -157,16 +157,16 @@ def stat_ufunc_threshold(
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    val = getattr(ml.stats, statistic)(**kwargs)
+    val = getattr(model.stats, statistic)(**kwargs)
     return _value_ufunc_threshold(val, ufunc, threshold, statistic)
 
 
-def rsq_geq_threshold(ml: Model, threshold: float = 0.7, **kwargs):
+def rsq_geq_threshold(model: Model, threshold: float = 0.7, **kwargs):
     """Check R^2 >= threshold.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     threshold: float
         Threshold value for the R^2 statistic.
@@ -179,11 +179,11 @@ def rsq_geq_threshold(ml: Model, threshold: float = 0.7, **kwargs):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    return stat_ufunc_threshold(ml, np.greater_equal, "rsq", threshold, **kwargs)
+    return stat_ufunc_threshold(model, np.greater_equal, "rsq", threshold, **kwargs)
 
 
 def _response_memory(
-    ml: Model,
+    model: Model,
     threshold: float,
     label: str,
     cutoff: float = 0.95,
@@ -193,7 +193,7 @@ def _response_memory(
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     threshold : float
         Threshold value for the maximum length of the response function.
@@ -213,7 +213,7 @@ def _response_memory(
         DataFrame with the results of the check.
     """
     if names is None:
-        names = list(ml.stressmodels.keys())
+        names = list(model.stressmodels.keys())
     elif names is not None and not isinstance(names, list):
         names = [names]
 
@@ -222,14 +222,14 @@ def _response_memory(
     dim = "[T]"
 
     for sm_name in names:
-        sm = ml.stressmodels[sm_name]
+        sm = model.stressmodels[sm_name]
         if sm._name == "WellModel":
             # HantushWellModel means the response function changes with distance
             # and therefore the memory is also distance dependent. So we compute
             # the memory for each well in the Wellmodel separately.
             nwells = sm.distances.index.size
             for iw in range(nwells):
-                p = sm.get_parameters(ml, istress=iw)
+                p = sm.get_parameters(model, istress=iw)
                 rfunc = type(sm.rfunc)(
                     quad=sm.rfunc.quad, log_b=sm.rfunc.log_b, approximate_tmax=False
                 )
@@ -252,12 +252,12 @@ def _response_memory(
                 # get_tmax for Hantush and FourParam has an approximation which
                 # can be overridden by setting approximate_tmax=False
                 rfunc = type(sm.rfunc)(quad=sm.rfunc.quad, approximate_tmax=False)
-                p = ml.get_parameters(sm_name)
+                p = model.get_parameters(sm_name)
                 p = p[0:3] if sm.rfunc._name == "Hantush" else p[0:4]
                 tmem = rfunc.get_tmax(p, cutoff=cutoff)
             else:
                 # for response functions where get_tmax is exact
-                tmem = ml.get_response_tmax(sm_name, cutoff=cutoff)
+                tmem = model.get_response_tmax(sm_name, cutoff=cutoff)
             lbl = f"t{cutoff * 100:.0f}_{sm_name} < {label}"
             check = tmem < threshold
             df.loc[lbl] = [
@@ -272,7 +272,7 @@ def _response_memory(
 
 
 def response_memory(
-    ml: Model,
+    model: Model,
     cutoff: float = 0.95,
     factor_length_oseries: float = 0.5,
     names: list[str] | str | None = None,
@@ -281,7 +281,7 @@ def response_memory(
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     cutoff: float, optional
         Cutoff value for the length of the response function. Default is 0.95, which
@@ -299,20 +299,20 @@ def response_memory(
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    len_oseries_calib = (ml.settings["tmax"] - ml.settings["tmin"]).days
+    len_oseries_calib = (model.settings["tmax"] - model.settings["tmin"]).days
     threshold = factor_length_oseries * len_oseries_calib
     label = f"{factor_length_oseries} Δt_calib"
-    return _response_memory(ml, threshold, label, cutoff=cutoff, names=names)
+    return _response_memory(model, threshold, label, cutoff=cutoff, names=names)
 
 
 def response_memory_vs_warmup(
-    ml: Model, cutoff: float = 0.95, names: list[str] | str | None = None
+    model: Model, cutoff: float = 0.95, names: list[str] | str | None = None
 ):
     """Check if response function memory is shorter than warmup.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     cutoff: float, optional
         Cutoff value for the length of the response function. Default is 0.95, which
@@ -327,14 +327,14 @@ def response_memory_vs_warmup(
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    warmup = ml.settings["warmup"]
+    warmup = m.settings["warmup"]
     threshold = warmup.days if isinstance(warmup, Timedelta) else Timedelta(warmup).days
     label = "warmup"
-    return _response_memory(ml, threshold, label, cutoff=cutoff, names=names)
+    return _response_memory(model, threshold, label, cutoff=cutoff, names=names)
 
 
 def uncertainty_gain(
-    ml: Model,
+    model: Model,
     n_std: float = 1.96,
     names: list[str] | str | None = None,
 ):
@@ -342,7 +342,7 @@ def uncertainty_gain(
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     n_std: int, optional
         Number of standard errors to compare the the gain to. Default is 1.96.
@@ -356,20 +356,20 @@ def uncertainty_gain(
         DataFrame with the results of the check.
     """
     if names is None:
-        names = list(ml.stressmodels.keys())
+        names = list(model.stressmodels.keys())
     elif names is not None and not isinstance(names, list):
         names = [names]
 
     results = []
     for sm_name in names:
-        results.append(_uncertainty_parameter(ml, sm_name + "_A", n_std=n_std))
+        results.append(_uncertainty_parameter(model, sm_name + "_A", n_std=n_std))
     df = concat(results)
     df["dimensions"] = "[L] / [unit stress]"
     return df
 
 
 def parameter_ufunc_threshold(
-    ml: Model,
+    model: Model,
     parameter: str,
     ufunc: Callable,
     threshold: float,
@@ -378,7 +378,7 @@ def parameter_ufunc_threshold(
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     parameter: str
         Name of the parameter to be compared.
@@ -393,12 +393,12 @@ def parameter_ufunc_threshold(
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    val = ml.parameters.loc[parameter, "optimal"]
+    val = model.parameters.loc[parameter, "optimal"]
     return _value_ufunc_threshold(val, ufunc, threshold, parameter)
 
 
 def parameters_leq_threshold(
-    ml: Model,
+    model: Model,
     parameters: list[str] | str | None = None,
     threshold: float = 500.0,
 ):
@@ -406,7 +406,7 @@ def parameters_leq_threshold(
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     parameters: list or str, optional
         List of parameter names to check the threshold for. Default is None, which
@@ -420,24 +420,26 @@ def parameters_leq_threshold(
         DataFrame with the results of the check.
     """
     if parameters is None:
-        parameters = ml.parameters.index.tolist()
+        parameters = model.parameters.index.tolist()
     elif isinstance(parameters, str):
-        parameters = [iparam for iparam in ml.parameters.index if parameters in iparam]
+        parameters = [
+            iparam for iparam in model.parameters.index if parameters in iparam
+        ]
 
     results = []
     for parameter in parameters:
         results.append(
-            parameter_ufunc_threshold(ml, parameter, np.less_equal, threshold)
+            parameter_ufunc_threshold(model, parameter, np.less_equal, threshold)
         )
     return concat(results)
 
 
-def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
+def parameter_bounds(model: Model, parameters: list[str] | str | None = None):
     """Check if the optimal parameter values are not on the lower or upper bounds.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     parameters: list or str, optional
         List of parameter names to check the bounds for. Default is None, which
@@ -448,7 +450,7 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    ml_parameters = ml.parameters
+    ml_parameters = model.parameters
     if parameters is None:
         parameters = ml_parameters.index.tolist()
     elif isinstance(parameters, str):
@@ -497,7 +499,7 @@ def parameter_bounds(ml: Model, parameters: list[str] | str | None = None):
 
 
 def uncertainty_parameters(
-    ml: Model,
+    model: Model,
     parameters: list[str] | str | None = None,
     n_std: float = 1.96,
 ):
@@ -508,7 +510,7 @@ def uncertainty_parameters(
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     parameters: list or str, optional
         List of parameter names to check the uncertainty for. Default is None, which
@@ -518,28 +520,28 @@ def uncertainty_parameters(
 
     """
     if parameters is None:
-        mask_vary = ml.parameters["vary"]
-        parameters = ml.parameters.loc[mask_vary].index.tolist()
+        mask_vary = model.parameters["vary"]
+        parameters = model.parameters.loc[mask_vary].index.tolist()
     elif isinstance(parameters, str):
         parameters = [
             iparam
-            for iparam in ml.parameters.index
-            if (parameters in iparam) and ml.parameters.loc[iparam, "vary"]
+            for iparam in model.parameters.index
+            if (parameters in iparam) and model.parameters.loc[iparam, "vary"]
         ]
 
     # loop through parameters
     results = []
     for parameter in parameters:
-        results.append(_uncertainty_parameter(ml, parameter, n_std=n_std))
+        results.append(_uncertainty_parameter(model, parameter, n_std=n_std))
     return concat(results)
 
 
-def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
+def _uncertainty_parameter(model: Model, parameter: str, n_std: float = 1.96):
     """Check if parameter value is larger than n_std * std.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     parameter: str
         Name of the parameter to check.
@@ -554,17 +556,17 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
     df = get_empty_check_dataframe()
     # get stressmodel
     sm_name = "_".join(parameter.split("_")[:-1])
-    if sm_name in ml.stressmodels:
-        sm = ml.stressmodels[sm_name]
+    if sm_name in model.stressmodels:
+        sm = model.stressmodels[sm_name]
     else:
         sm = None
     # WellModel gain is a special case, because the parameter depends on distance
     if sm is not None and sm._name == "WellModel" and parameter.endswith("_A"):
         nwells = sm.distances.index.size
         for iw in range(nwells):
-            p = sm.get_parameters(model=ml, istress=iw)
+            p = sm.get_parameters(model=model, istress=iw)
             p = sm.rfunc.gain(p)
-            std = sm.variance_gain(model=ml, istress=iw)
+            std = sm.variance_gain(model=model, istress=iw)
             check = np.abs(p) > (n_std * std)
             df.loc[f"|{parameter} ({sm.distances.index[iw]})| > {n_std}σ"] = [
                 np.abs(p),
@@ -575,8 +577,8 @@ def _uncertainty_parameter(ml: Model, parameter: str, n_std: float = 1.96):
                 "Assumes estimate of σ is reliable.",
             ]
     else:
-        p = ml.parameters.loc[parameter, "optimal"]
-        std = ml.parameters.loc[parameter, "stderr"]
+        p = model.parameters.loc[parameter, "optimal"]
+        std = model.parameters.loc[parameter, "stderr"]
         check = np.abs(p) > (n_std * std)
         df.loc[f"|{parameter}| > {n_std}σ"] = [
             np.abs(p),
@@ -622,12 +624,12 @@ def guess_unit_or_dims(parameter: str, return_dims=True):
     return dim if return_dims else unit
 
 
-def acf_runs_test(ml: Model, p_threshold: float = 0.05):
+def acf_runs_test(model: Model, p_threshold: float = 0.05):
     """Check if there is significant autocorrelation in the noise using runs test.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     p_threshold: float, optional
         Threshold value for the p-value of the runs test. Default is 0.05.
@@ -637,15 +639,15 @@ def acf_runs_test(ml: Model, p_threshold: float = 0.05):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    return _diagnostic_test(ml, "runs_test", alpha=p_threshold)
+    return _diagnostic_test(model, "runs_test", alpha=p_threshold)
 
 
-def acf_stoffer_toloi_test(ml: Model, p_threshold: float = 0.05, **kwargs):
+def acf_stoffer_toloi_test(model: Model, p_threshold: float = 0.05, **kwargs):
     """Check if there is significant autocorrelation in the noise using Stoffer-Toloi test.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     p_threshold: float, optional
         Threshold value for the p-value of the Stoffer-Toloi test. Default is 0.05.
@@ -657,15 +659,15 @@ def acf_stoffer_toloi_test(ml: Model, p_threshold: float = 0.05, **kwargs):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    return _diagnostic_test(ml, "stoffer_toloi", alpha=p_threshold, **kwargs)
+    return _diagnostic_test(model, "stoffer_toloi", alpha=p_threshold, **kwargs)
 
 
-def acf_ljung_box_test(ml: Model, p_threshold: float = 0.05, **kwargs):
+def acf_ljung_box_test(model: Model, p_threshold: float = 0.05, **kwargs):
     """Check check if there is significant autocorrelation in the noise.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     p_threshold: float, optional
         Threshold value for the p-value of the Ljung-Box test. Default is 0.05.
@@ -677,15 +679,15 @@ def acf_ljung_box_test(ml: Model, p_threshold: float = 0.05, **kwargs):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    return _diagnostic_test(ml, "ljung_box", alpha=p_threshold, **kwargs)
+    return _diagnostic_test(model, "ljung_box", alpha=p_threshold, **kwargs)
 
 
-def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
+def _diagnostic_test(model: Model, test: str, alpha: float = 0.05, **kwargs):
     """Get result of a diagnostic test.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     test: str
         Name of the diagnostic test to perform, must be one of
@@ -701,13 +703,13 @@ def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
         DataFrame with the results of the check.
     """
     dtest = getattr(diagnostic_tests, test)
-    if ml.noisemodel is None:
+    if model.noisemodel is None:
         logger.warning(
             "No noisemodel found in model. Using residuals instead for diagnostic test."
         )
-        noise = ml.residuals()
+        noise = model.residuals()
     else:
-        noise = ml.noise()
+        noise = model.noise()
     _, p = dtest(noise.iloc[1:], **kwargs)
     check = p > alpha
     label = f"{test} (p > α)"
@@ -716,12 +718,12 @@ def _diagnostic_test(ml: Model, test: str, alpha: float = 0.05, **kwargs):
     return df
 
 
-def correlation_sim_vs_res(ml: Model, threshold: float = 0.2):
+def correlation_sim_vs_res(model: Model, threshold: float = 0.2):
     """Check if the correlation between simulated and residuals is less than threshold.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     threshold: float
         Threshold value for the correlation coefficient.
@@ -731,8 +733,8 @@ def correlation_sim_vs_res(ml: Model, threshold: float = 0.2):
     df: pandas.DataFrame
         DataFrame with the results of the check.
     """
-    sim = ml.simulate()
-    res = ml.residuals()
+    sim = model.simulate()
+    res = model.residuals()
 
     if sim.index.difference(res.index).size > 0:
         logger.warning(
@@ -755,12 +757,12 @@ def correlation_sim_vs_res(ml: Model, threshold: float = 0.2):
     return df
 
 
-def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
+def checklist(model: Model, checks: list[str | Callable | dict], report=True):
     """Run a list of checks on a Pastas model.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas model instance.
     checks: list
         List of checks to perform. Each entry in the list can be a string, a callable,
@@ -789,13 +791,13 @@ def checklist(ml: Model, checks: list[str | Callable | dict], report=True):
             func = check.pop("func")
             if isinstance(func, str):
                 func = globals()[func]  # get function from this module
-            results.append(func(ml, **check))  # pass rest of dict to function
+            results.append(func(model, **check))  # pass rest of dict to function
         elif callable(check):
             results.append(check(ml))  # call function with model as only argument
         else:
             raise TypeError("Check must be str, callable, or dict.")
     df = concat(results)
-    df.index.name = ml.name
+    df.index.name = model.name
     # deal with duplicated index labels by appending .1, .2, etc.
     if df.index.duplicated().any():
         new_index = []
