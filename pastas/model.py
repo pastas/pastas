@@ -624,6 +624,7 @@ class Model:
                     "There are observations between the simulation time steps. Linear "
                     "interpolation between simulated values is used."
                 )
+
         if self._interpolate_simulation:
             # Interpolate using pre-calculated weights and indices
             sim_values = sim.to_numpy(copy=False)
@@ -641,7 +642,6 @@ class Model:
                 sim_values[indices[:, 0]] * weights[:, 0]
                 + sim_values[indices[:, 1]] * weights[:, 1]
             )
-            # check assumes that obs_index is the same if sim_index is the same
         else:
             # All the observation indexes are in the simulation
             sim_interpolated = sim.reindex(obs.index)
