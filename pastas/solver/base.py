@@ -24,7 +24,7 @@ class SolverBase(ABC):
     ----------
     name: str
         Name of the solver instance.
-    ml: pastas.Model
+    model: pastas.Model
         The Pastas Model instance that is being solved.
     parameters: pd.DataFrame
         DataFrame with the initial parameters of the solver itself.
@@ -115,12 +115,12 @@ class SolverBase(ABC):
         """
         self.parameters.at[name, "dist"] = str(value)
 
-    def set_model(self, ml: Model) -> None:
+    def set_model(self, model: Model) -> None:
         """Set the Pastas Model instance.
 
         Parameters
         ----------
-        ml: pastas.Model instance
+        model: pastas.Model instance
 
         """
         if self.model is not None:
@@ -128,7 +128,7 @@ class SolverBase(ABC):
                 "This solver instance is already used by another model. Please create "
                 "a separate solver instance for each Pastas Model."
             )
-        self.model = ml
+        self.model = model
 
     @abstractmethod
     def fit_report(self, full_output=False) -> str:

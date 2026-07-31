@@ -89,7 +89,7 @@ class Model:
 
     Returns
     -------
-    ml: pastas.model.Model
+    model: pastas.model.Model
         Pastas Model instance, the base object in Pastas.
 
     Examples
@@ -2371,7 +2371,7 @@ class Model:
 
         Returns
         -------
-        ml: pastas.model.Model
+        model: pastas.model.Model
             Copy of the original model with no references to the old model.
 
         Examples
@@ -2380,9 +2380,9 @@ class Model:
         """
         if name is None:
             name = self.name + "_copy"
-        ml = _load_model(self.to_dict())
-        ml.name = name
-        return ml
+        model = _load_model(self.to_dict())
+        model.name = name
+        return model
 
     def _check_stressmodel_compatibility(self) -> None:
         """Check if the stressmodels are compatible with the model.

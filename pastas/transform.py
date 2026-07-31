@@ -68,9 +68,9 @@ class ThresholdTransform:
             self.model._add_transform(self)
             self.set_init_parameters()
 
-    def set_model(self, ml: Model) -> None:
+    def set_model(self, model: Model) -> None:
         """Set model observations and initialize parameters."""
-        self.model = ml
+        self.model = model
         self.set_init_parameters()
 
     @property
