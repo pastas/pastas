@@ -553,9 +553,7 @@ class Model:
             sim = sim.loc[tmin:tmax]
 
         if sim.hasnans:
-            msg = (
-                f"Simulation with parameters {p} contains NaN-values."
-            )
+            msg = f"Simulation with parameters {p} contains NaN-values."
             logger.error(msg)
             raise ValueError(msg)
 
