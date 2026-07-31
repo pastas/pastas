@@ -1386,10 +1386,6 @@ class Model:
             else self._time_offset
         )
 
-    @time_offset.setter
-    def time_offset(self, _: Timedelta) -> None:
-        raise AttributeError("time_offset is a read-only property.")
-
     def _get_time_offset(self, freq: str) -> Timedelta:
         """Property to get the time offset from the settings."""
         if self._time_offset is None or freq != self._settings["freq"]:
@@ -1447,13 +1443,9 @@ class Model:
             return sim_index
 
     @property
-    def sim_index(self) -> DatetimeIndex:
+    def sim_index(self) -> DatetimeIndex | None:
         """Simulation index."""
         return self._sim_index
-
-    @sim_index.setter
-    def sim_index(self, _: DatetimeIndex) -> None:
-        raise AttributeError("sim_index is a read-only property.")
 
     def _get_interpolation_indices_weights(self, sim_index, obs_index) -> Series:
         """Property that returns the interpolation weights for the simulation index.
