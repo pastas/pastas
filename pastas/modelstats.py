@@ -41,7 +41,7 @@ class Statistics:
     """
 
     # Save all statistics that can be calculated.
-    ops = [
+    ops = (
         "rmse",
         "rmsn",
         "sse",
@@ -54,7 +54,7 @@ class Statistics:
         "bic",
         "aic",
         "aicc",
-    ]
+    )
 
     def __init__(self, ml: Model):
         # Save a reference to the model.
@@ -608,7 +608,7 @@ class Statistics:
         >>> ml.stats.summary(stats=["mae", "rmse"])
         """
         if stats is None:
-            stats_to_compute = self.ops
+            stats_to_compute = list(self.ops)
         else:
             stats_to_compute = stats
 

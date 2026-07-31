@@ -23,7 +23,7 @@ def get_stress_tmin_tmax(ml: ModelType) -> tuple[Timestamp | str, Timestamp | st
                 tmin = max((tmin, st.series_original.index.min()))
                 tmax = min((tmax, st.series_original.index.max()))
     else:
-        raise (TypeError("Unknown type {}".format(type(ml))))
+        raise (TypeError(f"Unknown type {type(ml)}"))
     return tmin, tmax
 
 

@@ -179,7 +179,7 @@ class ArNoiseModel(NoiseModelBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the noise model.
+        """Number of parameters for the noise model.
 
         Returns
         -------
@@ -308,6 +308,11 @@ def NoiseModel(*args, **kwargs) -> ArNoiseModel:
 class ArmaNoiseModel(NoiseModelBase):
     r"""ARMA(1,1) Noise model to simulate the noise as defined in :cite:t:`collenteur_estimation_2021`.
 
+    Warnings
+    --------
+    This model has only been tested on regular time steps and should not be used for
+    irregular time steps yet.
+
     Notes
     -----
     Calculates the noise according to:
@@ -318,11 +323,6 @@ class ArmaNoiseModel(NoiseModelBase):
         e^{-\\Delta t/\\beta}
 
     The units of the alpha and beta parameters are always in days.
-
-    Warnings
-    --------
-    This model has only been tested on regular time steps and should not be used for
-    irregular time steps yet.
     """
 
     @check_argument_model
@@ -334,7 +334,7 @@ class ArmaNoiseModel(NoiseModelBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the noise model.
+        """Number of parameters for the noise model.
 
         Returns
         -------

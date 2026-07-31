@@ -37,8 +37,8 @@ def test_classmethod_deprecation() -> None:
         def foo(self, b: Any) -> Any:
             return self.a + b
 
+    d = Deprecated(1)
     with pytest.warns(FutureWarning, match=msg):
-        d = Deprecated(1)
         d.foo(2)  # shows warning, continues execution
 
     # method was already removed (version <= current) - should raise AttributeError

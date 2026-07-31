@@ -21,19 +21,19 @@ def acf_func(**kwargs) -> tuple[np.ndarray, np.ndarray]:
 
 def test_acf_rectangle() -> None:
     acf, acf_true = acf_func(bin_method="rectangle")
-    assert abs((acf - acf_true)).max() < 0.05
+    assert abs(acf - acf_true).max() < 0.05
 
 
 def test_acf_gaussian() -> None:
     acf, acf_true = acf_func(bin_method="gaussian")
-    assert abs((acf - acf_true)).max() < 0.05
+    assert abs(acf - acf_true).max() < 0.05
 
 
 def test_acf_hourly() -> None:
     index = pd.to_datetime(np.arange(0, 100, 1), unit="h", origin="2000")
     lags = 10
     acf, acf_true = acf_func(index=index, lags=lags)
-    assert abs((acf - acf_true)).max() < 0.05
+    assert abs(acf - acf_true).max() < 0.05
 
 
 def test_runs_test() -> None:

@@ -79,7 +79,7 @@ def show_versions(optional: bool = False) -> None:
     """
     version_dict = get_versions(optional=optional)
 
-    max_len_key = max(len(key) for key in version_dict.keys()) + 1
+    max_len_key = max(len(key) for key in version_dict) + 1
     msg = ""
     # msg = f"{'Package':<{max_len_key}}: Version\n"
     # msg += "-" * (max_len_key + 9) + "\n"

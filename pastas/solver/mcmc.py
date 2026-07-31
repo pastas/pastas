@@ -51,6 +51,13 @@ class Emcee(SolverBase):
     **kwargs, optional
         All other keyword arguments are passed on to the SolverBase class.
 
+    See Also
+    --------
+    emcee.EnsembleSampler
+    emcee.moves
+    emcee.backend
+    pastas.solver.objective_function
+
     Notes
     -----
     The EmceeSolve solver uses the emcee package to perform a Markov Chain Monte Carlo
@@ -67,6 +74,10 @@ class Emcee(SolverBase):
 
         ml.solve(solver=ps.solver.Emcee(), thin_by=2)
 
+    References
+    ----------
+    https://emcee.readthedocs.io/en/stable/
+
     Examples
     --------
     Example usage::
@@ -76,27 +87,13 @@ class Emcee(SolverBase):
     To obtain the MCMC chains, use::
 
         ml.solver.sampler.get_chain(flat=True, discard=3000)
-
-    References
-    ----------
-    https://emcee.readthedocs.io/en/stable/
-
-    See Also
-    --------
-    emcee.EnsembleSampler
-    emcee.moves
-    emcee.backend
-    pastas.solver.objective_function
-
     """
 
     def __init__(
         self,
         model: Model,
         name: str = "solver",
-        objfunction: GaussianLikelihood
-        | GaussianLikelihoodAr1
-        | None = GaussianLikelihood(),
+        objfunction: GaussianLikelihood | GaussianLikelihoodAr1 | None = None,
         nwalkers: int = 20,
         backend: Any | None = None,
         moves: Any | None = None,
@@ -113,6 +110,8 @@ class Emcee(SolverBase):
                 reason="Use the argument objfunction instead",
             )
             objfunction = kwargs.pop("objective_function")
+        if objfunction is None:
+            objfunction = GaussianLikelihood()
 
         self.objfunction = objfunction
 
@@ -138,7 +137,7 @@ class Emcee(SolverBase):
     def _assert_emcee_installation(self) -> None:
         try:
             global emcee
-            import emcee as emcee  # Import emcee here, so it is no dependency
+            import emcee  # Import emcee here, so it is no dependency
         except ImportError:
             msg = "emcee not installed. Please install emcee first."
             raise ImportError(msg) from None
@@ -447,18 +446,18 @@ class Emcee(SolverBase):
         report: str
             String with the report.
 
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where possible.
+        If interpolation is used this means that the result may slightly differ
+        compared to using ml.simulate() and ml.observations().
+
         Examples
         --------
         This method is called by the solve method if report=True, but can also be
         called on its own::
 
         >>> print(ml.fit_report)
-
-        Notes
-        -----
-        The reported values for the fit use the residuals time series where possible.
-        If interpolation is used this means that the result may slightly differ
-        compared to using ml.simulate() and ml.observations().
         """
         model = {
             "nwalkers": self.nwalkers,
@@ -490,11 +489,9 @@ class Emcee(SolverBase):
         ].copy()
 
         # determine width of the fit_report
-        len_fit = max([len(v) for v in fit.values()]) + max(
-            [len(v) for v in fit.keys()]
-        )
-        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
-            [len(v) for v in model.keys()]
+        len_fit = max(len(v) for v in fit.values()) + max(len(v) for v in fit)
+        len_model = max(len(v) for v in model.values() if isinstance(v, str)) + max(
+            len(v) for v in model
         )
         len_param = len(parameters.to_string().split("\n")[1])
         width = max((len_fit + len_model + 8), len_param)
@@ -512,7 +509,7 @@ class Emcee(SolverBase):
         )
 
         basic = ""
-        len_val4 = max([len(v) for v in fit.values()])
+        len_val4 = max(len(v) for v in fit.values())
         wspace = width - (9 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
@@ -531,8 +528,10 @@ class Emcee(SolverBase):
             # create message
             if len(msg) > 0:
                 msg = [
-                    f"\n\nWarnings! ({len(msg)})\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
+                    (
+                        f"\n\nWarnings! ({len(msg)})\n"
+                        f"{string.format('', fill='=', align='>', width=width)}"
+                    )
                 ] + msg
                 warnings_rep += "\n".join(msg)
 

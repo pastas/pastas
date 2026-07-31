@@ -31,17 +31,17 @@ def test_notebook(file) -> None:
                 + "--to "
                 + "notebook "
                 + "--execute "
-                + '"{}" '.format(file)
+                + f'"{file}" '
                 + "--output-dir "
-                + "{} ".format(testdir)
+                + f"{testdir} "
             )
             ival = os.system(cmd)
-            msg = "could not run {}".format(file)
+            msg = f"could not run {file}"
             assert ival == 0, msg
             assert os.path.isfile(os.path.join(testdir, file)), msg
             # Report success
             print(f"Notebook {file} ran successfully.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             os.chdir(cwd)
             raise RuntimeError(f"Could not run notebook {file}, error: {e}")
     os.chdir(cwd)

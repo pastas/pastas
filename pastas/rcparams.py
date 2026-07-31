@@ -90,7 +90,7 @@ class _DeprecatedRcParams(Mapping[str, Any]):
 
     def __contains__(self, value: Any) -> bool:
         """Check if a key exists."""
-        return bool(value in self._data.__dict__.keys())
+        return bool(value in self._data.__dict__)
 
     def __eq__(self, other: object) -> bool:
         """Check equality with another object."""

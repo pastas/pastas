@@ -717,20 +717,20 @@ class Plotting:
         -------
         axes: list of matplotlib.axes.Axes
 
-        Examples
-        --------
-        >>> axes = ml.plots.diagnostics()
-
-        Notes
-        -----
-        This plot assumed that the noise or residuals follow a Normal distribution.
-
         See Also
         --------
         pastas.stats.acf
             Method that computes the autocorrelation.
         scipy.stats.probplot
             Method use to plot the probability plot.
+
+        Notes
+        -----
+        This plot assumed that the noise or residuals follow a Normal distribution.
+
+        Examples
+        --------
+        >>> axes = ml.plots.diagnostics()
         """
         if self.ml.noisemodel is not None:
             res = self.ml.noise(tmin=tmin, tmax=tmax).iloc[1:]
@@ -1025,7 +1025,7 @@ class Plotting:
             # the part of each pie is determined by the std of the contribution
             frac = [contrib.std() for contrib in contribs]
         else:
-            msg = "Unknown value for partition: {}".format(partition)
+            msg = f"Unknown value for partition: {partition}"
             raise ValueError(msg)
 
         # make sure the unexplained part is 100 - evp %
@@ -1278,7 +1278,7 @@ class Plotting:
         -------
         fig: matplotlib.pyplot.Figure instance
         """
-        fname = "{}.pdf".format(self.ml.name) if fname is None else fname
+        fname = f"{self.ml.name}.pdf" if fname is None else fname
         fig = self.summary(
             tmin=tmin,
             tmax=tmax,

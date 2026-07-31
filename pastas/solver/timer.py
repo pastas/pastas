@@ -33,8 +33,6 @@ from pastas.typing import ArrayLike, Model
 class ExceededMaxSolveTime(Exception):
     """Exception raised when the maximum solve time is exceeded."""
 
-    pass
-
 
 try:
     from tqdm.auto import tqdm
@@ -46,6 +44,11 @@ except ImportError:
 class SolveTimer(tqdm):
     """Progress indicator for model optimization.
 
+    Notes
+    -----
+    If the logger is also printing messages to the console the timer will not be
+    updated quite as nicely.
+
     Examples
     --------
     Print timer and number of iterations in console while running `ml.solve()`::
@@ -56,12 +59,6 @@ class SolveTimer(tqdm):
     This prints the following to the console, for example::
 
         Optimization progress: 73it [00:01, 67.68it/s]
-
-
-    Notes
-    -----
-    If the logger is also printing messages to the console the timer will not be
-    updated quite as nicely.
     """
 
     def __init__(
@@ -95,11 +92,8 @@ class SolveTimer(tqdm):
         """
         _ = p
         displayed = super().update(n)
-        if self.max_time is not None:
-            if self.format_dict["elapsed"] > self.max_time:
-                raise TimeoutError(
-                    f"Model solve time exceeded {self.max_time} seconds!"
-                )
+        if self.max_time is not None and self.format_dict["elapsed"] > self.max_time:
+            raise TimeoutError(f"Model solve time exceeded {self.max_time} seconds!")
         return displayed
 
 
