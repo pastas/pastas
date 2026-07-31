@@ -908,19 +908,19 @@ def _index_to_int64(tindex: DatetimeIndex) -> np.ndarray:
 
 
 def _get_interpolation_weights(
-    sim_index: DatetimeIndex, obs_index: DatetimeIndex
+    sim_tindex: DatetimeIndex, obs_tindex: DatetimeIndex
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Calculate indices and weights for linear interpolation.
 
     This function computes the necessary indices and weights to interpolate values
-    from a simulation time grid (`sim_index`) to an observation time grid (`obs_index`).
+    from a simulation time grid (`sim_tindex`) to an observation time grid (`obs_tindex`).
 
     Parameters
     ----------
-    sim_index : pandas.DatetimeIndex
+    sim_tindex : pandas.DatetimeIndex
         The time index of the simulation.
-    obs_index : pandas.DatetimeIndex
+    obs_tindex : pandas.DatetimeIndex
         The time index of the observations.
 
     Returns
@@ -932,8 +932,8 @@ def _get_interpolation_weights(
         - weights (np.ndarray): An array of shape (n_obs, 2) with the
           corresponding weights for interpolation.
     """
-    sim_idx_int = _index_to_int64(sim_index)
-    obs_idx_int = _index_to_int64(obs_index)
+    sim_idx_int = _index_to_int64(sim_tindex)
+    obs_idx_int = _index_to_int64(obs_tindex)
     indices = np.searchsorted(sim_idx_int, obs_idx_int, side="right") - 1
     indices = np.vstack([indices, indices + 1]).T
     np.clip(indices, a_min=0, a_max=len(sim_idx_int) - 1, out=indices)
