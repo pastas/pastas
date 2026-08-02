@@ -35,13 +35,13 @@ def load(fname: str | Path, **kwargs) -> Model:
 
     Returns
     -------
-    ml: pastas.model.Model
+    model: pastas.model.Model
         Pastas Model instance.
 
     Examples
     --------
     >>> import pastas as ps
-    >>> ml = ps.io.load("model.pas")
+    >>> model = ps.io.load("model.pas")
 
     """
     if not path.exists(fname):
