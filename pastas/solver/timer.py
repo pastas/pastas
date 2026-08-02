@@ -114,7 +114,7 @@ class StatTimer(SolveTimer):
 
     def __init__(
         self,
-        ml: Model,
+        model: Model,
         *args: Any,
         statistic: Literal[
             "rmse", "sse", "mae", "rsq", "evp", "nse", "nnse", "aic", "aicc", "bic"
@@ -122,11 +122,11 @@ class StatTimer(SolveTimer):
         update_interval: int | None = None,
         **kwargs: Any,
     ) -> None:
-        self.ml = ml
+        self.model = model
         if update_interval is not None:
             self.update_interval = update_interval
         else:
-            self.update_interval = self.ml.parameters.vary.sum()
+            self.update_interval = self.model.parameters.vary.sum()
         self.statistic = statistic
         self.func = getattr(metrics, self.statistic)
         super().__init__(*args, **kwargs)

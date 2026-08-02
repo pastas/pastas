@@ -89,7 +89,7 @@ class Model:
 
     Returns
     -------
-    ml: pastas.model.Model
+    model: pastas.model.Model
         Pastas Model instance, the base object in Pastas.
 
     Examples
@@ -935,7 +935,7 @@ class Model:
         -----
         - The solver instance including some results are stored as ml.solver. From here
           one can access the specific attributes from the solver (i.e., the covariance
-          matrix (ml.solver.pcov) for the LeastSquaresSolve).
+          matrix(model.solver.pcov) for the LeastSquaresSolve).
         - Each solver returns a number of results after optimization. These solver
           specific results are stored in ml.solver.result and can be accessed from
           there.
@@ -1023,11 +1023,11 @@ class Model:
 
         # Check if the solver is provided, deprecated with Pastas 2.0
         if solver is not None:  # add solver if provided
-            msg = (
-                "solver argument is deprecated and will be removed in Pastas 2.4.0. "
-                "Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
+            deprecate_args_or_kwargs(
+                name="solver",
+                version="2.4.0",
+                reason="Please use ps.solver.LeastSquares(model) pattern instead to add a solver.",
             )
-            logger.warning(msg)
             if self.solver is None or self.solver._name != solver._name:
                 logger.info(f"Setting solver to `{solver._name}`.")
                 self._add_solver(solver=solver)
@@ -1168,10 +1168,10 @@ class Model:
             logger.debug(f"Updating model setting freq_obs to {freq_obs}.")
             self._settings["freq_obs"] = _frequency_is_supported(freq_obs)
         elif freq_obs is None and self.settings["freq_obs"] is not None:
-            logger.info(
-                "Cannot update freq_obs to 'None'."
-                "Please use `self._settings['freq_obs'] = None` or "
-                "ml.reset_settings()."
+            logger.info(                
+                    "Cannot update freq_obs to 'None'."
+                    "Please use `self._settings['freq_obs'] = None` or "
+                    "ml.reset_settings()."
             )
         # always clear the _sim_index after set_settings
         self._sim_index = None
@@ -2421,7 +2421,7 @@ class Model:
 
         Returns
         -------
-        ml: pastas.model.Model
+        model: pastas.model.Model
             Copy of the original model with no references to the old model.
 
         Examples
@@ -2430,9 +2430,9 @@ class Model:
         """
         if name is None:
             name = self.name + "_copy"
-        ml = _load_model(self.to_dict())
-        ml.name = name
-        return ml
+        model = _load_model(self.to_dict())
+        model.name = name
+        return model
 
     def _check_stressmodel_compatibility(self) -> None:
         """Check if the stressmodels are compatible with the model.

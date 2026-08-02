@@ -2608,17 +2608,17 @@ class TarsoModel(RechargeModel):
         return sim
 
     @staticmethod
-    def _check_stressmodel_compatibility(ml: Model) -> None:
+    def _check_stressmodel_compatibility(model: Model) -> None:
         """Check if no other stressmodels, a constants or a transform is used."""
         msg = (
             "A TarsoModel cannot be combined with %s. Either remove the TarsoModel or "
             "the %s."
         )
-        if len(ml.stressmodels) > 1:
+        if len(model.stressmodels) > 1:
             logger.warning(msg, "other stressmodels", "stressmodels")
-        if ml.constant is not None:
+        if model.constant is not None:
             logger.warning(msg, "a constant", "constant")
-        if ml.transform is not None:
+        if model.transform is not None:
             logger.warning(msg, "a transform", "transform")
 
     @staticmethod
