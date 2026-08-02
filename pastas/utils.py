@@ -11,19 +11,19 @@ from pastas.typing import Model as ModelType
 logger = logging.getLogger(__name__)
 
 
-def get_stress_tmin_tmax(ml: ModelType) -> tuple[Timestamp | str, Timestamp | str]:
+def get_stress_tmin_tmax(model: ModelType) -> tuple[Timestamp | str, Timestamp | str]:
     """Get minimum and maximum time that all the stresses have data."""
     from pastas import Model
 
     tmin = Timestamp.min
     tmax = Timestamp.max
-    if isinstance(ml, Model):
-        for sm in ml.stressmodels:
-            for st in ml.stressmodels[sm].stresses:
+    if isinstance(model, Model):
+        for sm in model.stressmodels:
+            for st in model.stressmodels[sm].stresses:
                 tmin = max((tmin, st.series_original.index.min()))
                 tmax = min((tmax, st.series_original.index.max()))
     else:
-        raise (TypeError(f"Unknown type {type(ml)}"))
+        raise (TypeError(f"Unknown type {type(model)}"))
     return tmin, tmax
 
 
