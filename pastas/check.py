@@ -785,7 +785,7 @@ def checklist(model: Model, checks: list[str | Callable | dict], report=True):
     results = []
     for check in checks:
         if isinstance(check, str):
-            results.append(globals()[check](ml))
+            results.append(globals()[check](model))
         elif isinstance(check, dict):
             check = check.copy()  # copy so we do not modify original dict
             func = check.pop("func")
@@ -793,7 +793,7 @@ def checklist(model: Model, checks: list[str | Callable | dict], report=True):
                 func = globals()[func]  # get function from this module
             results.append(func(model, **check))  # pass rest of dict to function
         elif callable(check):
-            results.append(check(ml))  # call function with model as only argument
+            results.append(check(model))  # call function with model as only argument
         else:
             raise TypeError("Check must be str, callable, or dict.")
     df = concat(results)
