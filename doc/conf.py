@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/../.venv/bin/python3
 """Configuration file for the Sphinx documentation builder."""
 
 import os
