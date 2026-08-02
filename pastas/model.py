@@ -1168,10 +1168,10 @@ class Model:
             logger.debug(f"Updating model setting freq_obs to {freq_obs}.")
             self._settings["freq_obs"] = _frequency_is_supported(freq_obs)
         elif freq_obs is None and self.settings["freq_obs"] is not None:
-            logger.info(                
-                    "Cannot update freq_obs to 'None'."
-                    "Please use `self._settings['freq_obs'] = None` or "
-                    "ml.reset_settings()."
+            logger.info(
+                "Cannot update freq_obs to 'None'."
+                "Please use `self._settings['freq_obs'] = None` or "
+                "ml.reset_settings()."
             )
         # always clear the _sim_index after set_settings
         self._sim_index = None
