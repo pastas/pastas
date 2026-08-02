@@ -5,7 +5,7 @@ Examples
 Generate forecasts using ensembles of stress forecasts::
 
     forecasts = ...  # dictionary or list of dataframes with time series forecasts
-    ps.forecast(ml, forecasts)
+    ps.forecast(model, forecasts)
 
 """
 

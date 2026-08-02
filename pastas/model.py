@@ -810,7 +810,6 @@ class Model:
 
         Deprecated: This method is no longer needed. Use `set_settings` instead.
         """
-        pass
 
     def solve(
         self,
@@ -917,7 +916,8 @@ class Model:
         Notes
         -----
         - The solver instance including some results are stored as ml.solver. From here
-          one can access the specific attributes from the solver (i.e., the covariance matrix(ml.solver.pcov) for the LeastSquaresSolve).
+          one can access the specific attributes from the solver (i.e., the covariance
+          matrix(model.solver.pcov) for the LeastSquaresSolve).
         - Each solver returns a number of results after optimization. These solver
           specific results are stored in ml.solver.result and can be accessed from
           there.
@@ -1000,8 +1000,11 @@ class Model:
 
         # Check if the solver is provided, deprecated with Pastas 2.0
         if solver is not None:  # add solver if provided
-            msg = "solver argument is deprecated and will be removed in Pastas 2.4.0. Please use ps.solver.LeastSquares(ml) pattern instead to add a solver."
-            logger.warning(msg)
+            deprecate_args_or_kwargs(
+                name="solver",
+                version="2.4.0",
+                reason="Please use ps.solver.LeastSquares(model) pattern instead to add a solver.",
+            )
             if self.solver is None or self.solver._name != solver._name:
                 logger.info("Setting solver to `%s`." % solver._name)
                 self._add_solver(solver=solver)
@@ -1141,11 +1144,11 @@ class Model:
             self._settings["freq_obs"] = _frequency_is_supported(freq_obs)
         elif freq_obs is None and self.settings["freq_obs"] is not None:
             logger.info(
-                (
+                
                     "Cannot update freq_obs to 'None'."
                     "Please use `self._settings['freq_obs'] = None` or "
                     "ml.reset_settings()."
-                )
+                
             )
 
     def set_parameter(
@@ -1300,7 +1303,6 @@ class Model:
                     f"Initial value ({curr_initial}) of parameter {name} cannot be greater than upper bound (pmax={curr_pmax})"
                 )
 
-        return
 
     def set_oseries(
         self,
@@ -1437,8 +1439,7 @@ class Model:
         elif use_stresses:
             ts_tmin = Timestamp.max
             for stressmodel in self.stressmodels.values():
-                if stressmodel.tmin < ts_tmin:
-                    ts_tmin = stressmodel.tmin
+                ts_tmin = min(ts_tmin, stressmodel.tmin)
         # Get tmin and tmax from user provided values
         else:
             ts_tmin = Timestamp(tmin)
@@ -1504,8 +1505,7 @@ class Model:
         elif use_stresses:
             ts_tmax = Timestamp.min
             for stressmodel in self.stressmodels.values():
-                if stressmodel.tmax > ts_tmax:
-                    ts_tmax = stressmodel.tmax
+                ts_tmax = max(ts_tmax, stressmodel.tmax)
         # Get tmax from user provided values
         else:
             ts_tmax = Timestamp(tmax)
