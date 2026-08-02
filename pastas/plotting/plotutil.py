@@ -61,16 +61,16 @@ def _get_height_ratios(ylims: list[tuple[float, float]]) -> list[float]:
     return [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
 
 
-def _get_stress_series(ml: Model, split: bool = True) -> list[Series]:
+def _get_stress_series(model: Model, split: bool = True) -> list[Series]:
     stresses = []
-    for name in ml.stressmodels:
-        nstress = len(ml.stressmodels[name].stresses)
+    for name in model.stressmodels:
+        nstress = len(model.stressmodels[name].stresses)
         if split and nstress > 1:
             for istress in range(nstress):
-                stress = ml.get_stress(name, istress=istress)
+                stress = model.get_stress(name, istress=istress)
                 stresses.append(stress)
         else:
-            stress = ml.get_stress(name)
+            stress = model.get_stress(name)
             if isinstance(stress, list):
                 stresses.extend(stress)
             else:
