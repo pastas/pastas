@@ -12,7 +12,7 @@ to Pastas 2.0.
 - [Changes in defaults](#changes-in-defaults)
 - [Renamed objects and access locations](#renamed-objects-and-access-locations)
 - [New features](#new-features)
-- [Notable deprecations](#notable-deprecations) 
+- [Notable deprecations](#notable-deprecations)
 - [Pastas Sustaining Membership Program](#pastas-sustaining-membership-program)
 
 ---
@@ -27,7 +27,8 @@ provided as the first argument when creating a `StressModel`. The new syntax is:
 ```python
 # Pastas 2.0
 ml = ps.Model(oseries)
-sm = ps.StressModel(ml, stress, rfunc=ps.Exponential(), name="rain")  # <-- Note the model is now the first argument!
+sm = ps.StressModel(ml, stress, rfunc=ps.Exponential(), name="rain")
+#                   ^^ Note the model is now the first argument!
 ```
 
 Whereas in previous versions of Pastas, the `ml.add_stressmodel()` was necessary:
@@ -172,6 +173,54 @@ prec_settings = ps.timeseries.settings["prec"]  # <-- get settings for "prec"
 ```
 
 Hopefully that feels a lot more intuitive.
+
+### StressModel stresses attribute refactoring
+
+We have updated how stress time series are stored and accessed in `StressModel` and its subclasses (such as `RechargeModel`, `WellModel`, and `TarsoModel`). So what's changed?
+
+* **`sm.stresses` (NamedTuple of TimeSeries):** The primary attribute for accessing all stresses in a model is now `sm.stresses`. It returns an immutable **named tuple** of `pastas.TimeSeries` objects (e.g., `(stress,)` or `(prec, evap)`). Because it is a named tuple, you can access stresses either by index or directly by name (e.g., `rm.stresses.prec` is equivalent to `rm.stresses[0]`).
+* **Direct Property Access:**
+    - Single-stress models (`StressModel`): Expose their primary `pastas.TimeSeries` object via `sm.stress`.
+    - Multi-stress models (`RechargeModel`, `TarsoModel`, etc.): Expose dedicated attributes for each stress, such as `rm.prec`, `rm.evap`, or `rm.temp`.
+* **Simpler Updates:** Updating a stress series is now much more intuitive. You can directly assign a `pandas.Series` (or `pastas.TimeSeries`) to the attribute, or use the `.set_stress()` method.
+
+This is what it would look like in practice:
+
+```python
+# --- Single StressModel ---
+
+# New way: Update stress using pandas.Series or pastas.TimeSeries
+sm.set_stress(new_series)  # Recommended method
+sm.stress = new_series  # Direct property assignment
+
+# Old way (deprecated)
+sm.stress[0] = new_ts_object  # Required a pastas.TimeSeries object
+
+# --- Multi-stress Model (e.g., RechargeModel) ---
+
+# Accessing individual stress objects
+prec_ts = rm.prec
+evap_ts = rm.evap
+
+# Accessing via named tuple
+prec_ts = rm.stresses.prec
+
+# Updating stress series
+rm.set_stress(prec=new_prec_series, evap=new_evap_series)
+# or alternatively
+rm.prec = new_prec_series
+rm.evap = new_evap_series
+
+# --- Iterating Over Stresses ---
+
+# Old way (deprecated)
+for ts in sm.stress:
+    ts.series.plot()
+
+# New way (Pastas 2.0)
+for ts in sm.stresses:
+    ts.series.plot()
+```
 
 ## New features
 
