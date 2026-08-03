@@ -87,6 +87,7 @@ jobs:
 
           data = json.loads(Path("coverage.json").read_text())
           coverage = data["totals"]["percent_covered_display"]
+          print(f"Coverage: {coverage}%")
           with Path(os.environ["GITHUB_OUTPUT"]).open("a") as fh:
               fh.write(f"coverage={coverage}\n")
           PY
