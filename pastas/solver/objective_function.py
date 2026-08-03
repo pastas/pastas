@@ -8,7 +8,7 @@ from pastas.typing import ArrayLike, Model
 
 
 def misfit(
-    ml: Model,
+    model: Model,
     p: ArrayLike,
     noise: bool,
     weights: Series | None = None,
@@ -20,12 +20,12 @@ def misfit(
 
     Parameters
     ----------
+    model: object
+        The model instance containing residuals and noise methods.
     p: np.ndarray
         Array of parameter values.
     noise: bool
         If True, minimizes the sum of squared noise computed by the NoiseModel.
-    ml: object
-        The model instance containing residuals and noise methods.
     weights: pandas.Series, optional
         Weights to scale the residuals or noise.
     callback: Callable, optional
@@ -39,16 +39,15 @@ def misfit(
         The calculated residuals or noise, optionally with separate components.
     """
     # Get the residuals or the noise
+    res = model.residuals(p)
     if noise:
-        rv = ml.noise(p) * ml._noise_weights(p)
-    else:
-        rv = ml.residuals(p)
+        res = model.noise(p=p, res=res) * model._noise_weights(p=p, res=res)
 
     # Apply weights if provided
     if weights is not None:
-        weights = weights.reindex(rv.index)
+        weights = weights.reindex(res.index)
         weights.fillna(1.0, inplace=True)
-        rv = rv.multiply(weights)
+        res = res.multiply(weights)
 
     # Call the callback function if provided
     if callback is not None:
@@ -57,9 +56,9 @@ def misfit(
     # Return separate components if requested
     if returnseparate:
         return (
-            ml.residuals(p).to_numpy(copy=True),
-            ml.noise(p).to_numpy(copy=True),
-            ml._noise_weights(p).to_numpy(copy=True),
+            res.to_numpy(copy=True),
+            model.noise(p=p, res=res).to_numpy(copy=True),
+            model._noise_weights(p=p, res=res).to_numpy(copy=True),
         )
 
-    return rv.to_numpy(copy=True)
+    return res.to_numpy(copy=True)

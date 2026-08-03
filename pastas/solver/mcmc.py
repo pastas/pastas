@@ -323,16 +323,16 @@ class Emcee(SolverBase):
         # Set the parameters that are varied from the model and objective function
         par[self.vary] = p
 
-        rv = misfit(
+        res = misfit(
+            model=self.model,
             p=p,
             noise=noise,
-            ml=self.model,
             weights=weights,
             callback=callback,
             returnseparate=False,
         )
 
-        lnlike = self.objfunction.compute(rv, par[-self.objfunction.nparam :])
+        lnlike = self.objfunction.compute(res, par[-self.objfunction.nparam :])
 
         return lnlike
 

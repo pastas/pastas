@@ -331,10 +331,11 @@ class TimeSeries:
         the series need to be updated.
         """
         if self._update_settings(**kwargs) or force_update:
-            tmin = self.settings["tmin"]
-            freq = self.settings["freq"]
+            settings_ = self.settings
+            tmin = settings_["tmin"]
+            freq = settings_["freq"]
             if tmin is not None and freq is not None:
-                self.settings["time_offset"] = _get_time_offset(tmin, freq)
+                settings_["time_offset"] = _get_time_offset(tmin, freq)
 
             # Get the original series to start with
             series = self._series_original.copy(deep=True)
