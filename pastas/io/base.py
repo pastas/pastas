@@ -96,12 +96,14 @@ def _load_model(data: dict) -> Model:
         metadata=metadata,
     )
 
-    if "settings" in data and "noise" in data["settings"]:
-        if not data["settings"]["noise"] and "noisemodel" in data:
-            # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
-            # remove noisemodel from data
-            data.pop("noisemodel")
+    if "settings" in data:
+        if "noise" in data["settings"]:
+            if not data["settings"]["noise"] and "noisemodel" in data:
+                # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
+                # remove noisemodel from data
+                data.pop("noisemodel")
         ml._settings.update(data["settings"])
+
     if "file_info" in data:
         ml.file_info.update(data["file_info"])
 
