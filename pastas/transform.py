@@ -68,14 +68,14 @@ class ThresholdTransform:
             self.model._add_transform(self)
             self.set_init_parameters()
 
-    def set_model(self, ml: Model) -> None:
+    def set_model(self, model: Model) -> None:
         """Set model observations and initialize parameters."""
-        self.model = ml
+        self.model = model
         self.set_init_parameters()
 
     @property
     def nparam(self) -> int:
-        """Return the number of parameters."""
+        """Number of parameters."""
         return self._nparam
 
     @nparam.setter
@@ -156,7 +156,10 @@ class ThresholdTransform:
         self.parameters.at[name] = str(value)
 
     def simulate(
-        self, series: Series | None = None, p: ArrayLike | None = None, **kwargs
+        self,
+        series: Series | ArrayLike | None = None,
+        p: ArrayLike | None = None,
+        **kwargs,
     ) -> Series:
         """Apply the threshold transform to the series.
 

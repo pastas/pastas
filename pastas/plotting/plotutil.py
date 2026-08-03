@@ -28,9 +28,7 @@ def _table_formatter_params(s: float, na_rep: str = "") -> str:
         return na_rep
     elif s == 0.0:
         return f"{s:.2f}"
-    elif np.floor(np.log10(np.abs(s))) <= -2:
-        return f"{s:.2e}"
-    elif np.floor(np.log10(np.abs(s))) > 5:
+    elif np.floor(np.log10(np.abs(s))) <= -2 or np.floor(np.log10(np.abs(s))) > 5:
         return f"{s:.2e}"
     else:
         return f"{s:.2f}"
@@ -53,9 +51,7 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
         return na_rep
     elif s == 0.0:
         return f"±{s * 100:.2e}%"
-    elif np.floor(np.log10(np.abs(s))) <= -4:
-        return f"±{s * 100.0:.2e}%"
-    elif np.floor(np.log10(np.abs(s))) > 3:
+    elif np.floor(np.log10(np.abs(s))) <= -4 or np.floor(np.log10(np.abs(s))) > 3:
         return f"±{s * 100.0:.2e}%"
     else:
         return f"±{s:.2%}"
@@ -65,16 +61,16 @@ def _get_height_ratios(ylims: list[tuple[float, float]]) -> list[float]:
     return [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
 
 
-def _get_stress_series(ml: Model, split: bool = True) -> list[Series]:
+def _get_stress_series(model: Model, split: bool = True) -> list[Series]:
     stresses = []
-    for name in ml.stressmodels.keys():
-        nstress = len(ml.stressmodels[name].stresses)
+    for name in model.stressmodels:
+        nstress = len(model.stressmodels[name].stresses)
         if split and nstress > 1:
             for istress in range(nstress):
-                stress = ml.get_stress(name, istress=istress)
+                stress = model.get_stress(name, istress=istress)
                 stresses.append(stress)
         else:
-            stress = ml.get_stress(name)
+            stress = model.get_stress(name)
             if isinstance(stress, list):
                 stresses.extend(stress)
             else:

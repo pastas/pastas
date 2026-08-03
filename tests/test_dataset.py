@@ -18,13 +18,13 @@ def test_load_multiple_csv() -> None:
         raise
     assert isinstance(dataset, dict)
     assert len(dataset) > 1
-    for _, value in dataset.items():
+    for value in dataset.values():
         assert isinstance(value, DataFrame)
 
 
 def test_invalid_folder_name() -> None:
     # Test loading dataset with invalid folder name
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         load_dataset("invalid_folder_name")
 
 

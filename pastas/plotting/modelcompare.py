@@ -271,7 +271,7 @@ class CompareModels:
         self.mosaic = mosaic
         fig, axes = plt.subplot_mosaic(
             self.mosaic,
-            gridspec_kw=dict(height_ratios=heights_list),
+            gridspec_kw={"height_ratios": heights_list},
             **fig_kwargs,
         )
 
@@ -284,7 +284,7 @@ class CompareModels:
             if axlbl in ["sim", "res"] or axlbl.startswith("con"):
                 self.axes[axlbl].autoscale(enable=None, axis="y", tight=True)
 
-    def get_unique_stressmodels(self, models: list[Model] = None) -> list[str]:
+    def get_unique_stressmodels(self, models: list[Model] | None = None) -> list[str]:
         """Get all unique stressmodel names.
 
         Parameters
@@ -328,7 +328,7 @@ class CompareModels:
 
         return mosaic
 
-    def get_tmin_tmax(self, models: list[Model] = None) -> DataFrame:
+    def get_tmin_tmax(self, models: list[Model] | None = None) -> DataFrame:
         """Get tmin and tmax of all models.
 
         Parameters
@@ -483,11 +483,11 @@ class CompareModels:
                 markersize=3,
             )
         else:
-            for i, oseries in enumerate(oseries):
+            for i, o in enumerate(oseries):
                 axs[axn].scatter(
-                    oseries.index,
-                    oseries.values,
-                    label=oseries.name,
+                    o.index,
+                    o.values,
+                    label=o.name,
                     color=self.cmap(i),
                     s=15,
                     edgecolor="k",
@@ -643,12 +643,11 @@ class CompareModels:
                     elif response == "block":
                         kwargs = {}
                         p = None
-                        if ml.stressmodels[smn].rfunc is not None:
-                            if isinstance(ml.stressmodels[smn], WellModel):
-                                kwargs = {"warn": False}
-                                p = ml.stressmodels[smn].get_parameters(
-                                    model=ml, istress=0
-                                )
+                        if ml.stressmodels[smn].rfunc is not None and isinstance(
+                            ml.stressmodels[smn], WellModel
+                        ):
+                            kwargs = {"warn": False}
+                            p = ml.stressmodels[smn].get_parameters(model=ml, istress=0)
                         block = ml.get_block_response(smn, p=p, add_0=True, **kwargs)
                         if block is None:
                             continue
@@ -1025,7 +1024,7 @@ class CompareModels:
         # share x-axes
         xshare_left = []
         xshare_right = []
-        for axn in self.axes.keys():
+        for axn in self.axes:
             if axn not in ("tab", "met", "dia"):
                 self.axes[axn].grid(grid)
                 if legend and not axn.startswith("rf"):

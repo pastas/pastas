@@ -157,6 +157,11 @@ class TimeSeries:
            * `max`: resample time series with maximum value
            * `min`: resample time series with minimum value
 
+    See Also
+    --------
+    pastas.timeseries.TimeSeries.update_series
+        For the individual options for the different settings.
+
     Examples
     --------
     To obtain the predefined TimeSeries settings, you can run the following line of
@@ -164,10 +169,6 @@ class TimeSeries:
 
     >>> ps.timeseries.settings
 
-    See Also
-    --------
-    pastas.timeseries.TimeSeries.update_series
-        For the individual options for the different settings.
     """
 
     _timeseries_settings = deepcopy(settings)
@@ -231,14 +232,14 @@ class TimeSeries:
         # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in self._timeseries_settings.keys():
+                if settings in self._timeseries_settings:
                     settings: StressSettingsDict | OseriesSettingsDict = (
                         self._timeseries_settings[settings]
                     )
                 else:
                     msg = (
                         "Settings shortcut code '%s' is not in the timeseries.settings "
-                        "dictionary. Please choose from %s.",
+                        "dictionary. Please choose from %s."
                     )
 
                     raise KeyError(msg, settings, self._timeseries_settings.keys())
@@ -262,7 +263,7 @@ class TimeSeries:
 
     @property
     def series_original(self) -> Series:
-        """Return the original series."""
+        """Original series."""
         return self._series_original
 
     @series_original.setter
@@ -360,9 +361,8 @@ class TimeSeries:
         """
         update = False
         for key, value in kwargs.items():
-            if key in ["tmin", "tmax"]:
-                if value is not None:
-                    value = pd.Timestamp(value)
+            if key in ["tmin", "tmax"] and value is not None:
+                value = pd.Timestamp(value)
             if (value != self.settings[key]) and (value is not None):
                 self.settings[key] = value
                 update = True
@@ -383,10 +383,7 @@ class TimeSeries:
         freq = self.settings["freq"]
 
         # 1. If no freq string is present or is provided (e.g. Oseries)
-        if not freq:
-            return series
-        # 2. If new frequency is the same
-        elif freq == self.freq_original:
+        if not freq or freq == self.freq_original:
             return series
         # 3. If new frequency is required (only up or down sampling allowed)
         else:

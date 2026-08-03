@@ -85,7 +85,7 @@ class GaussianLikelihood:
 
     @property
     def _name(self) -> str:
-        """Get the name of the log-likelihood function."""
+        """Name of the log-likelihood function."""
         return self.__class__.__name__
 
     @property
@@ -178,7 +178,7 @@ class GaussianLikelihoodAr1:
 
     @property
     def _name(self) -> str:
-        """Get the name of the log-likelihood function."""
+        """Name of the log-likelihood function."""
         return self.__class__.__name__
 
     @property

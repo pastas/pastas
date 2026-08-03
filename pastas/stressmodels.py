@@ -2488,24 +2488,35 @@ class TarsoModel(RechargeModel):
         dmax: float | None = None,
         **kwargs,
     ) -> None:
-        if oseries is not None:
-            if dmin is not None or dmax is not None:
-                msg = "Please specify either oseries or dmin and dmax"
-                raise ValueError(msg)
-            dmin = oseries.min()
-            dmax = oseries.max()
-        elif dmin is None or dmax is None:
-            msg = "Please specify either oseries or dmin and dmax"
-            raise ValueError(msg)
         if rfunc is None:
             rfunc = Exponential()
         if not isinstance(rfunc, Exponential):
             raise NotImplementedError("TarsoModel only supports rfunc Exponential!")
-        self.dmin = dmin
-        self.dmax = dmax
+
+        # Determine dmin and dmax from arguments, model.oseries, or oseries
+        if dmin is not None and dmax is not None:
+            self.dmin = float(dmin)
+            self.dmax = float(dmax)
+        else:
+            series = model.oseries.series if model is not None else oseries
+            if series is not None:
+                self.dmin = float(series.min())
+                self.dmax = float(series.max())
+            else:
+                msg = "Either model, oseries or both dmin and dmax must be provided to initialize the TarsoModel."
+                logger.error(msg)
+                raise ValueError(msg)
+
         super().__init__(
-            model=model, prec=prec, evap=evap, rfunc=rfunc, name=name, **kwargs
+            model=model,
+            prec=prec,
+            evap=evap,
+            rfunc=rfunc,
+            name=name,
+            recharge=kwargs.pop("recharge", Linear()),
+            **kwargs,
         )
+
         if self.model is not None:
             self.model._add_stressmodel(self)
 
@@ -2584,24 +2595,21 @@ class TarsoModel(RechargeModel):
         _ = istress  # istress is not used for TarsoModel
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
         h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(), dt)
-        # Strip imaginary part when not doing complex-step Jacobian
-        if not np.iscomplexobj(p):
-            h = h.real
         sim = Series(h, name=self.name, index=stress.index)
         return sim
 
     @staticmethod
-    def _check_stressmodel_compatibility(ml: Model) -> None:
+    def _check_stressmodel_compatibility(model: Model) -> None:
         """Check if no other stressmodels, a constants or a transform is used."""
         msg = (
             "A TarsoModel cannot be combined with %s. Either remove the TarsoModel or "
             "the %s."
         )
-        if len(ml.stressmodels) > 1:
+        if len(model.stressmodels) > 1:
             logger.warning(msg, "other stressmodels", "stressmodels")
-        if ml.constant is not None:
+        if model.constant is not None:
             logger.warning(msg, "a constant", "constant")
-        if ml.transform is not None:
+        if model.transform is not None:
             logger.warning(msg, "a transform", "transform")
 
     @staticmethod
@@ -2613,6 +2621,7 @@ class TarsoModel(RechargeModel):
         recharge, using two thresholds.
         """
         A0, a0, d0, A1, a1, d1 = p
+        dtype = np.asarray(A0 + a0 + d0 + A1 + a1 + d1).dtype
 
         # calculate physical meaning of these parameters
         S0 = a0 / A0
@@ -2626,7 +2635,7 @@ class TarsoModel(RechargeModel):
         d_e = (c1 / (c0 + c1)) * d0 + (c0 / (c0 + c1)) * d1
         a_e = S1 * c_e
 
-        h = np.empty(len(r), dtype=np.complex128)
+        h = np.empty(len(r), dtype=dtype)
         for i in range(len(r)):
             if i == 0:
                 h0 = (d0 + d1) / 2

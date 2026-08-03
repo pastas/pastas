@@ -30,8 +30,8 @@ class Statistics:
 
     Parameters
     ----------
-    ml: Pastas.model.Model
-        ml is a time series Model that is calibrated.
+    model: Pastas.model.Model
+        model is a time series Model that is calibrated.
 
     Notes
     -----
@@ -41,7 +41,7 @@ class Statistics:
     """
 
     # Save all statistics that can be calculated.
-    ops = [
+    ops = (
         "rmse",
         "rmsn",
         "sse",
@@ -54,11 +54,11 @@ class Statistics:
         "bic",
         "aic",
         "aicc",
-    ]
+    )
 
-    def __init__(self, ml: Model):
+    def __init__(self, model: Model):
         # Save a reference to the model.
-        self.ml = ml
+        self.model = model
 
     def __repr__(self) -> str:
         """Return string representation of the Statistics object.
@@ -103,7 +103,7 @@ class Statistics:
         --------
         pastas.stats.rmse
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        res = self.model.residuals(tmin=tmin, tmax=tmax)
         return metrics.rmse(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
@@ -139,10 +139,10 @@ class Statistics:
         --------
         pastas.stats.rmse
         """
-        if self.ml.noisemodel is None:
+        if self.model.noisemodel is None:
             return nan
         else:
-            res = self.ml.noise(tmin=tmin, tmax=tmax)
+            res = self.model.noise(tmin=tmin, tmax=tmax)
             return metrics.rmse(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
@@ -166,7 +166,7 @@ class Statistics:
         --------
         pastas.stats.sse
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        res = self.model.residuals(tmin=tmin, tmax=tmax)
         return metrics.sse(res=res)
 
     @model_tmin_tmax
@@ -197,7 +197,7 @@ class Statistics:
         --------
         pastas.stats.mae
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        res = self.model.residuals(tmin=tmin, tmax=tmax)
         return metrics.mae(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
@@ -228,7 +228,7 @@ class Statistics:
         --------
         pastas.stats.me
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        res = self.model.residuals(tmin=tmin, tmax=tmax)
         return metrics.me(res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
@@ -259,8 +259,8 @@ class Statistics:
         --------
         pastas.stats.nse
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        res = self.model.residuals(tmin=tmin, tmax=tmax)
+        obs = self.model.observations(tmin=tmin, tmax=tmax)
         return metrics.nse(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
@@ -291,8 +291,8 @@ class Statistics:
         --------
         pastas.stats.nnse
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        res = self.model.residuals(tmin=tmin, tmax=tmax)
+        obs = self.model.observations(tmin=tmin, tmax=tmax)
 
         return metrics.nnse(obs=obs, res=res, weighted=weighted, **kwargs)
 
@@ -324,8 +324,8 @@ class Statistics:
         --------
         pastas.stats.pearsonr
         """
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.model.observations(tmin=tmin, tmax=tmax)
+        sim = self.model.simulate(tmin=tmin, tmax=tmax)
         return metrics.pearsonr(obs=obs, sim=sim, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
@@ -356,8 +356,8 @@ class Statistics:
         --------
         pastas.stats.evp
         """
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        res = self.model.residuals(tmin=tmin, tmax=tmax)
+        obs = self.model.observations(tmin=tmin, tmax=tmax)
         return metrics.evp(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
@@ -388,8 +388,8 @@ class Statistics:
         --------
         pastas.stats.rsq
         """
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        res = self.ml.residuals(tmin=tmin, tmax=tmax)
+        obs = self.model.observations(tmin=tmin, tmax=tmax)
+        res = self.model.residuals(tmin=tmin, tmax=tmax)
         return metrics.rsq(obs=obs, res=res, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
@@ -423,11 +423,11 @@ class Statistics:
         --------
         pastas.stats.kge
         """
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
+        obs = self.model.observations(tmin=tmin, tmax=tmax)
+        sim = self.model.simulate(tmin=tmin, tmax=tmax)
 
         # Get simulation at the correct indices
-        if self.ml._interpolate_simulation:
+        if self.model._interpolate_simulation:
             # interpolate simulation to times of observations
             sim_interpolated = Series(
                 interp(
@@ -477,8 +477,8 @@ class Statistics:
         --------
         pastas.stats.kge_2012
         """
-        sim = self.ml.simulate(tmin=tmin, tmax=tmax)
-        obs = self.ml.observations(tmin=tmin, tmax=tmax)
+        sim = self.model.simulate(tmin=tmin, tmax=tmax)
+        obs = self.model.observations(tmin=tmin, tmax=tmax)
         return metrics.kge_2012(obs=obs, sim=sim, weighted=weighted, **kwargs)
 
     @model_tmin_tmax
@@ -502,13 +502,13 @@ class Statistics:
         --------
         pastas.stats.bic
         """
-        nparam = self.ml.parameters["vary"].sum()
-        if self.ml.noisemodel is not None:
-            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
+        nparam = self.model.parameters["vary"].sum()
+        if self.model.noisemodel is not None:
+            res = self.model.noise(tmin=tmin, tmax=tmax) * self.model._noise_weights(
                 tmin=tmin, tmax=tmax
             )
         else:
-            res = self.ml.residuals(tmin=tmin, tmax=tmax)
+            res = self.model.residuals(tmin=tmin, tmax=tmax)
         return metrics.bic(res=res, nparam=nparam)
 
     @model_tmin_tmax
@@ -532,13 +532,13 @@ class Statistics:
         --------
         pastas.stats.aic
         """
-        nparam = self.ml.parameters["vary"].sum()
-        if self.ml.noisemodel is not None:
-            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
+        nparam = self.model.parameters["vary"].sum()
+        if self.model.noisemodel is not None:
+            res = self.model.noise(tmin=tmin, tmax=tmax) * self.model._noise_weights(
                 tmin=tmin, tmax=tmax
             )
         else:
-            res = self.ml.residuals(tmin=tmin, tmax=tmax)
+            res = self.model.residuals(tmin=tmin, tmax=tmax)
         return metrics.aic(res=res, nparam=nparam)
 
     @model_tmin_tmax
@@ -562,13 +562,13 @@ class Statistics:
         --------
         pastas.stats.aicc
         """
-        nparam = self.ml.parameters["vary"].sum()
-        if self.ml.noisemodel is not None:
-            res = self.ml.noise(tmin=tmin, tmax=tmax) * self.ml._noise_weights(
+        nparam = self.model.parameters["vary"].sum()
+        if self.model.noisemodel is not None:
+            res = self.model.noise(tmin=tmin, tmax=tmax) * self.model._noise_weights(
                 tmin=tmin, tmax=tmax
             )
         else:
-            res = self.ml.residuals(tmin=tmin, tmax=tmax)
+            res = self.model.residuals(tmin=tmin, tmax=tmax)
         return metrics.aicc(res=res, nparam=nparam)
 
     @model_tmin_tmax
@@ -608,12 +608,12 @@ class Statistics:
         >>> ml.stats.summary(stats=["mae", "rmse"])
         """
         if stats is None:
-            stats_to_compute = self.ops
+            stats_to_compute = list(self.ops)
         else:
             stats_to_compute = stats
 
         # Remove rmsn if no noise model
-        if "rmsn" in stats_to_compute and self.ml.noisemodel is None:
+        if "rmsn" in stats_to_compute and self.model.noisemodel is None:
             stats_to_compute.remove("rmsn")
 
         stats = DataFrame(columns=["Value"])
@@ -667,11 +667,11 @@ class Statistics:
         pastas.stats.diagnostics
 
         """
-        if self.ml.noisemodel is not None:
-            series = self.ml.noise(tmin=tmin, tmax=tmax)
-            nparam = self.ml.noisemodel.nparam
+        if self.model.noisemodel is not None:
+            series = self.model.noise(tmin=tmin, tmax=tmax)
+            nparam = self.model.noisemodel.nparam
         else:
-            series = self.ml.residuals(tmin=tmin, tmax=tmax)
+            series = self.model.residuals(tmin=tmin, tmax=tmax)
             nparam = 0
 
         return diagnostics(
