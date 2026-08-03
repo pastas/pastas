@@ -147,7 +147,7 @@ class Model:
 
         # some _attributes simulation and solving
         self._interpolate_simulation: bool | None = None
-        self._interpolation_indices_weights: tuple | None = None  # Interal variable
+        self._interpolation_indices_weights: tuple | None = None  # Internal variable
         self._fit_constant = None  # Internal variable used during solving
         self._sim_index: DatetimeIndex | None = None  # Internal variable during solving
         self._time_offset: Timedelta | None = None  # Internal variable during solving
