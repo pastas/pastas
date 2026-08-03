@@ -328,6 +328,10 @@ def get_sample_for_freq(
 ):
     """Sample a pandas Series or DataFrame so that the frequency is not higher than a supplied frequency.
 
+    .. versionchanged:: 2.0
+        The ``s`` parameter was renamed to ``series``. Passing ``s`` still works
+        but raises a deprecation warning.
+
     Parameters
     ----------
     series : pandas.Series or pandas.DataFrame
@@ -385,6 +389,9 @@ def timestep_weighted_resample(
     **kwargs,
 ) -> Series:
     """Resample a time series to a new time index, using an overlapping period weighted average.
+
+    .. deprecated:: 2.1
+        Use :func:`time_weighted_resample` instead.
 
     The original series and the new index do not have to be equidistant. Also, the
     timestep-edges of the new index do not have to overlap with the original series.
@@ -526,6 +533,11 @@ def time_weighted_resample(
 ):
     """
     Time-weighted resampling of a time series to arbitrary periods.
+
+    .. versionadded:: 1.14
+
+    .. versionchanged:: 2.0.0
+        The ``index`` parameter was renamed to ``tindex``.
 
     Parameters
     ----------

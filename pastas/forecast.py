@@ -170,6 +170,10 @@ def forecast(
 
     Please note that only the AR1 noise model is supported at this moment for post-processing.
 
+    .. versionchanged:: 2.0.0
+        The ``forecasts`` argument no longer accepts a list of DataFrames per
+        stressmodel. It now requires a dictionary of DataFrames, where the
+        keys are the keyword arguments of the stressmodel.
     """
     # Check the integrity of the forecasts data
     n, tmin, tmax, index = _check_forecast_data(forecasts)

@@ -59,6 +59,7 @@ def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
     def wrapper(obj: Any):
         name = obj.__name__
 
+        @wraps(obj)
         def _function(*args, **kwargs):
             VERSION = parse_version(version)
             if CURRENT_PASTAS_VERSION < VERSION:

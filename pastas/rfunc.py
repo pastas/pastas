@@ -196,6 +196,8 @@ class RfuncBase(ABC):
     ) -> float:
         """Compute the raw moment of the response function.
 
+        .. versionadded:: 1.13
+
         Parameters
         ----------
         p: array_like

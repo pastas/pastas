@@ -234,7 +234,12 @@ class Model:
     def add_stressmodel(
         self, stressmodel: StressModel | list[StressModel], replace: bool = True
     ):
-        """Add a stressmodel to the model (Deprecated)."""
+        """Add a stressmodel to the model (Deprecated).
+
+        .. deprecated:: 2.4.0
+            Use ``ps.StressModel(model=ml, ...)`` to add a stressmodel directly
+            without calling this method.
+        """
         # Method can take multiple stressmodels at once through args
         if isinstance(stressmodel, list):
             for sm in stressmodel:
@@ -292,7 +297,12 @@ class Model:
         reason="Constants are now added by adding the Pastas Model as the first argument during initialization (i.e., ps.Constant(model=ml, *args))",
     )
     def add_constant(self, constant: Constant) -> None:
-        """Add a constant to the model (Deprecated)."""
+        """Add a constant to the model (Deprecated).
+
+        .. deprecated:: 2.4.0
+            Use ``ps.Constant(model=ml, ...)`` to add a constant directly without
+            calling this method.
+        """
         constant._set_model(self)
         self._add_constant(constant)
 
@@ -316,7 +326,12 @@ class Model:
         "(model=ml, *args))",
     )
     def add_transform(self, transform: ThresholdTransform):
-        """Add a Transform to the model (Deprecated)."""
+        """Add a Transform to the model (Deprecated).
+
+        .. deprecated:: 2.4.0
+            Use ``ps.ThresholdTransform(model=ml, ...)`` to add a transform directly
+            without calling this method.
+        """
         transform.set_model(self)
         self._add_transform(transform)
 
@@ -343,7 +358,12 @@ class Model:
         "(model=ml, *args))",
     )
     def add_noisemodel(self, noisemodel: NoiseModelType) -> None:
-        """Add a noisemodel to the model (Deprecated)."""
+        """Add a noisemodel to the model (Deprecated).
+
+        .. deprecated:: 2.4.0
+            Use ``ps.ArNoiseModel(model=ml, ...)`` to add a noise model directly
+            without calling this method.
+        """
         noisemodel._set_model(self)
         self._add_noisemodel(noisemodel)
 
@@ -378,7 +398,12 @@ class Model:
         "(model=ml, *args))",
     )
     def add_solver(self, solver: Solver) -> None:
-        """Add a solver to the model (Deprecated)."""
+        """Add a solver to the model (Deprecated).
+
+        .. deprecated:: 2.4.0
+            Use ``ps.solver.LeastSquares(model=ml, ...)`` to add a solver directly
+            without calling this method.
+        """
         solver.set_model(self)
         self._add_solver(solver)
 
@@ -939,6 +964,20 @@ class Model:
         - Each solver returns a number of results after optimization. These solver
           specific results are stored in ml.solver.result and can be accessed from
           there.
+
+        See Also
+        --------
+        pastas.solver
+            Different solver objects are available to estimate parameters.
+
+        .. versionchanged:: 1.5.0
+            The ``noise`` parameter was deprecated. Add a noise model via
+            :meth:`add_noisemodel` or remove it with :meth:`del_noisemodel`
+            before calling :meth:`solve`.
+
+        .. versionchanged:: 2.0.0
+            The ``initialize`` parameter was deprecated. Use
+            :meth:`set_settings` to configure model settings before solving.
         """
         if noise is not None:
             if noise is True:
@@ -1131,6 +1170,8 @@ class Model:
         This method is used to change the model settings. It is called by the solve
         method, but can also be triggered manually.
 
+        .. versionadded:: 2.0.0
+            This method replaces the deprecated :meth:`initialize` method.
         """
         if tmin is not None:
             logger.debug(f"Updating model setting tmin to {tmin}.")
@@ -1967,6 +2008,13 @@ class Model:
             Adds 0 at t=0 at the start of the response, defaults to False.
         dt: float, optional
             timestep for the response function.
+        istress: int or "all" or None, optional
+            When multiple stresses are present in a stressmodel, select the response
+            for the n-th stress (int), all stresses ("all"), or the stressmodel
+            default (None).
+
+            .. versionchanged:: 2.0
+                Added support for ``istress="all"`` to return all responses.
         kwargs: dict, optional
             Kwargs are passed onto _get_response()
 
@@ -2011,6 +2059,13 @@ class Model:
             Adds 0 at t=0 at the start of the response, defaults to False.
         dt: float, optional
             timestep for the response function.
+        istress: int or "all" or None, optional
+            When multiple stresses are present in a stressmodel, select the response
+            for the n-th stress (int), all stresses ("all"), or the stressmodel
+            default (None).
+
+            .. versionchanged:: 2.0
+                Added support for ``istress="all"`` to return all responses.
         kwargs: dict, optional
             Kwargs are passed onto _get_response()
 
