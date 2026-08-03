@@ -663,10 +663,11 @@ class Model:
                 )
 
             indices, weights = self._interpolation_indices_weights
-            sim = (
+            sim_interp = (
                 sim_values[indices[:, 0]] * weights[:, 0]
                 + sim_values[indices[:, 1]] * weights[:, 1]
             )
+            sim = Series(data=sim_interp, index=obs.index, name="Simulation")
         else:
             # All the observation indexes are in the simulation
             sim = sim.reindex(obs.index)
