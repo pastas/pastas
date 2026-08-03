@@ -98,7 +98,7 @@ def _load_model(data: dict) -> Model:
 
     if "settings" in data:
         if "noise" in data["settings"]:
-            if not data["settings"]["noise"] and "noisemodel" in data:
+            if data["settings"]["noise"] is False and "noisemodel" in data:
                 # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
                 # remove noisemodel from data
                 data.pop("noisemodel")
