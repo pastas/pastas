@@ -20,12 +20,11 @@ Sustaining memberships
 
 We will collect the sustaining membership contributions through `Open Collective <https://opencollective.com/pastas>`_. The contributions will be collected on an annual basis, and the amount of the contribution is up to you. We suggest contributions depending on the size of the organization, but any amount is welcome. You can also choose to contribute anonymously if you prefer. Go to https://opencollective.com/pastas
 
-All members will be listed with their company logo on the sustaining members page (see below), unless anonymous membership is desired.
+All members will be listed with their company logo on the sustaining members page (see below), unless anonymous membership is desired. If you want to be included in the list, please contact us and send us your logo.
 
 Questions and contact
 ---------------------
-If you have any questions about the sustaining membership program, please contact us at
-
+If you have any questions about the sustaining membership program, please contact one of the Pastas Development team members via email.
 
 Sustaining members
 ------------------
