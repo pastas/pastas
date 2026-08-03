@@ -775,7 +775,7 @@ class LeastSquares(LeastSquaresBase):
         par = np.array(initial, copy=True, dtype=np.asarray(p).dtype)
         par[vary] = p
         return misfit(
-            ml=self.model, p=par, noise=noise, weights=weights, callback=callback
+            model=self.model, p=par, noise=noise, weights=weights, callback=callback
         )
 
     def solve(
@@ -1206,7 +1206,7 @@ class Lmfit(LeastSquaresBase):
         """Objective function that is minimized by the Lmfit solver."""
         p = np.array([p.value for p in parameters.values()])
         return misfit(
-            ml=self.model,
+            model=self.model,
             p=p,
             noise=noise,
             weights=weights,
