@@ -1144,11 +1144,9 @@ class Model:
             self._settings["freq_obs"] = _frequency_is_supported(freq_obs)
         elif freq_obs is None and self.settings["freq_obs"] is not None:
             logger.info(
-                
-                    "Cannot update freq_obs to 'None'."
-                    "Please use `self._settings['freq_obs'] = None` or "
-                    "ml.reset_settings()."
-                
+                "Cannot update freq_obs to 'None'."
+                "Please use `self._settings['freq_obs'] = None` or "
+                "ml.reset_settings()."
             )
 
     def set_parameter(
@@ -1302,7 +1300,6 @@ class Model:
                 raise ValueError(
                     f"Initial value ({curr_initial}) of parameter {name} cannot be greater than upper bound (pmax={curr_pmax})"
                 )
-
 
     def set_oseries(
         self,

@@ -3327,6 +3327,14 @@ class Spline(RfuncBase):
     function is more data-driven than existing response functions and has no physical
     background. Therefore, it can primarily be used to compare to other more physical
     response functions, that probably describe the groundwater system better.
+
+    Example
+    -------
+    >>> ml = ps.Model(obs, name="Spline")
+    >>> rfunc = ps.Spline(t=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024])
+    >>> sm = ps.RechargeModel(model=ml, prec=rain, evap=evap, rfunc=rfunc)
+    >>> ml.solve()
+
     """
 
     def __init__(
