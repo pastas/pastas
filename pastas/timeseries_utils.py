@@ -259,14 +259,13 @@ def _get_sim_index(
     sim_index: pandas.DatetimeIndex
         Pandas DatetimeIndex instance with the datetimes values for which the
         model is simulated.
-
     """
     tmin = tmin.floor(freq) + time_offset
-    sim_index = date_range(start=tmin, end=tmax, freq=freq)
+    sim_index = date_range(start=tmin, end=tmax, freq=freq, unit="us")
     return sim_index
 
 
-def _parse_warmup(warmup: Timedelta | float | int | str) -> Timedelta:
+def _parse_warmup(warmup: Timedelta | float | str) -> Timedelta:
     """Parse the warmup period to a pandas Timedelta.
 
     Parameters
@@ -901,8 +900,46 @@ def resample(
 
 def _index_to_int64(tindex: DatetimeIndex) -> np.ndarray:
     """Convert a pandas index to int64 representation."""
-    if hasattr(tindex, "as_unit"):  # pandas >= 3.0
+    if hasattr(tindex, "as_unit") and tindex.unit != "us":  # pandas >= 3.0
         # In pandas 3.0, the default resolution for newly created datetime-like objects
         # is datetime64[us] (microseconds)
         tindex = tindex.as_unit("us")
     return tindex.view("int64")
+
+
+def _get_interpolation_weights(
+    sim_tindex: DatetimeIndex, obs_tindex: DatetimeIndex
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Calculate indices and weights for linear interpolation.
+
+    This function computes the necessary indices and weights to interpolate values
+    from a simulation time grid (`sim_tindex`) to an observation time grid (`obs_tindex`).
+
+    Parameters
+    ----------
+    sim_tindex : pandas.DatetimeIndex
+        The time index of the simulation.
+    obs_tindex : pandas.DatetimeIndex
+        The time index of the observations.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        A tuple containing:
+        - indices (np.ndarray): An array of shape (n_obs, 2) with the indices
+          of the two simulation points surrounding each observation.
+        - weights (np.ndarray): An array of shape (n_obs, 2) with the
+          corresponding weights for interpolation.
+    """
+    sim_idx_int = _index_to_int64(sim_tindex)
+    obs_idx_int = _index_to_int64(obs_tindex)
+    indices = np.searchsorted(sim_idx_int, obs_idx_int, side="right") - 1
+    indices = np.vstack([indices, indices + 1]).T
+    np.clip(indices, a_min=0, a_max=len(sim_idx_int) - 1, out=indices)
+    # avoid division by zero for cases where obs index is on sim_index at start/end
+    num = obs_idx_int - sim_idx_int[indices[:, 0]]
+    den = sim_idx_int[indices[:, 1]] - sim_idx_int[indices[:, 0]]
+    weights = np.divide(num, den, out=np.zeros_like(num, dtype=float), where=den != 0)
+    weights = np.vstack([1 - weights, weights]).T
+    return indices, weights
