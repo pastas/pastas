@@ -534,9 +534,9 @@ def time_weighted_resample(
     """
     Time-weighted resampling of a time series to arbitrary periods.
 
-    .. versionadded:: 2.0.0
+    .. versionadded:: 1.14
 
-    .. versionchanged:: 2.4.0
+    .. versionchanged:: 2.0.0
         The ``index`` parameter was renamed to ``tindex``.
 
     Parameters

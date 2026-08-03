@@ -196,7 +196,7 @@ class RfuncBase(ABC):
     ) -> float:
         """Compute the raw moment of the response function.
 
-        .. versionadded:: 2.0.0
+        .. versionadded:: 1.13
 
         Parameters
         ----------
