@@ -5,7 +5,7 @@ Examples
 Generate forecasts using ensembles of stress forecasts::
 
     forecasts = ...  # dictionary or list of dataframes with time series forecasts
-    ps.forecast(ml, forecasts)
+    ps.forecast(model, forecasts)
 
 """
 
@@ -129,7 +129,7 @@ def _check_forecast_data(
 
 
 def forecast(
-    ml: Model,
+    model: Model,
     forecasts: dict[str, list[DataFrame | Series]]
     | dict[str, dict[str, DataFrame | Series]],
     p: ArrayLike | None = None,
@@ -139,7 +139,7 @@ def forecast(
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas Model instance.
     forecasts: dict
         Dictionary containing the forecasts data. The keys are the stressmodel names
@@ -179,8 +179,8 @@ def forecast(
     n, tmin, tmax, index = _check_forecast_data(forecasts)
     logger.info(f"Working with {n} ensemble members from {tmin} to {tmax}")
 
-    if post_process and not isinstance(ml.noisemodel, ArNoiseModel):
-        if ml.noisemodel is None:
+    if post_process and not isinstance(model.noisemodel, ArNoiseModel):
+        if model.noisemodel is None:
             msg = "No noise model present in the model instance. Please add a noise model to the model instance or set post_process=False."
         else:
             msg = "Only the AR1 noise model is supported for post-processing at this moment. Please use an AR1 noise model or set post_process=False."
@@ -191,7 +191,7 @@ def forecast(
     if p is None:
         logger.info("No parameter provided, using the optimal parameters.")
         # In case no parameters are provided, use optimal values
-        p = [ml.parameters.loc[:, "optimal"].values]
+        p = [model.parameters.loc[:, "optimal"].values]
         nparam = len(p)
     else:
         if len(p) == 0:
@@ -213,36 +213,36 @@ def forecast(
     day = Timedelta("1D")
 
     if post_process:
-        dt = ml.settings["freq_obs"] / day
+        dt = model.settings["freq_obs"] / day
         t = linspace(1, index.size, index.size)
         correction = {}
 
     # Preprocess residuals and variances for each parameter set as they only depend on parameters and not on ensemble members
     for i, param in enumerate(p):
-        residuals[i] = ml.residuals(tmax=tmin, p=param).dropna()
+        residuals[i] = model.residuals(tmax=tmin, p=param).dropna()
 
         if post_process:
             # Compute the time varying variance for the AR1 noise model
             phi = exp(-dt / param[-1])
             denominator = 1.0 - phi**2
             phi_scaling_factor = (1.0 - phi ** (2.0 * t / dt)) / denominator
-            vars[i] = ml.noise(tmax=tmin, p=param).var() * phi_scaling_factor
+            vars[i] = model.noise(tmax=tmin, p=param).var() * phi_scaling_factor
 
-            correction[i] = ml.noisemodel.get_correction(
+            correction[i] = model.noisemodel.get_correction(
                 residuals[i], [param[-1]], index
             ).values
         else:
             vars[i] = residuals[i].var() * ones(forecast_length)
 
     # Copy the model so old model is unaffected when replacing the stresses.
-    ml = ml.copy()
+    model = model.copy()
     idx = 0
 
     # 1. iterate over the ensemble members
     for member in range(n):
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
-            sm = ml.stressmodels[sm_name]  # Select stressmodel
+            sm = model.stressmodels[sm_name]  # Select stressmodel
             for stress_name, fc in fc_data.items():
                 if isinstance(fc, Series):
                     fc = fc.to_frame()
@@ -254,7 +254,7 @@ def forecast(
         # 2. iterate over the parameter sets
         for i, param in enumerate(p):
             # Generate the forecasts
-            sim = ml.simulate(tmin=tmin, tmax=tmax, p=param).values
+            sim = model.simulate(tmin=tmin, tmax=tmax, p=param).values
 
             if post_process:
                 # Add the correction from the noise model

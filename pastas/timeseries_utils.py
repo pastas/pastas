@@ -92,7 +92,7 @@ def _frequency_is_supported(freq: str) -> str:
     offset = to_offset(freq)
     try:
         _offset_to_timedelta(offset)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         msg = "Frequency %s not supported."
         logger.error(msg, freq)
         logger.debug(e)
@@ -129,8 +129,8 @@ def _get_stress_dt(freq: str) -> float:
     offset = to_offset(freq)
     try:
         dt = _offset_to_timedelta(offset) / Timedelta(1, "D")
-    except Exception as e:
-        logging.debug(e)
+    except Exception as e:  # noqa: BLE001
+        logger.debug(e)
         num = offset.n
         freq = offset._prefix
         if freq in ["A", "Y", "AS", "YS", "YE", "BA", "BY", "BAS", "BYS"]:
@@ -155,12 +155,11 @@ def _get_stress_dt(freq: str) -> float:
             # hour
             dt = num * 1.0 / 24.0
         else:
-            raise (ValueError("freq of {} not supported".format(freq)))
+            raise (ValueError(f"freq of {freq} not supported"))
 
     # Check if dt can be an integer, if so convert to int
-    if not isinstance(dt, int):
-        if dt.is_integer():
-            dt = int(dt)
+    if not isinstance(dt, int) and dt.is_integer():
+        dt = int(dt)
 
     return dt
 
@@ -260,14 +259,13 @@ def _get_sim_index(
     sim_index: pandas.DatetimeIndex
         Pandas DatetimeIndex instance with the datetimes values for which the
         model is simulated.
-
     """
     tmin = tmin.floor(freq) + time_offset
-    sim_index = date_range(start=tmin, end=tmax, freq=freq)
+    sim_index = date_range(start=tmin, end=tmax, freq=freq, unit="us")
     return sim_index
 
 
-def _parse_warmup(warmup: Timedelta | float | int | str) -> Timedelta:
+def _parse_warmup(warmup: Timedelta | float | str) -> Timedelta:
     """Parse the warmup period to a pandas Timedelta.
 
     Parameters
@@ -561,17 +559,17 @@ def time_weighted_resample(
         If True, periods that are not fully covered by the original data are masked with NaN. If False,
         only periods completely outside the range of the original data are masked. Default is False.
 
-    Raises
-    ------
-    ValueError
-        If `method` is not supported or input is not strictly increasing.
-
     Returns
     -------
     s_new : pandas.Series
         Resampled time series. Each value represents the time-weighted mean
         over the corresponding period. Periods not covered by the original
         data are NaN.
+
+    Raises
+    ------
+    ValueError
+        If `method` is not supported or input is not strictly increasing.
     """
     # Validate inputs
     if isinstance(s, DataFrame):
@@ -583,7 +581,7 @@ def time_weighted_resample(
             logger.error(msg)
             raise ValueError(msg)
     if s.isna().any():
-        raise Exception("s cannot contain NaN values")
+        raise ValueError("s cannot contain NaN values")
     if not s.index.is_monotonic_increasing:
         raise ValueError("Series index must be strictly increasing.")
     if not tindex.is_monotonic_increasing:
@@ -914,8 +912,46 @@ def resample(
 
 def _index_to_int64(tindex: DatetimeIndex) -> np.ndarray:
     """Convert a pandas index to int64 representation."""
-    if hasattr(tindex, "as_unit"):  # pandas >= 3.0
+    if hasattr(tindex, "as_unit") and tindex.unit != "us":  # pandas >= 3.0
         # In pandas 3.0, the default resolution for newly created datetime-like objects
         # is datetime64[us] (microseconds)
         tindex = tindex.as_unit("us")
     return tindex.view("int64")
+
+
+def _get_interpolation_weights(
+    sim_tindex: DatetimeIndex, obs_tindex: DatetimeIndex
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Calculate indices and weights for linear interpolation.
+
+    This function computes the necessary indices and weights to interpolate values
+    from a simulation time grid (`sim_tindex`) to an observation time grid (`obs_tindex`).
+
+    Parameters
+    ----------
+    sim_tindex : pandas.DatetimeIndex
+        The time index of the simulation.
+    obs_tindex : pandas.DatetimeIndex
+        The time index of the observations.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        A tuple containing:
+        - indices (np.ndarray): An array of shape (n_obs, 2) with the indices
+          of the two simulation points surrounding each observation.
+        - weights (np.ndarray): An array of shape (n_obs, 2) with the
+          corresponding weights for interpolation.
+    """
+    sim_idx_int = _index_to_int64(sim_tindex)
+    obs_idx_int = _index_to_int64(obs_tindex)
+    indices = np.searchsorted(sim_idx_int, obs_idx_int, side="right") - 1
+    indices = np.vstack([indices, indices + 1]).T
+    np.clip(indices, a_min=0, a_max=len(sim_idx_int) - 1, out=indices)
+    # avoid division by zero for cases where obs index is on sim_index at start/end
+    num = obs_idx_int - sim_idx_int[indices[:, 0]]
+    den = sim_idx_int[indices[:, 1]] - sim_idx_int[indices[:, 0]]
+    weights = np.divide(num, den, out=np.zeros_like(num, dtype=float), where=den != 0)
+    weights = np.vstack([1 - weights, weights]).T
+    return indices, weights

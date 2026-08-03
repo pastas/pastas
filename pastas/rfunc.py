@@ -12,6 +12,7 @@ Use response functions in stress models::
 
 from abc import ABC, abstractmethod
 from logging import getLogger
+from typing import Any, Literal
 
 import numpy as np
 from numpy import pi
@@ -34,32 +35,23 @@ from scipy.special import (
     wrightomega,
 )
 
-from .decorators import njit
-
-try:
-    from numba import prange
-except ImportError:
-    prange = range
-
-from typing import Any, Literal
-
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import PastasDeprecationWarning, njit
 from pastas.stats import moment
 from pastas.typing import ArrayLike
 
 logger = getLogger(__name__)
 
 __all__ = [
-    "Gamma",
-    "Exponential",
-    "Hantush",
-    "Polder",
-    "FourParam",
     "DoubleExponential",
-    "One",
-    # "Edelman",
+    "Exponential",
+    "FourParam",
+    "Gamma",
+    "Hantush",
     "HantushWellModel",
     "Kraijenhoff",
+    "One",
+    "Polder",
+    # "Edelman",
     "Spline",
 ]
 
@@ -500,7 +492,7 @@ class Gamma(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -610,7 +602,7 @@ class Gamma(RfuncBase):
         if np.iscomplexobj(p) and self.use_block:
             raise TypeError(
                 "Gamma.step does not support complex-step Jacobian evaluation "
-                "(jac='cs') by default. Set use_block=False, set complex_step=True or"
+                "(jac='cs') by default. Set use_block=False, set complex_step=True or "
                 "use a different Jacobian method (e.g. jac='3-point' or jac='2-point')."
             )
         t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
@@ -743,7 +735,7 @@ class Exponential(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -969,7 +961,7 @@ class Hantush(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -1235,7 +1227,7 @@ class Hantush(RfuncBase):
         """
         F = np.zeros_like(t)
         u = a * b / t
-        for i in range(0, len(t)):
+        for i in range(len(t)):
             F[i] = quad(Hantush._integrand_hantush, u[i], np.inf, args=(b,))[0]
         return F * A / (2 * kv(0, 2 * np.sqrt(b)))
 
@@ -1307,7 +1299,7 @@ class Hantush(RfuncBase):
             b = Series(self.block(p=p, dt=dt, cutoff=self.cutoff), index=t)
             return moment(b, order)
         elif method == "exact":
-            A, a, b = p
+            _, a, b = p
             return (
                 (a**2 * b) ** (order / 2)
                 * kv(order, 2 * np.sqrt(b))
@@ -1415,7 +1407,7 @@ class HantushWellModel(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -1783,11 +1775,6 @@ class HantushWellModel(RfuncBase):
         Variance of the gain is calculated based on propagation of uncertainty using
         optimal values, the variances of A and b and the covariance between A and b.
 
-        Notes
-        -----
-        Estimated variance can be biased for non-linear functions as it uses
-        truncated series expansion.
-
         Parameters
         ----------
         A : float
@@ -1817,6 +1804,11 @@ class HantushWellModel(RfuncBase):
         See Also
         --------
         ps.WellModel.variance_gain
+
+        Notes
+        -----
+        Estimated variance can be biased for non-linear functions as it uses
+        truncated series expansion.
         """
         if log_b:
             b_scaled = 10 ** (b / 2.0)
@@ -1890,7 +1882,7 @@ class Polder(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -1912,15 +1904,15 @@ class Polder(RfuncBase):
         parameters : pandas.DataFrame
             The initial parameters and parameter bounds used by the solver.
         """
+        if self.up:
+            initial_A, pmin_A, pmax_A = 1.0, 0.0, 2.0
+        elif self.up is False:
+            initial_A, pmin_A, pmax_A = -1.0, -2.0, 0.0
+        else:  # self.up is None
+            initial_A, pmin_A, pmax_A = 1.0, np.nan, np.nan
         parameters = DataFrame(
             [
-                (
-                    1.0 if self.up else -1.0 if self.up is False else 1.0,
-                    0.0 if self.up else -2.0 if self.up is False else -2.0,
-                    2.0 if self.up else 0.0 if self.up is False else 2.0,
-                    True,
-                    name,
-                ),
+                (initial_A, pmin_A, pmax_A, True, name),
                 (10.0, 1e-2, 1e3, True, name),
                 (1.0, 1e-6, 25.0, True, name),
             ],
@@ -2128,7 +2120,7 @@ class One(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -2158,7 +2150,7 @@ class One(RfuncBase):
                     else -self.gain_scale_factor
                     if self.up is False
                     else self.gain_scale_factor,
-                    0.0 if self.up else np.nan if self.up is False else np.nan,
+                    0.0 if self.up else np.nan,
                     np.nan if self.up else 0.0 if self.up is False else np.nan,
                     True,
                     name,
@@ -2347,7 +2339,7 @@ class FourParam(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -2604,8 +2596,6 @@ class FourParam(RfuncBase):
         **kwargs,
     ) -> ArrayLike:
         """Return the step function for FourParam response."""
-        impulse_integral = self._impulse_integral(p)
-
         if np.iscomplexobj(p) and self.use_block:
             raise NotImplementedError(
                 "FourParam does not support complex-step Jacobian evaluation "
@@ -2613,6 +2603,7 @@ class FourParam(RfuncBase):
                 "FourParam response function, or use a different Jacobian "
                 "method (e.g., jac='3-point' or jac='2-point')."
             )
+        impulse_integral = self._impulse_integral(p)
 
         if self.quad:
             t = self.get_t(p=p, dt=dt, cutoff=cutoff, maxtmax=maxtmax, **kwargs)
@@ -2821,7 +2812,7 @@ class DoubleExponential(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -3063,7 +3054,7 @@ class Kraijenhoff(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -3360,7 +3351,7 @@ class Spline(RfuncBase):
 
     @property
     def nparam(self) -> int:
-        """Return number of parameters for the response function.
+        """Number of parameters for the response function.
 
         Returns
         -------
@@ -3568,5 +3559,3 @@ class Spline(RfuncBase):
 )
 class Edelman(RfuncBase):
     """Moved to pastas-plugins: pastas_plugins.responses.Edelman."""
-
-    pass

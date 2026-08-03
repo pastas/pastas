@@ -34,6 +34,29 @@ analysis tools.
 -   View and edit the example notebooks of Pastas in
     [GitHub Codespaces](https://codespaces.new/pastas/pastas?quickstart=1)
 
+## Quick Example
+
+```python
+# Import Python packages
+import pandas as pd
+import pastas as ps
+
+# Load head and meteorological observations into a pandas Series
+obs = pd.read_csv("head.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+prec = pd.read_csv("prec.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+evap = pd.read_csv("evap.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+
+# Create and calibrate Pastas model
+ml = ps.Model(obs, name="head")
+sm = ps.RechargeModel(ml, prec, evap, rfunc=ps.Exponential(), name="recharge")
+ml.solve()
+
+# Visualize the model results
+ml.plots.results()
+```
+
+![image](doc/_static/example_output.png)
+
 ## Get in Touch
 
 -   Questions on Pastas can be asked and answered on [Github
@@ -50,8 +73,8 @@ analysis tools.
 To install Pastas, a working version of Python has to be installed on
 your computer. We recommend using [uv](https://docs.astral.sh/uv/) to manage Python
 and your project dependencies. However, you are free to use any Python installation
-method you prefer. The `Anaconda Distribution
-<https://www.anaconda.com/products/distribution>`_ is another popular option.
+method you prefer. The [Anaconda Distribution](https://www.anaconda.com/products/distribution) 
+is another popular option.
 
 ### Stable version
 

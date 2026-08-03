@@ -42,37 +42,37 @@ year_offset = "YE"
 month_offset = "ME"
 
 __all__ = [
-    "cv_period_mean",
-    "cv_date_min",
-    "cv_date_max",
-    "cv_fall_rate",
-    "cv_rise_rate",
-    "parde_seasonality",
+    "autocorr_time",
     "avg_seasonal_fluctuation",
-    "interannual_variation",
-    "low_pulse_count",
-    "high_pulse_count",
-    "low_pulse_duration",
-    "high_pulse_duration",
-    "bimodality_coefficient",
-    "mean_annual_maximum",
-    "rise_rate",
-    "fall_rate",
-    "reversals_avg",
-    "reversals_cv",
-    "colwell_contingency",
-    "colwell_constancy",
-    "recession_constant",
-    "recovery_constant",
-    "duration_curve_slope",
-    "duration_curve_ratio",
-    "richards_pathlength",
     "baselevel_index",
     "baselevel_stability",
-    "magnitude",
-    "autocorr_time",
-    "date_min",
+    "bimodality_coefficient",
+    "colwell_constancy",
+    "colwell_contingency",
+    "cv_date_max",
+    "cv_date_min",
+    "cv_fall_rate",
+    "cv_period_mean",
+    "cv_rise_rate",
     "date_max",
+    "date_min",
+    "duration_curve_ratio",
+    "duration_curve_slope",
+    "fall_rate",
+    "high_pulse_count",
+    "high_pulse_duration",
+    "interannual_variation",
+    "low_pulse_count",
+    "low_pulse_duration",
+    "magnitude",
+    "mean_annual_maximum",
+    "parde_seasonality",
+    "recession_constant",
+    "recovery_constant",
+    "reversals_avg",
+    "reversals_cv",
+    "richards_pathlength",
+    "rise_rate",
 ]
 
 logger = getLogger(__name__)
@@ -378,6 +378,11 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
     float:
         Average seasonal fluctuation (s).
 
+    Warnings
+    --------
+    In this formulating the water table is referenced to a certain datum and
+    positive, not as depth below the surface!
+
     Notes
     -----
     Mean annual difference between the averaged 3 highest monthly heads
@@ -388,12 +393,6 @@ def avg_seasonal_fluctuation(series: Series, normalize: bool = False) -> float:
         s = MHW - MLW
 
     A higher value of s indicates a more seasonal head, and vice versa.
-
-    Warnings
-    --------
-    In this formulating the water table is referenced to a certain datum and
-    positive, not as depth below the surface!
-
     """
     hl, hw = _martens(series, normalize=normalize)
     return (hw - hl).mean()
@@ -414,6 +413,11 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
     float:
         Interannual variation (s).
 
+    Warnings
+    --------
+    In this formulating the water table is referenced to a certain datum and
+    positive, not as depth below the surface!
+
     Notes
     -----
     The average between the range in annually averaged 3 highest monthly heads and the
@@ -424,11 +428,6 @@ def interannual_variation(series: Series, normalize: bool = False) -> float:
         s = ((max_HW - min_HW) + (max_LW - min_LW)) / 2
 
     A higher value of s indicates a more variable head, and vice versa.
-
-    Warnings
-    --------
-    In this formulating the water table is referenced to a certain datum and
-    positive, not as depth below the surface!
 
     """
     hl, hw = _martens(series, normalize=normalize)
@@ -614,18 +613,17 @@ def low_pulse_count(
     float:
         Average number of times the series exceeds a certain threshold per year.
 
-    Notes
-    -----
-    Number of times during which the head drops below a certain threshold.
-    The threshold is defined as the 20th percentile of non-exceedance
-    :cite:t:`richter_method_1996`.
-
     Warnings
     --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
 
+    Notes
+    -----
+    Number of times during which the head drops below a certain threshold.
+    The threshold is defined as the 20th percentile of non-exceedance
+    :cite:t:`richter_method_1996`.
     """
     if rolling_window is not None:
         series = series.rolling(rolling_window).mean()
@@ -662,17 +660,16 @@ def high_pulse_count(
     float:
         Average number of times the series exceeds a certain threshold per year.
 
-    Notes
-    -----
-    Number of times during which the head exceeds a certain threshold. The threshold is
-    defined as the 80th percentile of non-exceedance.
-
     Warnings
     --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
 
+    Notes
+    -----
+    Number of times during which the head exceeds a certain threshold. The threshold is
+    defined as the 80th percentile of non-exceedance.
     """
     if rolling_window is not None:
         series = series.rolling(rolling_window).mean()
@@ -707,16 +704,15 @@ def low_pulse_duration(
         Average duration (in days) of pulses where the head drops below a certain
         threshold.
 
-    Notes
-    -----
-    Average duration of pulses (in days) where the head drops below a certain threshold.
-
     Warnings
     --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
 
+    Notes
+    -----
+    Average duration of pulses (in days) where the head drops below a certain threshold.
     """
     if rolling_window is not None:
         series = series.rolling(rolling_window).mean()
@@ -753,16 +749,18 @@ def high_pulse_duration(
         Average duration (in days) of pulses where the head drops below a certain
         threshold.
 
-    Notes
-    -----
-    Average duration of pulses where the head drops exceeds a certain threshold. The
-    threshold is defined as the 80th percentile of non-exceedance.
-
     Warnings
     --------
     This method is sensitive to measurement noise, e.g., every change is sign in the
     differences is counted as a pulse. Therefore, it is recommended to smooth the time
     series first (which is also the default).
+
+    Notes
+    -----
+    Average duration of pulses where the head drops exceeds a certain threshold. The
+    threshold is defined as the 80th percentile of non-exceedance.
+
+
 
     """
     if rolling_window is not None:
@@ -1075,15 +1073,14 @@ def mean_annual_maximum(series: Series, normalize: bool = True) -> float:
     float:
         Mean of annual maximum head.
 
-    Notes
-    -----
-    Mean of annual maximum head :cite:p:`clausen_flow_2000`.
-
     Warnings
     --------
     This signatures is sensitive to the base level of the time series if normalize is
     set to False.
 
+    Notes
+    -----
+    Mean of annual maximum head :cite:p:`clausen_flow_2000`.
     """
     if normalize:
         series = _normalize(series)
@@ -1375,7 +1372,7 @@ def recovery_constant(
 
 def duration_curve_slope(
     series: Series,
-    l: float = 0.1,  # noqa: E741
+    l: float = 0.1,
     u: float = 0.9,
     normalize: bool = False,
 ) -> float:
@@ -1427,7 +1424,7 @@ def duration_curve_slope(
 
 def duration_curve_ratio(
     series: Series,
-    l: float = 0.1,  # noqa: E741
+    l: float = 0.1,
     u: float = 0.9,
     normalize: bool = True,
 ) -> float:
@@ -1776,6 +1773,12 @@ def summary(
     result: pandas.DataFrame
         Pandas DataFrame with every row a signature and the signature value for each column.
 
+    Notes
+    -----
+    Rather than throwing an error when a signature cannot be computed, a warning is
+    issued and the value is set to np.nan. This allows the user to still use the
+    results of the other signatures.
+
     Examples
     --------
     >>> idx = date_range("2000", "2010")
@@ -1783,11 +1786,7 @@ def summary(
     >>> df = DataFrame(index=idx, data=data, columns=[year_offset, "B", "C"], dtype=float)
     >>> ps.stats.signatures.summary(df)
 
-    Notes
-    -----
-    Rather than throwing an error when a signature cannot be computed, a warning is
-    issued and the value is set to np.nan. This allows the user to still use the
-    results of the other signatures.
+
 
     """
     if signatures is None:
@@ -1799,7 +1798,7 @@ def summary(
         result = DataFrame(index=signatures, columns=[data.name], dtype=float)
         data = data.to_frame()
     else:
-        raise ValueError("Invalid data type. Expected DataFrame or Series.")
+        raise TypeError("Invalid data type. Expected DataFrame or Series.")
 
     # Get the signatures
     for signature in signatures:
@@ -1815,7 +1814,7 @@ def summary(
         for col in data.columns:
             try:
                 result.loc[signature, col] = func(data[col])
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 msg = f"Signature '{signature}': could not be computed for series '{col}': {e}"
                 logger.error(msg)
                 result.loc[signature, col] = nan

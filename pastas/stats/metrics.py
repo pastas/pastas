@@ -22,20 +22,20 @@ from pastas.decorators import PastasDeprecationWarning
 from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = [
-    "rmse",
-    "sse",
-    "mae",
-    "me",
-    "nse",
-    "nnse",
-    "evp",
-    "rsq",
-    "bic",
     "aic",
     "aicc",
-    "pearsonr",
+    "bic",
+    "evp",
     "kge",
+    "mae",
+    "me",
+    "nnse",
+    "nse",
+    "pearsonr",
     "picp",
+    "rmse",
+    "rsq",
+    "sse",
 ]
 
 logger = getLogger(__name__)

@@ -10,6 +10,7 @@ from pandas import DataFrame, Series
 from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
 from pastas.typing import ArrayLike, CallBack, Model
 
+from .._options import options
 from .base import SolverBase
 from .likelihood import GaussianLikelihood, GaussianLikelihoodAr1
 from .objective_function import misfit
@@ -43,11 +44,19 @@ class Emcee(SolverBase):
         the MCMC approach. One of the Moves classes from Emcee has to be provided.
         See Emcee documentation for more information.
     parallel: bool, optional
-        Run the sampler in parallel or not.
+        Run the sampler in parallel or not. By default, the parallel option is set
+        to the value of the global Pastas option.
     progress_bar: bool, optional
         Show the progress bar or not. Requires the `tqdm` package to be installed.
     **kwargs, optional
         All other keyword arguments are passed on to the SolverBase class.
+
+    See Also
+    --------
+    emcee.EnsembleSampler
+    emcee.moves
+    emcee.backend
+    pastas.solver.objective_function
 
     Notes
     -----
@@ -65,6 +74,10 @@ class Emcee(SolverBase):
 
         ml.solve(solver=ps.solver.Emcee(), thin_by=2)
 
+    References
+    ----------
+    https://emcee.readthedocs.io/en/stable/
+
     Examples
     --------
     Example usage::
@@ -74,31 +87,17 @@ class Emcee(SolverBase):
     To obtain the MCMC chains, use::
 
         ml.solver.sampler.get_chain(flat=True, discard=3000)
-
-    References
-    ----------
-    https://emcee.readthedocs.io/en/stable/
-
-    See Also
-    --------
-    emcee.EnsembleSampler
-    emcee.moves
-    emcee.backend
-    pastas.solver.objective_function
-
     """
 
     def __init__(
         self,
         model: Model,
         name: str = "solver",
-        objfunction: GaussianLikelihood
-        | GaussianLikelihoodAr1
-        | None = GaussianLikelihood(),
+        objfunction: GaussianLikelihood | GaussianLikelihoodAr1 | None = None,
         nwalkers: int = 20,
         backend: Any | None = None,
         moves: Any | None = None,
-        parallel: bool = False,
+        parallel: bool | None = None,
         progress_bar: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -111,6 +110,8 @@ class Emcee(SolverBase):
                 reason="Use the argument objfunction instead",
             )
             objfunction = kwargs.pop("objective_function")
+        if objfunction is None:
+            objfunction = GaussianLikelihood()
 
         self.objfunction = objfunction
 
@@ -120,7 +121,7 @@ class Emcee(SolverBase):
         self.sampler: Any | None = None
         self.backend = backend
         self.moves = moves
-        self.parallel = parallel
+        self.parallel = options.parallel if parallel is None else parallel
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
         self.nsteps: int | None = None
@@ -136,7 +137,7 @@ class Emcee(SolverBase):
     def _assert_emcee_installation(self) -> None:
         try:
             global emcee
-            import emcee as emcee  # Import emcee here, so it is no dependency
+            import emcee  # Import emcee here, so it is no dependency
         except ImportError:
             msg = "emcee not installed. Please install emcee first."
             raise ImportError(msg) from None
@@ -322,16 +323,16 @@ class Emcee(SolverBase):
         # Set the parameters that are varied from the model and objective function
         par[self.vary] = p
 
-        rv = misfit(
+        res = misfit(
+            model=self.model,
             p=p,
             noise=noise,
-            ml=self.model,
             weights=weights,
             callback=callback,
             returnseparate=False,
         )
 
-        lnlike = self.objfunction.compute(rv, par[-self.objfunction.nparam :])
+        lnlike = self.objfunction.compute(res, par[-self.objfunction.nparam :])
 
         return lnlike
 
@@ -445,18 +446,18 @@ class Emcee(SolverBase):
         report: str
             String with the report.
 
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where possible.
+        If interpolation is used this means that the result may slightly differ
+        compared to using ml.simulate() and ml.observations().
+
         Examples
         --------
         This method is called by the solve method if report=True, but can also be
         called on its own::
 
         >>> print(ml.fit_report)
-
-        Notes
-        -----
-        The reported values for the fit use the residuals time series where possible.
-        If interpolation is used this means that the result may slightly differ
-        compared to using ml.simulate() and ml.observations().
         """
         model = {
             "nwalkers": self.nwalkers,
@@ -488,11 +489,9 @@ class Emcee(SolverBase):
         ].copy()
 
         # determine width of the fit_report
-        len_fit = max([len(v) for v in fit.values()]) + max(
-            [len(v) for v in fit.keys()]
-        )
-        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
-            [len(v) for v in model.keys()]
+        len_fit = max(len(v) for v in fit.values()) + max(len(v) for v in fit)
+        len_model = max(len(v) for v in model.values() if isinstance(v, str)) + max(
+            len(v) for v in model
         )
         len_param = len(parameters.to_string().split("\n")[1])
         width = max((len_fit + len_model + 8), len_param)
@@ -510,7 +509,7 @@ class Emcee(SolverBase):
         )
 
         basic = ""
-        len_val4 = max([len(v) for v in fit.values()])
+        len_val4 = max(len(v) for v in fit.values())
         wspace = width - (9 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
@@ -529,8 +528,10 @@ class Emcee(SolverBase):
             # create message
             if len(msg) > 0:
                 msg = [
-                    f"\n\nWarnings! ({len(msg)})\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
+                    (
+                        f"\n\nWarnings! ({len(msg)})\n"
+                        f"{string.format('', fill='=', align='>', width=width)}"
+                    )
                 ] + msg
                 warnings_rep += "\n".join(msg)
 
