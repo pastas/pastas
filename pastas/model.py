@@ -943,11 +943,9 @@ class Model:
         if noise is not None:
             if noise is True:
                 msg = (
-                    "To solve using a noisemodel, add a noisemodel to a "
-                    "model called ml using ml.add_noisemodel(n), where n is an instance"
-                    " of a noisemodel (e.g., n = ps.ArNoiseModel()). See this issue on "
-                    "GitHub for more information: "
-                    "https://github.com/pastas/pastas/issues/735"
+                    "To solve using a noisemodel, add a noisemodel to the model (e.g., "
+                    "ps.ArNoiseModel(ml)). See this issue on GitHub for more "
+                    "information: https://github.com/pastas/pastas/issues/735"
                 )
             elif noise is False:
                 msg = (
