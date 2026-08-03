@@ -71,9 +71,10 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
 .. toctree::
     :maxdepth: 4
     :hidden:
-    :caption: Pastas Performance
+    :caption: Other
 
     caching_for_performance
+    logger
 
 .. toctree::
     :maxdepth: 4
