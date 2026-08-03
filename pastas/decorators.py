@@ -24,45 +24,181 @@ except (ModuleNotFoundError, ImportError):
     CACHETOOLS_AVAILABLE = False
 
 logger = getLogger(__name__)
-
-USE_NUMBA = True
-USE_CACHE = False
 CURRENT_PASTAS_VERSION = parse_version(__version__)
 
+# Keep these for backward compatibility but they now delegate to central settings
+# These will be removed in a future version 2.3.0
+USE_NUMBA = True
+USE_CACHE = False
 
+
+def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
+    """Provide a warning or error when a Pastas class, method or function is deprecated.
+
+    This decorator manages deprecation of classes, functions, or methods across Pastas versions.
+    The behavior depends on the current version:
+
+    - If current version < version: logs a warning and allows execution to continue
+    - If current version >= version: raises AttributeError which indicates
+    that it can be removed from the codebase entirely in the (near) future.
+
+    Parameters
+    ----------
+    version: str
+        The version in which the function, method or class raises an AttributeError.
+    reason: str, optional
+        The reason why the function or class is deprecated, or a message directing users
+        to an alternative. Default is an empty string.
+
+    Returns
+    -------
+    callable
+        A decorator that wraps the target class or function.
+    """
+
+    def wrapper(obj: Any):
+        name = obj.__name__
+
+        def _function(*args, **kwargs):
+            VERSION = parse_version(version)
+            if CURRENT_PASTAS_VERSION < VERSION:
+                msg = (
+                    f"{name} is deprecated and will not be available "
+                    f"from Pastas version >= {VERSION}. {reason}"
+                )
+                warn(message=msg, category=FutureWarning)
+            else:
+                msg = (
+                    f"Module has no attribute '{name}'. "
+                    f"{name} is deprecated and is not available since"
+                    f" Pastas version {VERSION}. {reason}"
+                )
+                raise AttributeError(msg)
+
+            return obj(*args, **kwargs)
+
+        return _function
+
+    return wrapper
+
+
+def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
+    """Provide a warning or error when a function argument is deprecated.
+
+    This function raises errors or warnings based on the current Pastas version and the
+    deprecation timeline. The behavior is:
+
+    - If current version < version: logs a warning
+    - If current version >= version: raises TypeError which indicates that it can be
+    removed from the codebase entirely in the (near) future.
+
+    Parameters
+    ----------
+    name: str
+        The name of the argument that is deprecated.
+    version: str
+        The version in which using the argument will raise a TypeError.
+    reason: str, optional
+        The reason why the argument is deprecated, or a message directing users to
+        an alternative. Default is an empty string.
+
+    Raises
+    ------
+    FutureWarning
+        If current version < version and the argument is used.
+    TypeError
+        If current version >= version and the argument is used.
+    """
+    VERSION = parse_version(version)
+    if CURRENT_PASTAS_VERSION < VERSION:
+        msg = (
+            f"The {name} argument is deprecated and will not be available"
+            f" from Pastas version >= {VERSION}. {reason}"
+        )
+        warn(message=msg, category=FutureWarning)
+    else:
+        msg = (
+            f"Got an unexpected keyword argument {name}. "
+            f"The {name} argument is deprecated and is not available"
+            f" since Pastas version {VERSION}. {reason}"
+        )
+        raise TypeError(msg)
+
+
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The set_use_numba function is deprecated. Use ps.options.numba = True/False instead.",
+)
 def set_use_numba(b: bool) -> None:
-    """Enable or disable the use of Numba JIT compilation."""
+    """Enable or disable the use of Numba JIT compilation.
+
+    .. deprecated::
+        Use `pastas.options.numba = True/False` instead.
+    """
+    from pastas._options import options
+
+    options.numba = b
+    # Update the module-level global for backward compatibility
     global USE_NUMBA
     USE_NUMBA = b
 
 
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The get_use_numba function is deprecated. Use ps.options.numba instead.",
+)
 def get_use_numba() -> bool:
-    """Check if Numba JIT compilation is enabled."""
-    global USE_NUMBA
-    return USE_NUMBA
+    """Check if Numba JIT compilation is enabled.
+
+    .. deprecated::
+        Use `pastas.options.numba` instead.
+    """
+    from pastas._options import options
+
+    return options.numba
 
 
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The set_use_cache function is deprecated. Use ps.options.cache = True/False instead.",
+)
 def set_use_cache(b: bool) -> None:
     """Enable or disable the use of caching with cachetools.
 
     When caching is enabled, the results of simulate() calls are stored in a cache
     to speed up repeated calls with the same parameters. This requires the cachetools
     package to be installed and the USE_CACHE variable to be set to True.
+
+    .. deprecated::
+        Use `pastas.options.cache = True/False` instead.
     """
-    global USE_CACHE
+    from pastas._options import options
+
     if b and not CACHETOOLS_AVAILABLE:
         logger.error(
             "Cannot enable caching: cachetools is not installed. "
             "Install with: pip install cachetools"
         )
         return
+    options.cache = b
+    # Update the module-level global for backward compatibility
+    global USE_CACHE
     USE_CACHE = b
 
 
+@PastasDeprecationWarning(
+    version="2.3.0",
+    reason="The get_use_cache function is deprecated. Use ps.options.cache instead.",
+)
 def get_use_cache() -> bool:
-    """Check if caching with cachetools is enabled."""
-    global USE_CACHE
-    return USE_CACHE
+    """Check if caching with cachetools is enabled.
+
+    .. deprecated::
+        Use `pastas.options.cache` instead.
+    """
+    from pastas._options import options
+
+    return options.cache
 
 
 def set_parameter(function: Callable) -> Callable:
@@ -112,7 +248,7 @@ def get_stressmodel(function: Callable) -> Callable:
 
     @wraps(function)
     def _get_stressmodel(self, name: str, **kwargs):
-        if name not in self.stressmodels.keys():
+        if name not in self.stressmodels:
             msg = (
                 "The stressmodel name you provided is not in the stressmodels dict. "
                 "Please select from the following list: %s"
@@ -123,6 +259,24 @@ def get_stressmodel(function: Callable) -> Callable:
             return function(self, name, **kwargs)
 
     return _get_stressmodel
+
+
+def check_argument_model(function: Callable) -> Callable:
+    """Check if the first argument is a pastas Model."""
+
+    @wraps(function)
+    def _make_model_component(self, *args, **kwargs):
+        if "model" in kwargs:
+            return function(self, *args, **kwargs)
+        from pastas.model import Model
+
+        if args and isinstance(args[0], Model):
+            return function(self, *args, **kwargs)
+        msg = "From Pastas 2.4, the first argument of %s needs to be a Pastas Model. Please provide the model as the first argument: %s(model=ml, ...)."  # From Pastas 2.4 the workflow with ml.add_xxx() will cease to function.
+        warn(message=msg % (self._name, self._name), category=FutureWarning)
+        return function(self, None, *args, **kwargs)
+
+    return _make_model_component
 
 
 def model_tmin_tmax(function: Callable) -> Callable:
@@ -149,105 +303,12 @@ def model_tmin_tmax(function: Callable) -> Callable:
         *args,
         **kwargs,
     ):
-        tmin = self.ml.settings["tmin"] if tmin is None else Timestamp(tmin)
-        tmax = self.ml.settings["tmax"] if tmax is None else Timestamp(tmax)
+        tmin = self.model.settings["tmin"] if tmin is None else Timestamp(tmin)
+        tmax = self.model.settings["tmax"] if tmax is None else Timestamp(tmax)
 
         return function(self, tmin, tmax, *args, **kwargs)
 
     return _model_tmin_tmax
-
-
-def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
-    """Provide a warning or error when a Pastas class, method or function is deprecated.
-
-    This decorator manages deprecation of classes, functions, or methods across Pastas versions.
-    The behavior depends on the current version:
-
-    - If current version < version: logs a warning and allows execution to continue
-    - If current version >= version: raises AttributeError which indicates
-    that it can be removed from the codebase entirely in the (near) future.
-
-    Parameters
-    ----------
-    version: str
-        The version in which the function, method or class raises an AttributeError.
-    reason: str, optional
-        The reason why the function or class is deprecated, or a message directing users
-        to an alternative. Default is an empty string.
-
-    Returns
-    -------
-    callable
-        A decorator that wraps the target class or function.
-    """
-
-    def wrapper(obj: Any):
-        name = obj.__name__
-
-        def _function(*args, **kwargs):
-            VERSION = parse_version(version)
-            if CURRENT_PASTAS_VERSION < VERSION:
-                msg = (
-                    f"{name} is deprecated and will not be available "
-                    f"from Pastas version >= {VERSION}. {reason}"
-                )
-                warn(message=msg, category=DeprecationWarning)
-            else:
-                msg = (
-                    f"Module has no attribute '{name}'. "
-                    f"{name} is deprecated and is not available since"
-                    f" Pastas version {VERSION}. {reason}"
-                )
-                raise AttributeError(msg)
-
-            return obj(*args, **kwargs)
-
-        return _function
-
-    return wrapper
-
-
-def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
-    """Provide a warning or error when a function argument is deprecated.
-
-    This function raises errors or warnings based on the current Pastas version and the
-    deprecation timeline. The behavior is:
-
-    - If current version < version: logs a warning
-    - If current version >= version: raises TypeError which indicates that it can be
-    removed from the codebase entirely in the (near) future.
-
-    Parameters
-    ----------
-    name: str
-        The name of the argument that is deprecated.
-    version: str
-        The version in which using the argument will raise a TypeError.
-    reason: str, optional
-        The reason why the argument is deprecated, or a message directing users to
-        an alternative. Default is an empty string.
-
-    Raises
-    ------
-    DeprecationWarning
-        If current version < version and the argument is used.
-    TypeError
-        If current version >= version and the argument is used.
-    """
-    VERSION = parse_version(version)
-    if CURRENT_PASTAS_VERSION < VERSION:
-        msg = (
-            f"The {name} argument is deprecated and will not be available"
-            f" from Pastas version >= {VERSION}. {reason}"
-        )
-        warn(message=msg, category=DeprecationWarning)
-    else:
-        msg = (
-            f"Got an unexpected keyword argument {name}. "
-            f"The {name} argument is deprecated and is not available"
-            f" since Pastas version {VERSION}. {reason}"
-        )
-        raise TypeError(msg)
 
 
 def njit(function: Callable | None = None, **kwargs) -> Callable:
@@ -265,16 +326,20 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
     callable
         The decorated function, or the original function if numba is not available.
     """
+    from pastas._options import options
 
     def njit_decorator(f: Callable) -> Callable:
         try:
-            if not USE_NUMBA:
+            if not options.numba:
                 return f
             else:
                 from numba import njit
 
-                fnumba = njit(f, **kwargs)
-                return fnumba
+                local_kwargs = kwargs.copy()
+                if "parallel" in kwargs:
+                    local_kwargs["parallel"] = options.parallel
+                return njit(f, **local_kwargs)
+
         except ImportError:
             return f
 
@@ -293,7 +358,6 @@ def latexfun(**kwargs) -> None:
 
     This decorator is deprecated and will be removed in a future release.
     """
-    pass
 
 
 def conditional_cachedmethod(cache_getter):
@@ -307,6 +371,7 @@ def conditional_cachedmethod(cache_getter):
     cache_getter : callable
         Function that returns the cache object from self (e.g., lambda self: self._cache)
     """
+    from pastas._options import options
 
     def decorator(func):
         if not CACHETOOLS_AVAILABLE:
@@ -318,8 +383,8 @@ def conditional_cachedmethod(cache_getter):
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if USE_CACHE:
-                return cached_func.__get__(self, type(self))(*args, **kwargs)
+            if options.cache:
+                return cached_func(self, *args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
 
@@ -336,17 +401,31 @@ def temporarily_disable_cache():
     --------
     To temporarily disable the cache (if it is currently active)::
 
-        with ps.temporarily_disable_cache():
-            # Caching is disabled within this block
-            ml.simulate()
+    >>> with ps.temporarily_disable_cache():
+    >>>     # Caching is disabled within this block
+    >>>     ml.simulate()
+
+    Alternatively you can use the `ps.options.cache` attribute directly
+    to disable caching as needed::
+
+    >>> ps.options.cache = False  # Disable caching
+    >>> ml.simulate()
+    >>> ps.options.cache = True   # Re-enable caching
+
     """
+    from pastas._options import options
+
+    original_state = options.cache
+    options.cache = False
+    # Update module-level global for backward compatibility
     global USE_CACHE
-    original_state = USE_CACHE
+    original_use_cache = USE_CACHE
     USE_CACHE = False
     try:
         yield
     finally:
-        USE_CACHE = original_state
+        options.cache = original_state
+        USE_CACHE = original_use_cache
 
 
 @contextmanager
@@ -355,14 +434,30 @@ def temporarily_enable_cache():
 
     Examples
     --------
+    To temporarily enable the cache::
+
     >>> with ps.temporarily_enable_cache():
-    ...     # Caching is enabled within this block
-    ...     ml.simulate()
+    >>>     # Caching is enabled within this block
+    >>>     ml.simulate()
+
+    Alternatively you can use the `ps.options.cache` attribute directly
+    to enable or disable caching as needed::
+
+    >>> ps.options.cache = True   # Enable caching
+    >>> ml.simulate()
+    >>> ps.options.cache = False  # Disable caching
+
     """
+    from pastas._options import options
+
+    original_state = options.cache
+    options.cache = True
+    # Update module-level global for backward compatibility
     global USE_CACHE
-    original_state = USE_CACHE
+    original_use_cache = USE_CACHE
     USE_CACHE = True
     try:
         yield
     finally:
-        USE_CACHE = original_state
+        options.cache = original_state
+        USE_CACHE = original_use_cache

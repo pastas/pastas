@@ -19,6 +19,7 @@ from bokeh.models import (
     TableColumn,
 )
 from bokeh.plotting import figure, show
+from pandas import Series
 
 from pastas.extensions import register_model_accessor
 
@@ -26,6 +27,14 @@ from pastas.extensions import register_model_accessor
 @register_model_accessor("bokeh")
 class Bokeh:
     """Extension class for interactive bokeh figures for pastas Models.
+
+    Notes
+    -----
+    The `bokeh` extension is registered in the `Model` class by calling the
+    `register_bokeh()` function. To work in Juptyer notebooks, the
+    `bokeh.io.output_notebook()` function should be called before plotting. The `bokeh`
+    extension is not registered by default, and should be called explicitly. Check the
+    bokeh documentation for more information on how to interact with the plots.
 
     Examples
     --------
@@ -38,14 +47,6 @@ class Bokeh:
 
         fig = ml.bokeh.results()
         fig.write_html("results_figure.html")
-
-    Notes
-    -----
-    The `bokeh` extension is registered in the `Model` class by calling the
-    `register_bokeh()` function. To work in Juptyer notebooks, the
-    `bokeh.io.output_notebook()` function should be called before plotting. The `bokeh`
-    extension is not registered by default, and should be called explicitly. Check the
-    bokeh documentation for more information on how to interact with the plots.
     """
 
     def __init__(self, model):
@@ -117,7 +118,7 @@ class Bokeh:
             "index",
             "Simulation",
             source=source,
-            legend_label=r"Simulation (R2 = {:.2f})".format(rsq),
+            legend_label=rf"Simulation (R2 = {rsq:.2f})",
             line_width=2,
         )
         p.legend.ncols = 2
@@ -203,7 +204,7 @@ class Bokeh:
             "index",
             "Simulation",
             source=source,
-            legend_label=r"Simulation (R2 = {:.2f})".format(rsq),
+            legend_label=rf"Simulation (R2 = {rsq:.2f})",
         )
         p.legend.ncols = 2
 
@@ -309,7 +310,11 @@ class Bokeh:
 
             contrib_plot.line("index", smname, source=source)
             response = self._model.get_step_response(smname)
-            rfunc_plot.line(response.index, response.values)
+            if isinstance(response, Series):
+                rfunc_plot.line(response.index, response.values)
+            else:
+                for name in response.columns:
+                    rfunc_plot.line(response.index, response[name].values)
 
             left_column.append(contrib_plot)
             right_column.append(rfunc_plot)

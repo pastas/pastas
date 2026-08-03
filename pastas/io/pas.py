@@ -79,13 +79,13 @@ def pastas_hook(obj: dict):
                 obj[key] = read_json(
                     stringIO(value), typ="series", orient="split"
                 ).astype(float)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.debug(e)
                 obj[key] = value
             if isinstance(obj[key], Series):
                 obj[key].index = obj[key].index.tz_localize(None)
         elif key in ["time_offset", "warmup"]:
-            if isinstance(value, int) or isinstance(value, float):
+            if isinstance(value, (int, float)):
                 obj[key] = Timedelta(value, "D")
             else:
                 obj[key] = Timedelta(value)
@@ -100,7 +100,7 @@ def pastas_hook(obj: dict):
         else:
             try:
                 obj[key] = json.loads(value, object_hook=pastas_hook)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.debug(e)
                 obj[key] = value
     return obj
@@ -163,4 +163,4 @@ class PastasEncoder(json.JSONEncoder):
         elif isinstance(o, integer):
             return int(o)
         else:
-            return super(PastasEncoder, self).default(o)
+            return super().default(o)

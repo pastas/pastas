@@ -35,13 +35,13 @@ def load(fname: str | Path, **kwargs) -> Model:
 
     Returns
     -------
-    ml: pastas.model.Model
+    model: pastas.model.Model
         Pastas Model instance.
 
     Examples
     --------
     >>> import pastas as ps
-    >>> ml = ps.io.load("model.pas")
+    >>> model = ps.io.load("model.pas")
 
     """
     if not path.exists(fname):
@@ -86,15 +86,8 @@ def _load_model(data: dict) -> Model:
     oseries = data["oseries"]["series"]
     metadata = data["oseries"]["metadata"]
 
-    if "constant" in data.keys():
-        constant = data["constant"]
-    else:
-        constant = False
-
-    if "name" in data.keys():
-        name = data["name"]
-    else:
-        name = None
+    constant = data.get("constant", False)
+    name = data.get("name", None)
 
     ml = ps.Model(
         oseries=oseries,
@@ -103,21 +96,19 @@ def _load_model(data: dict) -> Model:
         metadata=metadata,
     )
 
-    if "settings" in data.keys():
-        if "noise" in data["settings"]:
-            if not data["settings"]["noise"] and "noisemodel" in data:
-                # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
-                # remove noisemodel from data
-                data.pop("noisemodel")
+    if "settings" in data and "noise" in data["settings"]:
+        if not data["settings"]["noise"] and "noisemodel" in data:
+            # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
+            # remove noisemodel from data
+            data.pop("noisemodel")
         ml._settings.update(data["settings"])
-    if "file_info" in data.keys():
+    if "file_info" in data:
         ml.file_info.update(data["file_info"])
 
     # Add stressmodels
     rfunc_one_sm_names = []
     for name, smdata in data["stressmodels"].items():
-        sm = _load_stressmodel(smdata, data)
-        ml.add_stressmodel(sm)
+        sm = _load_stressmodel(smdata, model=ml)
         if sm.rfunc is not None and sm.rfunc._name == "One":
             rfunc_one_sm_names.append(name)
 
@@ -125,7 +116,7 @@ def _load_model(data: dict) -> Model:
     file_parameters = data["parameters"].copy()
 
     # Add transform
-    if "transform" in data.keys():
+    if "transform" in data:
         if data["transform"]["class"] == "ThresholdTransform":
             # the parameters of ThresholdTransform were renamed from 1 and 2 to d and f in pastas 2.0.0,
             # so we need to check if the old parameter names are present and rename them to the new ones
@@ -147,20 +138,21 @@ def _load_model(data: dict) -> Model:
                     ),
                 )
                 file_parameters = file_parameters.rename(index=rename_map)
+
         transform = getattr(ps.transform, data["transform"].pop("class"))
+        data["transform"]["model"] = ml
         transform = transform(**data["transform"])
-        ml.add_transform(transform)
 
     # Add noisemodel if present
-    if "noisemodel" in data.keys():
+    if "noisemodel" in data:
         # Fixes to read pas-files from before pastas version 1.5
         # TODO: Deprecate if pas-files < 2.0 are no longer supported
         if data["noisemodel"]["class"] == "NoiseModel":
             data["noisemodel"]["class"] = "ArNoiseModel"
         elif data["noisemodel"]["class"] == "ArmaModel":
             data["noisemodel"]["class"] = "ArmaNoiseModel"
-        n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
-        ml.add_noisemodel(n)
+        data["noisemodel"]["model"] = ml
+        getattr(ps.noisemodels, data["noisemodel"].pop("class"))(**data["noisemodel"])
 
     solver_name = None
     for solver_key in ("fit", "solver"):
@@ -176,8 +168,9 @@ def _load_model(data: dict) -> Model:
         solver_name = data[solver_key].pop("class")
         solver_name = "Lmfit" if solver_name == "LmfitSolve" else solver_name
         solver_name = "Emcee" if solver_name == "EmceeSolve" else solver_name
-        solver = getattr(ps.solver, solver_name)
-        ml.add_solver(solver(**data[solver_key]))
+
+        data[solver_key]["model"] = ml
+        getattr(ps.solver, solver_name)(**data[solver_key])
 
     # Fix old parameter names for One response functions to match the naming convention from Pastas 2.0
     # TODO: Deprecate if pas-files < 2.0 are no longer supported
@@ -225,7 +218,7 @@ def _load_model(data: dict) -> Model:
     return ml
 
 
-def _load_stressmodel(ts, data):
+def _load_stressmodel(ts, model):
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts.pop("class"))
 
@@ -237,7 +230,7 @@ def _load_stressmodel(ts, data):
         rfunc.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
         ts[key] = rfunc
 
-    if "recharge" in ts.keys():
+    if "recharge" in ts:
         recharge_class = ts["recharge"].pop("class")
         ts["recharge"] = getattr(ps.recharge, recharge_class)(**ts["recharge"])
 
@@ -245,7 +238,7 @@ def _load_stressmodel(ts, data):
     settings = []
 
     # Unpack the stress time series
-    if "stress" in ts.keys():
+    if "stress" in ts:
         # Only in the case of the wellmodel stresses are a list
         if isinstance(ts["stress"], list):
             for i, stress in enumerate(ts["stress"]):
@@ -259,19 +252,19 @@ def _load_stressmodel(ts, data):
             metadata.append(meta)
             settings.append(setting)
 
-    if "prec" in ts.keys():
+    if "prec" in ts:
         series, meta, setting = _unpack_series(ts["prec"])
         ts["prec"] = series
         metadata.append(meta)
         settings.append(setting)
 
-    if "evap" in ts.keys():
+    if "evap" in ts:
         series, meta, setting = _unpack_series(ts["evap"])
         ts["evap"] = series
         metadata.append(meta)
         settings.append(setting)
 
-    if "temp" in ts.keys() and ts["temp"] is not None:
+    if "temp" in ts and ts["temp"] is not None:
         series, meta, setting = _unpack_series(ts["temp"])
         ts["temp"] = series
         metadata.append(meta)
@@ -281,6 +274,8 @@ def _load_stressmodel(ts, data):
         ts["metadata"] = metadata if len(metadata) > 1 else metadata[0]
     if settings:
         ts["settings"] = settings if len(settings) > 1 else settings[0]
+    if "model" not in ts:
+        ts["model"] = model
 
     sm = stressmodel(**ts)
     return sm

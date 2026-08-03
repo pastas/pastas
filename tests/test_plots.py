@@ -27,7 +27,7 @@ def test_decomposition_kwargs(ml_noisemodel: Model) -> None:
 
 
 def test_decomposition_split_deprecation(ml_noisemodel: Model) -> None:
-    with pytest.warns(DeprecationWarning, match="split"):
+    with pytest.warns(FutureWarning, match="split"):
         _ = ml_noisemodel.plots.decomposition(split=True)
     plt.close()
 
@@ -49,7 +49,7 @@ def test_results_kwargs(ml_noisemodel: Model) -> None:
 
 
 def test_results_kwargs_split_deprecation(ml_noisemodel: Model) -> None:
-    with pytest.warns(DeprecationWarning, match="split"):
+    with pytest.warns(FutureWarning, match="split"):
         _ = ml_noisemodel.plots.results(split=True)
     plt.close()
 
@@ -80,7 +80,7 @@ def test_step_response(ml_basic: Model) -> None:
 
 
 def test_diagnostics(ml_noisemodel: Model) -> None:
-    _ = ml_noisemodel.plots.diagnostics(acf_options=dict(min_obs=10))
+    _ = ml_noisemodel.plots.diagnostics(acf_options={"min_obs": 10})
     plt.close()
 
 

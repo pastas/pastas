@@ -11,9 +11,8 @@ import numpy as np
 from pandas import DataFrame, DatetimeIndex, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
-from pastas.typing import ArrayLike
-
 from ..decorators import deprecate_args_or_kwargs, njit
+from ..typing import ArrayLike
 
 try:
     from numba import prange
@@ -69,6 +68,11 @@ def acf(
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the ACF is returned.
 
+    See Also
+    --------
+    pastas.stats.ccf
+    statsmodels.api.tsa.acf
+
     Notes
     -----
     The ACF method primarily tries to estimate the autocorrelation using common
@@ -89,10 +93,6 @@ def acf(
 
     >>> acf = ps.stats.acf(series, lags=np.arange(1.0, 366.0, 2.0))
 
-    See Also
-    --------
-    pastas.stats.ccf
-    statsmodels.api.tsa.acf
     """
     if "x" in kwargs:
         deprecate_args_or_kwargs(
@@ -184,10 +184,6 @@ def ccf(
         alpha), and the number of samples n used to compute these, respectively. If
         full_output=False, only the CCF is returned.
 
-    Examples
-    --------
-    >>> ccf = ps.stats.ccf(series_x, series_y, bin_method="gaussian")
-
     Notes
     -----
     The CCF method primarily tries to estimate the correlation using common
@@ -201,6 +197,9 @@ def ccf(
     on the data and the binning method and settings used, the correlation can be above
     1 or below -1. If this occurs, a warning is raised.
 
+    Examples
+    --------
+    >>> ccf = ps.stats.ccf(series_x, series_y, bin_method="gaussian")
     """
     if "x" in kwargs:
         deprecate_args_or_kwargs(
@@ -317,7 +316,7 @@ def _preprocess(
     if series is None:
         raise TypeError("_preprocess() missing required argument: 'series'")
 
-    x_idx = series.index.to_series().diff().dropna().to_numpy(copy=True)
+    x_idx = series.index.to_series().diff().dropna().to_numpy()
 
     dt = x_idx / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
@@ -325,13 +324,13 @@ def _preprocess(
     t = dt.cumsum()
 
     # Normalize the values and create numpy arrays
-    x_vals = series.to_numpy(copy=True)  # pandas 3.0: ensure writeable array
+    x_vals = series.to_numpy()  # pandas 3.0: ensure writeable array
     x = (x_vals - x_vals.mean()) / x_vals.std()
 
     return x, t, dt_mu
 
 
-@njit(parallel=True, nogil=True, cache=True)
+@njit(parallel=True, nogil=True, cache=True)  # parallel is controlled by ps.options
 def _compute_ccf_rectangle(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -367,7 +366,7 @@ def _compute_ccf_rectangle(
     return c, b
 
 
-@njit(parallel=True, nogil=True, cache=True)
+@njit(parallel=True, nogil=True, cache=True)  # parallel is controlled by ps.options
 def _compute_ccf_gaussian(
     lags: ArrayLike,
     t_x: ArrayLike,
@@ -384,6 +383,7 @@ def _compute_ccf_gaussian(
     den1 = -2 * bin_width**2  # denominator 1
     den2 = np.sqrt(2 * np.pi * bin_width)  # denominator 2
     six_den2 = 6 * den2  # six std. dev.
+
     for k in prange(len(lags)):
         cl = 0.0
         b_sum = 0.0
@@ -525,7 +525,7 @@ def var(
         raise TypeError("var() missing required argument: 'series'")
 
     w = _get_weights(series, weighted=weighted, max_gap=max_gap)
-    x = series.to_numpy(copy=True)
+    x = series.to_numpy()
     mu = np.average(x, weights=w)
     sigma = np.sum(x.size / (x.size - 1) * w * (x - mu) ** 2)
     return sigma
@@ -612,7 +612,7 @@ def moment(series: Series | None = None, order: int = 0, **kwargs) -> float:
             "The index of the series must be numeric (float or int) representing "
             "time steps, not a DatetimeIndex. Use a numeric index instead."
         )
-    return float(np.sum((index**order) * series.to_numpy(copy=True)))
+    return float(np.sum((index**order) * series.to_numpy()))
 
 
 # Helper functions
@@ -655,7 +655,7 @@ def _get_weights(
     if series is None:
         raise TypeError("_get_weights() missing required argument: 'series'")
 
-    x_index = series.index.to_numpy(copy=True)
+    x_index = series.index.to_numpy()
     if weighted:
         w = np.append(0.0, np.diff(x_index) / Timedelta("1D"))
         w[w > max_gap] = max_gap

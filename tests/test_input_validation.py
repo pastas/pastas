@@ -80,10 +80,7 @@ class TestInputValidation:
         stress = pd.Series(np.random.normal(0, 1, len(dates2)), index=dates2)
 
         ml = ps.Model(head)
-        sm = ps.StressModel(stress, rfunc=ps.Exponential(), name="stress")
-
-        # Adding the stress model should work but produce a warning about no overlap
-        ml.add_stressmodel(sm)
+        ps.StressModel(model=ml, stress=stress, rfunc=ps.Exponential(), name="stress")
 
         # Solving should raise an error about time series extension
         with pytest.raises(ValueError, match="cannot be extended into past"):

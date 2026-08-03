@@ -188,7 +188,7 @@ class TestForecast:
         """Test forecast with missing required key in forecast_data."""
         # Remove the key expected by the model (simulate missing stressmodel)
         bad_data = {"wrong_key": forecast_data["rch"]}
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             forecast(ml_noisemodel, bad_data)
 
     def test_forecast_output_shape(

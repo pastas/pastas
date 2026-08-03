@@ -9,6 +9,7 @@ from pandas.plotting import register_matplotlib_converters
 import pastas.recharge as rch
 import pastas.timeseries_utils as ts
 from pastas import check, extensions, forecast, solver, stats
+from pastas._options import options
 from pastas.dataset import list_datasets, load_dataset
 from pastas.decorators import (
     PastasDeprecationWarning,
@@ -36,7 +37,7 @@ from pastas.rfunc import (
     Polder,
     Spline,
 )
-from pastas.solver import EmceeSolve, LeastSquares, LmfitSolve, likelihood, timer
+from pastas.solver import likelihood, timer
 from pastas.solver.trackers import TrackSolve
 from pastas.stressmodels import (
     ChangeModel,
@@ -65,24 +66,24 @@ register_matplotlib_converters()
     version="2.3.0",
     reason="The LmfitSolve class will be removed from the pastas module namespace. Please use ps.solver.Lmfit instead.",
 )
-def LmfitSolve(*args, **kwargs):  # noqa: F811
+def LmfitSolve(*args, **kwargs):
     """Use ps.solver.Lmfit instead (deprecated)."""
-    return LmfitSolve(*args, **kwargs)
+    return solver.Lmfit(*args, **kwargs)
 
 
 @PastasDeprecationWarning(
     version="2.3.0",
     reason="The EmceeSolve class will be removed from the pastas module namespace. Please use ps.solver.Emcee instead.",
 )
-def EmceeSolve(*args, **kwargs):  # noqa: F811
+def EmceeSolve(*args, **kwargs):
     """Use ps.solver.Emcee instead (deprecated)."""
-    return EmceeSolve(*args, **kwargs)
+    return solver.Emcee(*args, **kwargs)
 
 
 @PastasDeprecationWarning(
     version="2.3.0",
     reason="The LeastSquares class will be removed from the pastas module namespace. Please use ps.solver.LeastSquares instead.",
 )
-def LeastSquares(*args, **kwargs):  # noqa: F811
+def LeastSquares(*args, **kwargs):
     """Use ps.solver.LeastSquares instead (deprecated)."""
-    return LeastSquares(*args, **kwargs)
+    return solver.LeastSquares(*args, **kwargs)

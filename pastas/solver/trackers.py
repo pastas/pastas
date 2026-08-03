@@ -77,7 +77,7 @@ class TrackSolve:
 
     def __init__(
         self,
-        ml: Model,
+        model: Model,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         update_iter: int | None = None,
@@ -88,11 +88,11 @@ class TrackSolve:
             "an issue on GitHub: https://github.com/pastas/pastas/issues"
         )
 
-        self.ml = ml
+        self.model = model
         self.viewlim = 75  # no of iterations on axes by default
         if update_iter is None:
             self.update_iter = len(
-                self.ml.parameters.loc[self.ml.parameters.vary].index
+                self.model.parameters.loc[self.model.parameters.vary].index
             )
         else:
             self.update_iter = update_iter  # update plot every update_iter
@@ -100,33 +100,33 @@ class TrackSolve:
 
         # get tmin/tmax
         if tmin is None:
-            self.tmin = self.ml.oseries.series.index[0]
+            self.tmin = self.model.oseries.series.index[0]
         else:
             self.tmin = Timestamp(tmin)
 
         if tmax is None:
-            self.tmax = self.ml.oseries.series.index[-1]
+            self.tmax = self.model.oseries.series.index[-1]
         else:
             self.tmax = Timestamp(tmax)
 
         # parameters
-        self.parameters = DataFrame(columns=self.ml.parameters.index)
-        self.parameters.loc[0] = self.ml.parameters.initial.values
+        self.parameters = DataFrame(columns=self.model.parameters.index)
+        self.parameters.loc[0] = self.model.parameters.initial.values
 
         # iteration counter
         self.itercount = 0
 
         # calculate RMSE residuals
-        res = self._residuals(self.ml.parameters.initial.values)
+        res = self._residuals(self.model.parameters.initial.values)
         self.rmse_res = np.array([rmse(res=res)])
 
         # calculate RMSE noise
-        if self.ml.noisemodel is not None:
-            noise = self._noise(self.ml.parameters.initial.values)
+        if self.model.noisemodel is not None:
+            noise = self._noise(self.model.parameters.initial.values)
             self.rmse_noise = np.array([rmse(res=noise)])
 
         # get observations
-        self.obs = self.ml.observations(tmin=self.tmin, tmax=self.tmax)
+        self.obs = self.model.observations(tmin=self.tmin, tmax=self.tmax)
         # calculate EVP
         self.evp = np.array([evp(obs=self.obs, res=res)])
 
@@ -157,13 +157,13 @@ class TrackSolve:
         self.itercount += 1
 
         # add parameters to DataFrame
-        self.parameters.loc[self.itercount, self.ml.parameters.index] = p.copy()
+        self.parameters.loc[self.itercount, self.model.parameters.index] = p.copy()
 
         # calculate new RMSE values
         r_res = self._residuals(p, **kwargs)
         self.rmse_res = np.r_[self.rmse_res, rmse(res=r_res)]
 
-        if self.ml.noisemodel is not None:
+        if self.model.noisemodel is not None:
             n_res = self._noise(p, **kwargs)
             self.rmse_noise = np.r_[self.rmse_noise, rmse(res=n_res)]
 
@@ -177,9 +177,9 @@ class TrackSolve:
             self.fig.canvas.draw()
 
     def _update_settings(self) -> None:
-        self.tmin = self.ml.settings["tmin"]
-        self.tmax = self.ml.settings["tmax"]
-        self.freq = self.ml.settings["freq"]
+        self.tmin = self.model.settings["tmin"]
+        self.tmax = self.model.settings["tmax"]
+        self.freq = self.model.settings["freq"]
 
     def _noise(self, p: ArrayLike, **kwargs) -> ArrayLike:
         """Get noise.
@@ -201,7 +201,7 @@ class TrackSolve:
                 reason="Params is renamed to p and will be removed in a future version.",
             )
             p = kwargs.pop("params")
-        noise = self.ml.noise(p=p, tmin=self.tmin, tmax=self.tmax)
+        noise = self.model.noise(p=p, tmin=self.tmin, tmax=self.tmax)
         return noise
 
     def _residuals(self, p: ArrayLike, **kwargs) -> ArrayLike:
@@ -224,7 +224,7 @@ class TrackSolve:
                 reason="Params is renamed to p and will be removed in a future version.",
             )
             p = kwargs.pop("params")
-        res = self.ml.residuals(p=p, tmin=self.tmin, tmax=self.tmax)
+        res = self.model.residuals(p=p, tmin=self.tmin, tmax=self.tmax)
         return res
 
     def _simulate(self) -> Series:
@@ -235,11 +235,11 @@ class TrackSolve:
         sim: pd.Series
             Series containing model evaluation.
         """
-        sim = self.ml.simulate(
+        sim = self.model.simulate(
             p=self.parameters.iloc[-1, :].values,
             tmin=self.tmin,
             tmax=self.tmax,
-            freq=self.ml.settings["freq"],
+            freq=self.model.settings["freq"],
         )
         return sim
 
@@ -284,9 +284,7 @@ class TrackSolve:
         sim = self._simulate()
         (self.simplot,) = self.ax0.plot(sim.index, sim, label="simulation")
         self.ax0.set_ylabel("head")
-        self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
-        )
+        self.ax0.set_title(f"Iteration: {self.itercount} (EVP: {self.evp[-1]:.2f}%)")
         self.ax0.legend(loc=(0, 1), frameon=False, ncol=2)
         omax = self.obs.max()
         omin = self.obs.min()
@@ -308,7 +306,7 @@ class TrackSolve:
         self.ax1.set_ylim(1e-2, 2 * self.rmse_res[-1])
         self.ax1.set_ylabel("RMSE")
 
-        if self.ml.noisemodel is not None:
+        if self.model.noisemodel is not None:
             (self.n_rmse_plot_line,) = self.ax1.plot(
                 [0], self.rmse_noise[0:1], c="C0", ls="solid", label="noise"
             )
@@ -326,10 +324,9 @@ class TrackSolve:
         plt.yscale("log")
         self.param_plot_handles = []
         legend_handles = []
-        for pname, row in self.ml.parameters.iterrows():
-            if pname.startswith("noise"):
-                if self.ml.noisemodel is None:
-                    continue
+        for pname, row in self.model.parameters.iterrows():
+            if pname.startswith("noise") and self.model.noisemodel is None:
+                continue
             (pa,) = self.ax2.plot(
                 [0], np.abs(row.initial), marker=".", ls="none", label=pname
             )
@@ -408,7 +405,7 @@ class TrackSolve:
             np.array([self.itercount]), np.array([self.rmse_res[-1]])
         )
 
-        if self.ml.noisemodel is not None:
+        if self.model.noisemodel is not None:
             # update rmse noise
             self.n_rmse_plot_line.set_data(
                 range(self.itercount + 1), np.array(self.rmse_noise)
@@ -427,9 +424,7 @@ class TrackSolve:
             )
 
         # update title
-        self.ax0.set_title(
-            "Iteration: {0} (EVP: {1:.2f}%)".format(self.itercount, self.evp[-1])
-        )
+        self.ax0.set_title(f"Iteration: {self.itercount} (EVP: {self.evp[-1]:.2f}%)")
         plt.pause(self.pause)
         self.fig.canvas.draw()
 
@@ -449,7 +444,7 @@ class TrackSolve:
         """
         if fig is None:
             fig = self.initialize_figure()
-        self.plot_track_solve(self.ml.parameters.optimal.values)
+        self.plot_track_solve(self.model.parameters.optimal.values)
 
         self.fig.axes[1].autoscale(tight=False, axis="both")
         self.fig.axes[2].autoscale(tight=False, axis="both")
