@@ -2015,7 +2015,7 @@ class Model:
             for the n-th stress (int), all stresses ("all"), or the stressmodel
             default (None).
 
-            .. versionchanged:: 2.4.0
+            .. versionchanged:: 2.0
                 Added support for ``istress="all"`` to return all responses.
         kwargs: dict, optional
             Kwargs are passed onto _get_response()
@@ -2066,7 +2066,7 @@ class Model:
             for the n-th stress (int), all stresses ("all"), or the stressmodel
             default (None).
 
-            .. versionchanged:: 2.4.0
+            .. versionchanged:: 2.0
                 Added support for ``istress="all"`` to return all responses.
         kwargs: dict, optional
             Kwargs are passed onto _get_response()

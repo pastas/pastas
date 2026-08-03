@@ -732,7 +732,7 @@ def kge(
     \\bar{y}}`. If weighted equals True, the weighted mean, variance and
     pearson correlation are used.
 
-    .. versionchanged:: 2.0.0
+    .. versionchanged:: 1.5
         The ``modified`` parameter was added to support the modified KGE
         formulation from :cite:t:`kling_runoff_2012`. Previously, this could
         only be computed via the (now deprecated) :func:`kge_2012` function.

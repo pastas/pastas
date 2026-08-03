@@ -328,7 +328,7 @@ def get_sample_for_freq(
 ):
     """Sample a pandas Series or DataFrame so that the frequency is not higher than a supplied frequency.
 
-    .. versionchanged:: 2.3.0
+    .. versionchanged:: 2.0
         The ``s`` parameter was renamed to ``series``. Passing ``s`` still works
         but raises a deprecation warning.
 
