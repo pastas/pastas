@@ -619,7 +619,7 @@ class Model:
         Returns
         -------
         pandas.Series
-            pandas.Series containing the simulated time series on the same index as
+            Series containing the simulated time series on the same index as
             the observations.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
@@ -704,8 +704,8 @@ class Model:
 
         Returns
         -------
-        res: pandas.Series
-            pandas.Series with the residuals.
+        pandas.Series
+            Series with the residuals.
         """
         obs = self.observations(tmin=tmin, tmax=tmax, freq=freq)
         sim = self.simulate_on_observations(
@@ -756,10 +756,6 @@ class Model:
         -------
         noise : pandas.Series
             Pandas series of the noise.
-
-        Warnings
-        --------
-        This method returns None if no noise model is present in the model.
 
         Notes
         -----
