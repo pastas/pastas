@@ -478,7 +478,7 @@ class Model:
         warmup: float | None = None,
         return_warmup: bool = False,
     ) -> Series:
-        """Simulate the time series model.
+        """Simulate the heads using the time series model.
 
         Parameters
         ----------
@@ -641,6 +641,8 @@ class Model:
 
         # Get simulation at the correct indices
         if self._interpolate_simulation is None:  # if not set before
+            # Check if interpolation is necessary due to mismatch between simulation
+            # and observation indices
             self._interpolate_simulation = obs.index.difference(sim.index).size != 0
             if self._interpolate_simulation:
                 logger.info(
@@ -649,29 +651,38 @@ class Model:
                 )
 
         if self._interpolate_simulation:
-            # Interpolate using pre-calculated weights and indices
-            sim_values = sim.to_numpy()
-
-            # check assumes that obs_index is the same if sim_index is the same
-            if self._interpolation_indices_weights is None or not sim.index.equals(
-                self._sim_index
-            ):
-                # recompute interpolation weights and indices if sim_index has changed
-                self._interpolation_indices_weights = _get_interpolation_weights(
-                    sim_tindex=sim.index,
-                    obs_tindex=obs.index,
-                )
-
-            indices, weights = self._interpolation_indices_weights
-            sim_interp = (
-                sim_values[indices[:, 0]] * weights[:, 0]
-                + sim_values[indices[:, 1]] * weights[:, 1]
-            )
-            sim = Series(data=sim_interp, index=obs.index, name="Simulation")
+            sim = self._simulate_interpolated(sim=sim, obs=obs)
         else:
             # All the observation indexes are in the simulation
             sim = sim.reindex(obs.index)
 
+        return sim
+
+    def _simulate_interpolated(self, sim: Series, obs: Series) -> Series:
+        """Simulate the time series model and interpolate to the observation index.
+
+        Uses (pre-calculated) weights and indices for linear interpolation to speed
+        up the process.
+        """
+        # Interpolate using pre-calculated weights and indices
+        sim_values = sim.to_numpy()
+
+        # check assumes that obs_index is the same if sim_index is the same
+        if self._interpolation_indices_weights is None or not sim.index.equals(
+            self._sim_index
+        ):
+            # recompute interpolation weights and indices if sim_index has changed
+            self._interpolation_indices_weights = _get_interpolation_weights(
+                sim_tindex=sim.index,
+                obs_tindex=obs.index,
+            )
+
+        indices, weights = self._interpolation_indices_weights
+        sim_interp = (
+            sim_values[indices[:, 0]] * weights[:, 0]
+            + sim_values[indices[:, 1]] * weights[:, 1]
+        )
+        sim = Series(data=sim_interp, index=obs.index, name="Simulation")
         return sim
 
     def residuals(
