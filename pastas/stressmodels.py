@@ -778,7 +778,7 @@ class StepModel(StressModelBase):
         dt: float = 1.0,
     ) -> Series:
         tstart = Timestamp.fromordinal(int(p[-1]))
-        tindex = date_range(tmin, tmax, freq=freq)
+        tindex = date_range(tmin, tmax, freq=freq, unit="us")
         h = Series(0, tindex, name=self.name)
         h.loc[h.index > tstart] = 1
 
