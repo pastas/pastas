@@ -584,7 +584,7 @@ class Model:
 
         return sim
 
-    def simulate_on_observations(
+    def _simulate_on_observations(
         self,
         p: ArrayLike | None = None,
         tmin: Timestamp | str | None = None,
@@ -720,7 +720,7 @@ class Model:
             Series with the residuals.
         """
         obs = self.observations(tmin=tmin, tmax=tmax, freq=freq)
-        sim = self.simulate_on_observations(
+        sim = self._simulate_on_observations(
             p=p, tmin=tmin, tmax=tmax, freq=freq, warmup=warmup
         )
         res = obs.subtract(sim).rename("Residuals")
