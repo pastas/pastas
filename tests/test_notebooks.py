@@ -1,4 +1,3 @@
-import os
 import shutil
 from pathlib import Path
 
@@ -6,45 +5,38 @@ import papermill as pm
 import pytest
 
 pathname = Path(__file__).parent.parent / "doc/examples"
-files = list(pathname.glob("*.ipynb"))
+files = sorted(pathname.glob("*.ipynb"))
 
-testdir = "build"
-if os.path.isdir(os.path.join(pathname, testdir)):
-    shutil.rmtree(os.path.join(pathname, testdir))
-os.mkdir(os.path.join(pathname, testdir))
+testdir = pathname / "build"
+if testdir.is_dir():
+    shutil.rmtree(testdir)
+testdir.mkdir()
 
+PARAMETERS = {
+    "uncertainty_ls_mcmc.ipynb": {"NUM_STEPS": 10},
+}
 
 @pytest.mark.notebooks
 @pytest.mark.parametrize("file", files)
 def test_notebook(file) -> None:
-    cwd = os.getcwd()
+    if file.name in ["prepare_timeseries.ipynb"]:
+        pytest.xfail("This notebook checks if errors are raised")
 
-    os.chdir(pathname)
-    if file.name not in [
-        "prepare_timeseries.ipynb",
-    ]:
-        try:
-            # Report which notebook is being tested
-            print(f"\nTesting notebook: {file}")
+    # Report which notebook is being tested
+    print(f"\nTesting notebook: {file}")
 
-            # Use papermill to execute the notebook
-            output_path = os.path.join(testdir, file)
-            pm.execute_notebook(
-                str(file),
-                output_path,
-                timeout=600,
-            )
+    # Use papermill to execute the notebook
+    output_path = testdir / file.name
+    pm.execute_notebook(
+        file,
+        output_path,
+        parameters=PARAMETERS.get(file.name),
+        timeout=600,
+        cwd=pathname,
+    )
 
-            msg = f"could not run {file}"
-            assert os.path.isfile(output_path), msg
-            # Report success
-            print(f"Notebook {file} ran successfully.")
-        except Exception as e:  # noqa: BLE001
-            os.chdir(cwd)
-            raise RuntimeError(f"Could not run notebook {file}, error: {e}")
-    else:
-        print(f"Skipping notebook: {file}")
-    os.chdir(cwd)
+    # Report success
+    print(f"Notebook {file} ran successfully.")
 
 
 if __name__ == "__main__":
