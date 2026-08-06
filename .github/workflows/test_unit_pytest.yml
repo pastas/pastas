@@ -94,7 +94,7 @@ jobs:
 
       - name: Update Coverage Badge
         if: matrix.toxenv == 'all' && github.event_name == 'push' && env.BADGE_GIST_COVERAGE_TOKEN != ''
-        uses: Schneegans/dynamic-badges-action@v1.7.0
+        uses: Schneegans/dynamic-badges-action@v1.9.0
         with:
           auth: ${{ env.BADGE_GIST_COVERAGE_TOKEN }}
           gistID: "02bcb92e1d487ffc9143752296b8db72"
