@@ -1,4 +1,3 @@
-import os
 import shutil
 from pathlib import Path
 
@@ -8,43 +7,33 @@ import pytest
 pathname = Path(__file__).parent.parent / "doc/benchmarks"
 files = list(pathname.glob("*.ipynb"))
 
-testdir = "build"
-if os.path.isdir(os.path.join(pathname, testdir)):
-    shutil.rmtree(os.path.join(pathname, testdir))
-os.mkdir(os.path.join(pathname, testdir))
+testdir = pathname / "build"
+if testdir.is_dir():
+    shutil.rmtree(testdir)
+testdir.mkdir()
+
+
+PARAMETERS = {
+    "pastas_uncertainty_benchmark.ipynb": {"NUMBER_EXPERIMENTS": 10},
+}
 
 
 @pytest.mark.bnotebooks
 @pytest.mark.parametrize("file", files)
 def test_notebook(file) -> None:
-    cwd = os.getcwd()
+    # Report which notebook is being tested
+    print(f"\nTesting notebook: {file}")
 
-    os.chdir(pathname)
-    if file.name not in [
-        "pastas_uncertainty_benchmark.ipynb",
-    ]:
-        try:
-            # Report which notebook is being tested
-            print(f"\nTesting notebook: {file}")
-
-            # Use papermill to execute the notebook
-            output_path = os.path.join(testdir, file)
-            pm.execute_notebook(
-                str(file),
-                output_path,
-                timeout=600,
-            )
-
-            msg = f"could not run {file}"
-            assert os.path.isfile(output_path), msg
-            # Report success
-            print(f"Notebook {file} ran successfully.")
-        except Exception as e:  # noqa: BLE001
-            os.chdir(cwd)
-            raise RuntimeError(f"Could not run notebook {file}, error: {e}")
-    else:
-        print(f"Skipping notebook: {file}")
-    os.chdir(cwd)
+    # Use papermill to execute the notebook
+    pm.execute_notebook(
+        input_path=file,
+        output_path=testdir / file.name,
+        timeout=600,
+        parameters=PARAMETERS.get(file.name),
+        cwd=pathname,
+    )
+    # Report success
+    print(f"Notebook {file} ran successfully.")
 
 
 if __name__ == "__main__":
