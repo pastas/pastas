@@ -1092,16 +1092,16 @@ class Plotting:
             contributions = {}
             if sm.stresses and (sm._name == "WellModel"):
                 if stackcolors is None:
-                    stackcolors = {
+                    stackcolors_ = {
                         wnam: f"C{i + 1}" for i, wnam in enumerate(sm.stresses._fields)
                     }
-                    stackcolors[sm_name] = (
+                    stackcolors_[sm_name] = (
                         "C0"  # add backup for single-stress WellModels
                     )
                 elif isinstance(stackcolors, (list, tuple)):
-                    stackcolors = dict(zip(sm.stresses._fields, stackcolors))
-                elif not isinstance(stackcolors, dict):
-                    raise TypeError("stackcolors must be None, list, or dict.")
+                    stackcolors_ = dict(zip(sm.stresses._fields, stackcolors))
+                else:
+                    stackcolors_ = stackcolors
                 if sm.nsplit > 1:
                     for istress in range(len(sm.stresses)):
                         h = self.model.get_contribution(
@@ -1113,7 +1113,7 @@ class Plotting:
                         contributions[name] = h
 
                         axd[f"rf_{sm_name}"].lines[istress].set_color(
-                            stackcolors[name]
+                            stackcolors_[name]
                         )  # change color of existing line
                 else:
                     contributions[sm_name] = self.model.get_contribution(
@@ -1126,7 +1126,7 @@ class Plotting:
                 # add stacked plot to correct axes
                 axd[f"con_{sm_name}"].lines[0].remove()  # delete existing line
 
-                colors = [stackcolors[name] for name in contributions_df.columns]
+                colors = [stackcolors_[name] for name in contributions_df.columns]
                 axd[f"con_{sm_name}"].stackplot(
                     contributions_df.index,
                     contributions_df.values.T,
