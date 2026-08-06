@@ -737,15 +737,7 @@ class Plotting:
         else:
             res = self.model.residuals(tmin=tmin, tmax=tmax)
 
-        sim = self.model.simulate(tmin=tmin, tmax=tmax)
-
-        if self.model._interpolate_simulation:
-            sim_interpolated = np.interp(
-                _index_to_int64(res.index),
-                _index_to_int64(sim.index),
-                sim.values,
-            )
-            sim = Series(index=res.index, data=sim_interpolated)
+        sim = self.model._simulate_on_observations(tmin=tmin, tmax=tmax)
 
         return diagnostics(
             series=res,

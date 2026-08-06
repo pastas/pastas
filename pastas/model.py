@@ -478,7 +478,7 @@ class Model:
         warmup: float | None = None,
         return_warmup: bool = False,
     ) -> Series:
-        """Simulate the time series model.
+        """Simulate the heads using the time series model.
 
         Parameters
         ----------
@@ -584,6 +584,107 @@ class Model:
 
         return sim
 
+    def _simulate_on_observations(
+        self,
+        p: ArrayLike | None = None,
+        tmin: Timestamp | str | None = None,
+        tmax: Timestamp | str | None = None,
+        freq: str | None = None,
+        warmup: float | None = None,
+    ) -> Series:
+        """Simulate the time series model and get it on the same index as the observations.
+
+        Note that if the observations have a higher frequency than the simulation, linear
+        interpolation is used to get the simulation on the same index as the observations.
+
+        Parameters
+        ----------
+        p: array_like, optional
+            array_like object with the values as floats representing the model
+            parameters. See Model.get_parameters() for more info if parameters is None.
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the start date for the simulation period
+            (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmin from the oseries is used.
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the end date for the simulation period
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to pandas.Timestamp
+            internally. If none is provided, the tmax from the oseries is used.
+        freq: str, optional
+            String with the frequency the stressmodels are simulated. Must be one of
+            the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+        warmup: float, optional
+            Warmup period (in Days).
+
+        Returns
+        -------
+        pandas.Series
+            Series containing the simulated time series on the same index as
+            the observations.
+        """
+        # Default options when tmin, tmax, freq and warmup are not provided.
+        settings = self._settings
+        tmin = settings["tmin"] if tmin is None else tmin
+        tmax = settings["tmax"] if tmax is None else tmax
+        freq = settings["freq"] if freq is None else freq
+        warmup = settings["warmup"] if warmup is None else warmup
+        freq = settings["freq"] if freq is None else freq
+        freq_obs = freq if settings["freq_obs"] is None else settings["freq_obs"]
+
+        # simulate model
+        sim = self.simulate(
+            p=p, tmin=tmin, tmax=tmax, freq=freq, warmup=warmup, return_warmup=False
+        )
+
+        # Get the oseries calibration series
+        obs = self.observations(tmin=tmin, tmax=tmax, freq=freq_obs)
+
+        # Get simulation at the correct indices
+        if self._interpolate_simulation is None:  # if not set before
+            # Check if interpolation is necessary due to mismatch between simulation
+            # and observation indices
+            self._interpolate_simulation = obs.index.difference(sim.index).size != 0
+            if self._interpolate_simulation:
+                logger.info(
+                    "There are observations between the simulation time steps. Linear "
+                    "interpolation between simulated values is used."
+                )
+
+        if self._interpolate_simulation:
+            sim = self._simulate_interpolated(sim=sim, obs=obs)
+        else:
+            # All the observation indexes are in the simulation
+            sim = sim.reindex(obs.index)
+
+        return sim
+
+    def _simulate_interpolated(self, sim: Series, obs: Series) -> Series:
+        """Simulate the time series model and interpolate to the observation index.
+
+        Uses (pre-calculated) weights and indices for linear interpolation to speed
+        up the process.
+        """
+        # Interpolate using pre-calculated weights and indices
+        sim_values = sim.to_numpy()
+
+        # check assumes that obs_index is the same if sim_index is the same
+        if self._interpolation_indices_weights is None or not sim.index.equals(
+            self._sim_index
+        ):
+            # recompute interpolation weights and indices if sim_index has changed
+            self._interpolation_indices_weights = _get_interpolation_weights(
+                sim_tindex=sim.index,
+                obs_tindex=obs.index,
+            )
+
+        indices, weights = self._interpolation_indices_weights
+        sim_interp = (
+            sim_values[indices[:, 0]] * weights[:, 0]
+            + sim_values[indices[:, 1]] * weights[:, 1]
+        )
+        sim = Series(data=sim_interp, index=obs.index, name="Simulation")
+        return sim
+
     def residuals(
         self,
         p: ArrayLike | None = None,
@@ -615,58 +716,14 @@ class Model:
 
         Returns
         -------
-        res: pandas.Series
-            pandas.Series with the residuals.
+        pandas.Series
+            Series with the residuals.
         """
-        # Default options when tmin, tmax, freq and warmup are not provided.
-        settings = self._settings
-        tmin = settings["tmin"] if tmin is None else tmin
-        tmax = settings["tmax"] if tmax is None else tmax
-        freq = settings["freq"] if freq is None else freq
-        warmup = settings["warmup"] if warmup is None else warmup
-        freq = settings["freq"] if freq is None else freq
-        freq_obs = freq if settings["freq_obs"] is None else settings["freq_obs"]
-
-        # simulate model
-        sim = self.simulate(
-            p=p, tmin=tmin, tmax=tmax, freq=freq, warmup=warmup, return_warmup=False
+        obs = self.observations(tmin=tmin, tmax=tmax, freq=freq)
+        sim = self._simulate_on_observations(
+            p=p, tmin=tmin, tmax=tmax, freq=freq, warmup=warmup
         )
-
-        # Get the oseries calibration series
-        obs = self.observations(tmin=tmin, tmax=tmax, freq=freq_obs)
-
-        # Get simulation at the correct indices
-        if self._interpolate_simulation is None:  # if not set before
-            self._interpolate_simulation = obs.index.difference(sim.index).size != 0
-            if self._interpolate_simulation:
-                logger.info(
-                    "There are observations between the simulation time steps. Linear "
-                    "interpolation between simulated values is used."
-                )
-
-        if self._interpolate_simulation:
-            # Interpolate using pre-calculated weights and indices
-            sim_values = sim.to_numpy()
-            # check assumes that obs_index is the same if sim_index is the same
-            if self._interpolation_indices_weights is None or not sim.index.equals(
-                self._sim_index
-            ):
-                self._interpolation_indices_weights = _get_interpolation_weights(
-                    sim_tindex=sim.index,
-                    obs_tindex=obs.index,
-                )
-
-            indices, weights = self._interpolation_indices_weights
-            sim_interpolated = (
-                sim_values[indices[:, 0]] * weights[:, 0]
-                + sim_values[indices[:, 1]] * weights[:, 1]
-            )
-        else:
-            # All the observation indexes are in the simulation
-            sim_interpolated = sim.reindex(obs.index)
-
-        # Calculate the actual residuals here
-        res = obs.subtract(sim_interpolated)
+        res = obs.subtract(sim).rename("Residuals")
 
         if res.hasnans:
             res = res.dropna()
@@ -675,7 +732,6 @@ class Model:
         if self._fit_constant is False:
             res = res.subtract(np.mean(res))
 
-        res.name = "Residuals"
         return res
 
     def noise(
@@ -712,10 +768,6 @@ class Model:
         -------
         noise : pandas.Series
             Pandas series of the noise.
-
-        Warnings
-        --------
-        This method returns None if no noise model is present in the model.
 
         Notes
         -----

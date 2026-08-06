@@ -424,26 +424,11 @@ class Statistics:
         pastas.stats.kge
         """
         obs = self.model.observations(tmin=tmin, tmax=tmax)
-        sim = self.model.simulate(tmin=tmin, tmax=tmax)
-
-        # Get simulation at the correct indices
-        if self.model._interpolate_simulation:
-            # interpolate simulation to times of observations
-            sim_interpolated = Series(
-                interp(
-                    _index_to_int64(obs.index),
-                    _index_to_int64(sim.index),
-                    sim.to_numpy(),
-                ),
-                index=obs.index,
-            )
-        else:
-            # All the observation indexes are in the simulation
-            sim_interpolated = sim.reindex(obs.index)
+        sim = self.model._simulate_on_observations(tmin=tmin, tmax=tmax)
 
         return metrics.kge(
             obs=obs,
-            sim=sim_interpolated,
+            sim=sim,
             weighted=weighted,
             modified=modified,
             **kwargs,
