@@ -13,8 +13,11 @@ if testdir.is_dir():
 testdir.mkdir()
 
 PARAMETERS = {
+    "stowa_calibration.ipynb": {"NUM_EXPERIMENTS": 10},
+    "uncertainty.ipynb": {"NUM_PAR_SAMPLES": 10},
     "uncertainty_ls_mcmc.ipynb": {"NUM_STEPS": 10},
 }
+
 
 @pytest.mark.notebooks
 @pytest.mark.parametrize("file", files)
@@ -32,7 +35,7 @@ def test_notebook(file) -> None:
         output_path,
         parameters=PARAMETERS.get(file.name),
         timeout=600,
-        cwd=pathname,
+        cwd=file.parent,
     )
 
     # Report success
