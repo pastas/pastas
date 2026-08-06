@@ -532,15 +532,7 @@ class Plotly:
         x = df_acf.index.total_seconds() / (24 * 60 * 60)
         conf = df_acf["conf"].rolling(10, min_periods=1).mean().values
 
-        if self._model._interpolate_simulation:
-            sim_interpolated = np.interp(
-                _index_to_int64(series.index),
-                _index_to_int64(sim.index),
-                sim.to_numpy(),
-            )
-            sim = pd.Series(index=series.index, data=sim_interpolated)
-
-        sim = sim.loc[series.index]
+        sim = self._model._simulate_on_observations().loc[series.index]
 
         # let the plotting begin
         fig = make_subplots(
