@@ -13,9 +13,6 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"
     open-pull-requests-limit: 10
     groups:
       official-actions:
