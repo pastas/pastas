@@ -2,6 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
+import papermill as pm
 import pytest
 
 pathname = Path(__file__).parent.parent / "doc/benchmarks"
@@ -23,27 +24,26 @@ def test_notebook(file) -> None:
         "pastas_uncertainty_benchmark.ipynb",
     ]:
         try:
-            # run autotest on each notebook
-            cmd = (
-                "jupyter "
-                + "nbconvert "
-                + "--ExecutePreprocessor.timeout=600 "
-                + "--to "
-                + "notebook "
-                + "--execute "
-                + f'"{file}" '
-                + "--output-dir "
-                + f"{testdir} "
+            # Report which notebook is being tested
+            print(f"\nTesting notebook: {file}")
+
+            # Use papermill to execute the notebook
+            output_path = os.path.join(testdir, file)
+            pm.execute_notebook(
+                str(file),
+                output_path,
+                timeout=600,
             )
-            ival = os.system(cmd)
+
             msg = f"could not run {file}"
-            assert ival == 0, msg
-            assert os.path.isfile(os.path.join(testdir, file)), msg
+            assert os.path.isfile(output_path), msg
             # Report success
             print(f"Notebook {file} ran successfully.")
         except Exception as e:  # noqa: BLE001
             os.chdir(cwd)
             raise RuntimeError(f"Could not run notebook {file}, error: {e}")
+    else:
+        print(f"Skipping notebook: {file}")
     os.chdir(cwd)
 
 

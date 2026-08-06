@@ -61,6 +61,7 @@ pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
 ci = [
     "pastas[pytesting,solvers,interactive,caching,mpmath]",
     "jupyter",
+    "papermill",
     "coverage",
     "corner",
     "tqdm",
