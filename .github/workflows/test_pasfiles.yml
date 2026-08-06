@@ -34,7 +34,7 @@ jobs:
       PYTEST_ADDOPTS: "--color=yes"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
