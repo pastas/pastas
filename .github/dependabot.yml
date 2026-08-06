@@ -13,6 +13,8 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    labels:
+      - "code quality"
     open-pull-requests-limit: 10
     groups:
       official-actions:
