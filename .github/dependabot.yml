@@ -1,0 +1,57 @@
+# Dependabot configuration for pastas repository
+# Location: .github/dependabot.yml
+# Reference: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+updates:
+  # Update GitHub Actions in workflow files
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    open-pull-requests-limit: 10
+    groups:
+      official-actions:
+        patterns:
+          - "actions/*"
+      third-party-actions:
+        patterns:
+          - "astral-sh/*"
+          - "pypa/*"
+          - "Schneegans/*"
+          - "toshimaru/*"
+
+  # Update pre-commit hooks in .pre-commit-config.yaml
+  - package-ecosystem: "pre-commit"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "pre-commit"
+    open-pull-requests-limit: 5
+
+  # Update Docker containers in devcontainer
+  - package-ecosystem: "docker"
+    directory: "/.devcontainer"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "devcontainer"
+    open-pull-requests-limit: 5
