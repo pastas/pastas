@@ -1442,7 +1442,7 @@ class Model:
         if "s" in kwargs:
             deprecate_args_or_kwargs(
                 name="s",
-                version="2.3.0",
+                version="2.4.0",
                 reason="Please use `oseries` instead of `s`.",
             )
             if oseries is None:
@@ -1937,7 +1937,7 @@ class Model:
         if "split" in kwargs:
             deprecate_args_or_kwargs(
                 name="split",
-                version="2.3.0",
+                version="2.4.0",
                 reason="Use `split_contributions` instead.",
             )
             split_contributions = kwargs.pop("split")

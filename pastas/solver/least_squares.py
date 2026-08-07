@@ -1089,7 +1089,7 @@ class LeastSquares(LeastSquaresBase):
 
 
 @deprecate_class_func_or_method(
-    version="2.3.0", reason="The LmfitSolve class is renamed to Lmfit."
+    version="2.4.0", reason="The LmfitSolve class is renamed to Lmfit."
 )
 def LmfitSolve(*args, **kwargs):
     """Alias for Lmfit."""

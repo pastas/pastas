@@ -19,7 +19,7 @@ logger = getLogger(__name__)
 
 
 @deprecate_class_func_or_method(
-    version="2.3.0", reason="The EmceeSolve class is renamed to Emcee."
+    version="2.4.0", reason="The EmceeSolve class is renamed to Emcee."
 )
 def EmceeSolve(*args, **kwargs):
     """Alias for Emcee class."""

@@ -144,7 +144,7 @@ class TrackSolve:
         if "params" in kwargs:
             deprecate_args_or_kwargs(
                 "params",
-                version="2.3.0",
+                version="2.4.0",
                 reason="Params is renamed to p and will be removed in a future version.",
             )
             p = kwargs.pop("params")
@@ -197,7 +197,7 @@ class TrackSolve:
         if "params" in kwargs:
             deprecate_args_or_kwargs(
                 "params",
-                version="2.3.0",
+                version="2.4.0",
                 reason="Params is renamed to p and will be removed in a future version.",
             )
             p = kwargs.pop("params")
@@ -220,7 +220,7 @@ class TrackSolve:
         if "params" in kwargs:
             deprecate_args_or_kwargs(
                 "params",
-                version="2.3.0",
+                version="2.4.0",
                 reason="Params is renamed to p and will be removed in a future version.",
             )
             p = kwargs.pop("params")
@@ -373,7 +373,7 @@ class TrackSolve:
         if "params" in kwargs:
             deprecate_args_or_kwargs(
                 "params",
-                version="2.3.0",
+                version="2.4.0",
                 reason="Params is renamed to p and will be removed in a future version.",
             )
             p = kwargs.pop("params")

@@ -127,7 +127,7 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
 
 
 @deprecate_class_func_or_method(
-    version="2.3.0",
+    version="2.4.0",
     reason="The set_use_numba function is deprecated. Use ps.options.numba = True/False instead.",
 )
 def set_use_numba(b: bool) -> None:
@@ -145,7 +145,7 @@ def set_use_numba(b: bool) -> None:
 
 
 @deprecate_class_func_or_method(
-    version="2.3.0",
+    version="2.4.0",
     reason="The get_use_numba function is deprecated. Use ps.options.numba instead.",
 )
 def get_use_numba() -> bool:
@@ -160,7 +160,7 @@ def get_use_numba() -> bool:
 
 
 @deprecate_class_func_or_method(
-    version="2.3.0",
+    version="2.4.0",
     reason="The set_use_cache function is deprecated. Use ps.options.cache = True/False instead.",
 )
 def set_use_cache(b: bool) -> None:
@@ -188,7 +188,7 @@ def set_use_cache(b: bool) -> None:
 
 
 @deprecate_class_func_or_method(
-    version="2.3.0",
+    version="2.4.0",
     reason="The get_use_cache function is deprecated. Use ps.options.cache instead.",
 )
 def get_use_cache() -> bool:

@@ -127,7 +127,7 @@ def series(
     if "head" in kwargs:
         deprecate_args_or_kwargs(
             name="head",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `oseries` instead of `head`.",
         )
         if oseries is None:
@@ -538,7 +538,7 @@ def cum_frequency(
     if "obs" in kwargs:
         deprecate_args_or_kwargs(
             name="obs",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `oseries` instead of `obs`.",
         )
         if oseries is None:

@@ -354,7 +354,7 @@ def get_sample_for_freq(
     if "s" in kwargs:
         deprecate_args_or_kwargs(
             name="s",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `s`.",
         )
         if series is None:
@@ -425,7 +425,7 @@ def timestep_weighted_resample(
     if "s" in kwargs:
         deprecate_args_or_kwargs(
             name="s",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `s`.",
         )
         if series is None:

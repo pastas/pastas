@@ -63,7 +63,7 @@ register_matplotlib_converters()
 
 
 @deprecate_class_func_or_method(
-    version="2.3.0",
+    version="2.4.0",
     reason="The LmfitSolve class will be removed from the pastas module namespace. Please use ps.solver.Lmfit instead.",
 )
 def LmfitSolve(*args, **kwargs):
@@ -72,7 +72,7 @@ def LmfitSolve(*args, **kwargs):
 
 
 @deprecate_class_func_or_method(
-    version="2.3.0",
+    version="2.4.0",
     reason="The EmceeSolve class will be removed from the pastas module namespace. Please use ps.solver.Emcee instead.",
 )
 def EmceeSolve(*args, **kwargs):
@@ -81,7 +81,7 @@ def EmceeSolve(*args, **kwargs):
 
 
 @deprecate_class_func_or_method(
-    version="2.3.0",
+    version="2.4.0",
     reason="The LeastSquares class will be removed from the pastas module namespace. Please use ps.solver.LeastSquares instead.",
 )
 def LeastSquares(*args, **kwargs):
