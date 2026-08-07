@@ -25,8 +25,8 @@ from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 from pastas.typing import ArrayLike, Model
 
 from .decorators import (
-    deprecate_class_func_or_method,
     check_argument_model,
+    deprecate_class_func_or_method,
     njit,
     set_parameter,
 )

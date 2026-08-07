@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 from pandas import DataFrame, Series
 
-from pastas.decorators import deprecate_class_func_or_method, deprecate_args_or_kwargs
+from pastas.decorators import deprecate_args_or_kwargs, deprecate_class_func_or_method
 from pastas.typing import ArrayLike, CallBack, Model
 
 from .._options import options

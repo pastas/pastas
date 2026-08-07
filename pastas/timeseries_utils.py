@@ -23,7 +23,7 @@ from pandas.tseries.frequencies import to_offset
 from pandas.tseries.offsets import BaseOffset
 from scipy import interpolate
 
-from .decorators import deprecate_class_func_or_method, deprecate_args_or_kwargs, njit
+from .decorators import deprecate_args_or_kwargs, deprecate_class_func_or_method, njit
 
 logger = logging.getLogger(__name__)
 

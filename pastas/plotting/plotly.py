@@ -10,7 +10,6 @@ Use Plotly for interactive plotting::
 """
 
 import numpy as np
-import pandas as pd
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 from scipy.stats import norm, probplot
@@ -23,7 +22,6 @@ from pastas.plotting.plotutil import (
 )
 from pastas.rfunc import HantushWellModel
 from pastas.stats import acf
-from pastas.timeseries_utils import _index_to_int64
 
 
 @register_model_accessor("plotly")

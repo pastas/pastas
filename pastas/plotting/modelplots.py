@@ -7,11 +7,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import DataFrame, Series, Timedelta, Timestamp, concat
+from pandas import DataFrame, Timedelta, Timestamp, concat
 
 from pastas.decorators import (
-    deprecate_class_func_or_method,
     deprecate_args_or_kwargs,
+    deprecate_class_func_or_method,
     model_tmin_tmax,
 )
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
@@ -23,7 +23,6 @@ from pastas.plotting.plotutil import (
     plot_series_with_gaps,
     share_xaxes,
 )
-from pastas.timeseries_utils import _index_to_int64
 from pastas.typing import Axes, Figure, Model, StressModel
 
 logger = logging.getLogger(__name__)

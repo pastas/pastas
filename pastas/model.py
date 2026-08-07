@@ -37,8 +37,8 @@ from pastas.check import (
     response_memory_vs_warmup,
 )
 from pastas.decorators import (
-    deprecate_class_func_or_method,
     deprecate_args_or_kwargs,
+    deprecate_class_func_or_method,
     get_stressmodel,
 )
 from pastas.io.base import _load_model, dump

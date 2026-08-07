@@ -35,10 +35,10 @@ from pastas.typing import (
 )
 
 from .decorators import (
-    deprecate_class_func_or_method,
     check_argument_model,
     conditional_cachedmethod,
     deprecate_args_or_kwargs,
+    deprecate_class_func_or_method,
     njit,
     set_parameter,
 )
