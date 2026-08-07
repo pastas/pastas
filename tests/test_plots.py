@@ -55,12 +55,14 @@ def test_results_kwargs_split_deprecation(ml_noisemodel: Model) -> None:
 
 
 def test_results_mosaic(ml_noisemodel: Model) -> None:
-    _ = ml_noisemodel.plots.results_mosaic(stderr=True, all_responses=False)
+    with pytest.warns(FutureWarning, match="return_dict"):
+        _ = ml_noisemodel.plots.results_mosaic(stderr=True, all_responses=False)
     plt.close()
 
 
 def test_results_mosaic_split(ml_noisemodel: Model) -> None:
-    _ = ml_noisemodel.plots.results_mosaic(split_contributions=True)
+    with pytest.warns(FutureWarning, match="return_dict"):
+        _ = ml_noisemodel.plots.results_mosaic(split_contributions=True)
     plt.close()
 
 
