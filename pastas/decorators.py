@@ -1,6 +1,6 @@
 """Module containing decorators and utility functions for Pastas models.
 
-Includes decorators for caching, configuring global settings, deprecation warnings,
+Includes decorators for caching, configuring global settings, deprecations,
 and other convenient methods for handling time, numba compiled code, etc.
 """
 
