@@ -1043,8 +1043,8 @@ def _validate_series(
     if series.hasnans:
         msg = (
             f"The series '{name}' has nan-values. Pastas will use the `fill_nan` "
-            "from the StressModel's settings (rcParams) parsed to the TimeSeries"
-            " settings to fill up the nan-values."
+            "from the StressModel's settings (ps.timeseries.settings) parsed to the "
+            "TimeSeries settings to fill up the nan-values."
         )
         logger.warning(msg)
         if verbose:

@@ -1140,7 +1140,7 @@ class Lmfit(LeastSquaresBase):
             logger.info(f"Setting {k} to {kwargs[k]} for LmfitSolve solver.")
             setattr(self, k, kwargs.pop(k))
 
-        noise = self.ml.noisemodel is not None
+        noise = self.model.noisemodel is not None
 
         # Deal with the parameters
         parameters = lmfit.Parameters()
