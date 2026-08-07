@@ -1,5 +1,6 @@
-"""This module contains functions to load datasets from the pastas-data repository on
-GitHub. The datasets are used for testing and examples in the documentation. The
+"""Functions to load datasets from the pastas-data repository on GitHub.
+
+The datasets are used for testing and examples in the documentation. The
 load_dataset function can be used to load a single csv file or multiple csv files from
 a subfolder in the pastas-data repository.
 
@@ -11,15 +12,27 @@ Load a single dataset from the "collenteur_2021" subfolder::
 
 """
 
+import logging
 from functools import lru_cache
+from typing import Literal, get_args
 
 from pandas import DataFrame, read_csv
 
 GITHUB_URL = "https://api.github.com/repos/pastas/pastas-data/contents/"
+DATASET_NAMES = Literal[
+    "collenteur_2019",
+    "collenteur_2021",
+    "collenteur_2023",
+    "collenteur_2024",
+    "spek_2017",
+    "vonk_2024",
+]
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache
-def load_dataset(name: str) -> DataFrame | dict[str, DataFrame]:
+def load_dataset(name: DATASET_NAMES) -> DataFrame | dict[str, DataFrame]:
     """Load csv-files from a subfolder in the pastas dataset repository on GitHub.
 
     Parameters
@@ -60,13 +73,20 @@ def load_dataset(name: str) -> DataFrame | dict[str, DataFrame]:
             "The requests package is required to load datasets from the pastas-data "
             "repository. Install requests using 'pip install requests'."
         )
+    from requests.exceptions import HTTPError
+
+    if name not in get_args(DATASET_NAMES):
+        logger.warning(
+            f"Possibly invalid dataset name: {name}. Use "
+            "ps.list_datasets() to get a list of available datasets."
+        )
 
     # Get the folder from the pastas-data repository
     r = requests.get(f"{GITHUB_URL}/{name}/")
 
     # Check if requests status is okay, otherwise raise error and return status code
     if not r.status_code == 200:
-        raise Exception(f"Error: {r.status_code}. Reason: {r.reason}. ")
+        raise HTTPError(f"Error: {r.status_code}. Reason: {r.reason}. ")
 
     # Get information about the files in the folder
     data = {}
@@ -74,7 +94,7 @@ def load_dataset(name: str) -> DataFrame | dict[str, DataFrame]:
     # Loop over the files in the folder
     rjson = r.json()
     read_csv_kwargs = requests.get(
-        [x for x in rjson if x["name"] == "settings.json"][0]["download_url"]
+        next(x for x in rjson if x["name"] == "settings.json")["download_url"]
     ).json()
     for file in rjson:
         fname = file["name"]
@@ -85,11 +105,11 @@ def load_dataset(name: str) -> DataFrame | dict[str, DataFrame]:
     # Return the data, if only one file is found return the dataframe, otherwise return
     # a dictionary with the dataframes
     if len(data) == 1:
-        return list(data.values())[0]
+        return next(iter(data.values()))
     elif len(data) > 1:
         return data
     else:
-        raise Exception(
+        raise FileNotFoundError(
             f"No csv files found in the folder {name}. Check the pastas-data repository "
             "on GitHub for available datasets."
         )
@@ -119,13 +139,14 @@ def list_datasets(silent: bool = True) -> list[str]:
             "The requests package is required to load datasets from the pastas-data "
             "repository. Install requests using 'pip install requests'."
         )
+    from requests.exceptions import HTTPError
 
     # Get the folder from the pastas-data repository
     r = requests.get(GITHUB_URL)
 
     # Check if requests status is okay, otherwise raise error and return status code
     if not r.status_code == 200:
-        raise Exception(f"Error: {r.status_code}. Reason: {r.reason}. ")
+        raise HTTPError(f"Error: {r.status_code}. Reason: {r.reason}. ")
 
     # Get information about the files in the folder
     data = []

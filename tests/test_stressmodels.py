@@ -23,20 +23,27 @@ def stress_model(ml_sm: ps.Model) -> StressModel:
     return ml_sm.stressmodels["prec"]
 
 
+def _component_model(index: pd.Index | None = None) -> ps.Model:
+    """Create a model instance that can own stress model components."""
+    if index is None:
+        index = pd.date_range(start="2000-01-01", periods=365, freq="D")
+    obs = pd.Series(np.zeros(len(index)), index=index, name="head")
+    return ps.Model(obs)
+
+
 class TestStressModelBase:
     """Test StressModelBase methods."""
 
     def test_update_stress(self, stress_model: StressModel) -> None:
         """Test updating stress settings."""
         # Get original frequency
-        original_freq = stress_model.freq
+        original_freq = stress_model.stress.settings["freq"]
 
         # Update to weekly frequency
         stress_model.update_stress(freq="7D")
 
         # Check if frequency was updated
-        assert stress_model.freq == "7D"
-        assert stress_model.stress[0].settings["freq"] == "7D"
+        assert stress_model.stress.settings["freq"] == "7D"
 
         # Reset to original frequency
         stress_model.update_stress(freq=original_freq)
@@ -54,24 +61,35 @@ class TestStressModelBase:
         assert stress_limited.index[0] >= pd.Timestamp(tmin)
         assert stress_limited.index[-1] <= pd.Timestamp(tmax)
 
+    def test_freq_deprecated(self, stress_model: StressModel) -> None:
+        """Test that the freq attribute raises an AttributeError."""
+        with pytest.raises(AttributeError, match="freq"):
+            _ = stress_model.freq
+
 
 class TestStressModel:
     """Test StressModel."""
 
     def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
-        sm = StressModel(stress=prec, rfunc=ps.Exponential(), name="test")
+        sm = StressModel(
+            model=_component_model(prec.index),
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="test",
+        )
         assert sm.name == "test"
         assert isinstance(sm.rfunc, ps.Exponential)
 
         # Test with different settings
         sm = StressModel(
+            model=_component_model(prec.index),
             stress=prec,
             rfunc=ps.Exponential(),
             name="test",
             settings={"fill_nan": "mean"},
         )
-        assert sm.stress[0].settings["fill_nan"] == "mean"
+        assert sm.stress.settings["fill_nan"] == "mean"
 
     def test_simulate(self, stress_model: StressModel) -> None:
         """Test simulate method."""
@@ -83,7 +101,7 @@ class TestStressModel:
 
         # Check results
         assert isinstance(sim, pd.Series)
-        assert len(sim) == len(stress_model.stress[0].series)
+        assert len(sim) == len(stress_model.stress.series)
         assert not np.isnan(sim).any()
 
     def test_to_dict(self, stress_model: StressModel) -> None:
@@ -105,7 +123,7 @@ class TestStepModel:
 
     def test_init(self) -> None:
         """Test initialization."""
-        sm = StepModel(tstart="2001-01-01", name="step1")
+        sm = StepModel(model=_component_model(), tstart="2001-01-01", name="step1")
         assert sm.name == "step1"
         assert sm.tstart == pd.Timestamp("2001-01-01")
 
@@ -115,7 +133,7 @@ class TestStepModel:
 
     def test_simulate(self) -> None:
         """Test simulate method."""
-        sm = StepModel(tstart="2001-01-01", name="step1")
+        sm = StepModel(model=_component_model(), tstart="2001-01-01", name="step1")
 
         # Get parameters
         p = sm.parameters.initial.values
@@ -139,17 +157,27 @@ class TestLinearTrend:
 
     def test_init(self) -> None:
         """Test initialization."""
-        sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        sm = LinearTrend(
+            model=_component_model(),
+            tstart="2001-01-01",
+            tend="2002-01-01",
+            name="trend1",
+        )
         assert sm.name == "trend1"
-        assert sm.start == "2001-01-01"
-        assert sm.end == "2002-01-01"
+        assert sm.tstart == "2001-01-01"
+        assert sm.tend == "2002-01-01"
 
     def test_simulate(self) -> None:
         """Test simulate method."""
-        sm = LinearTrend(start="2001-01-01", end="2002-01-01", name="trend1")
+        sm = LinearTrend(
+            model=_component_model(),
+            tstart="2001-01-01",
+            tend="2002-01-01",
+            name="trend1",
+        )
 
         # Set positive trend
-        p = sm.parameters.initial.values
+        p = sm.parameters.loc[:, "initial"].to_numpy(copy=True)
         p[0] = 1.0  # Set slope to positive value
 
         # Run simulation
@@ -173,13 +201,46 @@ class TestLinearTrend:
         post_trend = sim.loc["2002-01-01":]
         assert np.allclose(post_trend.diff().dropna().values, 0)
 
+    def test_deprecated_arguments(self) -> None:
+        """Test that deprecated 'start' and 'end' arguments raise warnings."""
+        # Test deprecated 'start' argument
+        with pytest.warns(FutureWarning, match="start.*deprecated|deprecated.*start"):
+            sm = LinearTrend(
+                model=_component_model(),
+                start="2001-01-01",
+                tend="2002-01-01",
+                name="trend1",
+            )
+        assert sm.tstart == "2001-01-01"
+
+        # Test deprecated 'end' argument
+        with pytest.warns(FutureWarning, match="end.*deprecated|deprecated.*end"):
+            sm = LinearTrend(
+                model=_component_model(),
+                tstart="2001-01-01",
+                end="2002-01-01",
+                name="trend1",
+            )
+        assert sm.tend == "2002-01-01"
+
+        # Test both deprecated arguments
+        with pytest.warns(FutureWarning):
+            sm = LinearTrend(
+                model=_component_model(),
+                start="2001-01-01",
+                end="2002-01-01",
+                name="trend1",
+            )
+        assert sm.tstart == "2001-01-01"
+        assert sm.tend == "2002-01-01"
+
 
 class TestConstant:
     """Test Constant."""
 
     def test_init(self) -> None:
         """Test initialization."""
-        sm = Constant(name="constant", initial=5.0)
+        sm = Constant(model=_component_model(), name="constant", initial=5.0)
         assert sm.name == "constant"
         assert sm.initial == 5.0
 
@@ -188,7 +249,7 @@ class TestConstant:
 
     def test_simulate(self) -> None:
         """Test simulate method."""
-        sm = Constant(name="constant", initial=5.0)
+        sm = Constant(model=_component_model(), name="constant", initial=5.0)
 
         # Test simulation (static value)
         result = sm.simulate(p=5.0)
@@ -220,6 +281,7 @@ class TestRechargeModel:
     def test_init_linear(self) -> None:
         """Test initialization with Linear recharge model."""
         rm = RechargeModel(
+            model=_component_model(self.prec.index),
             prec=self.prec,
             evap=self.evap,
             name="rech1",
@@ -227,11 +289,12 @@ class TestRechargeModel:
         )
         assert rm.name == "rech1"
         assert rm.recharge._name == "Linear"
-        assert len(rm.stress) == 2  # prec and evap
+        assert len(rm.stresses) == 2  # prec and evap
 
     def test_init_flex(self) -> None:
         """Test initialization with FlexModel recharge model."""
         rm = RechargeModel(
+            model=_component_model(self.prec.index),
             prec=self.prec,
             evap=self.evap,
             name="rech2",
@@ -247,6 +310,7 @@ class TestRechargeModel:
 
         with pytest.raises(TypeError) as e:
             RechargeModel(
+                model=_component_model(self.prec.index),
                 prec=self.prec,
                 evap=self.evap,
                 name="rech_error",
@@ -259,6 +323,7 @@ class TestRechargeModel:
 
         # Create recharge model that needs temperature
         rm = RechargeModel(
+            model=_component_model(self.prec.index),
             prec=self.prec,
             evap=self.evap,
             name="rech_temp",
@@ -269,12 +334,13 @@ class TestRechargeModel:
         )
 
         assert rm.name == "rech_temp"
-        assert len(rm.stress) == 3  # prec, evap, and temp
+        assert len(rm.stresses) == 3  # prec, evap, and temp
         assert rm.temp is not None
 
     def test_get_stress(self) -> None:
         """Test get_stress method."""
         rm = RechargeModel(
+            model=_component_model(self.prec.index),
             prec=self.prec,
             evap=self.evap,
             name="rech_stress",
@@ -318,16 +384,18 @@ class TestWellModel:
     def test_init(self) -> None:
         """Test initialization."""
         wm = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells",
             distances=self.distances,
         )
         assert wm.name == "wells"
-        assert len(wm.stress) == 3
+        assert len(wm.stresses) == 3
         assert len(wm.distances) == 3
 
         # Test with sorting
         wm_sorted = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells_sorted",
             distances=self.distances,
@@ -339,18 +407,20 @@ class TestWellModel:
         """Test error when number of stresses and distances don't match."""
         with pytest.raises(ValueError) as e:
             WellModel(
+                model=_component_model(self.well1.index),
                 stress=[self.well1, self.well2],
                 name="wells_error",
                 distances=[100, 200, 300],
             )
         assert (
-            "number of stresses does not match the number of distances"
+            "the number of distances must match the number of stresses."
             in str(e.value).lower()
         )
 
     def test_get_distances(self) -> None:
         """Test get_distances method."""
         wm = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells_dist",
             distances=self.distances,
@@ -375,6 +445,7 @@ class TestWellModel:
     def test_simulate(self) -> None:
         """Test simulate method."""
         wm = WellModel(
+            model=_component_model(self.well1.index),
             stress=[self.well1, self.well2, self.well3],
             name="wells_sim",
             distances=self.distances,
@@ -396,6 +467,73 @@ class TestWellModel:
         assert sim1.name == "well1"
         assert len(sim1) == len(self.well1)
 
+    def test_set_stress(self) -> None:
+        """Test set_stress method."""
+        wm = WellModel(
+            model=_component_model(self.well1.index),
+            stress=[self.well1, self.well2, self.well3],
+            name="wells_set",
+            distances=self.distances,
+        )
+
+        # Create new stress series
+        new_well1 = self.well1 * 2
+        new_well2 = self.well2 * 2
+        new_well3 = self.well3 * 2
+
+        # Set new stresses
+        wm.set_stress([new_well1, new_well2, new_well3])
+
+        # Verify that stresses were updated
+        assert wm.stresses[0].series.equals(new_well1)
+        assert wm.stresses[1].series.equals(new_well2)
+        assert wm.stresses[2].series.equals(new_well3)
+
+        new_well4 = self.well1 * 3
+        wm.stress = new_well4
+        assert wm.stresses[0].series.equals(new_well4)
+
+    def test_set_stress_error(self) -> None:
+        """Test error when setting stress with incorrect number of series."""
+        wm = WellModel(
+            model=_component_model(self.well1.index),
+            stress=[self.well1, self.well2, self.well3],
+            name="wells_set_error",
+            distances=self.distances,
+        )
+
+        new_well1 = self.well1 * 2
+        new_well2 = self.well2 * 2
+
+        with pytest.raises(ValueError) as e:
+            wm.set_stress([new_well1, new_well2])
+        assert (
+            "the number of stress time series must match the number of distances."
+            in str(e.value).lower()
+        )
+
+        new_well3 = (self.well3 * 2).rename("wrong_name")
+        with pytest.raises(ValueError) as e:
+            wm.set_stress(new_well3)
+        assert "when setting a single stress series," in str(e.value).lower()
+
+        new_well4 = (self.well1 * 2).rename("name1")
+        new_well5 = (self.well2 * 2).rename("name2")
+        new_well6 = (self.well3 * 2).rename("name3")
+        with pytest.raises(ValueError) as e:
+            wm.set_stress([new_well4, new_well5, new_well6])
+        assert (
+            "new names of the stress time series were provided that do not match the original names on initialization."
+            in str(e.value).lower()
+        )
+
+        with pytest.raises(AttributeError) as e:
+            wm.stress[0] = new_well1
+        assert (
+            "cannot set values in stress directly anymore. please use the `set_stress` method."
+            in str(e.value).lower()
+        )
+
 
 class TestChangeModel:
     """Test ChangeModel."""
@@ -403,6 +541,7 @@ class TestChangeModel:
     def test_init(self, prec: pd.Series) -> None:
         """Test initialization."""
         cm = ChangeModel(
+            model=_component_model(prec.index),
             stress=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),
@@ -417,6 +556,7 @@ class TestChangeModel:
     def test_simulate(self, prec: pd.Series) -> None:
         """Test simulate method."""
         cm = ChangeModel(
+            model=_component_model(prec.index),
             stress=prec,
             rfunc1=ps.Exponential(),
             rfunc2=ps.Gamma(),

@@ -1,65 +1,70 @@
-"""Noise models may be used to transform the residual series into a noise series that
-better represents white noise.
+"""Module for noise models.
+
+Noise models may be used to transform the residual
+series into a noise series that better represents
+white noise.
 
 Examples
 --------
 A noise model can be added to a Pastas model.::
 
-    n = ps.ArmaNoiseModel()
-    ml.add_noisemodel(n)
+    n = ps.ArmaNoiseModel(model=ml)
 
 Or delete the noise model from the model::
 
     ml.del_noisemodel()
 
-See Also
---------
-pastas.model.Model.add_noisemodel
 """
 
+from abc import ABC, abstractmethod
 from logging import getLogger
 
 import numpy as np
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 
-from pastas.typing import ArrayLike
+from pastas.typing import ArrayLike, Model
 
-from .decorators import PastasDeprecationWarning, njit, set_parameter
+from .decorators import (
+    check_argument_model,
+    deprecate_class_func_or_method,
+    njit,
+    set_parameter,
+)
 
 logger = getLogger(__name__)
 
 __all__ = ["ArNoiseModel", "ArmaNoiseModel"]
 
 
-class NoiseModelBase:
-    _name = "NoiseModelBase"
+class NoiseModelBase(ABC):
+    """Base class for noise models."""
 
-    def __init__(self) -> None:
-        self.nparam = 1
-        self.name = "noise"
-        self.norm = None
-        self.parameters = DataFrame(
-            columns=["initial", "pmin", "pmax", "vary", "name", "dist"]
-        )
+    def __init__(self, model: Model, name: str, norm: bool | None = None) -> None:
+        self.model = model
+        self.name = name
+        self.norm = norm
+        self.parameters = DataFrame(columns=["initial", "pmin", "pmax", "vary", "name"])
 
+    @property
+    def _name(self) -> str:
+        return self.__class__.__name__
+
+    @property
+    @abstractmethod
+    def nparam(self) -> int:
+        """Number of parameters of the noise model."""
+
+    @abstractmethod
+    def simulate(self, res: Series, p: ArrayLike) -> Series:
+        """Simulate noise from the residual series."""
+
+    @abstractmethod
     def set_init_parameters(self, oseries: Series | None = None) -> None:
-        if oseries is not None:
-            pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
-            pinit = np.median(pinit)
-        else:
-            pinit = 14.0
-        self.parameters.loc["noise_alpha"] = (
-            pinit,
-            1e-5,
-            5000.0,
-            True,
-            "noise",
-            "uniform",
-        )
+        """Set initial noise model parameters."""
 
     @set_parameter
     def _set_initial(self, name: str, value: float) -> None:
-        """Internal method to set the initial parameter value.
+        """Set the initial parameter value.
 
         Notes
         -----
@@ -69,7 +74,7 @@ class NoiseModelBase:
 
     @set_parameter
     def _set_pmin(self, name: str, value: float) -> None:
-        """Internal method to set the minimum value of the noisemodel.
+        """Set the minimum value of the noisemodel.
 
         Notes
         -----
@@ -79,7 +84,7 @@ class NoiseModelBase:
 
     @set_parameter
     def _set_pmax(self, name: str, value: float) -> None:
-        """Internal method to set the maximum parameter values.
+        """Set the maximum parameter values.
 
         Notes
         -----
@@ -89,7 +94,7 @@ class NoiseModelBase:
 
     @set_parameter
     def _set_vary(self, name: str, value: float) -> None:
-        """Internal method to set if the parameter is varied.
+        """Set if the parameter is varied.
 
         Notes
         -----
@@ -97,31 +102,28 @@ class NoiseModelBase:
         """
         self.parameters.at[name, "vary"] = value
 
-    @set_parameter
-    def _set_dist(self, name: str, value: str) -> None:
-        """Internal method to set distribution of prior of the parameter.
-
-        Notes
-        -----
-        The preferred method for parameter setting is through the model.
-        """
-        self.parameters.at[name, "dist"] = str(value)
+    def _set_model(self, model: Model) -> None:
+        """Set the Pastas Model for the noise model."""
+        self.model = model
 
     def to_dict(self) -> dict:
-        """Method to return a dict to store the noise model"""
-        data = {"class": self._name, "norm": self.norm}
-        return data
+        """Return a dict to store the noise model."""
+        return {"class": self._name, "norm": self.norm}
 
-    @staticmethod
-    def weights(res, p) -> int:
+    def weights(self, res: Series, p: ArrayLike) -> Series | int:
+        _, _ = res, p
         return 1
 
 
 class ArNoiseModel(NoiseModelBase):
-    """Noise model with exponential decay of the residuals and weighting.
+    r"""Noise model with exponential decay of the residuals and weighting.
 
     Parameters
     ----------
+    model: pastas.Model
+        The Pastas Model instance to which the noise model is added.
+    name: str, optional
+        Name of the noise model. Default is "noise".
     norm: boolean, optional
         Boolean to indicate whether weights are normalized according to the Von
         Asmuth and Bierkens (2005) paper. Default is True.
@@ -146,16 +148,47 @@ class ArNoiseModel(NoiseModelBase):
     optional.
     """
 
-    _name = "ArNoiseModel"
-
-    def __init__(self, norm: bool = True) -> None:
-        NoiseModelBase.__init__(self)
-        self.norm = norm
-        self.nparam = 1
+    @check_argument_model
+    def __init__(self, model: Model, name: str = "noise", norm: bool = True) -> None:
+        super().__init__(model=model, name=name, norm=norm)
         self.set_init_parameters()
+        if model is not None:
+            self.model._add_noisemodel(self)
 
-    @staticmethod
-    def simulate(res: Series, p: ArrayLike) -> Series:
+    def set_init_parameters(self, oseries: Series | None = None) -> None:
+        """Set initial parameters for the noise model.
+
+        Parameters
+        ----------
+        oseries : pandas.Series, optional
+            Observation series used to estimate initial parameters. If None,
+            default values are used. Default is None.
+        """
+        if oseries is not None:
+            pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
+            pinit = np.median(pinit)
+        else:
+            pinit = 14.0
+        self.parameters.loc[f"{self.name}_alpha"] = (
+            pinit,
+            1e-5,
+            5000.0,
+            True,
+            self.name,
+        )
+
+    @property
+    def nparam(self) -> int:
+        """Number of parameters for the noise model.
+
+        Returns
+        -------
+        int
+            Number of parameters (1 for ArNoiseModel).
+        """
+        return 1
+
+    def simulate(self, res: Series, p: ArrayLike) -> Series:
         """Simulate noise from the residuals.
 
         Parameters
@@ -173,13 +206,12 @@ class ArNoiseModel(NoiseModelBase):
         """
         alpha = p[0]
         odelt = np.diff(res.index.to_numpy()) / Timedelta("1D")
-        v = np.append(
-            res.values[0], res.values[1:] - np.exp(-odelt / alpha) * res.values[:-1]
-        )
+        resv = res.to_numpy()
+        v = np.append(resv[0], resv[1:] - np.exp(-odelt / alpha) * resv[:-1])
         return Series(data=v, index=res.index, name="Noise")
 
     def weights(self, res: Series, p: ArrayLike) -> Series:
-        """Method to calculate the weights for the noise.
+        r"""Calculate the weights for the noise.
 
         Parameters
         ----------
@@ -214,9 +246,12 @@ class ArNoiseModel(NoiseModelBase):
         return Series(data=w, index=res.index, name="noise_weights")
 
     def get_correction(
-        self, res: Series, p: ArrayLike, tindex: DatetimeIndex
+        self,
+        res: Series,
+        p: ArrayLike,
+        tindex: DatetimeIndex,
     ) -> Series:
-        """Get the correction for a forecast using the noise model.
+        r"""Get correction for a forecast using the noise model.
 
         Parameters
         ----------
@@ -257,24 +292,26 @@ class ArNoiseModel(NoiseModelBase):
         return correction
 
     def to_dict(self) -> dict:
-        """Method to return a dict to store the noise model"""
-        data = {"class": self._name, "norm": self.norm}
-        return data
+        """Return a dict to store the noise model."""
+        return super().to_dict()
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="Please use `ps.ArNoiseModel` instead.",
 )
 def NoiseModel(*args, **kwargs) -> ArNoiseModel:
     n = ArNoiseModel(*args, **kwargs)
-    n._name = "NoiseModel"
     return n
 
 
 class ArmaNoiseModel(NoiseModelBase):
-    """ARMA(1,1) Noise model to simulate the noise as defined in
-    :cite:t:`collenteur_estimation_2021`.
+    r"""ARMA(1,1) Noise model to simulate the noise as defined in :cite:t:`collenteur_estimation_2021`.
+
+    Warnings
+    --------
+    This model has only been tested on regular time steps and should not be used for
+    irregular time steps yet.
 
     Notes
     -----
@@ -286,44 +323,71 @@ class ArmaNoiseModel(NoiseModelBase):
         e^{-\\Delta t/\\beta}
 
     The units of the alpha and beta parameters are always in days.
-
-    Warnings
-    --------
-    This model has only been tested on regular time steps and should not be used for
-    irregular time steps yet.
     """
 
-    _name = "ArmaNoiseModel"
-
-    def __init__(self) -> None:
-        NoiseModelBase.__init__(self)
-        self.nparam = 2
+    @check_argument_model
+    def __init__(self, model: Model, name: str = "noise", norm: bool = True) -> None:
+        super().__init__(model=model, name=name, norm=norm)
         self.set_init_parameters()
+        if model is not None:
+            self.model._add_noisemodel(self)
 
-    def set_init_parameters(self, oseries: Series = None) -> None:
+    @property
+    def nparam(self) -> int:
+        """Number of parameters for the noise model.
+
+        Returns
+        -------
+        int
+            Number of parameters (2 for ArmaNoiseModel: alpha and beta).
+        """
+        return 2
+
+    def set_init_parameters(self, oseries: Series | None = None) -> None:
+        """Set initial parameters for the noise model.
+
+        Parameters
+        ----------
+        oseries : pandas.Series, optional
+            Observation series used to estimate initial parameters. If None,
+            default values are used. Default is None.
+        """
         if oseries is not None:
             pinit = np.diff(oseries.index.to_numpy()) / Timedelta("1D")
             pinit = np.median(pinit)
         else:
             pinit = 14.0
-        self.parameters.loc["noise_alpha"] = (
+        self.parameters.loc[f"{self.name}_alpha"] = (
             pinit,
             1e-9,
             5000.0,
             True,
-            "noise",
-            "uniform",
+            self.name,
         )
-        self.parameters.loc["noise_beta"] = (
+        self.parameters.loc[f"{self.name}_beta"] = (
             1.0,
             -np.inf,
             np.inf,
             True,
-            "noise",
-            "uniform",
+            self.name,
         )
 
     def simulate(self, res: Series, p: ArrayLike) -> Series:
+        """Simulate noise from the residual series.
+
+        Parameters
+        ----------
+        res : pandas.Series
+            The residual series.
+        p : array_like
+            array_like object with the values as floats representing the model
+            parameters. Here, Alpha and Beta parameters used by the noisemodel.
+
+        Returns
+        -------
+        noise : pandas.Series
+            Series of the noise.
+        """
         alpha = p[0]
         beta = p[1]
 
@@ -337,6 +401,24 @@ class ArmaNoiseModel(NoiseModelBase):
     def calculate_noise(
         res: ArrayLike, odelt: ArrayLike, alpha: float, beta: float
     ) -> ArrayLike:
+        """Calculate the noise values for the ARMA(1,1) noise model.
+
+        Parameters
+        ----------
+        res : array_like
+            Array of residual values.
+        odelt : array_like
+            Array of time steps between observations in days.
+        alpha : float
+            Alpha parameter for the noise model.
+        beta : float
+            Beta parameter for the noise model.
+
+        Returns
+        -------
+        array_like
+            Array of noise values.
+        """
         # Create an array to store the noise
         a = np.zeros_like(res)
         a[0] = res[0]
@@ -355,12 +437,15 @@ class ArmaNoiseModel(NoiseModelBase):
             )
         return a
 
+    def to_dict(self) -> dict:
+        """Return a dict to store the noise model."""
+        return super().to_dict()
 
-@PastasDeprecationWarning(
+
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="Please use `ps.ArmaNoiseModel` instead.",
 )
 def ArmaModel(*args, **kwargs) -> ArmaNoiseModel:
     n = ArmaNoiseModel(*args, **kwargs)
-    n._name = "ArmaModel"
     return n

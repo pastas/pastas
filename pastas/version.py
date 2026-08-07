@@ -14,39 +14,23 @@ from platform import python_version
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.14.0"
+__version__ = "2.0.0rc0"
 
 
-def get_versions(
-    optional: bool = False, lmfit: bool = False, latexify: bool = False
-) -> str:
-    """Method to get the version of dependencies.
+def get_versions(optional: bool = False) -> dict[str, str]:
+    """Get version of dependencies.
 
     Parameters
     ----------
     optional: bool, optional
         Add the version of optional dependencies if installed.
-    lmfit: bool, optional
-        Print the version of LMfit if installed. Deprecated since v1.6.0.
-    latexify: bool, optional
-        Print the version of Latexify if installed. Deprecated since v1.6.0.
 
     Returns
     -------
-    str
-        String with the version of the dependencies.
+    dict[str, str]
+        Dictionary with the version of the dependencies.
 
     """
-    if lmfit:
-        logger.warning(
-            "The lmfit argument is deprecated and will be removed in a future version."
-        )
-    if latexify:
-        logger.warning(
-            "The latexify argument is deprecated and will be removed in a "
-            "future version."
-        )
-
     version_dict = {}
     version_dict["pastas"] = __version__
     version_dict["python"] = python_version()
@@ -59,7 +43,11 @@ def get_versions(
         "numba",
     )
     for module in required_dependencies:
-        version_dict[module] = metadata.version(module)
+        try:
+            import_module(module)
+            version_dict[module] = metadata.version(module)
+        except ImportError:
+            version_dict[module] = "Not Installed"
 
     if optional:
         optional_dependencies = (
@@ -68,13 +56,12 @@ def get_versions(
             "emcee",
             "bokeh",
             "plotly",
-            "latexify",
+            "cachetools",
         )
         for module in optional_dependencies:
             try:
                 import_module(module)
-                module_name = module if module != "latexify" else "latexify-py"
-                version_dict[module] = metadata.version(module_name) + " (optional)"
+                version_dict[module] = metadata.version(module) + " (optional)"
             except ImportError:
                 version_dict[module] = "Not Installed"
 
@@ -82,7 +69,7 @@ def get_versions(
 
 
 def show_versions(optional: bool = False) -> None:
-    """Method to print the version of dependencies.
+    """Print the version of dependencies.
 
     Parameters
     ----------
@@ -92,7 +79,7 @@ def show_versions(optional: bool = False) -> None:
     """
     version_dict = get_versions(optional=optional)
 
-    max_len_key = max(len(key) for key in version_dict.keys()) + 1
+    max_len_key = max(len(key) for key in version_dict) + 1
     msg = ""
     # msg = f"{'Package':<{max_len_key}}: Version\n"
     # msg += "-" * (max_len_key + 9) + "\n"

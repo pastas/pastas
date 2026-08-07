@@ -19,13 +19,13 @@ maintainers = [
     { name = "O.N. Ebbens", email = "o.ebbens@artesia-water.nl" },
     { name = "M.A. Vonk", email = "vonk.mart@gmail.com" },
 ]
-requires-python = ">= 3.10"
+requires-python = ">= 3.11, < 3.15"
 dependencies = [
-    "numpy >= 2.0.0",
-    "matplotlib >= 3.9.0",
-    "pandas >= 2.2.2, < 3.0",
-    "scipy >= 1.13.0",
-    "numba >= 0.60.0",
+    "numpy >= 2.0.0, < 3.0",
+    "matplotlib >= 3.9.0, < 4.0",
+    "pandas >= 2.2.0, < 4.0",
+    "scipy >= 1.16.0, < 2.0",
+    "numba >= 0.60.0, < 1.0",
 ]
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
 classifiers = [
@@ -34,7 +34,6 @@ classifiers = [
     'Intended Audience :: Other Audience',
     'Topic :: Scientific/Engineering :: Hydrology',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
@@ -49,7 +48,6 @@ download = "https://pypi.org/project/pastas/"
 
 [project.optional-dependencies]
 solvers = ["lmfit >= 1.3.2", "emcee >= 3.1.5"]
-latexify = ["latexify-py"]
 interactive = ["bokeh >= 3.6", "plotly"]
 datasets = ["requests"]
 ruffing = ["ruff"]
@@ -57,17 +55,18 @@ formatting = ["pastas[ruffing]"]
 linting = ["pastas[ruffing]"]
 caching = ["cachetools"]
 codespelling = ["codespell[toml]"]
-full = ["pastas[latexify,solvers,interactive,datasets,caching]"]
-pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
+mpmath = ["mpmath"]
+full = ["pastas[solvers,interactive,datasets,caching,mpmath]"]
+pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar", "papermill"]
 ci = [
-    "pastas[pytesting,solvers,interactive,caching]",
+    "pastas[pytesting,solvers,interactive,caching,mpmath]",
     "jupyter",
     "coverage",
     "corner",
     "tqdm",
 ]
 rtd = [
-    "pastas[solvers,latexify]",
+    "pastas[solvers]",
     "Ipython",
     "ipykernel",
     "pydata-sphinx-theme",
@@ -89,9 +88,18 @@ version = { attr = "pastas.version.__version__" }
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
-lint.extend-select = ["I"]
 show-fixes = true
 fix = true
+
+[tool.ruff.lint]
+extend-select = ["I", "D"]
+pydocstyle.convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D"]
+"doc/**/*.ipynb" = ["D"]
+"doc/**/*.py" = ["D"]
+
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers --durations=0"
@@ -124,7 +132,7 @@ commands = [
 ]
 
 [tool.tox.env.all]
-description = "run all unit tests (including Notebooks) and obtain coverage"
+description = "run all unit tests and notebooks"
 extras = ["ci"]
 commands = [
     [
@@ -138,7 +146,7 @@ commands = [
     ],
     [
         "coverage",
-        "xml",
+        "json",
     ],
 ]
 

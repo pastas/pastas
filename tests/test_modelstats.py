@@ -65,6 +65,17 @@ class TestStatistics:
         mae_weighted = ml_solved.stats.mae(weighted=True)
         assert isinstance(mae_weighted, float)
 
+    def test_me(self, ml_solved: ps.Model) -> None:
+        """Test ME calculation."""
+        me = ml_solved.stats.me()
+
+        # Should return a float value
+        assert isinstance(me, float)
+
+        # Test weighted version
+        me_weighted = ml_solved.stats.me(weighted=True)
+        assert isinstance(me_weighted, float)
+
     def test_nse(self, ml_solved: ps.Model) -> None:
         """Test NSE calculation."""
         nse = ml_solved.stats.nse()
@@ -131,13 +142,8 @@ class TestStatistics:
 
     def test_kge_2012(self, ml_solved: ps.Model) -> None:
         """Test KGE 2012 calculation."""
-        kge_2012 = ml_solved.stats.kge_2012()
-
-        # Should return a float value
-        assert isinstance(kge_2012, float)
-
-        # KGE 2012 should be <= 1.0 (theoretical maximum)
-        assert kge_2012 <= 1.0
+        with pytest.raises(AttributeError):
+            _ = ml_solved.stats.kge_2012()
 
     def test_information_criteria(self, ml_solved: ps.Model) -> None:
         """Test information criteria calculations."""
@@ -168,7 +174,7 @@ class TestStatistics:
         assert isinstance(summary, pd.DataFrame)
 
         # Should contain default stats
-        for stat in ["rmse", "sse", "mae", "rsq", "evp"]:
+        for stat in ["rmse", "sse", "mae", "me", "rsq", "evp"]:
             assert stat in summary.index
 
         # Get summary with specific stats

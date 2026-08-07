@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pytest
 from pandas import Series
 
 from pastas import Model
-from pastas.plotting.plots import TrackSolve, compare, pairplot
+from pastas.plotting.plots import compare, pairplot
+from pastas.solver.trackers import TrackSolve
 
 # mpl.use("Agg")  # prevent _tkinter.TclError: Can't find a usable tk.tcl error
 
@@ -18,6 +21,17 @@ def test_decomposition(ml_noisemodel: Model) -> None:
     plt.close()
 
 
+def test_decomposition_kwargs(ml_noisemodel: Model) -> None:
+    _ = ml_noisemodel.plots.decomposition(split_contributions=False)
+    plt.close()
+
+
+def test_decomposition_split_deprecation(ml_noisemodel: Model) -> None:
+    with pytest.warns(FutureWarning, match="split"):
+        _ = ml_noisemodel.plots.decomposition(split=True)
+    plt.close()
+
+
 def test_results(ml_noisemodel: Model) -> None:
     _ = ml_noisemodel.plots.results()
     plt.close()
@@ -25,16 +39,30 @@ def test_results(ml_noisemodel: Model) -> None:
 
 def test_results_kwargs(ml_noisemodel: Model) -> None:
     _ = ml_noisemodel.plots.results(
-        split=True,
+        split_contributions=True,
         block_or_step="block",
+        all_responses=False,
         adjust_height=False,
         return_warmup=True,
     )
     plt.close()
 
 
+def test_results_kwargs_split_deprecation(ml_noisemodel: Model) -> None:
+    with pytest.warns(FutureWarning, match="split"):
+        _ = ml_noisemodel.plots.results(split=True)
+    plt.close()
+
+
 def test_results_mosaic(ml_noisemodel: Model) -> None:
-    _ = ml_noisemodel.plots.results_mosaic(stderr=True)
+    with pytest.raises(AttributeError, match="return_dict"):
+        _ = ml_noisemodel.plots.results_mosaic(stderr=True, all_responses=False)
+    plt.close()
+
+
+def test_results_mosaic_split(ml_noisemodel: Model) -> None:
+    with pytest.raises(AttributeError, match="return_dict"):
+        _ = ml_noisemodel.plots.results_mosaic(split_contributions=True)
     plt.close()
 
 
@@ -54,7 +82,7 @@ def test_step_response(ml_basic: Model) -> None:
 
 
 def test_diagnostics(ml_noisemodel: Model) -> None:
-    _ = ml_noisemodel.plots.diagnostics(acf_options=dict(min_obs=10))
+    _ = ml_noisemodel.plots.diagnostics(acf_options={"min_obs": 10})
     plt.close()
 
 
@@ -83,7 +111,9 @@ def test_tracksolve(ml_solved: Model) -> None:
 
 
 def test_summary_pdf(ml_noisemodel: Model) -> None:
-    _ = ml_noisemodel.plots.summary_pdf()
+    fname = Path("summary_pdf_test.pdf")
+    _ = ml_noisemodel.plots.summary_pdf(fname=fname)
+    fname.unlink()  # Clean up the generated PDF file
     plt.close()
 
 
@@ -146,13 +176,13 @@ def test_standalone_series(prec: Series, evap: Series, head: Series) -> None:
     from pastas.plotting.plots import series
 
     # Basic usage with head only
-    axes = series(head=head)
+    axes = series(oseries=head)
     assert axes is not None
     plt.close()
 
     # With stresses
     stresses = [prec, evap]
-    axes = series(head=head, stresses=stresses)
+    axes = series(oseries=head, stresses=stresses)
     assert axes is not None
     plt.close()
 
@@ -177,18 +207,18 @@ def test_standalone_cum_frequency(head: Series) -> None:
     from pastas.plotting.plots import cum_frequency
 
     # Basic usage
-    ax = cum_frequency(obs=head)
+    ax = cum_frequency(oseries=head)
     assert ax is not None
     plt.close()
 
     # With simulation series
     sim = head + 0.1  # Create a simple sim series
-    ax = cum_frequency(obs=head, sim=sim)
+    ax = cum_frequency(oseries=head, sim=sim)
     assert ax is not None
     plt.close()
 
     # With custom figure size
-    ax = cum_frequency(obs=head, figsize=(8, 4))
+    ax = cum_frequency(oseries=head, figsize=(8, 4))
     assert ax is not None
     plt.close()
 

@@ -1,19 +1,17 @@
-# -*- coding: utf-8 -*-
-#
-# Pastas documentation build configuration file, created by
-# sphinx-quickstart on Wed May 11 12:38:06 2016.
+#!/../.venv/bin/python3
+"""Configuration file for the Sphinx documentation builder."""
 
 import os
 import re
 import sys
-from datetime import date
 
 import requests
 from matplotlib import use
+from pandas import Timestamp
 
 from pastas import __version__
 
-year = date.today().strftime("%Y")
+year = Timestamp.now().strftime("%Y")
 use("agg")
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -43,13 +41,12 @@ extensions = [
 
 templates_path = ["_templates"]
 source_suffix = ".rst"
-source_encoding = "utf-8"
 
-master_doc = "index"  # The master toctree document.
+root_doc = "index"  # The root toctree document.
 
 # General information about the project.
 project = "Pastas"
-copyright = "{}, The Pastas Team".format(year)
+copyright = f"{year}, The Pastas Team"
 author = "R.A. Collenteur, M. Bakker, R. Calje, F. Schaars"
 
 # The version.
@@ -90,11 +87,17 @@ html_theme_options = {
         {
             "name": "GitHub",  # Label for this link
             "url": "https://github.com/pastas/pastas",  # required
-            "icon": "fab fa-github-square",
+            "icon": "fa-brands fa-square-github",
             "type": "fontawesome",  # Default is fontawesome
         }
     ],
-    "announcement": "",  # You can put an announcement (HTML) here
+    "announcement": (
+        "Support Pastas: "
+        '<a href="https://opencollective.com/pastas" '
+        'target="_blank" rel="noopener noreferrer">'
+        "Become a sustaining member"
+        "</a>"
+    ),
     "show_nav_level": 2,
 }
 

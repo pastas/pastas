@@ -90,4 +90,3 @@ class TestSettingsProtection:
         # Check that settings were updated
         assert ml_recharge.settings["tmin"] is not None
         assert ml_recharge.settings["tmax"] is not None
-        assert ml_recharge.settings["solver"] is not None

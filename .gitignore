@@ -1,42 +1,38 @@
-
-*.xml
-
+# Python files
 *.iml
-
 *.pyc
-
 *.so
-
-*.coverage*
-
 *.amlignore*
-
+*.DS_Store
 pastas.egg-info
 pastas/gui/settings
 
-examples/notebooks/.ipynb_checkpoints/
-gui/settings
-build
-dist
+# Test and coverage files
 .tox
+tests/data/pas_files_*/
+coverage.json
+*.coverage*
+*.xml
 
+# IDE settings
 .idea/.name
 .cache/v/cache/lastfailed
 *.log
-
-**/*.ipynb_checkpoints/
-
 .vscode/*
-
-# Spyder project settings
 .spyderproject
 .spyproject
 .pylint.d/
 
-.DS_Store
+# Docs
 /doc/api/generated/
 doc/about/publications.bib
 doc/about/references.bib
 *.nbc
 *.nbi
 *.pdf
+*.lock
+examples/notebooks/.ipynb_checkpoints/
+**/*.ipynb_checkpoints/
+gui/settings/
+build/
+dist/

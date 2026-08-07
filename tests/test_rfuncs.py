@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy.integrate import quad
 
 import pastas as ps
 
@@ -7,14 +8,36 @@ import pastas as ps
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
 @pytest.mark.parametrize("up", [True, False])
 def test_rfunc(rfunc_name: str, up: bool) -> None:
-    if rfunc_name not in []:
-        rfunc = getattr(ps.rfunc, rfunc_name)()
-        rfunc.update_rfunc_settings(up=up)
-        if rfunc_name == "HantushWellModel":
-            rfunc.set_distances(100.0)
-        p = rfunc.get_init_parameters("test").initial.to_numpy()
-        rfunc.block(p)
-        rfunc.step(p)
+    rfunc = getattr(ps.rfunc, rfunc_name)()
+    rfunc.update_rfunc_settings(up=up)
+    if rfunc_name == "HantushWellModel":
+        rfunc.set_distances(100.0)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+    rfunc.block(p)
+    rfunc.step(p)
+
+
+@pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
+@pytest.mark.parametrize("use_block", [False, True])
+def test_block_uses_configured_impulse_routing(
+    rfunc_name: str, use_block: bool
+) -> None:
+    rfunc = getattr(ps.rfunc, rfunc_name)(use_block=use_block)
+    if rfunc_name == "HantushWellModel":
+        rfunc.set_distances(1.0)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    if rfunc_name in ["Spline"]:
+        assert rfunc.use_block is True, "Spline should always use step method"
+        np.testing.assert_allclose(rfunc.block(p), rfunc.block_from_step(p))
+        return
+
+    expected = rfunc.block_from_impulse(p) if use_block else rfunc.block_from_step(p)
+    block = rfunc.block(p)
+    if rfunc_name == "One":
+        block = block[:1]
+        expected = expected[:1]
+    np.testing.assert_allclose(block, expected, atol=1e-3)
 
 
 @pytest.mark.parametrize("rfunc_name", ps.rfunc.__all__)
@@ -94,7 +117,7 @@ def test_gain_methods_with_distance(rfunc_name: str) -> None:
 
 
 # Response functions that support both discrete and exact moment methods
-# FourParam and Edelman have known issues with moment computation and are excluded
+# FourParam has known issues with moment computation and are excluded
 RFUNCS_WITH_EXACT_MOMENTS = [
     "Gamma",
     "Exponential",
@@ -125,7 +148,6 @@ def test_moment_discrete_works(rfunc_name: str) -> None:
     rfunc_name : str
         Name of the response function class to test.
     """
-
     rfunc = getattr(ps.rfunc, rfunc_name)(cutoff=0.999)
     p = rfunc.get_init_parameters("test").initial.to_numpy()
 
@@ -242,9 +264,298 @@ def test_moment_exact_not_implemented(rfunc_name: str) -> None:
     rfunc_name : str
         Name of the response function class to test.
     """
+
     rfunc = getattr(ps.rfunc, rfunc_name)()
     p = rfunc.get_init_parameters("test").initial.to_numpy()
 
     # Call exact method - should raise ValueError for unimplemented methods
     with pytest.raises(ValueError, match="Invalid method"):
         rfunc.moment(p, order=0, method="exact")  # type: ignore
+
+
+# Tests for Hantush approximate_tmax option
+@pytest.mark.parametrize("approximate_tmax", [True, False])
+def test_hantush_approximate_tmax_parameter(approximate_tmax: bool) -> None:
+    """Test that Hantush approximate_tmax parameter works and is preserved.
+
+    Parameters
+    ----------
+    approximate_tmax : bool
+        Whether to use approximate (True) or exact (False) tmax calculation.
+    """
+    rfunc = ps.Hantush(approximate_tmax=approximate_tmax)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Test that both modes can compute tmax without error
+    tmax = rfunc.get_tmax(p)
+    assert np.isfinite(tmax) and tmax > 0, f"Invalid tmax: {tmax}"
+
+    # Test that to_dict preserves the parameter
+    data = rfunc.to_dict()
+    assert data["approximate_tmax"] == approximate_tmax
+
+
+@pytest.mark.parametrize("quad", [True, False])
+@pytest.mark.parametrize("approximate_tmax", [True, False])
+def test_hantush_quad_and_approximate_tmax_combinations(
+    quad: bool, approximate_tmax: bool
+) -> None:
+    """Test all combinations of quad and approximate_tmax parameters for Hantush.
+
+    Parameters
+    ----------
+    quad : bool
+        Whether to use numerical integration for step response.
+    approximate_tmax : bool
+        Whether to use approximate (True) or exact (False) tmax calculation.
+    """
+    rfunc = ps.Hantush(quad=quad, approximate_tmax=approximate_tmax)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Test that step response can be computed
+    step = rfunc.step(p)
+    assert len(step) > 0, "Step response should be non-empty"
+    assert np.all(np.isfinite(step)), "Step response should have finite values"
+
+    # Test that tmax can be computed
+    tmax = rfunc.get_tmax(p)
+    assert np.isfinite(tmax) and tmax > 0, f"Invalid tmax: {tmax}"
+
+    # Test that to_dict preserves both parameters
+    data = rfunc.to_dict()
+    assert data["quad"] == quad, (
+        f"quad parameter not preserved: {data['quad']} vs {quad}"
+    )
+    assert data["approximate_tmax"] == approximate_tmax, (
+        f"approximate_tmax parameter not preserved: {data['approximate_tmax']} vs {approximate_tmax}"
+    )
+
+
+def test_hantush_exact_vs_approximate_tmax() -> None:
+    """Test that exact tmax differs from approximate and hits target cutoff better.
+
+    The exact method should find a tmax that achieves the target cutoff more
+    accurately than the approximation, which is based on Lambert W asymptotic expansion.
+    """
+    rfunc_approx = ps.Hantush(approximate_tmax=True)
+    rfunc_exact = ps.Hantush(approximate_tmax=False)
+
+    p = rfunc_approx.get_init_parameters("test").initial.to_numpy()
+    tmax_approx = rfunc_approx.get_tmax(p)
+    tmax_exact = rfunc_exact.get_tmax(p)
+
+    # Exact tmax should be different from approximate (smaller)
+    assert tmax_exact < tmax_approx, (
+        f"Exact tmax ({tmax_exact}) should be smaller than approximate ({tmax_approx})"
+    )
+
+    # Exact tmax should achieve cutoff more accurately
+    A = p[0]
+    cutoff = rfunc_exact.cutoff
+
+    # Compute step response at each tmax using the analytical expression
+    step_approx = rfunc_approx.numpy_step(A, p[1], p[2], np.array([tmax_approx]))[0] / A
+    step_exact = rfunc_exact.numpy_step(A, p[1], p[2], np.array([tmax_exact]))[0] / A
+
+    # The exact method should achieve cutoff more closely
+    error_approx = abs(step_approx - cutoff)
+    error_approx = abs(step_approx - cutoff)
+    error_exact = abs(step_exact - cutoff)
+
+    assert error_exact < error_approx, (
+        f"Exact method should achieve cutoff more accurately. "
+        f"Approximate error: {error_approx:.6f}, Exact error: {error_exact:.6f}"
+    )
+
+
+def test_hantush_approximate_tmax_to_dict_roundtrip() -> None:
+    """Test that approximate_tmax parameter survives to_dict/from_dict roundtrip."""
+    for use_exact in [True, False]:
+        # Create original rfunc
+        rfunc1 = ps.Hantush(approximate_tmax=not use_exact, cutoff=0.95)
+
+        # Export to dict
+        data = rfunc1.to_dict()
+
+        # Create new rfunc from dict
+        rfunc_class = data.pop("class")
+        rfunc_up = data.pop("up", None)
+        rfunc_gsf = data.pop("gain_scale_factor", None)
+        rfunc2 = getattr(ps.rfunc, rfunc_class)(**data)
+        rfunc2.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
+
+        # Verify approximate_tmax is preserved
+        assert rfunc2.approximate_tmax == rfunc1.approximate_tmax, (
+            f"approximate_tmax not preserved: {rfunc1.approximate_tmax} vs {rfunc2.approximate_tmax}"
+        )
+
+        # Verify behavior is identical
+        p = rfunc1.get_init_parameters("test").initial.to_numpy()
+        tmax1 = rfunc1.get_tmax(p)
+        tmax2 = rfunc2.get_tmax(p)
+
+        assert tmax1 == tmax2, f"tmax values differ after roundtrip: {tmax1} vs {tmax2}"
+
+
+@pytest.mark.parametrize("approximate_tmax", [True, False])
+def test_fourparam_approximate_tmax_parameter(approximate_tmax: bool) -> None:
+    """Test that FourParam approximate_tmax parameter works and is preserved."""
+    rfunc = ps.FourParam(approximate_tmax=approximate_tmax)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    tmax = rfunc.get_tmax(p)
+    assert np.isfinite(tmax) and tmax > 0, f"Invalid tmax: {tmax}"
+
+    data = rfunc.to_dict()
+    assert data["approximate_tmax"] == approximate_tmax
+
+
+def test_fourparam_get_tmax_matches_normalized_step_cutoff() -> None:
+    """Regression test for FourParam tmax clipping at hard-coded search limits."""
+    cutoff = 0.999
+    p = [2.0, 1.0, 50.0, 100.0]
+    rfunc_approx = ps.FourParam(approximate_tmax=True)
+    rfunc_exact = ps.FourParam(approximate_tmax=False)
+
+    tmax_approx = rfunc_approx.get_tmax(p, cutoff=cutoff)
+    tmax_exact = rfunc_exact.get_tmax(p, cutoff=cutoff)
+
+    total = quad(rfunc_exact.impulse, 0, np.inf, args=p)[0]
+    reached_approx = quad(rfunc_exact.impulse, 0, tmax_approx, args=p)[0] / total
+    reached_exact = quad(rfunc_exact.impulse, 0, tmax_exact, args=p)[0] / total
+
+    assert reached_approx >= cutoff, (
+        f"Approximate FourParam tmax ({tmax_approx}) should be conservative for "
+        f"cutoff ({cutoff}), got {reached_approx:.6f}"
+    )
+    assert abs(reached_exact - cutoff) < 1e-6, (
+        f"Exact FourParam tmax ({tmax_exact}) should satisfy cutoff equation. "
+        f"Expected {cutoff:.6f}, got {reached_exact:.6f}"
+    )
+
+
+def test_fourparam_tmax_negative_n_does_not_hit_hard_limit() -> None:
+    """Regression test for low-n FourParam cases that used to return huge tmax."""
+    p = [1.0, -10.0, 0.01, 1e-6]
+    cutoffs = [0.1, 0.5, 0.9, 0.99, 0.999]
+
+    rfunc_approx = ps.FourParam(approximate_tmax=True)
+    rfunc_exact = ps.FourParam(approximate_tmax=False)
+
+    previous_exact = 0.0
+    for cutoff in cutoffs:
+        tmax_approx = rfunc_approx.get_tmax(p, cutoff=cutoff)
+        tmax_exact = rfunc_exact.get_tmax(p, cutoff=cutoff)
+
+        assert tmax_approx < 1e5, (
+            f"Approximate tmax should not hit hard search limits, got {tmax_approx}"
+        )
+        assert tmax_exact < 1e5, (
+            f"Exact tmax should not hit hard search limits, got {tmax_exact}"
+        )
+
+        assert tmax_approx >= tmax_exact, (
+            f"Approximate tmax should be conservative (>= exact), "
+            f"approx={tmax_approx}, exact={tmax_exact}"
+        )
+
+        assert tmax_exact >= previous_exact, (
+            f"tmax should be non-decreasing with cutoff, got {tmax_exact} "
+            f"after {previous_exact}"
+        )
+        previous_exact = tmax_exact
+
+
+def test_fourparam_approximate_tmax_to_dict_roundtrip() -> None:
+    """Test that approximate_tmax survives to_dict/from_dict roundtrip for FourParam."""
+    for use_exact in [True, False]:
+        rfunc1 = ps.FourParam(approximate_tmax=not use_exact, cutoff=0.95)
+
+        data = rfunc1.to_dict()
+
+        rfunc_class = data.pop("class")
+        rfunc_up = data.pop("up", None)
+        rfunc_gsf = data.pop("gain_scale_factor", None)
+        rfunc2 = getattr(ps.rfunc, rfunc_class)(**data)
+        rfunc2.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
+
+        assert rfunc2.approximate_tmax == rfunc1.approximate_tmax, (
+            f"approximate_tmax not preserved: {rfunc1.approximate_tmax} vs {rfunc2.approximate_tmax}"
+        )
+
+        p = [2.0, 1.0, 50.0, 100.0]
+        tmax1 = rfunc1.get_tmax(p)
+        tmax2 = rfunc2.get_tmax(p)
+
+        assert tmax1 == tmax2, f"tmax values differ after roundtrip: {tmax1} vs {tmax2}"
+
+
+# Tests for HantushWellModel approximate_tmax and log_b options
+@pytest.mark.parametrize("log_b", [True, False])
+@pytest.mark.parametrize("approximate_tmax", [True, False])
+def test_hantush_well_model_parameters(log_b: bool, approximate_tmax: bool) -> None:
+    """Test HantushWellModel parameters log_b and approximate_tmax."""
+    rfunc = ps.HantushWellModel(log_b=log_b, approximate_tmax=approximate_tmax)
+    rfunc.set_distances(100.0)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Step response works
+    step = rfunc.step(p)
+    assert len(step) > 0
+
+    # tmax works
+    tmax = rfunc.get_tmax(p)
+    assert np.isfinite(tmax) and tmax > 0
+
+    # to_dict works
+    data = rfunc.to_dict()
+    assert data["log_b"] == log_b
+    assert data["approximate_tmax"] == approximate_tmax
+
+
+@pytest.mark.parametrize("log_b", [True, False])
+def test_hantush_well_model_variance_gain(log_b: bool) -> None:
+    """Test variance_gain for HantushWellModel with log_b variations."""
+    rfunc = ps.HantushWellModel(log_b=log_b)
+    rfunc.set_distances(100.0)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Dummy covariance and variance values
+    var_A = 0.1
+    var_b = 0.2
+    cov_Ab = 0.05
+
+    # test variance_gain (calculates through internal method)
+    vg = rfunc.variance_gain(
+        A=p[0], b=p[2], var_A=var_A, var_b=var_b, cov_Ab=cov_Ab, r=100.0
+    )
+    assert np.isfinite(vg)
+    assert vg >= 0.0
+
+
+# Test for Gamma complex_step
+@pytest.mark.parametrize("complex_step", [True, False])
+def test_gamma_complex_step(complex_step: bool) -> None:
+    """Test Gamma with complex step."""
+    rfunc = ps.Gamma(complex_step=complex_step)
+    p = rfunc.get_init_parameters("test").initial.to_numpy()
+
+    # Step response works (real)
+    step = rfunc.step(p)
+    assert len(step) > 0
+    assert step.dtype == np.float64
+
+    # Step response works when complex_step is True (complex) and raises when False
+    if complex_step:
+        step = rfunc.step(p + 1e10j)
+        assert len(step) > 0
+        assert step.dtype == np.complex128
+    else:
+        with pytest.raises(
+            TypeError, match="Gamma.step does not support complex-step "
+        ):
+            rfunc.step(p + 1e10j)
+
+    # to_dict works
+    data = rfunc.to_dict()
+    assert data["complex_step"] is complex_step

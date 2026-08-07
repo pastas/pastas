@@ -1,6 +1,7 @@
 """Tests for the Model class in pastas.model."""
 
 import logging
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -79,16 +80,25 @@ class TestModelComponents:
     def test_add_stressmodel(self, ml_basic: ps.Model, prec: pd.Series) -> None:
         """Test adding a stress model."""
 
-        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
-        ml_basic.add_stressmodel(sm)
+        sm = ps.StressModel(
+            model=ml_basic,
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="precipitation",
+        )
 
         assert "precipitation" in ml_basic.stressmodels
         assert ml_basic.stressmodels["precipitation"] is sm
 
-    def test_stressmodel_params(self, prec: pd.Series) -> None:
+    def test_stressmodel_params(self, ml_basic: ps.Model, prec: pd.Series) -> None:
         """Test getting stress model parameters."""
 
-        sm = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
+        sm = ps.StressModel(
+            model=ml_basic,
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="precipitation",
+        )
 
         assert isinstance(sm.parameters, pd.DataFrame)
         assert (
@@ -100,14 +110,23 @@ class TestModelComponents:
                     "pmax",
                     "vary",
                     "name",
-                    "dist",
                 ]
             )
         ).all()
-        assert (
-            sm.parameters.dtypes.values
-            == np.array([float, float, float, bool, "O", "O"])
-        ).all()
+        # TODO: add this test again when minimum pandas version is 3.0
+        # assert (
+        #     sm.parameters.dtypes.values
+        #     == np.array(
+        #         [
+        #             float,
+        #             float,
+        #             float,
+        #             bool,
+        #             pd.StringDtype("python", na_value=np.nan),
+        #             pd.StringDtype("python", na_value=np.nan),
+        #         ]
+        #     )
+        # ).all()
 
     def test_set_oseries(self, ml_solved: ps.Model) -> None:
         s0 = ml_solved.oseries.series_original
@@ -120,10 +139,18 @@ class TestModelComponents:
     ) -> None:
         """Test adding multiple stress models at once."""
 
-        sm1 = ps.StressModel(stress=prec, rfunc=ps.Exponential(), name="precipitation")
-        sm2 = ps.StressModel(stress=evap, rfunc=ps.Exponential(), name="evaporation")
-
-        ml_basic.add_stressmodel([sm1, sm2])
+        ps.StressModel(
+            model=ml_basic,
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="precipitation",
+        )
+        ps.StressModel(
+            model=ml_basic,
+            stress=evap,
+            rfunc=ps.Exponential(),
+            name="evaporation",
+        )
 
         assert "precipitation" in ml_basic.stressmodels
         assert "evaporation" in ml_basic.stressmodels
@@ -133,25 +160,38 @@ class TestModelComponents:
     ) -> None:
         """Test adding a stress model with the same name."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_solved.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_solved.stressmodels.keys()))
 
         # Create a new stress model with the same name but different response function
-        sm = ps.StressModel(stress=prec, rfunc=ps.Gamma(), name=first_sm_name)
+        ps.StressModel(
+            model=ml_solved,
+            stress=prec,
+            rfunc=ps.Gamma(),
+            name=first_sm_name,
+        )
 
         # Should replace the existing stress model and log a warning
-        ml_solved.add_stressmodel(sm)
-
         # Check that it was replaced with the new one
         assert ml_solved.stressmodels[first_sm_name].rfunc._name == "Gamma"
 
-        # With replace=False, should raise an error
-        with pytest.raises(ValueError):
-            ml_solved.add_stressmodel(sm, replace=False)
+    def test_add_stressmodel_indirectly(
+        self, ml_basic: ps.Model, prec: pd.Series
+    ) -> None:
+        """Test adding a stress model using ml.add_stressmodel(), allowed until pastas 2.3."""
+        sm = ps.StressModel(
+            stress=prec,
+            rfunc=ps.Exponential(),
+            name="precipitation",
+        )
+        ml_basic.add_stressmodel(sm)
+
+        assert "precipitation" in ml_basic.stressmodels
+        assert ml_basic.stressmodels["precipitation"] is sm
 
     def test_del_stressmodel(self, ml_solved: ps.Model) -> None:
         """Test deleting a stress model."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_solved.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_solved.stressmodels.keys()))
 
         ml_solved.del_stressmodel(first_sm_name)
         assert first_sm_name not in ml_solved.stressmodels
@@ -166,8 +206,7 @@ class TestModelComponents:
         ml_basic.del_constant()
         assert ml_basic.constant is None
 
-        constant = ps.Constant(initial=10.0, name="constant")
-        ml_basic.add_constant(constant)
+        constant = ps.Constant(model=ml_basic, initial=10.0, name="constant")
 
         assert ml_basic.constant is constant
         assert ml_basic.constant.name == "constant"
@@ -177,41 +216,35 @@ class TestModelComponents:
         ml_basic.del_constant()
         assert ml_basic.constant is None
 
-    def test_add_transform(self, ml_basic: ps.Model) -> None:
+    def test_add_transform(self, ml_recharge: ps.Model) -> None:
         """Test adding a transform."""
-        transform = ps.ThresholdTransform()
-        ml_basic.add_transform(transform)
+        transform = ps.ThresholdTransform(model=ml_recharge)
 
-        assert ml_basic.transform is transform
+        assert ml_recharge.transform is transform
 
-    def test_del_transform(self, ml_basic: ps.Model) -> None:
+    def test_del_transform(self, ml_recharge: ps.Model) -> None:
         """Test deleting a transform."""
         # First add a transform
-        transform = ps.ThresholdTransform()
-        ml_basic.add_transform(transform)
+        ps.ThresholdTransform(model=ml_recharge)
 
         # Then delete it
-        ml_basic.del_transform()
-        assert ml_basic.transform is None
+        ml_recharge.del_transform()
+        assert ml_recharge.transform is None
 
     def test_add_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test adding a noise model."""
-        noise = ps.ArmaNoiseModel()
-        ml_basic.add_noisemodel(noise)
+        noise = ps.ArmaNoiseModel(model=ml_basic)
 
         assert ml_basic.noisemodel is noise
-        assert ml_basic.settings["noise"] is True
 
     def test_del_noisemodel(self, ml_basic: ps.Model) -> None:
         """Test deleting a noise model."""
         # First add a noise model
-        noise = ps.ArmaNoiseModel()
-        ml_basic.add_noisemodel(noise)
+        ps.ArmaNoiseModel(model=ml_basic)
 
         # Then delete it
         ml_basic.del_noisemodel()
         assert ml_basic.noisemodel is None
-        assert ml_basic.settings["noise"] is False
 
 
 @pytest.mark.integration
@@ -258,24 +291,19 @@ class TestModelSimulation:
 
     def test_simulate_with_parameters(self, ml_solved: ps.Model) -> None:
         """Test simulation with provided parameters."""
-        # Solve the model first
-        ml_solved.solve(report=False)
 
-        # Get optimal parameters
-        p_opt = ml_solved.get_parameters()
+        # Get initial and optimal parameters
+        p_init = ml_solved.parameters["initial"]
+        p_opt = ml_solved.parameters["optimal"]
 
-        # Get a copy of ml_rm with initial parameters
-        ml_copy = ml_solved.copy()
-        ml_copy.initialize()
-
-        # Simulate with initial parameters
-        sim_init = ml_copy.simulate()
-
-        # Simulate with optimal parameters
-        sim_opt = ml_copy.simulate(p=p_opt)
+        # Simulate with initial and optimal parameters
+        sim_init = ml_solved.simulate(p=p_init)
+        sim_opt = ml_solved.simulate(p=p_opt)
 
         # Should be different unless the optimization didn't change parameters
-        assert not np.all(sim_init.values == sim_opt.values)
+        res = np.isclose(sim_init.values, sim_opt.values).all(axis=0)
+
+        assert not res
 
     def test_simulate_with_warmup(self, ml_solved: ps.Model) -> None:
         """Test simulation with warmup period."""
@@ -301,12 +329,12 @@ class TestModelSimulation:
         # Residuals should have mean close to zero for a fitted model
         assert abs(res.mean()) < 1.0
 
-    def test_residuals_with_normalize(self, ml_solved: ps.Model) -> None:
-        """Test residuals calculation with normalization."""
-        ml_solved.normalize_residuals = True
+    def test_residuals_with_fit_constant(self, ml_solved: ps.Model) -> None:
+        """Test residuals are mean-zero when fit_constant=False."""
+        ml_solved.solve(fit_constant=False, report=False)
         res = ml_solved.residuals()
 
-        # Normalized residuals should have mean very close to zero
+        # Residuals should have mean very close to zero when fit_constant=False
         assert abs(res.mean()) < 1e-10
 
     def test_observations(self, ml_solved: ps.Model) -> None:
@@ -440,34 +468,38 @@ class TestModelParameters:
 class TestModelSolving:
     """Test model solving."""
 
-    def test_initialize(self, ml_solved: ps.Model) -> None:
-        """Test model initialization before solving."""
-        ml_solved.initialize()
-
-        assert ml_solved.settings["tmin"] is not None
-        assert ml_solved.settings["tmax"] is not None
-        assert ml_solved.oseries_calib is not None
-
-    def test_solve(self, ml_solved: ps.Model) -> None:
+    # Parameterize the test with the string names of the fixtures you want to use
+    @pytest.mark.parametrize("model_name", ["ml_recharge", "ml_with_interpolation"])
+    def test_solve(self, model_name: str, request: pytest.FixtureRequest) -> None:
         """Test solving the model."""
-        ml_solved.solve(report=False)
+        ml = request.getfixturevalue(model_name)
+        ml.solve(report=False)
 
-        assert ml_solved.solver is not None
-        assert ml_solved.parameters["optimal"].notna().any()
-        assert ml_solved._solve_success
+        assert ml.solver is not None
+        assert ml.parameters["optimal"].notna().any()
+
+        # make sure all parameters that can vary have changed from their initial values
+        for param in ml.parameters.index:
+            if ml.parameters.at[param, "vary"]:
+                assert not np.isclose(
+                    ml.parameters.at[param, "optimal"],
+                    ml.parameters.at[param, "initial"],
+                )
 
     def test_solve_with_weights(self, ml_solved: ps.Model) -> None:
         """Test solving with weights."""
         # Create weights series with same index as observations
-        weights = ml_solved.observations().copy()
-        weights[:] = 1.0
+        p_opt = ml_solved.parameters.loc[:, "optimal"].copy()
+
+        weights = pd.Series(1.0, index=ml_solved.observations().index)
 
         # Lower weights for some periods
-        weights.loc["2002":"2003"] = 0.5
-
+        weights.loc["2010":"2012"] = 0.0
         ml_solved.solve(weights=weights, report=False)
+        p_optw = ml_solved.parameters.loc[:, "optimal"]
 
-        assert ml_solved.settings["weights"] is weights
+        # check if at least one parameter changed due to weights
+        assert not np.isclose(p_opt, p_optw).all(axis=0)
 
     def test_fit_report(self, ml_noisemodel: ps.Model) -> None:
         """Test fit report generation."""
@@ -507,14 +539,12 @@ class TestModelSolving:
 
             assert len(caplog.get_records("call")) == 3
             assert caplog.records[0].message.startswith(
-                "Parameter 'recharge_f' on lower bound:"
+                "Parameter 'recharge_f' on lower bound"
             )
-            assert caplog.records[1].message.startswith(
-                "Response tmax for 'recharge' > than calibration period."
-            )
-            assert caplog.records[2].message.startswith(
-                "Response tmax for 'recharge' > than warmup period."
-            )
+            assert "Response tmax for" in caplog.records[1].message
+            assert "> than calibration period" in caplog.records[1].message
+            assert "Response tmax for" in caplog.records[2].message
+            assert "> than warmup period" in caplog.records[2].message
 
 
 class TestModelContributions:
@@ -533,14 +563,14 @@ class TestModelContributions:
     ) -> None:
         """Test various contribution-related methods."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_noisemodel.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_noisemodel.stressmodels.keys()))
 
         # Call the method
         method = getattr(ml_noisemodel, method_name)
         result = method(first_sm_name)
 
         # Check result
-        assert isinstance(result, pd.Series)
+        assert isinstance(result, (pd.Series, pd.DataFrame))
         if series_name:
             assert result.name == series_name
         if method_name == "get_step_response":
@@ -566,10 +596,26 @@ class TestModelContributions:
         assert "Simulation" in df.columns
         assert "Residuals" in df.columns
 
+    def test_get_output_series_split_contributions(
+        self, ml_noisemodel: ps.Model
+    ) -> None:
+        """Test getting all output series with split_contributions."""
+        df = ml_noisemodel.get_output_series(split_contributions=False)
+
+        assert isinstance(df, pd.DataFrame)
+        assert "Head_Calibration" in df.columns
+
+    def test_get_output_series_split_deprecation(self, ml_noisemodel: ps.Model) -> None:
+        """Test deprecated split keyword for get_output_series."""
+        with pytest.warns(FutureWarning, match="split"):
+            df = ml_noisemodel.get_output_series(split=False)
+
+        assert isinstance(df, pd.DataFrame)
+
     def test_get_response_tmax(self, ml_noisemodel: ps.Model) -> None:
         """Test getting response tmax."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_noisemodel.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_noisemodel.stressmodels.keys()))
 
         tmax = ml_noisemodel.get_response_tmax(first_sm_name)
 
@@ -579,7 +625,7 @@ class TestModelContributions:
     def test_get_stress(self, ml_noisemodel: ps.Model) -> None:
         """Test getting stress series."""
         # Get the first stressmodel name
-        first_sm_name = list(ml_noisemodel.stressmodels.keys())[0]
+        first_sm_name = next(iter(ml_noisemodel.stressmodels.keys()))
 
         stress = ml_noisemodel.get_stress(first_sm_name)
 
@@ -631,5 +677,7 @@ class TestModelExportImport:
         """Test saving and loading a model with float that can be converted to int."""
         s = pd.Series(index=pd.date_range("2025-01-01", periods=10, freq="D"), data=1.0)
         ml = ps.Model(s)
-        ml.to_file("test_float_int.pas")
-        _ = ps.io.load("test_float_int.pas")
+        file = Path("test_float_int.pas")
+        ml.to_file(file)
+        _ = ps.io.load(file)
+        file.unlink()  # Clean up

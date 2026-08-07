@@ -9,18 +9,87 @@ Create a TimeSeries object::
 
 """
 
+from copy import deepcopy
 from logging import getLogger
-from typing import Any
+from typing import Any, Self
 
 import pandas as pd
+from packaging.version import parse as parse_version
 from pandas import Series, Timedelta
 from pandas.tseries.frequencies import to_offset
 
-from .rcparams import rcParams
-from .timeseries_utils import _get_dt, _get_time_offset, _infer_fixed_freq, resample
+from pastas.typing import OseriesSettingsDict, StressSettingsDict
+
+from .io.base import _unpack_series
+from .timeseries_utils import (
+    _get_dt,
+    _get_sim_index,
+    _get_stress_dt,
+    _get_time_offset,
+    _infer_fixed_freq,
+    _offset_to_timedelta,
+    get_sample,
+    resample,
+)
 from .utils import validate_name
 
 logger = getLogger(__name__)
+
+settings = {
+    "oseries": OseriesSettingsDict(
+        fill_nan="drop",
+        sample_down="drop",
+    ),
+    "prec": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_nan=0.0,
+        fill_before="mean",
+        fill_after="mean",
+    ),
+    "evap": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "well": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_nan=0.0,
+        fill_before=0.0,
+        fill_after=0.0,
+    ),
+    "waterlevel": StressSettingsDict(
+        sample_up="interpolate",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "level": StressSettingsDict(
+        sample_up="interpolate",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "flux": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan=0.0,
+    ),
+    "quantity": StressSettingsDict(
+        sample_up="divide",
+        sample_down="sum",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan=0.0,
+    ),
+}
 
 
 class TimeSeries:
@@ -35,7 +104,7 @@ class TimeSeries:
         to derive the name from the series.
     settings: str or dict, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary with
+        settings dictionary (defined in ps.timeseries.settings), or a dictionary with
         the settings to apply. For more information refer to Time series settings
         section below.
     metadata: dict, optional
@@ -48,7 +117,6 @@ class TimeSeries:
 
     Other Parameters
     ----------------
-
     Time series settings
 
     fill_nan : {"drop", "mean", "interpolate"} or float
@@ -89,26 +157,27 @@ class TimeSeries:
            * `max`: resample time series with maximum value
            * `min`: resample time series with minimum value
 
+    See Also
+    --------
+    pastas.timeseries.TimeSeries.update_series
+        For the individual options for the different settings.
+
     Examples
     --------
     To obtain the predefined TimeSeries settings, you can run the following line of
     code:
 
-    >>> ps.rcParams["timeseries"]
+    >>> ps.timeseries.settings
 
-    See Also
-    --------
-    pastas.timeseries.TimeSeries.update_series
-        For the individual options for the different settings.
     """
 
-    _predefined_settings = rcParams["timeseries"]
+    _timeseries_settings = deepcopy(settings)
 
     def __init__(
         self,
         series: Series,
         name: str | None = None,
-        settings: str | dict[str, Any] | None = None,
+        settings: str | OseriesSettingsDict | StressSettingsDict | None = None,
         metadata: dict | None = None,
     ) -> None:
         # Make sure we have a Pandas Series and not a 1D-DataFrame
@@ -119,19 +188,20 @@ class TimeSeries:
                     "1D-DataFrame was provided, automatically transformed to "
                     "pandas.Series."
                 )
+        elif isinstance(series, TimeSeries):
+            if name is None and series.name is not None:
+                name = series.name
+            if settings is None and series.settings is not None:
+                settings = series.settings
+            if metadata is None and series.metadata is not None:
+                metadata = series.metadata
+            series = series.series
 
-        # Make sure we have a workable Pandas Series, depends on type of time series
-        if settings == "oseries":
-            validate_oseries(series)
-        else:
-            if settings is not None and not isinstance(settings, str):
-                if settings["fill_nan"] == "drop":
-                    raise UserWarning(
-                        "The fill_nan setting 'drop' for a stress is not allowed "
-                        "because the stress time series need to be equidistant. "
-                        "Please change this."
-                    )
-            validate_stress(series)
+        # for pandas 3.0, make sure the unit of the datetime index is in microseconds
+        # as this is the default for pandas 3.0 (and therefore used for the simulation)
+        # for pandas 2.x, the unit is always nanoseconds, and cannot be changed
+        if hasattr(series.index, "as_unit"):  # pandas >= 3.0
+            series.index = series.index.as_unit("us")
 
         # Store a copy of the original series
         self._series_original = series.copy()  # copy of the original series
@@ -162,21 +232,26 @@ class TimeSeries:
         # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in self._predefined_settings.keys():
-                    settings = self._predefined_settings[settings]
+                if settings in self._timeseries_settings:
+                    settings: StressSettingsDict | OseriesSettingsDict = (
+                        self._timeseries_settings[settings]
+                    )
                 else:
                     msg = (
-                        "Settings shortcut code '%s' is not in the predefined "
-                        "settings options. Please choose from %s.",
+                        "Settings shortcut code '%s' is not in the timeseries.settings "
+                        "dictionary. Please choose from %s."
                     )
 
-                    raise KeyError(msg, settings, self._predefined_settings.keys())
+                    raise KeyError(msg, settings, self._timeseries_settings.keys())
             self._update_settings(**settings)
 
+        # Make sure we have a workable Pandas Series, depends on type of time series
+        self._validate_series()
+        # Update the time series by calculating the attribute _series
         self.update_series(force_update=True, **self.settings)
 
     def __repr__(self) -> str:
-        """Prints a simple string representation of the time series."""
+        """Print a simple string representation of the time series."""
         return (
             f"{self.__class__.__name__}"
             f"(name={self.name}, "
@@ -188,11 +263,12 @@ class TimeSeries:
 
     @property
     def series_original(self) -> Series:
+        """Original series."""
         return self._series_original
 
     @series_original.setter
     def series_original(self, series: Series) -> None:
-        """Sets a new freq_original for the TimeSeries."""
+        """Set a new freq_original for the TimeSeries."""
         validate_stress(series)
         self._series_original = series.copy()
         self.freq_original = pd.infer_freq(self._series_original.index)
@@ -202,6 +278,7 @@ class TimeSeries:
 
     @property
     def series(self) -> Series:
+        """Series with the applied settings."""
         return self._series
 
     @series.setter
@@ -211,8 +288,8 @@ class TimeSeries:
             "series_original. Please set series_original to update the series."
         )
 
-    def update_series(self, force_update: bool = False, **kwargs) -> None:
-        """Method to update the series with new options.
+    def update_series(self, force_update: bool = False, **kwargs):
+        """Update the series with new options.
 
         Parameters
         ----------
@@ -254,10 +331,11 @@ class TimeSeries:
         the series need to be updated.
         """
         if self._update_settings(**kwargs) or force_update:
-            tmin = self.settings["tmin"]
-            freq = self.settings["freq"]
+            settings_ = self.settings
+            tmin = settings_["tmin"]
+            freq = settings_["freq"]
             if tmin is not None and freq is not None:
-                self.settings["time_offset"] = _get_time_offset(tmin, freq)
+                settings_["time_offset"] = _get_time_offset(tmin, freq)
 
             # Get the original series to start with
             series = self._series_original.copy(deep=True)
@@ -275,32 +353,38 @@ class TimeSeries:
             self._series = series
 
     def _update_settings(self, **kwargs) -> bool:
-        """Internal method that check if an update is actually necessary.
+        """Check if an update is actually necessary.
 
         Returns
         -------
-        update: bool
+        bool
             True if settings are changed and series need to be updated.
         """
         update = False
         for key, value in kwargs.items():
-            if key in ["tmin", "tmax"]:
-                if value is not None:
-                    value = pd.Timestamp(value)
+            if key in ["tmin", "tmax"] and value is not None:
+                value = pd.Timestamp(value)
             if (value != self.settings[key]) and (value is not None):
                 self.settings[key] = value
                 update = True
         return update
 
+    def _validate_series(self):
+        """Validate the time series."""
+        if self.settings["fill_nan"] == "drop":
+            raise UserWarning(
+                "The fill_nan setting 'drop' for a stress is not allowed "
+                "because the stress time series need to be equidistant. "
+                "Please change this."
+            )
+        return validate_stress(self.series_original)
+
     def _change_frequency(self, series: Series) -> Series:
-        """Method to change the frequency of the time series."""
+        """Change the frequency of the time series."""
         freq = self.settings["freq"]
 
         # 1. If no freq string is present or is provided (e.g. Oseries)
-        if not freq:
-            return series
-        # 2. If new frequency is the same
-        elif freq == self.freq_original:
+        if not freq or freq == self.freq_original:
             return series
         # 3. If new frequency is required (only up or down sampling allowed)
         else:
@@ -320,8 +404,11 @@ class TimeSeries:
             return series
 
     def _sample_up(self, series: Series) -> Series:
-        """Resample the time series when the frequency increases (e.g. from weekly to
-        daily values)."""
+        """Resample the time series when the frequency increases.
+
+        For example from 14 days to daily frequency.
+
+        """
         method = self.settings["sample_up"]
         freq = self.settings["freq"]
 
@@ -336,7 +423,14 @@ class TimeSeries:
             elif method == "interpolate":
                 series = series.asfreq(freq).interpolate(method="time")
             elif method == "divide":
-                dt = series.index.to_series().diff() / Timedelta(to_offset(freq))
+                if parse_version(pd.__version__) >= parse_version("3.0.0"):
+                    dt = series.index.to_series().diff() / _offset_to_timedelta(
+                        to_offset(freq)
+                    )
+                else:
+                    dt = series.index.to_series().diff() / Timedelta(
+                        _get_stress_dt(freq), "D"
+                    )
                 series = series / dt
                 series = series.asfreq(freq, method="bfill")
             elif isinstance(method, float):
@@ -357,14 +451,16 @@ class TimeSeries:
         return series
 
     def _sample_down(self, series: Series) -> Series:
-        """Resample the time series when the frequency decreases (e.g. from daily to
-        weekly values).
+        """Resample the time series when the frequency decreases.
+
+        For example from daily to 14 daily values.
 
         Notes
         -----
-        make sure the labels are still at the end of each period, and data at the
+        Make sure the labels are still at the end of each period, and data at the
         right-side of the bucket is included (see
-        http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html)
+        http://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.resample.html).
+
         """
         method = self.settings["sample_down"]
         freq = self.settings["freq"]
@@ -418,7 +514,6 @@ class TimeSeries:
 
     def _fill_nan(self, series: Series) -> Series:
         """Fill up the nan-values when present."""
-
         method = self.settings["fill_nan"]
         n = series.isnull().values.sum()
 
@@ -451,7 +546,7 @@ class TimeSeries:
         return series
 
     def _fill_before(self, series: Series) -> Series:
-        """Method to add a period in front of the available time series."""
+        """Add a period in front of the available time series."""
         freq = self.settings["freq"]
         method = self.settings["fill_before"]
         tmin = self.settings["tmin"]
@@ -521,7 +616,7 @@ class TimeSeries:
         return series
 
     def _fill_after(self, series: Series) -> Series:
-        """Method to add a period in front of the available time series."""
+        """Add a period in front of the available time series."""
         freq = self.settings["freq"]
         method = self.settings["fill_after"]
         tmax = self.settings["tmax"]
@@ -591,7 +686,7 @@ class TimeSeries:
         return series
 
     def to_dict(self, series: bool | None = True) -> dict:
-        """Method to export the Time Series to a json format.
+        """Export the Time Series to a json format.
 
         Parameters
         ----------
@@ -618,51 +713,108 @@ class TimeSeries:
 
         return data
 
+    def copy(self, name: str | None = None) -> Self:
+        """Copy a TimeSeries.
 
-def validate_stress(series: Series):
-    """Method to validate user-provided stress input time series.
+        Parameters
+        ----------
+        name: str, optional
+            String with the name of the model. If no name is provided, use the old name.
+
+        Returns
+        -------
+        ts: pastas.timeseries.TimeSeries
+            Copy of the original TimeSeries with no references to the old TimeSeries.
+
+        Examples
+        --------
+        >>> ts_copy = ts.copy(name="new_name")
+        """
+        if name is None:
+            name = self.name
+
+        series, metadata, settings = _unpack_series(self.to_dict())
+        ts = type(self)(series=series, name=name, settings=settings, metadata=metadata)
+        return ts
+
+
+class ObservationSeries(TimeSeries):
+    """TimeSeries class that deals with observation data."""
+
+    def __init__(
+        self,
+        series: Series,
+        name: str | None = None,
+        settings: str | dict[str, Any] | None = "oseries",
+        metadata: dict | None = None,
+    ) -> None:
+        super().__init__(series=series, name=name, settings=settings, metadata=metadata)
+
+    def update_series(self, force_update: bool = False, **kwargs) -> None:
+        """Update the series with new options.
+
+        Parameters
+        ----------
+        force_update: bool, optional
+            argument that is used to force an update, even when no changes are found.
+            Internally used by the __init__ method. Default is False.
+        freq: str, optional
+            String representing the desired frequency of the time series. Must be one
+            of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
+        tmin: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the minimum time of the series
+            (E.g. '1980-01-01 00:00:00').
+        tmax: pandas.Timestamp or str, optional
+            A string or pandas.Timestamp with the maximum time of the series
+            (E.g. '2020-01-01 00:00:00'). Strings are converted to
+
+            pandas.Timestamp internally.
+
+        Notes
+        -----
+        The method will validate if any of the settings is changed to determine if
+        the series need to be updated.
+        """
+        if self._update_settings(**kwargs) or force_update:
+            tmin = self.settings["tmin"]
+            tmax = self.settings["tmax"]
+            freq = self.settings["freq"]
+            time_offset = self.settings["time_offset"]
+
+            # Get the original series to start with
+            series = self._series_original.copy(deep=True)
+            series = series.loc[tmin:tmax]
+
+            # Only fill_nans if necessary
+            if series.hasnans:
+                series = self._fill_nan(series)
+
+            if freq is not None and not series.empty:
+                # Sample the measurements so that the observation frequency does not
+                # exceed the model frequency. Make sure to retain the original
+                # timestamps, as they will be used for interpolation of the simulation.
+                sim_index = _get_sim_index(tmin, tmax, freq, time_offset)
+                index = get_sample(series.index, sim_index)
+                series = series.loc[index]
+            # Update the series with the new settings
+            series.name = self._series_original.name
+
+            self._series = series
+
+    def _validate_series(self):
+        """Validate the time series."""
+        return validate_oseries(self.series_original)
+
+
+def validate_stress(series: Series, verbose: bool = False) -> bool:
+    """Validate user-provided stress input time series.
 
     Parameters
     ----------
     series: pandas.Series
         Pandas.Series object containing the series time series.
-
-    Returns
-    -------
-    bool:
-        True if the series is valid. If not, an error is raised.
-
-    Notes
-    -----
-    The Series are validated for the following cases:
-
-    0. Make sure the series is a Pandas.Series
-    1. Make sure the values are floats
-    2. Make sure the index is a DatetimeIndex
-    3. Make sure the indices are datetime64
-    4. Make sure the index is monotonically increasing
-    5. Make sure there are no duplicate indices
-    6. Make sure the time series has no nan-values
-    7. Make sure the time series has equidistant time steps
-
-    If any of these checks are not passed the method will throw an error that needs
-    to be fixed by the user.
-
-    Examples
-    --------
-
-    >>> ps.validate_stress(series)
-    """
-    return _validate_series(series, equidistant=True)
-
-
-def validate_oseries(series: Series):
-    """Method to validate user-provided oseries input time series.
-
-    Parameters
-    ----------
-    series: pandas.Series
-        Pandas.Series object containing the series time series.
+    verbose : bool, optional
+        Whether to print the results of the checks in the validation process.
 
     Returns
     -------
@@ -680,26 +832,68 @@ def validate_oseries(series: Series):
     4. Make sure the index has no NaT-values
     5. Make sure the index is monotonically increasing
     6. Make sure there are no duplicate indices
-    7. Make sure the time series has no nan-values
+    7. Detect if the time series has nan-values (filled with `fill_nan` TimeSeries' settings)
+    8. Make sure the time series has equidistant time steps
 
     If any of these checks are not passed the method will throw an error that needs
     to be fixed by the user.
 
     Examples
     --------
-
-    >>> ps.validate_oseries(series)
+    >>> ps.validate_stress(series)
     """
-    return _validate_series(series, equidistant=False)
+    return _validate_series(series, verbose=verbose, equidistant=True)
 
 
-def _validate_series(series: Series, equidistant: bool = True):
-    """Internal method to validate user-provided input time series.
+def validate_oseries(series: Series, verbose: bool = False) -> bool:
+    """Validate user-provided oseries input time series.
 
     Parameters
     ----------
     series: pandas.Series
         Pandas.Series object containing the series time series.
+    verbose : bool, optional
+        Whether to print the results of the checks in the validation process.
+
+    Returns
+    -------
+    bool:
+        True if the series is valid. If not, an error is raised.
+
+    Notes
+    -----
+    The Series are validated for the following cases:
+
+    0. Make sure the series is a Pandas.Series
+    1. Make sure the values are floats
+    2. Make sure the index is a DatetimeIndex
+    3. Make sure the indices are datetime64 (and tz naive)
+    4. Make sure the index has no NaT-values
+    5. Make sure the index is monotonically increasing
+    6. Make sure there are no duplicate indices
+    7. Detect if the time series has nan-values (filled with `fill_nan` TimeSeries' settings)
+
+    If any of these checks are not passed the method will throw an error that needs
+    to be fixed by the user.
+
+    Examples
+    --------
+    >>> ps.validate_oseries(series)
+    """
+    return _validate_series(series, verbose=verbose, equidistant=False)
+
+
+def _validate_series(
+    series: Series, verbose: bool = False, equidistant: bool = True
+) -> bool:
+    """Validate user-provided input time series.
+
+    Parameters
+    ----------
+    series: pandas.Series
+        Pandas.Series object containing the series time series.
+    verbose : bool, optional
+        Whether to print the results of the checks in the validation process.
     equidistant: bool, optional
         Whether the time series should have equidistant time step or not.
 
@@ -713,6 +907,8 @@ def _validate_series(series: Series, equidistant: bool = True):
     If any of these checks are not passed the method will throw an error that needs
     to be fixed by the user.
     """
+    check = True
+
     # Because we are friendly and allow 1D DataFrames
     if isinstance(series, pd.DataFrame):
         if len(series.columns) == 1:
@@ -721,87 +917,172 @@ def _validate_series(series: Series, equidistant: bool = True):
             # helpful specific message for multi-column DataFrames
             msg = "DataFrame with multiple columns. Please select one."
             logger.error(msg)
-            raise ValueError(msg)
+            if verbose:
+                print("❌ " + msg)
+                check = False
+                return check
+            else:
+                raise ValueError(msg)
+
+    if isinstance(series, TimeSeries):
+        series = series.series
 
     # 0. Make sure it is a Series and not something else (e.g., DataFrame)
     if not isinstance(series, pd.Series):
-        msg = "Expected a Pandas Series, got %s"
-        logger.error(msg, type(series))
-        raise ValueError(msg % type(series))
+        msg = f"Expected a Pandas.Series, got {type(series)}."
+        logger.error(msg)
+        if verbose:
+            print("❌ " + msg)
+            check = False
+        else:
+            raise ValueError(msg)
+    elif verbose:
+        print("✅ series is a pandas.Series.")
 
     name = series.name  # Only Series have a name, DateFrame do not
 
     # 1. Make sure the values are float
     if not pd.api.types.is_float_dtype(series):
-        msg = "Values of time series %s are not dtype=float."
-        logger.error(msg, name)
-        raise ValueError(msg % name)
+        msg = (
+            "The dtype of the values of the series "
+            f"'{name}' is not float, but {series.dtype}."
+        )
+        logger.error(msg)
+        if verbose:
+            print("❌ " + msg)
+            check = False
+        else:
+            raise ValueError(msg)
+    elif verbose:
+        print("✅ series values are floats.")
 
     # 2. Make sure the index is a DatetimeIndex
     if not isinstance(series.index, pd.DatetimeIndex):
-        msg = "Index of series %s is not a pandas.DatetimeIndex."
-        logger.error(msg, name)
-        raise ValueError(msg % name)
+        msg = (
+            f"Index of series '{name}' is not a "
+            f"pandas.DatetimeIndex, but {type(series.index)}."
+        )
+        logger.error(msg)
+        if verbose:
+            print("❌ " + msg)
+            check = False
+        else:
+            raise ValueError(msg)
+    elif verbose:
+        print("✅ series index is a pandas.DatetimeIndex.")
 
     # 3. Make sure the indices are datetime64
     if not pd.api.types.is_datetime64_dtype(series.index):
         if isinstance(series.index.dtype, pd.DatetimeTZDtype):
             msg = (
-                "The index of series %s is timezone aware. Please convert "
-                "the series to timezone naive. Try using "
+                f"The index of series '{name}' is timezone aware. Please "
+                "convert the series to timezone naive. Try using "
                 "`series.index = series.index.tz_localize(None)`."
             )
         else:
-            msg = "Indices of series %s are not datetime64."
-        logger.error(msg, name)
-        raise ValueError(msg % name)
+            msg = (
+                f"Indices of series '{name}' are not numpy.datetime64,"
+                f"but {series.index.dtype}."
+            )
+        logger.error(msg)
+        if verbose:
+            print("❌ " + msg)
+            check = False
+        else:
+            raise ValueError(msg)
+    elif verbose:
+        print("✅ series index dtype is numpy.datetime64.")
 
     # 4. Make sure there are no NaT in index
     if series.index.hasnans:
         msg = (
-            "The index of series %s contains NaNs. "
+            f"The index of series '{name}' contains NaNs/NaTs. "
             "Try to remove these with `series.loc[series.index.dropna()]`."
         )
-        logger.error(msg, name)
-        raise ValueError(msg % name)
+        logger.error(msg)
+        if verbose:
+            print("❌ " + msg)
+            check = False
+        else:
+            raise ValueError(msg)
+    elif verbose:
+        print("✅ series index has no NaNs/NaTs.")
 
     # 5. Make sure the index is monotonically increasing
     if not series.index.is_monotonic_increasing:
         msg = (
-            "The time-indices of series %s are not monotonically increasing. Try "
-            "to use `series.sort_index()` to fix it."
+            f"The datetimes in the index of series '{name}' are not monotonically "
+            "increasing. Try to use `series.sort_index()` to fix it."
         )
-        logger.error(msg, name)
-        raise ValueError(msg % name)
+        logger.error(msg)
+        if verbose:
+            print("❌ " + msg)
+            check = False
+        else:
+            raise ValueError(msg)
+    elif verbose:
+        print("✅ series index is monotonically increasing.")
 
     # 6. Make sure there are no duplicate indices
     if not series.index.is_unique:
         msg = (
-            "duplicate time-indexes were found in the time series %s. Make sure "
-            "there are no duplicate indices. For example by "
-            "`grouped = series.groupby(level=0); series = grouped.mean()`"
-            "or `series = series.loc[~series.index.duplicated(keep='first/last')]`"
+            f"Duplicate indices were found in the series '{name}'. Try and fix by"
+            " `grouped = series.groupby(level=0); series = grouped.mean()` "
+            "or `series = series.loc[~series.index.duplicated(keep='first/last')].`"
         )
-        logger.error(msg, name)
-        raise ValueError(msg % name)
+        logger.error(msg)
+        if verbose:
+            print("❌ " + msg)
+            check = False
+        else:
+            raise ValueError(msg)
+    elif verbose:
+        print("✅ series index has no duplicate indices.")
 
-    # 7. Make sure the time series has no nan-values
+    # 7. Check if the time series has nan-values
     if series.hasnans:
         msg = (
-            "The Time Series '%s' has nan-values. Pastas will use the fill_nan "
-            "settings to fill up the nan-values."
+            f"The series '{name}' has nan-values. Pastas will use the `fill_nan` "
+            "from the StressModel's settings (ps.timeseries.settings) parsed to the "
+            "TimeSeries settings to fill up the nan-values."
         )
-        logger.warning(msg, name)
+        logger.warning(msg)
+        if verbose:
+            print("❌ " + msg)
+            check = False
+    elif verbose:
+        print("✅ series values have no NaNs.")
 
     # 8. Make sure the time series has equidistant time steps
     if equidistant:
-        if not pd.infer_freq(series.index):
+        try:
+            inferred_freq = pd.infer_freq(series.index)
+            if not inferred_freq:
+                msg = (
+                    f"The frequency of the index of time series '{name}' could not be "
+                    "inferred. This indicates that there are gaps or duplicates in "
+                    "your time series. Please resample your time series to an "
+                    "equidistant time step."
+                )
+                logger.error(msg)
+                if verbose:
+                    print("❌ " + msg)
+                    check = False
+                else:
+                    raise ValueError(msg)
+            elif verbose:
+                print("✅ series has equidistant time steps.")
+        except TypeError:
             msg = (
-                "The frequency of the index of time series %s could not be "
-                "inferred. Please provide a time series with a regular time step."
+                f"The frequency of the index of time series '{name}' could not be "
+                "inferred. Unable to check for equidistant time steps."
             )
-            logger.error(msg, name)
-            raise ValueError(msg % name)
+            logger.error(msg)
+            if verbose:
+                print("❌ " + msg)
+                check = False
+            else:
+                raise ValueError(msg)
 
     # If all checks are passed, return True
-    return True
+    return check
