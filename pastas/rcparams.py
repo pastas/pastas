@@ -15,7 +15,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from pastas._options import options
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import deprecate_class_func_or_method
 
 reason = "Using ps.rcParams is deprecated. Use ps.options instead."
 
@@ -38,12 +38,12 @@ class _DeprecatedRcParams(Mapping[str, Any]):
     def __init__(self) -> None:
         self._data = options
 
-    @PastasDeprecationWarning(version="2.3.0", reason=reason)
+    @deprecate_class_func_or_method(version="2.3.0", reason=reason)
     def __getitem__(self, key: str) -> Any:
         """Get a setting value by key."""
         return self._data[key]
 
-    @PastasDeprecationWarning(version="2.3.0", reason=reason)
+    @deprecate_class_func_or_method(version="2.3.0", reason=reason)
     def __setitem__(self, key: str, value: Any) -> None:
         """Set a setting value by key."""
         self._data[key] = value
@@ -72,17 +72,17 @@ class _DeprecatedRcParams(Mapping[str, Any]):
         """Return setting values."""
         return self._data.__dict__.values()
 
-    @PastasDeprecationWarning(version="2.3.0", reason=reason)
+    @deprecate_class_func_or_method(version="2.3.0", reason=reason)
     def get(self, key: str, default: Any = None) -> Any:
         """Get a setting with a default value."""
         return self._data.__dict__.get(key, default)
 
-    @PastasDeprecationWarning(version="2.3.0", reason=reason)
+    @deprecate_class_func_or_method(version="2.3.0", reason=reason)
     def pop(self, key: str, *args: Any) -> Any:
         """Remove and return a setting."""
         return self._data.__dict__.pop(key, *args)
 
-    @PastasDeprecationWarning(version="2.3.0", reason=reason)
+    @deprecate_class_func_or_method(version="2.3.0", reason=reason)
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Update settings from a dictionary."""
         for key, value in dict(*args, **kwargs).items():

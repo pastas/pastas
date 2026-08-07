@@ -37,7 +37,7 @@ from pastas.check import (
     response_memory_vs_warmup,
 )
 from pastas.decorators import (
-    PastasDeprecationWarning,
+    deprecate_class_func_or_method,
     deprecate_args_or_kwargs,
     get_stressmodel,
 )
@@ -227,7 +227,7 @@ class Model:
             "like ml.solve() and ml.set_settings()."
         )
 
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.4.0",
         reason="Stressmodels are now added by adding the Pastas Model as the first argument during stressmodel initialization (i.e., ps.Stressmodel(model=ml, *args))",
     )
@@ -292,7 +292,7 @@ class Model:
         # Reset time_offset to force recalculation when a new stressmodel is added
         self._time_offset = None
 
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.4.0",
         reason="Constants are now added by adding the Pastas Model as the first argument during initialization (i.e., ps.Constant(model=ml, *args))",
     )
@@ -319,7 +319,7 @@ class Model:
         self._parameters = self.get_init_parameters(initial=False)
         self._check_stressmodel_compatibility()
 
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.4.0",
         reason="Transforms are now added by adding the Pastas Model as the first "
         "argument during Transform initialization (i.e., ps.ThresholdTransform"
@@ -351,7 +351,7 @@ class Model:
         self._parameters = self.get_init_parameters(initial=False)
         self._check_stressmodel_compatibility()
 
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.4.0",
         reason="Noise models are now added by adding the Pastas Model as the first "
         "argument during noise model initialization (i.e., ps.ArNoiseModel"
@@ -391,7 +391,7 @@ class Model:
 
         self._parameters = self.get_init_parameters(initial=False)
 
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.4.0",
         reason="Solvers are now added by adding the Pastas Model as the first "
         "argument during solver initialization (i.e.,  ps.solver.LeastSquares"
@@ -890,7 +890,7 @@ class Model:
 
         return oseries.series
 
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.0.0",
         reason="The initialize method is not needed anymore in favor of the `set_settings` method.",
     )
@@ -1158,7 +1158,7 @@ class Model:
             self._generate_warnings_report(log=True, solve_success=solve_success)
 
     @property
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.0.0", reason="Use 'ml.observations()' instead."
     )
     def oseries_calib(self):

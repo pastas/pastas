@@ -10,7 +10,7 @@ from matplotlib.ticker import LogFormatter, MultipleLocator
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat
 
 from pastas.decorators import (
-    PastasDeprecationWarning,
+    deprecate_class_func_or_method,
     deprecate_args_or_kwargs,
     model_tmin_tmax,
 )
@@ -395,7 +395,7 @@ class Plotting:
 
         return axd if return_dict else list(axd.values())
 
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.2.0", reason="Use `results` instead with the return_dict argument."
     )
     def results_mosaic(self, *args, **kwargs) -> dict[str, Axes]:
@@ -947,7 +947,7 @@ class Plotting:
 
         return fig.axes
 
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="1.6.0",
         reason=(
             "Quantifying contributions in one plot is ambiguous. "

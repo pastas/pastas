@@ -23,7 +23,7 @@ from pandas.tseries.frequencies import to_offset
 from pandas.tseries.offsets import BaseOffset
 from scipy import interpolate
 
-from .decorators import PastasDeprecationWarning, deprecate_args_or_kwargs, njit
+from .decorators import deprecate_class_func_or_method, deprecate_args_or_kwargs, njit
 
 logger = logging.getLogger(__name__)
 
@@ -378,7 +378,7 @@ def get_sample_for_freq(
     return series.loc[get_sample(series.index, ref_tindex)]
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.1",
     reason="`timestep_weighted_resample` is replaced by `time_weighted_resample`.",
 )

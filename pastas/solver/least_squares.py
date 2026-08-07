@@ -12,7 +12,7 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, OptimizeResult, least_squares
 
-from pastas.decorators import PastasDeprecationWarning, temporarily_disable_cache
+from pastas.decorators import deprecate_class_func_or_method, temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike, Model
 
@@ -1088,7 +1088,7 @@ class LeastSquares(LeastSquaresBase):
         return settings
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.3.0", reason="The LmfitSolve class is renamed to Lmfit."
 )
 def LmfitSolve(*args, **kwargs):

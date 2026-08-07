@@ -21,12 +21,12 @@ This will print the following to the console::
 
 from typing import Any, Literal
 
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import deprecate_class_func_or_method
 from pastas.stats import metrics
 from pastas.typing import ArrayLike, Model
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="The ExceededMaxSolveTime exception has been renamed to TimeoutError.",
 )

@@ -25,7 +25,7 @@ from pandas import DataFrame, DatetimeIndex, Series, Timedelta
 from pastas.typing import ArrayLike, Model
 
 from .decorators import (
-    PastasDeprecationWarning,
+    deprecate_class_func_or_method,
     check_argument_model,
     njit,
     set_parameter,
@@ -296,7 +296,7 @@ class ArNoiseModel(NoiseModelBase):
         return super().to_dict()
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="Please use `ps.ArNoiseModel` instead.",
 )
@@ -442,7 +442,7 @@ class ArmaNoiseModel(NoiseModelBase):
         return super().to_dict()
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="Please use `ps.ArmaNoiseModel` instead.",
 )

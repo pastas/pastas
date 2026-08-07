@@ -35,7 +35,7 @@ from pastas.typing import (
 )
 
 from .decorators import (
-    PastasDeprecationWarning,
+    deprecate_class_func_or_method,
     check_argument_model,
     conditional_cachedmethod,
     deprecate_args_or_kwargs,
@@ -141,7 +141,7 @@ class StressModelBase(ABC):
         """Number of time series the contribution can be split in."""
 
     @property
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.0.0",
         reason=(
             "The get_nsplit method is deprecated. To inspect the number of available split"
@@ -163,7 +163,7 @@ class StressModelBase(ABC):
         return self.parameters.index.size
 
     @property
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.0.0",
         reason=(
             "The freq attribute is deprecated. To inspect the model frequency "
@@ -1952,7 +1952,7 @@ class RechargeModel(StressModelBase):
             logger.warning(msg)
 
     @property
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.0.0",
         reason=(
             "for the RechargeModel. Use 'stresses' property instead if you want to"

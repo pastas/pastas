@@ -8,7 +8,7 @@ import numpy as np
 from pandas import DataFrame, Series, Timedelta, Timestamp, concat
 from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
-from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
+from pastas.decorators import deprecate_class_func_or_method, deprecate_args_or_kwargs
 from pastas.plotting.modelcompare import CompareModels
 from pastas.plotting.plotutil import plot_series_with_gaps, share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 __all__ = ["acf", "compare", "cum_frequency", "diagnostics", "series"]
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="The TrackSolve class has been moved to pastas.solver.trackers.TrackSolve.",
 )

@@ -18,7 +18,7 @@ from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
 from pandas import DataFrame, Series
 
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import deprecate_class_func_or_method
 from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = [
@@ -765,7 +765,7 @@ def kge(
     return kge
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="""This function `kge_2012` will be deprecated in Pastas version 2.0. Please
     use `pastas.stats.kge(modified=True)` to get the same outcome.""",

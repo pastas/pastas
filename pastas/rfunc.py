@@ -35,7 +35,7 @@ from scipy.special import (
     wrightomega,
 )
 
-from pastas.decorators import PastasDeprecationWarning, njit
+from pastas.decorators import deprecate_class_func_or_method, njit
 from pastas.stats import moment
 from pastas.typing import ArrayLike
 
@@ -3558,7 +3558,7 @@ class Spline(RfuncBase):
         return settings
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason=(
         "Please use the pastas-plugins library if you want to keep using this "
