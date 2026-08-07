@@ -379,7 +379,7 @@ def get_sample_for_freq(
 
 
 @deprecate_class_func_or_method(
-    version="2.1",
+    version="2.0.0",
     reason="`timestep_weighted_resample` is replaced by `time_weighted_resample`.",
 )
 def timestep_weighted_resample(
@@ -390,7 +390,7 @@ def timestep_weighted_resample(
 ) -> Series:
     """Resample a time series to a new time index, using an overlapping period weighted average.
 
-    .. deprecated:: 2.1
+    .. deprecated:: 2.0.0
         Use :func:`time_weighted_resample` instead.
 
     The original series and the new index do not have to be equidistant. Also, the

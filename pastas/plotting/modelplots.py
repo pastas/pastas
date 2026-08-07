@@ -396,7 +396,7 @@ class Plotting:
         return axd if return_dict else list(axd.values())
 
     @deprecate_class_func_or_method(
-        version="2.2.0", reason="Use `results` instead with the return_dict argument."
+        version="2.0.0", reason="Use `results` instead with the return_dict argument."
     )
     def results_mosaic(self, *args, **kwargs) -> dict[str, Axes]:
         """Plot the results of the model in a mosaic plot (deprecated).
