@@ -7,11 +7,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import LogFormatter, MultipleLocator
-from pandas import DataFrame, Series, Timedelta, Timestamp, concat
+from pandas import DataFrame, Timedelta, Timestamp, concat
 
 from pastas.decorators import (
-    PastasDeprecationWarning,
     deprecate_args_or_kwargs,
+    deprecate_class_func_or_method,
     model_tmin_tmax,
 )
 from pastas.plotting.plots import cum_frequency, diagnostics, pairplot, series
@@ -23,7 +23,6 @@ from pastas.plotting.plotutil import (
     plot_series_with_gaps,
     share_xaxes,
 )
-from pastas.timeseries_utils import _index_to_int64
 from pastas.typing import Axes, Figure, Model, StressModel
 
 logger = logging.getLogger(__name__)
@@ -195,7 +194,7 @@ class Plotting:
         if "split" in kwargs:
             deprecate_args_or_kwargs(
                 name="split",
-                version="2.2.0",
+                version="2.4.0",
                 reason="Use `split_contributions` instead.",
             )
             split_contributions = kwargs.pop("split")
@@ -395,8 +394,8 @@ class Plotting:
 
         return axd if return_dict else list(axd.values())
 
-    @PastasDeprecationWarning(
-        version="2.2.0", reason="Use `results` instead with the return_dict argument."
+    @deprecate_class_func_or_method(
+        version="2.0.0", reason="Use `results` instead with the return_dict argument."
     )
     def results_mosaic(self, *args, **kwargs) -> dict[str, Axes]:
         """Plot the results of the model in a mosaic plot (deprecated).
@@ -544,7 +543,7 @@ class Plotting:
         if "split" in kwargs:
             deprecate_args_or_kwargs(
                 name="split",
-                version="2.3.0",
+                version="2.4.0",
                 reason="Use `split_contributions` instead.",
             )
             split_contributions = kwargs.pop("split")
@@ -947,7 +946,7 @@ class Plotting:
 
         return fig.axes
 
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="1.6.0",
         reason=(
             "Quantifying contributions in one plot is ambiguous. "

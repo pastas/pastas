@@ -178,7 +178,7 @@ class ThresholdTransform:
         if "h" in kwargs:
             deprecate_args_or_kwargs(
                 name="h",
-                version="2.3.0",
+                version="2.4.0",
                 reason="Please use `series` instead of `h`.",
             )
             if series is None:

@@ -1,6 +1,6 @@
 """Module containing decorators and utility functions for Pastas models.
 
-Includes decorators for caching, configuring global settings, deprecation warnings,
+Includes decorators for caching, configuring global settings, deprecations,
 and other convenient methods for handling time, numba compiled code, etc.
 """
 
@@ -32,7 +32,7 @@ USE_NUMBA = True
 USE_CACHE = False
 
 
-def PastasDeprecationWarning(version: str, reason: str = "") -> Any:
+def deprecate_class_func_or_method(version: str, reason: str = "") -> Any:
     """Provide a warning or error when a Pastas class, method or function is deprecated.
 
     This decorator manages deprecation of classes, functions, or methods across Pastas versions.
@@ -126,8 +126,8 @@ def deprecate_args_or_kwargs(name: str, version: str, reason: str = "") -> None:
         raise TypeError(msg)
 
 
-@PastasDeprecationWarning(
-    version="2.3.0",
+@deprecate_class_func_or_method(
+    version="2.4.0",
     reason="The set_use_numba function is deprecated. Use ps.options.numba = True/False instead.",
 )
 def set_use_numba(b: bool) -> None:
@@ -144,8 +144,8 @@ def set_use_numba(b: bool) -> None:
     USE_NUMBA = b
 
 
-@PastasDeprecationWarning(
-    version="2.3.0",
+@deprecate_class_func_or_method(
+    version="2.4.0",
     reason="The get_use_numba function is deprecated. Use ps.options.numba instead.",
 )
 def get_use_numba() -> bool:
@@ -159,8 +159,8 @@ def get_use_numba() -> bool:
     return options.numba
 
 
-@PastasDeprecationWarning(
-    version="2.3.0",
+@deprecate_class_func_or_method(
+    version="2.4.0",
     reason="The set_use_cache function is deprecated. Use ps.options.cache = True/False instead.",
 )
 def set_use_cache(b: bool) -> None:
@@ -187,8 +187,8 @@ def set_use_cache(b: bool) -> None:
     USE_CACHE = b
 
 
-@PastasDeprecationWarning(
-    version="2.3.0",
+@deprecate_class_func_or_method(
+    version="2.4.0",
     reason="The get_use_cache function is deprecated. Use ps.options.cache instead.",
 )
 def get_use_cache() -> bool:
@@ -350,7 +350,7 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
     return njit_decorator
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="latexify was archived and is no longer maintained. This decorator will be removed in a future release.",
 )

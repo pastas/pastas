@@ -35,10 +35,10 @@ from pastas.typing import (
 )
 
 from .decorators import (
-    PastasDeprecationWarning,
     check_argument_model,
     conditional_cachedmethod,
     deprecate_args_or_kwargs,
+    deprecate_class_func_or_method,
     njit,
     set_parameter,
 )
@@ -141,7 +141,7 @@ class StressModelBase(ABC):
         """Number of time series the contribution can be split in."""
 
     @property
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.0.0",
         reason=(
             "The get_nsplit method is deprecated. To inspect the number of available split"
@@ -163,7 +163,7 @@ class StressModelBase(ABC):
         return self.parameters.index.size
 
     @property
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.0.0",
         reason=(
             "The freq attribute is deprecated. To inspect the model frequency "
@@ -892,16 +892,16 @@ class LinearTrend(StressModelBase):
         if start is not None:
             deprecate_args_or_kwargs(
                 "start",
-                "3.0.0",
-                "Please use 'tstart' instead of 'start'.",
+                version="2.4.0",
+                reason="Please use 'tstart' instead of 'start'.",
             )
             if tstart is None:
                 tstart = start
         if end is not None:
             deprecate_args_or_kwargs(
                 "end",
-                "3.0.0",
-                "Please use 'tend' instead of 'end'.",
+                version="2.4.0",
+                reason="Please use 'tend' instead of 'end'.",
             )
             if tend is None:
                 tend = end
@@ -1952,7 +1952,7 @@ class RechargeModel(StressModelBase):
             logger.warning(msg)
 
     @property
-    @PastasDeprecationWarning(
+    @deprecate_class_func_or_method(
         version="2.0.0",
         reason=(
             "for the RechargeModel. Use 'stresses' property instead if you want to"

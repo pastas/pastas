@@ -23,7 +23,7 @@ from pandas.tseries.frequencies import to_offset
 from pandas.tseries.offsets import BaseOffset
 from scipy import interpolate
 
-from .decorators import PastasDeprecationWarning, deprecate_args_or_kwargs, njit
+from .decorators import deprecate_args_or_kwargs, deprecate_class_func_or_method, njit
 
 logger = logging.getLogger(__name__)
 
@@ -354,7 +354,7 @@ def get_sample_for_freq(
     if "s" in kwargs:
         deprecate_args_or_kwargs(
             name="s",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `s`.",
         )
         if series is None:
@@ -378,8 +378,8 @@ def get_sample_for_freq(
     return series.loc[get_sample(series.index, ref_tindex)]
 
 
-@PastasDeprecationWarning(
-    version="2.1",
+@deprecate_class_func_or_method(
+    version="2.0.0",
     reason="`timestep_weighted_resample` is replaced by `time_weighted_resample`.",
 )
 def timestep_weighted_resample(
@@ -390,7 +390,7 @@ def timestep_weighted_resample(
 ) -> Series:
     """Resample a time series to a new time index, using an overlapping period weighted average.
 
-    .. deprecated:: 2.1
+    .. deprecated:: 2.0.0
         Use :func:`time_weighted_resample` instead.
 
     The original series and the new index do not have to be equidistant. Also, the
@@ -425,7 +425,7 @@ def timestep_weighted_resample(
     if "s" in kwargs:
         deprecate_args_or_kwargs(
             name="s",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `s`.",
         )
         if series is None:

@@ -11,7 +11,7 @@ from typing import Any
 
 import pandas as pd
 
-from pastas.decorators import PastasDeprecationWarning, set_parameter
+from pastas.decorators import deprecate_class_func_or_method, set_parameter
 from pastas.typing import Model
 
 logger = getLogger(__name__)
@@ -56,7 +56,9 @@ class SolverBase(ABC):
         return parameters
 
     @property
-    @PastasDeprecationWarning(version="2.4.0", reason="Use 'solver.model' instead.")
+    @deprecate_class_func_or_method(
+        version="2.4.0", reason="Use 'solver.model' instead."
+    )
     def ml(self):
         """Pastas Model instance (Deprecated)."""
         return self.model
@@ -157,7 +159,7 @@ class SolverBase(ABC):
         }
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0", reason="Use SolverBase instead of BaseSolver."
 )
 class BaseSolver(SolverBase):

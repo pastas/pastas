@@ -97,7 +97,7 @@ def acf(
     if "x" in kwargs:
         deprecate_args_or_kwargs(
             name="x",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `x`.",
         )
         if series is None:
@@ -204,7 +204,7 @@ def ccf(
     if "x" in kwargs:
         deprecate_args_or_kwargs(
             name="x",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series_x` instead of `x`.",
         )
         if series_x is None:
@@ -214,7 +214,7 @@ def ccf(
     if "y" in kwargs:
         deprecate_args_or_kwargs(
             name="y",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series_y` instead of `y`.",
         )
         if series_y is None:
@@ -302,7 +302,7 @@ def _preprocess(
     if "x" in kwargs:
         deprecate_args_or_kwargs(
             name="x",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `x`.",
         )
         if series is None:
@@ -459,7 +459,7 @@ def mean(
     if "x" in kwargs:
         deprecate_args_or_kwargs(
             name="x",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `x`.",
         )
         if series is None:
@@ -512,7 +512,7 @@ def var(
     if "x" in kwargs:
         deprecate_args_or_kwargs(
             name="x",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `x`.",
         )
         if series is None:
@@ -558,7 +558,7 @@ def std(
     if "x" in kwargs:
         deprecate_args_or_kwargs(
             name="x",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `x`.",
         )
         if series is None:
@@ -592,7 +592,7 @@ def moment(series: Series | None = None, order: int = 0, **kwargs) -> float:
     if "x" in kwargs:
         deprecate_args_or_kwargs(
             name="x",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `x`.",
         )
         if series is None:
@@ -641,7 +641,7 @@ def _get_weights(
     if "x" in kwargs:
         deprecate_args_or_kwargs(
             name="x",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `series` instead of `x`.",
         )
         if series is None:

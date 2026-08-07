@@ -15,10 +15,9 @@ This returns a Series containing the statistics::
     nse        0.929136
 """
 
-from numpy import interp, nan
-from pandas import DataFrame, Series, Timestamp
+from numpy import nan
+from pandas import DataFrame, Timestamp
 
-from pastas.timeseries_utils import _index_to_int64
 from pastas.typing import Model
 
 from .decorators import model_tmin_tmax
