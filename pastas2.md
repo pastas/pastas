@@ -229,13 +229,13 @@ Among the many new features introduced by Pastas 2.0, these are some of the high
 - Use the impulse response instead of the block response to simulate heads. This can be
 set by adding `use_block=False` in the response function definitions. This is faster,
 since it avoids having to compute two step responses, and produces comparable results
-in our tests. Set with e.g. `ps.FourParam(use_block=False)`.
+in our tests. This is supported by all response functions. Set with e.g. `ps.FourParam(use_block=False)`.
 
 - Use `jac="cs"` in `ps.solver.LeastSquares()` to compute the Jacobian using a complex
 step. This method is more accurate and more efficient than other jacobian estimation
 routines despite the added computational burden of doing complex arithmetic. Pastas
 internals were adjusted to support complex math in order to make this possible. If more
-accurate Jacobians are your thing, try this out.
+accurate Jacobians are your thing, try this out. Note that for response function `ps.FourParam`, `jac="cs"` is only supported when `use_block=False`. For `ps.Gamma` it is recommended to set `use_block=False`, otherwise models become significantly slower.
 
 - The `tmax` estimates of the `Hantush` and `FourParam` response functions for a given
 `cutoff` can now be computed more accurately using fast numerical integration. This is
