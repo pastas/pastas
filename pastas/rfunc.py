@@ -1097,7 +1097,7 @@ class Hantush(RfuncBase):
         if self.approximate_tmax:
             return t0
 
-        A, a, b = p[0], p[1], p[2]
+        a, b = p[1], p[2]
 
         # Use Brentq's method
         tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
