@@ -1,10 +1,39 @@
 from typing import Any
 
 import pytest
+from packaging.version import Version
 
-from pastas.decorators import deprecate_args_or_kwargs, deprecate_class_func_or_method
+from pastas.decorators import (
+    CURRENT_PASTAS_VERSION,
+    _get_base_version,
+    deprecate_args_or_kwargs,
+    deprecate_class_func_or_method,
+)
+from pastas.version import __version__
 
 msg = "Boo!"
+
+
+def test_base_version_normalization(monkeypatch: pytest.MonkeyPatch) -> None:
+    version = _get_base_version("1!2.3.4rc1.post2.dev3+local")
+
+    assert version == Version("1!2.3.4")
+    assert version.epoch == 1
+    assert version.release == (2, 3, 4)
+    assert version.pre is version.post is version.dev is version.local is None
+    assert _get_base_version(version.base_version) == version
+    assert CURRENT_PASTAS_VERSION == _get_base_version(__version__)
+
+    monkeypatch.setattr("pastas.decorators.CURRENT_PASTAS_VERSION", version)
+
+    @deprecate_class_func_or_method(version="1!2.3.4", reason=msg)
+    def deprecated() -> None:
+        pass
+
+    with pytest.raises(AttributeError, match=msg):
+        deprecated()
+    with pytest.raises(TypeError, match=msg):
+        deprecate_args_or_kwargs("test", version="1!2.3.4", reason=msg)
 
 
 def test_class_deprecation() -> None:

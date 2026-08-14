@@ -11,6 +11,7 @@ from logging import getLogger
 from typing import Any
 from warnings import warn
 
+from packaging.version import Version
 from packaging.version import parse as parse_version
 from pandas import Timestamp
 
@@ -24,10 +25,14 @@ except (ModuleNotFoundError, ImportError):
     CACHETOOLS_AVAILABLE = False
 
 logger = getLogger(__name__)
+
+
+def _get_base_version(version: str) -> Version:
+    return parse_version(parse_version(version).base_version)
+
+
 # Test against base-version, formatted as a Version (.base_version returns a str)
-CURRENT_PASTAS_VERSION = parse_version(__version__).__replace__(
-    pre=None, post=None, dev=None, local=None
-)
+CURRENT_PASTAS_VERSION = _get_base_version(__version__)
 
 # Keep these for backward compatibility but they now delegate to central settings
 # These will be removed in a future version 2.3.0
