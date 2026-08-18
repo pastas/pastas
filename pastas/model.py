@@ -954,9 +954,9 @@ class Model:
             parameters, or set to False to suppress the report.
 
             .. versionchanged:: 2.0.0
-             To have full control over the report, a dictionary with the arguments of
-             ml.solve.fit_report() can be provided:
-             (i.e., ml.solve(report=dict(stderr=True, corr=False))).
+                To have full control over the report, a dictionary with the arguments of
+                ml.solver.fit_report() can be provided:
+                (i.e., ml.solve(report=dict(stderr=True, corr=False))).
 
         initial: bool, optional
             Reset initial parameters from the individual stress models. Default is
@@ -2288,7 +2288,8 @@ class Model:
         log: bool, optional
             If True, the warnings are logged using the logging module. Default is True.
         solve_success: bool, optional
-            If True, the solve was successful and no warnings are generated. Default is True.
+            If True, the solve was successful and no warnings are generated.
+            Default is True.
 
         Returns
         -------

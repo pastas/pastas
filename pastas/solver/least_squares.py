@@ -1062,6 +1062,7 @@ class LeastSquares(LeastSquaresBase):
 
         >>> print(ml.fit_report)
         """
+        obj_func = self.result.cost if self.result is not None else np.nan
         return super().fit_report(
             corr=corr,
             stderr=stderr,
