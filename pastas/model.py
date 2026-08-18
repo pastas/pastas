@@ -229,7 +229,7 @@ class Model:
 
     @deprecate_class_func_or_method(
         version="2.4.0",
-        reason="Stressmodels are now added by adding the Pastas Model as the first argument during stressmodel initialization (i.e., ps.Stressmodel(model=ml, *args))",
+        reason="Stressmodels are now added by adding the Pastas Model as the first argument during stressmodel initialization (i.e., ps.StressModel(model=ml, *args))",
     )
     def add_stressmodel(
         self, stressmodel: StressModel | list[StressModel], replace: bool = True
