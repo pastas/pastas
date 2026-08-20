@@ -14,7 +14,7 @@ from logging import getLogger
 from os import path
 from pathlib import Path
 
-from packaging import version
+from packaging.version import parse as parse_version
 
 import pastas as ps
 from pastas.typing import Model
@@ -58,7 +58,7 @@ def load(fname: str | Path, **kwargs) -> Model:
     file_version = data["file_info"]["pastas_version"]
 
     # A single catch for old pas-files, no longer supported
-    if version.parse(file_version) < version.parse("0.23.0"):
+    if parse_version(file_version) < parse_version("0.23.0"):
         msg = (
             "This file was created with a Pastas version prior to 0.23 "
             "and cannot be loaded with Pastas >= 1.0. Please load and "
