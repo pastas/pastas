@@ -2,6 +2,7 @@
 
 import importlib
 from collections.abc import Iterable
+from contextlib import nullcontext
 from logging import getLogger
 from typing import Any
 
@@ -221,31 +222,18 @@ class Emcee(SolverBase):
 
             from multiprocessing import Pool
 
-            with Pool() as pool:
-                self.sampler = emcee.EnsembleSampler(
-                    nwalkers=self.nwalkers,
-                    ndim=ndim,
-                    log_prob_fn=self.log_probability,
-                    moves=self.moves,
-                    backend=self.backend,
-                    pool=pool,
-                    args=(noise, weights, callback),
-                )
-
-                self.sampler.run_mcmc(
-                    initial_state=pinit,
-                    nsteps=self.nsteps,
-                    progress=self.progress_bar,
-                    **kwargs,
-                )
+            pool_ctx = Pool()
         else:
+            pool_ctx = nullcontext()
+
+        with pool_ctx as pool:
             self.sampler = emcee.EnsembleSampler(
                 nwalkers=self.nwalkers,
                 ndim=ndim,
                 log_prob_fn=self.log_probability,
                 moves=self.moves,
                 backend=self.backend,
-                pool=None,
+                pool=pool,
                 args=(noise, weights, callback),
             )
 
