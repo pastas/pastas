@@ -1,6 +1,7 @@
 """Module containing the EmceeSolve class, which is a solver based on the MCMC approach in emcee :cite:p:`foreman-mackey_emcee_2013`."""
 
 import importlib
+from collections.abc import Iterable
 from logging import getLogger
 from typing import Any
 
@@ -56,6 +57,7 @@ class Emcee(SolverBase):
     emcee.EnsembleSampler
     emcee.moves
     emcee.backend
+    pastas.solver.likelihood
     pastas.solver.objective_function
 
     Notes
@@ -64,29 +66,23 @@ class Emcee(SolverBase):
     (MCMC) approach to find the optimal parameter values. The solver can be used as
     follows::
 
-        solver = ps.solver.Emcee(nwalkers=20, progress_bar=True)
-        ml.solve(solver=solver)
+        solver = ps.solver.Emcee(ml, nwalkers=20, nsteps=5000, progress_bar=True)
 
-    The arguments provided are mostly passed on to the `emcee.EnsembleSampler`
-    and determine how that instance is created. Arguments you want to pass on to
-    `run_mcmc` (and indirectly the `sample` method), can be passed on to
-    `Model.solve`, like::
+    The attributes provided are mostly passed on to the `emcee.EnsembleSampler`
+    and determine how that instance is created. Keyword arguments to `model.solve`
+    are parsed to `emcee.EnsembleSampler.sample` via the `run_mcmc` method like::
 
-        ml.solve(solver=ps.solver.Emcee(), thin_by=2)
+        ml.solve(thin_by=2)
+
+
+    To obtain the MCMC chains, use::
+
+        ml.solver.sampler.get_chain(flat=True, discard=3000)
 
     References
     ----------
     https://emcee.readthedocs.io/en/stable/
 
-    Examples
-    --------
-    Example usage::
-
-        ml.solve(solver=ps.solver.Emcee(), steps=5000)
-
-    To obtain the MCMC chains, use::
-
-        ml.solver.sampler.get_chain(flat=True, discard=3000)
     """
 
     def __init__(
@@ -95,8 +91,9 @@ class Emcee(SolverBase):
         name: str = "solver",
         objfunction: GaussianLikelihood | GaussianLikelihoodAr1 | None = None,
         nwalkers: int = 20,
+        nsteps: int = 5_000,
         backend: Any | None = None,
-        moves: Any | None = None,
+        moves: Any | Iterable[Any] | None = None,
         parallel: bool | None = None,
         progress_bar: bool = True,
         **kwargs: Any,
@@ -124,7 +121,7 @@ class Emcee(SolverBase):
         self.parallel = options.parallel if parallel is None else parallel
         self.progress_bar = progress_bar
         self.nwalkers = nwalkers
-        self.nsteps: int | None = None
+        self.nsteps: int = nsteps
         self.priors: list[DataFrame] = []
         self.initial: np.ndarray
         self.vary: np.ndarray
@@ -163,11 +160,40 @@ class Emcee(SolverBase):
         self,
         noise: bool = False,
         weights: Series | None = None,
-        steps: int = 5000,
         callback: CallBack | None = None,
-        **kwargs: Any,
+        steps: int | None = None,
+        **kwargs,
     ) -> tuple[bool, DataFrame]:
-        """Solve the model using MCMC."""
+        """Solve the model using MCMC.
+
+        Parameters
+        ----------
+        noise: bool, optional
+            If True, the noise model is applied to the residuals. This is passed on to
+            the misfit function, which will apply the noise model if True.
+        weights: pandas.Series, optional
+            Series with weights for the residuals. This is passed on to the misfit
+            function, which will apply the weights if provided.
+        callback: callable, optional
+            Callback function that will be called after each iteration of the solver.
+        **kwargs: Any, optional
+            Additional keyword arguments to be passed to the `emcee.EnsembleSampler.sample`
+            method via the `run_mcmc` method.
+        """
+        if steps is not None:
+            deprecate_args_or_kwargs(
+                "steps",
+                "2.4.0",
+                reason="Use the argument nsteps instead, preferably on the Emcee initialization.",
+            )
+            kwargs["nsteps"] = steps
+
+        # Overwrite kwargs of init if parsed to solve
+        init_kwargs = [k for k in kwargs if hasattr(self, k)]
+        for k in init_kwargs:
+            logger.info(f"Setting {k} to {kwargs[k]} for Emcee solver.")
+            setattr(self, k, kwargs.pop(k))
+
         # Store initial parameters
         self.initial = self.model.parameters.initial.to_numpy(dtype=float)
         self.vary = self.model.parameters.vary.to_numpy(dtype=bool)
@@ -183,8 +209,6 @@ class Emcee(SolverBase):
 
         # Set priors
         self._set_priors()
-
-        self.nsteps = steps
 
         # Set initial positions of the walkers
         pinit = self.initial[self.vary]
@@ -210,7 +234,7 @@ class Emcee(SolverBase):
 
                 self.sampler.run_mcmc(
                     initial_state=pinit,
-                    nsteps=steps,
+                    nsteps=self.nsteps,
                     progress=self.progress_bar,
                     **kwargs,
                 )
@@ -226,7 +250,10 @@ class Emcee(SolverBase):
             )
 
             self.sampler.run_mcmc(
-                initial_state=pinit, nsteps=steps, progress=self.progress_bar, **kwargs
+                initial_state=pinit,
+                nsteps=self.nsteps,
+                progress=self.progress_bar,
+                **kwargs,
             )
 
         # Get optimal values
