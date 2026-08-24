@@ -14,8 +14,7 @@ from pastas.typing import ArrayLike, CallBack, Model
 
 from .._options import options
 from .base import SolverBase
-from .likelihood import GaussianLikelihood, GaussianLikelihoodAr1
-from .objective_function import misfit
+from .objective_function import GaussianLikelihood, GaussianLikelihoodAr1, misfit
 
 logger = getLogger(__name__)
 
@@ -33,9 +32,8 @@ class Emcee(SolverBase):
 
     Parameters
     ----------
-    objfunction: pastas.solver.likelihood function, optional
-        An objective function to be minimized. See the pastas.likelihood module for
-        more information.
+    objfunction: pastas.solver.objective_function, optional
+        The objective function to be minimized.
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
     backend: emcee.backend, optional
@@ -58,7 +56,6 @@ class Emcee(SolverBase):
     emcee.EnsembleSampler
     emcee.moves
     emcee.backend
-    pastas.solver.likelihood
     pastas.solver.objective_function
 
     Notes
@@ -163,7 +160,6 @@ class Emcee(SolverBase):
         weights: Series | None = None,
         steps: int | None = None,
         callback: CallBack | None = None,
-        steps: int | None = None,
         **kwargs,
     ) -> tuple[bool, DataFrame]:
         """Solve the model using MCMC.
