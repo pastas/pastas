@@ -90,7 +90,7 @@ def test_emcee(ml_recharge: ps.Model) -> None:
         ml_recharge.solve()
         ml_recharge.del_noisemodel()
 
-        ps.solver.Emcee(model=ml_recharge, nwalkers=10)
+        ps.solver.Emcee(model=ml_recharge, nwalkers=10, nsteps=2, progress_bar=False)
 
         ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)
 
@@ -100,7 +100,6 @@ def test_emcee(ml_recharge: ps.Model) -> None:
         ml_recharge.solve(
             initial=False,
             fit_constant=True,
-            steps=2,
         )
     except ImportError:
         pytest.skip("emcee not installed, skipping test")
