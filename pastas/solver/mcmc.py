@@ -161,6 +161,7 @@ class Emcee(SolverBase):
         self,
         noise: bool = False,
         weights: Series | None = None,
+        steps: int | None = None,
         callback: CallBack | None = None,
         steps: int | None = None,
         **kwargs,
@@ -567,4 +568,4 @@ class Emcee(SolverBase):
             " and cannot be reproduced. To ensure reproducibility, it "
             " is recommended to save the attributes separately."
         )
-        return super().to_dict() | {"nwalkers": self.nwalkers}
+        return super().to_dict() | {"nwalkers": self.nwalkers, "nsteps": self.nsteps}
