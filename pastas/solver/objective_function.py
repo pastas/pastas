@@ -124,12 +124,12 @@ class GaussianLikelihood:
         )
         return parameters
 
-    def compute(self, rv: ArrayLike, p: ArrayLike) -> float:
+    def compute(self, res: ArrayLike, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
         ----------
-        rv: array
+        res: array
             Residuals of the model.
         p: array or list
             Parameters of the log-likelihood function.
@@ -141,8 +141,8 @@ class GaussianLikelihood:
 
         """
         var = p[-1]
-        N = rv.size
-        ln = -0.5 * N * log(2 * pi * var) + sum(-(rv**2) / (2 * var))
+        N = len(res)
+        ln = -0.5 * N * log(2 * pi * var) + sum(-(res**2) / (2 * var))
         return ln
 
     @property
@@ -214,12 +214,12 @@ class GaussianLikelihoodAr1:
             index=[name + "_var", name + "_phi"],
         )
 
-    def compute(self, rv: ArrayLike, p: ArrayLike) -> float:
+    def compute(self, res: ArrayLike, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
         ----------
-        rv: array
+        res: array
             Residuals of the model.
         p: array or list
             Parameters of the log-likelihood function.
@@ -232,9 +232,9 @@ class GaussianLikelihoodAr1:
         """
         var = p[-2]
         phi = p[-1]
-        N = rv.size
+        N = len(res)
         ln = -(N - 1) / 2 * log(2 * pi * var) + sum(
-            -((rv[1:] - phi * rv[0:-1]) ** 2) / (2 * var)
+            -((res[1:] - phi * res[0:-1]) ** 2) / (2 * var)
         )
         return ln
 
