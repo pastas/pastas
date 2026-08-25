@@ -337,7 +337,7 @@ class Emcee(SolverBase):
 
         res = misfit(
             model=self.model,
-            p=p,
+            p=par,
             noise=noise,
             weights=weights,
             callback=callback,
