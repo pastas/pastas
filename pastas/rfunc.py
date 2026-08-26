@@ -266,9 +266,9 @@ class RfuncBase(ABC):
                 gain_scale_factor = gain_scale_factor * -1
             elif gain_scale_factor == 0.0:
                 msg = (
-                "The gain_scale_factor, the factor to scale the initial value of"
-                " the gain parameter, cannot be zero, setting to 1.0. Consider "
-                "providing a custom gain_scale_factor."
+                    "The gain_scale_factor, the factor to scale the initial value of"
+                    " the gain parameter, cannot be zero, setting to 1.0. Consider "
+                    "providing a custom gain_scale_factor."
                 )
                 logger.warning(msg)
                 gain_scale_factor = 1.0
