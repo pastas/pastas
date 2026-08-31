@@ -714,7 +714,7 @@ class LeastSquares(LeastSquaresBase):
         self,
         model: Model,
         name: str = "solver",
-        jac: Literal["2-point", "3-point", "cs"] = "3-point",
+        jac: Literal["2-point", "3-point", "cs"] = "2-point",
         method: Literal["trf", "dogbox", "lm"] = "trf",
         ftol: float = 1e-8,
         xtol: float = 1e-8,
