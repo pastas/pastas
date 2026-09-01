@@ -18,24 +18,24 @@ from numpy import abs as npabs
 from numpy import average, log, nan, sqrt
 from pandas import DataFrame, Series
 
-from pastas.decorators import PastasDeprecationWarning
+from pastas.decorators import deprecate_class_func_or_method
 from pastas.stats.core import _get_weights, mean, std, var
 
 __all__ = [
-    "rmse",
-    "sse",
-    "mae",
-    "me",
-    "nse",
-    "nnse",
-    "evp",
-    "rsq",
-    "bic",
     "aic",
     "aicc",
-    "pearsonr",
+    "bic",
+    "evp",
     "kge",
+    "mae",
+    "me",
+    "nnse",
+    "nse",
+    "pearsonr",
     "picp",
+    "rmse",
+    "rsq",
+    "sse",
 ]
 
 logger = getLogger(__name__)
@@ -731,6 +731,11 @@ def kge(
     :math:`\\gamma = \\frac{\\bar{\\sigma}_x / \\bar{x}}{\\bar{\\sigma}_y /
     \\bar{y}}`. If weighted equals True, the weighted mean, variance and
     pearson correlation are used.
+
+    .. versionchanged:: 1.5
+        The ``modified`` parameter was added to support the modified KGE
+        formulation from :cite:t:`kling_runoff_2012`. Previously, this could
+        only be computed via the (now deprecated) :func:`kge_2012` function.
     """
     obs = obs.dropna() if missing == "drop" else obs
 
@@ -760,7 +765,7 @@ def kge(
     return kge
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="""This function `kge_2012` will be deprecated in Pastas version 2.0. Please
     use `pastas.stats.kge(modified=True)` to get the same outcome.""",
@@ -803,6 +808,9 @@ def kge_2012(
     \\frac{\\bar{\\sigma}_x / \\bar{x}}{\\bar{\\sigma}_y / \\bar{y}}`. If
     weighted equals True, the weighted mean, variance and pearson
     correlation are used.
+
+    .. deprecated:: 2.0.0
+        Use :func:`kge` with ``modified=True`` instead.
     """
     return kge(
         obs=obs,

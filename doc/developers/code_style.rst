@@ -25,6 +25,48 @@ Docstrings within the method or class need to be written in `NumPy docformat
 <https://numpydoc .readthedocs.io/en/latest/format.html#docstring-standard>`_
 to enable automatic documentation on this website.
 
+Version Directives in Docstrings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When adding new features, changing existing behaviour, or deprecating methods,
+add the appropriate Sphinx version directive to the docstring so users can
+understand when the API changed. Place these directives at the end of the
+relevant parameter description or at the end of the overall docstring.
+
+``.. versionadded:: <version>``
+    Use when a new function, class, method, or parameter is introduced::
+
+        Parameters
+        ----------
+        modified : bool, optional
+            Use the modified KGE formulation. Default is False.
+
+            .. versionadded:: 2.0.0
+
+``.. versionchanged:: <version>``
+    Use when the behaviour or signature of an existing function or parameter
+    changes::
+
+        Parameters
+        ----------
+        noise : bool, optional
+            Fit a noise model. Default is True.
+
+            .. versionchanged:: 1.5.0
+                The ``noise`` parameter is deprecated and will be removed in a
+                future release.
+
+``.. deprecated:: <version>``
+    Use when a function, method, or parameter is deprecated and will be
+    removed in a future version. Include the replacement where applicable::
+
+        .. deprecated:: 2.0.0
+            Use :func:`kge` with ``modified=True`` instead.
+
+The version number must match the Pastas release in which the change was
+introduced (e.g. ``2.0.0``). Check the
+`GitHub Releases page <https://github.com/pastas/pastas/releases>`_ if you
+are unsure of the version number.
+
 Optimization
 ------------
 Much of the Pastas code is highly optimized to main high speed and productivity. Please
@@ -40,7 +82,7 @@ Private methods in Pastas are identified by a leading underscore. For example:
 >>> ml._get_response()
 
 This basically means that these methods may be removed or their behaviour may
-be changed without DeprecationWarning or any other form of notice.
+be changed without FutureWarning or any other form of notice.
 
 Logger Calls and Errors
 -----------------------

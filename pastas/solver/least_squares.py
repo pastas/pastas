@@ -12,12 +12,12 @@ from pandas import DataFrame, Series
 from scipy.linalg import LinAlgError, get_lapack_funcs, svd
 from scipy.optimize import Bounds, OptimizeResult, least_squares
 
-from pastas.decorators import PastasDeprecationWarning, temporarily_disable_cache
+from pastas.decorators import deprecate_class_func_or_method, temporarily_disable_cache
 from pastas.plotting.plotutil import _table_formatter_stderr
-from pastas.typing import ArrayLike
+from pastas.typing import ArrayLike, Model
 
 from .base import SolverBase
-from .objective_function import misfit
+from .objective.misfit import misfit
 
 logger = getLogger(__name__)
 
@@ -27,6 +27,7 @@ class LeastSquaresBase(SolverBase):
 
     def __init__(
         self,
+        model: Model,
         name: str = "solver",
         pcov: DataFrame | None = None,
         **kwargs,
@@ -35,6 +36,8 @@ class LeastSquaresBase(SolverBase):
 
         Parameters
         ----------
+        model: pastas.Model
+            The Pastas Model instance to which the solver is attached.
         name: str, optional
             Name of the solver instance. Default is "solver".
         pcov: DataFrame, optional
@@ -51,9 +54,9 @@ class LeastSquaresBase(SolverBase):
                 "The 'obj_func' argument is not used in the LeastSquaresBase class and will be ignored."
             )
             kwargs.pop("obj_func")
-        super().__init__(name=name, **kwargs)
+        super().__init__(model=model, name=name, **kwargs)
         self.pcov: DataFrame | None = pcov
-        self.result: OptimizeResult | "lmfit.minimize.MinimizerResult" | None = None
+        self.result: OptimizeResult | lmfit.minimize.MinimizerResult | None = None
 
     @property
     def pcor(self) -> DataFrame | None:
@@ -141,11 +144,11 @@ class LeastSquaresBase(SolverBase):
 
         """
         if name:
-            index = self.ml.parameters.loc[
-                self.ml.parameters.loc[:, "name"] == name
+            index = self.model.parameters.loc[
+                self.model.parameters.loc[:, "name"] == name
             ].index
         else:
-            index = self.ml.parameters.index
+            index = self.model.parameters.index
 
         pcov = self.pcov.reindex(index=index, columns=index).fillna(0)
 
@@ -176,7 +179,11 @@ class LeastSquaresBase(SolverBase):
         return pcor
 
     def get_parameter_sample(
-        self, name: str | None = None, n: int | None = None, max_iter: int = 10
+        self,
+        name: str | None = None,
+        n: int | None = None,
+        max_iter: int = 10,
+        seed: int | None = None,
     ) -> ArrayLike:
         """Obtain a parameter sets for monte carlo analyses.
 
@@ -192,6 +199,8 @@ class LeastSquaresBase(SolverBase):
             maximum number of iterations for truncated multivariate sampling, default
             is 10. Increase this value if number of accepted parameter samples is lower
             than n.
+        seed: int, optional
+            Seed for the random number generator.
 
         Returns
         -------
@@ -205,13 +214,13 @@ class LeastSquaresBase(SolverBase):
         uncertainty.
 
         """
-        p = self.ml.get_parameters(name=name)
+        p = self.model.get_parameters(name=name)
         pcov = self._get_covariance_matrix(name=name)
 
         if name is None:
-            parameters = self.ml.parameters
+            parameters = self.model.parameters
         else:
-            parameters = self.ml.parameters.loc[self.ml.parameters.name == name]
+            parameters = self.model.parameters.loc[self.model.parameters.name == name]
 
         pmin = parameters.pmin.fillna(-np.inf).values
         pmax = parameters.pmax.fillna(np.inf).values
@@ -226,7 +235,7 @@ class LeastSquaresBase(SolverBase):
 
         # Start truncated multivariate sampling
         it = 0
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(seed=seed)
         while samples.shape[0] < n:
             s = rng.multivariate_normal(
                 mean=p, cov=pcov, size=(n,), check_valid="ignore"
@@ -246,12 +255,12 @@ class LeastSquaresBase(SolverBase):
             suggestion = "You could try increasing 'max_iter'."
             if samples.shape[0] == 0:
                 raise RuntimeError(
-                    "No parameter samples were found within %s runs. " % max_iter
+                    f"No parameter samples were found within {max_iter} runs. "
                     + suggestion
                 )
             else:
                 logger.warning(
-                    "Parameter sample size is smaller than n: %s/%s. " % (max_iter, n)
+                    f"Parameter sample size is smaller than n: {max_iter}/{n}. "
                     + suggestion
                 )
         return samples[:n, :]
@@ -291,9 +300,9 @@ class LeastSquaresBase(SolverBase):
         equal to the standard deviation of the residuals.
 
         """
-        sigr = self.ml.residuals().std()
+        sigr = self.model.residuals().std()
         data = self._get_realizations(
-            func=self.ml.simulate, n=n, name=None, max_iter=max_iter, **kwargs
+            func=self.model.simulate, n=n, name=None, max_iter=max_iter, **kwargs
         )
         rng = np.random.default_rng()
         datan = data + rng.normal(loc=0, scale=sigr, size=data.shape)
@@ -338,7 +347,7 @@ class LeastSquaresBase(SolverBase):
         95% confidence interval.
         """
         return self._get_confidence_interval(
-            func=self.ml.simulate, n=n, alpha=alpha, max_iter=max_iter, **kwargs
+            func=self.model.simulate, n=n, alpha=alpha, max_iter=max_iter, **kwargs
         )
 
     def ci_block_response(
@@ -385,9 +394,9 @@ class LeastSquaresBase(SolverBase):
         that the true best-fit line for the observed data lies within the
         95% confidence interval.
         """
-        dt = self.ml.get_block_response(name=name).index.values
+        dt = self.model.get_block_response(name=name).index.values
         return self._get_confidence_interval(
-            func=self.ml.get_block_response,
+            func=self.model.get_block_response,
             n=n,
             alpha=alpha,
             name=name,
@@ -432,9 +441,9 @@ class LeastSquaresBase(SolverBase):
         95% confidence interval.
 
         """
-        dt = self.ml.get_block_response(name=name).index.values
+        dt = self.model.get_block_response(name=name).index.values
         return self._get_confidence_interval(
-            func=self.ml.get_step_response,
+            func=self.model.get_step_response,
             n=n,
             alpha=alpha,
             name=name,
@@ -486,7 +495,7 @@ class LeastSquaresBase(SolverBase):
         95% confidence interval.
         """
         return self._get_confidence_interval(
-            func=self.ml.get_contribution,
+            func=self.model.get_contribution,
             n=n,
             alpha=alpha,
             name=name,
@@ -511,7 +520,6 @@ class LeastSquaresBase(SolverBase):
             contains at least the following columns: "optimal", "stderr"
 
         """
-        pass
 
     def fit_report(
         self,
@@ -548,39 +556,39 @@ class LeastSquaresBase(SolverBase):
         report: str
             String with the report.
 
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where possible.
+        If interpolation is used this means that the result may slightly differ
+        compared to using ml.simulate() and ml.observations().
+
         Examples
         --------
         This method is called by the solve method if report=True, but can also be
         called on its own::
 
         >>> print(ml.fit_report)
-
-        Notes
-        -----
-        The reported values for the fit use the residuals time series where possible.
-        If interpolation is used this means that the result may slightly differ
-        compared to using ml.simulate() and ml.observations().
         """
         model = {
             "nfev": self.result.nfev if self.result is not None else 0,
-            "nobs": self.ml.observations().index.size,
-            "noise": str(True if self.ml.noisemodel else False),
-            "tmin": str(self.ml.settings["tmin"]),
-            "tmax": str(self.ml.settings["tmax"]),
-            "freq": self.ml.settings["freq"],
-            "freq_obs": str(self.ml.settings["freq_obs"]),
-            "warmup": str(self.ml.settings["warmup"]),
+            "nobs": self.model.observations().index.size,
+            "noise": str(bool(self.model.noisemodel)),
+            "tmin": str(self.model.settings["tmin"]),
+            "tmax": str(self.model.settings["tmax"]),
+            "freq": self.model.settings["freq"],
+            "freq_obs": str(self.model.settings["freq_obs"]),
+            "warmup": str(self.model.settings["warmup"]),
             "solver": self._name,
         }
         fit = {
-            "EVP": f"{self.ml.stats.evp():.2f}",
-            "R2": f"{self.ml.stats.rsq():.2f}",
-            "RMSE": f"{self.ml.stats.rmse():.2f}",
-            "AICc": f"{self.ml.stats.aicc():.2f}",
-            "BIC": f"{self.ml.stats.bic():.2f}",
+            "EVP": f"{self.model.stats.evp():.2f}",
+            "R2": f"{self.model.stats.rsq():.2f}",
+            "RMSE": f"{self.model.stats.rmse():.2f}",
+            "AICc": f"{self.model.stats.aicc():.2f}",
+            "BIC": f"{self.model.stats.bic():.2f}",
             "Obj": f"{obj_func:.2f}",
             "___": "",
-            "Interp.": "Yes" if self.ml._interpolate_simulation else "No",
+            "Interp.": "Yes" if self.model._interpolate_simulation else "No",
         }
 
         if full_output:
@@ -588,41 +596,40 @@ class LeastSquaresBase(SolverBase):
             stderr = True
             warnings = True
 
-        parameters = self.ml._parameters.loc[:, ["optimal", "initial", "vary"]].copy()
+        parameters = self.model._parameters.loc[
+            :, ["optimal", "initial", "vary"]
+        ].copy()
 
         if stderr:
             stderr = (
-                self.ml._parameters.loc[:, "stderr"]
-                / self.ml._parameters.loc[:, "optimal"]
+                self.model._parameters.loc[:, "stderr"]
+                / self.model._parameters.loc[:, "optimal"]
             )
             parameters.loc[:, "stderr"] = stderr.abs().apply(
                 _table_formatter_stderr, na_rep="nan"
             )
 
         # determine width of the fit_report
-        len_fit = max([len(v) for v in fit.values()]) + max(
-            [len(v) for v in fit.keys()]
-        )
-        len_model = max([len(v) for v in model.values() if isinstance(v, str)]) + max(
-            [len(v) for v in model.keys()]
+        len_fit = max(len(v) for v in fit.values()) + max(len(v) for v in fit)
+        len_model = max(len(v) for v in model.values() if isinstance(v, str)) + max(
+            len(v) for v in model
         )
         len_param = len(parameters.to_string().split("\n")[1])
         width = max((len_fit + len_model + 8), len_param)
         string = "{:{fill}{align}{width}}"
-        string = "{:{fill}{align}{width}}"
 
         # Create the first header with model information and stats
-        wspace = max(width - (11 + 14 + len(self.name)), 1)
+        wspace = max(width - (11 + 14 + len(self.model.name)), 1)
         mspace = width - wspace - (11 + 14)
         header = (
-            f"Fit report {self.name:<{mspace}.{mspace}}"
+            f"Fit report {self.model.name:<{mspace}.{mspace}}"
             f"{string.format('', fill=' ', align='>', width=wspace)}"
             f"Fit Statistics\n"
             f"{string.format('', fill='=', align='>', width=width)}\n"
         )
 
         basic = ""
-        len_val4 = max([len(v) for v in fit.values()])
+        len_val4 = max(len(v) for v in fit.values())
         wspace = width - (9 + 23 + 9 + len_val4)
         for (val1, val2), (val3, val4) in zip(model.items(), fit.items()):
             basic += f"{val1:<9}{val2:<23}{val3:<9}{val4:>{wspace + len_val4}}\n"
@@ -656,15 +663,17 @@ class LeastSquaresBase(SolverBase):
                 if self.result is not None and hasattr(self.result, "success")
                 else None
             )
-            msg = self.ml._generate_warnings_report(
+            msg = self.model._generate_warnings_report(
                 log=False, solve_success=solve_success
             )
 
             # create message
             if len(msg) > 0:
                 msg = [
-                    f"\n\nWarnings! ({len(msg)})\n"
-                    f"{string.format('', fill='=', align='>', width=width)}"
+                    (
+                        f"\n\nWarnings! ({len(msg)})\n"
+                        f"{string.format('', fill='=', align='>', width=width)}"
+                    )
                 ] + msg
                 warnings_rep += "\n".join(msg)
 
@@ -692,35 +701,34 @@ class LeastSquares(LeastSquaresBase):
     method. All kwargs provided to the Model.solve() method are forwarded to the
     solver. From there, they are forwarded to Scipy least_squares solver.
 
-    Examples
-    --------
-    >>> ml.solve(solver=ps.solver.LeastSquares())
-
     References
     ----------
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html
+
+    Examples
+    --------
+    >>> ml.solve(solver=ps.solver.LeastSquares())
     """
 
     def __init__(
         self,
+        model: Model,
         name: str = "solver",
         jac: Literal["2-point", "3-point", "cs"] = "2-point",
         method: Literal["trf", "dogbox", "lm"] = "trf",
         ftol: float = 1e-8,
         xtol: float = 1e-8,
         gtol: float = 1e-8,
-        x_scale: float | Literal["jac"] | None = None,
+        x_scale: float | Literal["jac"] | None = "jac",
         loss: Literal["linear", "soft_l1", "huber", "cauchy", "arctan"] = "linear",
         f_scale: float = 1.0,
         max_nfev: int | None = None,
         diff_step: float | ArrayLike | None = None,
         tr_solver: Literal["exact", "lsmr"] | None = None,
-        tr_options: dict | None = None,
-        callback: Callable | None = None,
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(name=name, pcov=pcov, **kwargs)
+        super().__init__(model=model, name=name, pcov=pcov, **kwargs)
         self.result: OptimizeResult | None = None
         self.jac = jac
         self.method = method
@@ -733,8 +741,6 @@ class LeastSquares(LeastSquaresBase):
         self.max_nfev = max_nfev
         self.diff_step = diff_step
         self.tr_solver = tr_solver
-        self.tr_options = tr_options
-        self.callback = callback
 
     def objfunction(
         self,
@@ -743,6 +749,7 @@ class LeastSquares(LeastSquaresBase):
         weights: Series | None,
         initial: ArrayLike,
         vary: ArrayLike,
+        callback: Callable | None = None,
     ) -> ArrayLike:
         """Objective function that is minimized by the least_squares solver.
 
@@ -764,10 +771,11 @@ class LeastSquares(LeastSquaresBase):
             function that is called after each iteration. the parameters are
             provided to the func.
         """
-        par = initial
+        # set dtype complex for jac='cs'
+        par = np.array(initial, copy=True, dtype=np.asarray(p).dtype)
         par[vary] = p
         return misfit(
-            ml=self.ml, p=par, noise=noise, weights=weights, callback=self.callback
+            model=self.model, p=par, noise=noise, weights=weights, callback=callback
         )
 
     def solve(
@@ -776,7 +784,7 @@ class LeastSquares(LeastSquaresBase):
         **kwargs,
     ) -> tuple[bool, DataFrame]:
         """Solve method calling scipy.optimize.least_squares."""
-        if self.ml is None:
+        if self.model is None:
             raise RuntimeError("Solver is not attached to a Pastas model.")
 
         # Overwrite kwargs of init if parsed to solve
@@ -785,10 +793,10 @@ class LeastSquares(LeastSquaresBase):
             logger.info(f"Setting {k} to {kwargs[k]} for LeastSquares solver.")
             setattr(self, k, kwargs.pop(k))
 
-        noise = self.ml.noisemodel is not None
-        vary = self.ml.parameters.vary.to_numpy(dtype=bool, copy=True)
-        initial = self.ml.parameters.initial.to_numpy(dtype=float, copy=True)
-        parameters = self.ml.parameters.loc[vary]
+        noise = self.model.noisemodel is not None
+        vary = self.model.parameters.vary.to_numpy(dtype=bool, copy=True)
+        initial = self.model.parameters.initial.to_numpy(dtype=float, copy=True)
+        parameters = self.model.parameters.loc[vary]
         pmin = (
             parameters.loc[:, "pmin"].fillna(-np.inf).to_numpy(dtype=float, copy=True)
         )
@@ -806,8 +814,8 @@ class LeastSquares(LeastSquaresBase):
                 keep_feasible=True,
             )
             # set to nan because that's what is used by the solver
-            self.ml._parameters.loc[vary, "pmin"] = np.nan
-            self.ml._parameters.loc[vary, "pmax"] = np.nan
+            self.model._parameters.loc[vary, "pmin"] = np.nan
+            self.model._parameters.loc[vary, "pmax"] = np.nan
         else:
             bounds = Bounds(
                 lb=pmin,
@@ -821,6 +829,7 @@ class LeastSquares(LeastSquaresBase):
             weights=weights,
             initial=initial,
             vary=vary,
+            callback=kwargs.pop("callback", None),
         )
 
         self.result = least_squares(
@@ -838,8 +847,6 @@ class LeastSquares(LeastSquaresBase):
             max_nfev=self.max_nfev,
             diff_step=self.diff_step,
             tr_solver=self.tr_solver,
-            tr_options=self.tr_options,
-            callback=self.callback,
             **kwargs,
         )
 
@@ -866,7 +873,7 @@ class LeastSquares(LeastSquaresBase):
                 "optimal": optimal,
                 "stderr": stderr,
             },
-            index=self.ml.parameters.index,
+            index=self.model.parameters.index,
             dtype=float,
         )
 
@@ -1042,19 +1049,20 @@ class LeastSquares(LeastSquaresBase):
         report: str
             String with the report.
 
+        Notes
+        -----
+        The reported values for the fit use the residuals time series where possible.
+        If interpolation is used this means that the result may slightly differ
+        compared to using ml.simulate() and ml.observations().
+
         Examples
         --------
         This method is called by the solve method if report=True, but can also be
         called on its own::
 
         >>> print(ml.fit_report)
-
-        Notes
-        -----
-        The reported values for the fit use the residuals time series where possible.
-        If interpolation is used this means that the result may slightly differ
-        compared to using ml.simulate() and ml.observations().
         """
+        obj_func = self.result.cost if self.result is not None else np.nan
         return super().fit_report(
             corr=corr,
             stderr=stderr,
@@ -1077,13 +1085,12 @@ class LeastSquares(LeastSquaresBase):
             "max_nfev": self.max_nfev,
             "diff_step": self.diff_step,
             "tr_solver": self.tr_solver,
-            "tr_options": self.tr_options,
         }
         return settings
 
 
-@PastasDeprecationWarning(
-    version="2.3.0", reason="The LmfitSolve class is renamed to Lmfit."
+@deprecate_class_func_or_method(
+    version="2.4.0", reason="The LmfitSolve class is renamed to Lmfit."
 )
 def LmfitSolve(*args, **kwargs):
     """Alias for Lmfit."""
@@ -1103,27 +1110,27 @@ class Lmfit(LeastSquaresBase):
 
     def __init__(
         self,
+        model: Model,
         name: str = "solver",
         method: Literal["leastsq"] = "leastsq",
         pcov: DataFrame | None = None,
         **kwargs,
     ) -> None:
         self._assert_lmfit_installation()
-        super().__init__(name=name, pcov=pcov, **kwargs)
+        super().__init__(model=model, name=name, pcov=pcov, **kwargs)
         self.method = method
-        self.result: "lmfit.minimize.MinimizerResult" | None = None
+        self.result: lmfit.minimize.MinimizerResult | None = None
 
     def _assert_lmfit_installation(self) -> None:
         try:
             global lmfit
-            import lmfit as lmfit  # Import Lmfit here, so it is no dependency
+            import lmfit  # Import Lmfit here, so it is no dependency
         except ImportError:
             msg = "lmfit not installed. Please install lmfit first."
             raise ImportError(msg) from None
 
     def solve(
         self,
-        noise: bool = True,
         weights: Series | None = None,
         **kwargs,
     ) -> tuple[bool, DataFrame]:
@@ -1134,9 +1141,11 @@ class Lmfit(LeastSquaresBase):
             logger.info(f"Setting {k} to {kwargs[k]} for LmfitSolve solver.")
             setattr(self, k, kwargs.pop(k))
 
+        noise = self.model.noisemodel is not None
+
         # Deal with the parameters
         parameters = lmfit.Parameters()
-        for pname, params in self.ml.parameters.loc[
+        for pname, params in self.model.parameters.loc[
             :, ["initial", "pmin", "pmax", "vary"]
         ].iterrows():
             pp = np.where(params.isnull(), None, params)
@@ -1186,7 +1195,7 @@ class Lmfit(LeastSquaresBase):
                 "optimal": optimal[:idx],
                 "stderr": stderr[:idx],
             },
-            index=self.ml.parameters.index,
+            index=self.model.parameters.index,
             dtype=float,
         )
 
@@ -1198,7 +1207,7 @@ class Lmfit(LeastSquaresBase):
         """Objective function that is minimized by the Lmfit solver."""
         p = np.array([p.value for p in parameters.values()])
         return misfit(
-            ml=self.ml,
+            model=self.model,
             p=p,
             noise=noise,
             weights=weights,

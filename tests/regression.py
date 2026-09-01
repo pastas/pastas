@@ -7,7 +7,7 @@ from uvtrick import Env
 def bench():
     import warnings
 
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=FutureWarning)
 
     from platform import python_version
 
@@ -37,14 +37,14 @@ def bench():
 
     ml = Model(head, name="nonlinear")
     recharge = FlexModel()
-    sm = RechargeModel(
-        prec,
-        evap,
+    RechargeModel(
+        model=ml,
+        prec=prec,
+        evap=evap,
         rfunc=Exponential(),
         name="rch",
         recharge=recharge,
     )
-    ml.add_stressmodel(sm)
 
     if ml.noisemodel is not None:
         ml.del_noisemodel()

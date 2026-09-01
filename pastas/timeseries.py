@@ -9,6 +9,7 @@ Create a TimeSeries object::
 
 """
 
+from copy import deepcopy
 from logging import getLogger
 from typing import Any, Self
 
@@ -20,7 +21,6 @@ from pandas.tseries.frequencies import to_offset
 from pastas.typing import OseriesSettingsDict, StressSettingsDict
 
 from .io.base import _unpack_series
-from .rcparams import rcParams
 from .timeseries_utils import (
     _get_dt,
     _get_sim_index,
@@ -35,6 +35,62 @@ from .utils import validate_name
 
 logger = getLogger(__name__)
 
+settings = {
+    "oseries": OseriesSettingsDict(
+        fill_nan="drop",
+        sample_down="drop",
+    ),
+    "prec": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_nan=0.0,
+        fill_before="mean",
+        fill_after="mean",
+    ),
+    "evap": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "well": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_nan=0.0,
+        fill_before=0.0,
+        fill_after=0.0,
+    ),
+    "waterlevel": StressSettingsDict(
+        sample_up="interpolate",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "level": StressSettingsDict(
+        sample_up="interpolate",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan="interpolate",
+    ),
+    "flux": StressSettingsDict(
+        sample_up="bfill",
+        sample_down="mean",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan=0.0,
+    ),
+    "quantity": StressSettingsDict(
+        sample_up="divide",
+        sample_down="sum",
+        fill_before="mean",
+        fill_after="mean",
+        fill_nan=0.0,
+    ),
+}
+
 
 class TimeSeries:
     """Class that deals with all user-provided time series.
@@ -48,7 +104,7 @@ class TimeSeries:
         to derive the name from the series.
     settings: str or dict, optional
         The settings of the stress. This can be a string referring to a predefined
-        settings dictionary (defined in ps.rcParams["timeseries"]), or a dictionary with
+        settings dictionary (defined in ps.timeseries.settings), or a dictionary with
         the settings to apply. For more information refer to Time series settings
         section below.
     metadata: dict, optional
@@ -101,20 +157,21 @@ class TimeSeries:
            * `max`: resample time series with maximum value
            * `min`: resample time series with minimum value
 
+    See Also
+    --------
+    pastas.timeseries.TimeSeries.update_series
+        For the individual options for the different settings.
+
     Examples
     --------
     To obtain the predefined TimeSeries settings, you can run the following line of
     code:
 
-    >>> ps.rcParams["timeseries"]
+    >>> ps.timeseries.settings
 
-    See Also
-    --------
-    pastas.timeseries.TimeSeries.update_series
-        For the individual options for the different settings.
     """
 
-    _predefined_settings = rcParams["timeseries"]
+    _timeseries_settings = deepcopy(settings)
 
     def __init__(
         self,
@@ -142,7 +199,7 @@ class TimeSeries:
 
         # for pandas 3.0, make sure the unit of the datetime index is in microseconds
         # as this is the default for pandas 3.0 (and therefore used for the simulation)
-        # for pandas 2.x, the unit is allways nanoseconds, and cannot be changed
+        # for pandas 2.x, the unit is always nanoseconds, and cannot be changed
         if hasattr(series.index, "as_unit"):  # pandas >= 3.0
             series.index = series.index.as_unit("us")
 
@@ -175,15 +232,17 @@ class TimeSeries:
         # Update the settings with user-provided values, if any.
         if settings:
             if isinstance(settings, str):
-                if settings in self._predefined_settings.keys():
-                    settings = self._predefined_settings[settings]
+                if settings in self._timeseries_settings:
+                    settings: StressSettingsDict | OseriesSettingsDict = (
+                        self._timeseries_settings[settings]
+                    )
                 else:
                     msg = (
-                        "Settings shortcut code '%s' is not in the predefined "
-                        "settings options. Please choose from %s.",
+                        "Settings shortcut code '%s' is not in the timeseries.settings "
+                        "dictionary. Please choose from %s."
                     )
 
-                    raise KeyError(msg, settings, self._predefined_settings.keys())
+                    raise KeyError(msg, settings, self._timeseries_settings.keys())
             self._update_settings(**settings)
 
         # Make sure we have a workable Pandas Series, depends on type of time series
@@ -204,7 +263,7 @@ class TimeSeries:
 
     @property
     def series_original(self) -> Series:
-        """Return the original series."""
+        """Original series."""
         return self._series_original
 
     @series_original.setter
@@ -272,10 +331,11 @@ class TimeSeries:
         the series need to be updated.
         """
         if self._update_settings(**kwargs) or force_update:
-            tmin = self.settings["tmin"]
-            freq = self.settings["freq"]
+            settings_ = self.settings
+            tmin = settings_["tmin"]
+            freq = settings_["freq"]
             if tmin is not None and freq is not None:
-                self.settings["time_offset"] = _get_time_offset(tmin, freq)
+                settings_["time_offset"] = _get_time_offset(tmin, freq)
 
             # Get the original series to start with
             series = self._series_original.copy(deep=True)
@@ -302,9 +362,8 @@ class TimeSeries:
         """
         update = False
         for key, value in kwargs.items():
-            if key in ["tmin", "tmax"]:
-                if value is not None:
-                    value = pd.Timestamp(value)
+            if key in ["tmin", "tmax"] and value is not None:
+                value = pd.Timestamp(value)
             if (value != self.settings[key]) and (value is not None):
                 self.settings[key] = value
                 update = True
@@ -325,10 +384,7 @@ class TimeSeries:
         freq = self.settings["freq"]
 
         # 1. If no freq string is present or is provided (e.g. Oseries)
-        if not freq:
-            return series
-        # 2. If new frequency is the same
-        elif freq == self.freq_original:
+        if not freq or freq == self.freq_original:
             return series
         # 3. If new frequency is required (only up or down sampling allowed)
         else:
@@ -987,8 +1043,8 @@ def _validate_series(
     if series.hasnans:
         msg = (
             f"The series '{name}' has nan-values. Pastas will use the `fill_nan` "
-            "from the StressModel's settings (rcParams) parsed to the TimeSeries"
-            " settings to fill up the nan-values."
+            "from the StressModel's settings (ps.timeseries.settings) parsed to the "
+            "TimeSeries settings to fill up the nan-values."
         )
         logger.warning(msg)
         if verbose:

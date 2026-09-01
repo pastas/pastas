@@ -32,7 +32,30 @@ analysis tools.
 -   A list of publications that use Pastas is available in a
     [dedicated Zotero group](https://www.zotero.org/groups/4846685/pastas/items/32FS5PTW/item-list)
 -   View and edit the example notebooks of Pastas in
-    [GitHub Codespaces](https://codespaces.new/pastas/pastas?quickstart=1))
+    [GitHub Codespaces](https://codespaces.new/pastas/pastas?quickstart=1)
+
+## Quick Example
+
+```python
+# Import Python packages
+import pandas as pd
+import pastas as ps
+
+# Load head and meteorological observations into a pandas Series
+obs = pd.read_csv("head.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+prec = pd.read_csv("prec.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+evap = pd.read_csv("evap.csv", index_col="datetime", parse_dates=["datetime"]).squeeze()
+
+# Create and calibrate Pastas model
+ml = ps.Model(obs, name="head")
+sm = ps.RechargeModel(ml, prec, evap, rfunc=ps.Exponential(), name="recharge")
+ml.solve()
+
+# Visualize the model results
+ml.plots.results()
+```
+
+![image](doc/_static/example_output.png)
 
 ## Get in Touch
 
@@ -47,16 +70,21 @@ analysis tools.
 
 ## Quick installation guide
 
-To install Pastas, a working version of Python has to be installed on your computer.
-We recommend using the [Anaconda Distribution](https://www.continuum.io/downloads) as it
-includes most of the python package dependencies and the Jupyter Notebook software to
-run the notebooks. However, you are free to install any Python distribution you want.
+To install Pastas, a working version of Python has to be installed on
+your computer. We recommend using [uv](https://docs.astral.sh/uv/) to manage Python
+and your project dependencies. However, you are free to use any Python installation
+method you prefer. The [Anaconda Distribution](https://www.anaconda.com/products/distribution) 
+is another popular option.
 
 ### Stable version
 
 To get the latest stable version, use:
 
     pip install pastas
+
+Or with uv:
+
+    uv pip install pastas
 
 ### Update
 

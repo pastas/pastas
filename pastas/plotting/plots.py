@@ -5,10 +5,10 @@ import logging
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame, Series, Timestamp, concat
+from pandas import DataFrame, Series, Timedelta, Timestamp, concat
 from scipy.stats import gaussian_kde, norm, pearsonr, probplot
 
-from pastas.decorators import PastasDeprecationWarning, deprecate_args_or_kwargs
+from pastas.decorators import deprecate_args_or_kwargs, deprecate_class_func_or_method
 from pastas.plotting.modelcompare import CompareModels
 from pastas.plotting.plotutil import plot_series_with_gaps, share_xaxes, share_yaxes
 from pastas.stats.core import acf as get_acf
@@ -16,10 +16,10 @@ from pastas.typing import Axes, Model
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["compare", "series", "acf", "diagnostics", "cum_frequency"]
+__all__ = ["acf", "compare", "cum_frequency", "diagnostics", "series"]
 
 
-@PastasDeprecationWarning(
+@deprecate_class_func_or_method(
     version="2.0.0",
     reason="The TrackSolve class has been moved to pastas.solver.trackers.TrackSolve.",
 )
@@ -36,11 +36,6 @@ def compare(
     **kwargs,
 ) -> dict[str, Axes]:
     """Plot multiple Pastas models in one figure to visually compare models.
-
-    Notes
-    -----
-    The models must have the same stressmodel names, otherwise the contributions will
-    not be plotted, and parameters table will not display nicely.
 
     Parameters
     ----------
@@ -68,6 +63,11 @@ def compare(
     Returns
     -------
         dict[str, matplotlib.axes.Axes]
+
+    Notes
+    -----
+    The models must have the same stressmodel names, otherwise the contributions will
+    not be plotted, and parameters table will not display nicely.
     """
     mc = CompareModels(models, names=names, tmin=tmin, tmax=tmax)
     mc.plot(adjust_height=adjust_height, **kwargs)
@@ -127,7 +127,7 @@ def series(
     if "head" in kwargs:
         deprecate_args_or_kwargs(
             name="head",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `oseries` instead of `head`.",
         )
         if oseries is None:
@@ -147,7 +147,7 @@ def series(
     gridspec_kw = {}
     cols = 1
     if table and not hist and not kde:
-        logging.info(
+        logger.info(
             "Plotting the table is not possible without hist=True or kde=True. Adding the histogram."
         )
         hist = True
@@ -307,17 +307,16 @@ def acf(
     -------
     ax: matplotlib.axes.Axes
 
-    Examples
-    --------
-    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.rand(1000))
-    >>> ps.plots.acf(res)
-
     Raises
     ------
     Warning if the ACF is empty. The plot will still be created to ensure that scripts
     will still run when dealing with many models.
 
+    Examples
+    --------
+    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                 data=np.random.rand(1000))
+    >>> ps.plots.acf(res)
     """
     kwargs = {} or kwargs
     if ax is None:
@@ -368,6 +367,7 @@ def diagnostics(
     bins: int = 50,
     acf_options: dict | None = None,
     heteroscedasicity: bool = True,
+    max_plot_gap: Timedelta | float = np.inf,
     **kwargs,
 ) -> Axes:
     """Plot that helps in diagnosing basic model assumptions.
@@ -388,6 +388,10 @@ def diagnostics(
     heteroscedasicity: bool, optional
         Create two additional subplots to check for heteroscedasticity. If true,
         a simulated time series has to be provided with the sim argument.
+    max_plot_gap: Timedelta | float
+        Timedelta or float (in days) with the maximum gap to be considered as a gap.
+        If the difference between two consecutive index values is larger than
+        max_plot_gap, a gap is inserted in the plot. Default is infinity.
     **kwargs: dict, optional
         Optional keyword arguments, passed on to plt.figure.
 
@@ -395,23 +399,23 @@ def diagnostics(
     -------
     axes: matplotlib.axes.Axes
 
-    Examples
-    --------
-    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
-    >>>                 data=np.random.normal(0, 1, 1000))
-    >>> ps.stats.plot_diagnostics(res)
-
-    Notes
-    -----
-    The two right-hand side plots assume that the noise or residuals follow a Normal
-    distribution.
-
     See Also
     --------
     pastas.stats.acf
         Method that computes the autocorrelation.
     scipy.stats.probplot
         Method use to plot the probability plot.
+
+    Notes
+    -----
+    The two right-hand side plots assume that the noise or residuals follow a Normal
+    distribution.
+
+    Examples
+    --------
+    >>> res = pd.Series(index=pd.date_range(start=0, periods=1000, freq="D"),
+    >>>                 data=np.random.normal(0, 1, 1000))
+    >>> ps.stats.plot_diagnostics(res)
     """
     if heteroscedasicity and sim is None:
         msg = (
@@ -450,7 +454,7 @@ def diagnostics(
 
     # Plot the residuals or noise series
     axd["series"].axhline(0, c="k")
-    axd["series"] = plot_series_with_gaps(series, ax=axd["series"])
+    axd["series"] = plot_series_with_gaps(series, ax=axd["series"], gap=max_plot_gap)
     axd["series"].set_ylabel(series.name)
     axd["series"].set_xlim(series.index.min(), series.index.max())
     axd["series"].set_title(
@@ -479,7 +483,7 @@ def diagnostics(
     axd["qq"].get_lines()[1].set_color("k")
 
     # Plot R2 here because probplot has suboptimal positioning
-    axd["qq"].text(0.5, 0.1, "$R^2={:.2f}$".format(r**2), transform=axd["qq"].transAxes)
+    axd["qq"].text(0.5, 0.1, f"$R^2={r**2:.2f}$", transform=axd["qq"].transAxes)
 
     if heteroscedasicity and sim is not None:
         # Plot residuals vs. simulation
@@ -534,7 +538,7 @@ def cum_frequency(
     if "obs" in kwargs:
         deprecate_args_or_kwargs(
             name="obs",
-            version="2.3.0",
+            version="2.4.0",
             reason="Please use `oseries` instead of `obs`.",
         )
         if oseries is None:

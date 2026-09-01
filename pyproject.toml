@@ -24,8 +24,9 @@ dependencies = [
     "numpy >= 2.0.0, < 3.0",
     "matplotlib >= 3.9.0, < 4.0",
     "pandas >= 2.2.0, < 4.0",
-    "scipy >= 1.13.0, < 2.0",
+    "scipy >= 1.16.0, < 2.0",
     "numba >= 0.60.0, < 1.0",
+    "packaging >= 20.0.0"
 ]
 keywords = ["hydrology", "groundwater", "timeseries", "analysis"]
 classifiers = [
@@ -57,7 +58,7 @@ caching = ["cachetools"]
 codespelling = ["codespell[toml]"]
 mpmath = ["mpmath"]
 full = ["pastas[solvers,interactive,datasets,caching,mpmath]"]
-pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar"]
+pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar", "papermill"]
 ci = [
     "pastas[pytesting,solvers,interactive,caching,mpmath]",
     "jupyter",
