@@ -32,7 +32,7 @@ logger = getLogger(__name__)
 def _check_forecast_data(
     forecasts: dict[str, list[DataFrame | Series]]
     | dict[str, dict[str, DataFrame | Series]],
-) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
+) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex, list]:
     """Check the integrity of the forecasts data.
 
     Parameters
@@ -52,6 +52,8 @@ def _check_forecast_data(
         The maximum datetime in the forecasts.
     index: DatetimeIndex
         The datetime index of the forecasts.
+    columns: list
+        The list of column names of the forecasts.
 
     Notes
     -----
@@ -70,6 +72,7 @@ def _check_forecast_data(
     tmax = None
     tmin = None
     index = None
+    columns = None
 
     for sm_name, fc_data in forecasts.items():
         if isinstance(fc_data, list):
@@ -103,8 +106,17 @@ def _check_forecast_data(
                 tmin = fc.index[0]
                 tmax = fc.index[-1]
                 index = fc.index
+                columns = fc.columns.get_level_values(0).unique().tolist()
                 logger.debug(f"First forecast found with {n} ensemble members")
             # If the number of columns is not the same, raise an error
+            if columns != fc.columns.get_level_values(0).unique().tolist():
+                msg = (
+                    f"The column names of the forecasts are not the same for all "
+                    f"Expected {columns}, got {fc.columns.get_level_values(0).unique().tolist()} in "
+                    f"stressmodel '{sm_name}'."
+                )
+                logger.debug(msg)
+                columns = range(n)  # Reset columns to a range of integers
             elif n != fc.columns.size:
                 msg = (
                     f"The number of ensemble members is not the same for all forecasts. "
@@ -125,7 +137,7 @@ def _check_forecast_data(
         logger.error(msg)
         raise ValueError(msg)
 
-    return n, tmin, tmax, index
+    return n, tmin, tmax, index, columns
 
 
 def forecast(
@@ -176,7 +188,7 @@ def forecast(
         keys are the keyword arguments of the stressmodel.
     """
     # Check the integrity of the forecasts data
-    n, tmin, tmax, index = _check_forecast_data(forecasts)
+    n, tmin, tmax, index, columns = _check_forecast_data(forecasts)
     logger.info(f"Working with {n} ensemble members from {tmin} to {tmax}")
 
     if post_process and not isinstance(model.noisemodel, ArNoiseModel):
@@ -266,7 +278,7 @@ def forecast(
 
     # Create DataFrames to store data
     mi = MultiIndex.from_product(
-        [range(n), range(nparam), ["mean", "var"]],
+        [columns, range(nparam), ["mean", "var"]],
         names=["ensemble_member", "param_member", "forecast"],
     )
     df = DataFrame(data=result_array.T, index=index, columns=mi, dtype=float)
