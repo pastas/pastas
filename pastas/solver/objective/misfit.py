@@ -1,4 +1,7 @@
-"""Module containing the objective function for solvers to calculate residuals or noise."""
+"""Module containing the objective function for solvers.
+
+This contains the misfit which calculates the calculate residuals or noise.
+"""
 
 from collections.abc import Callable
 
