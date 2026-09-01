@@ -73,7 +73,7 @@ ml.plots.results()
 To install Pastas, a working version of Python has to be installed on
 your computer. We recommend using [uv](https://docs.astral.sh/uv/) to manage Python
 and your project dependencies. However, you are free to use any Python installation
-method you prefer. The [Anaconda Distribution](https://www.anaconda.com/products/distribution) 
+method you prefer. The [Anaconda Distribution](https://www.anaconda.com/products/distribution)
 is another popular option.
 
 ### Stable version
@@ -123,6 +123,22 @@ To install the most important optional dependencies (solver with `LmFit` and cac
 or for the development version use:
 
     pip install git+https://github.com/pastas/pastas.git@dev#egg=pastas[full]
+
+## Pastas Sustaining membership
+
+Funding is required to maintain Pastas and keep the software up-to-date. For this
+purpose, we call upon our community to contribute to this effort through our sustaining
+membership program. We will collect the sustaining membership contributions through
+Open Collective. The funds raised through the sustaining membership program will be used
+to support the development and maintenance of Pastas, as well as to fund new features
+and improvements to the software. For more information and to contribute, go to
+https://opencollective.com/pastas.
+
+## Pastas newsletter
+
+To stay up-to-date with all things Pastas, receive news, event announcements, and
+more right into your e-mail inbox, please sign up for our quaterly newsletter here:
+https://hydroconsult.ch/pastas-newsletter-subscription/
 
 ## How to Cite Pastas?
 
