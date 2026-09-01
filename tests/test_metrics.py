@@ -14,6 +14,11 @@ def test_mae() -> None:
     assert pytest.approx(mae, tol) == 0.2025
 
 
+def test_me() -> None:
+    me = ps.stats.metrics.me(obs=obs, sim=sim)
+    assert pytest.approx(me, tol) == -0.0025
+
+
 def test_rmse() -> None:
     rmse = ps.stats.metrics.rmse(obs=obs, sim=sim)
     assert pytest.approx(rmse, tol) == 0.2145343

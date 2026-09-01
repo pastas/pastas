@@ -1,4 +1,4 @@
-"""This module provides functions to load and save Pastas models.
+"""Functions to load and save Pastas models.
 
 Examples
 --------
@@ -14,7 +14,7 @@ from logging import getLogger
 from os import path
 from pathlib import Path
 
-from packaging import version
+from packaging.version import parse as parse_version
 
 import pastas as ps
 from pastas.typing import Model
@@ -23,7 +23,7 @@ logger = getLogger(__name__)
 
 
 def load(fname: str | Path, **kwargs) -> Model:
-    """Method to load a Pastas Model from file.
+    """Load a Pastas Model from file.
 
     Parameters
     ----------
@@ -35,13 +35,13 @@ def load(fname: str | Path, **kwargs) -> Model:
 
     Returns
     -------
-    ml: pastas.model.Model
+    model: pastas.model.Model
         Pastas Model instance.
 
     Examples
     --------
     >>> import pastas as ps
-    >>> ml = ps.io.load("model.pas")
+    >>> model = ps.io.load("model.pas")
 
     """
     if not path.exists(fname):
@@ -58,7 +58,7 @@ def load(fname: str | Path, **kwargs) -> Model:
     file_version = data["file_info"]["pastas_version"]
 
     # A single catch for old pas-files, no longer supported
-    if version.parse(file_version) < version.parse("0.23.0"):
+    if parse_version(file_version) < parse_version("0.23.0"):
         msg = (
             "This file was created with a Pastas version prior to 0.23 "
             "and cannot be loaded with Pastas >= 1.0. Please load and "
@@ -81,20 +81,13 @@ def load(fname: str | Path, **kwargs) -> Model:
 
 
 def _load_model(data: dict) -> Model:
-    """Internal method to create a model from a dictionary."""
+    """Create a model from a dictionary."""
     # Create model
     oseries = data["oseries"]["series"]
     metadata = data["oseries"]["metadata"]
 
-    if "constant" in data.keys():
-        constant = data["constant"]
-    else:
-        constant = False
-
-    if "name" in data.keys():
-        name = data["name"]
-    else:
-        name = None
+    constant = data.get("constant", False)
+    name = data.get("name", None)
 
     ml = ps.Model(
         oseries=oseries,
@@ -103,61 +96,117 @@ def _load_model(data: dict) -> Model:
         metadata=metadata,
     )
 
-    if "settings" in data.keys():
-        if "noise" in data["settings"]:
-            if not data["settings"]["noise"] and "noisemodel" in data:
-                # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
-                # remove noisemodel from data
-                data.pop("noisemodel")
+    if "settings" in data:
+        if data.get("settings", {}).get("noise") is False and "noisemodel" in data:
+            # file is saved before pastas 1.5, and solved with ml.solve(noise=False)
+            # remove noisemodel from data
+            data.pop("noisemodel")
         ml._settings.update(data["settings"])
-    if "file_info" in data.keys():
+
+    if "file_info" in data:
         ml.file_info.update(data["file_info"])
 
     # Add stressmodels
+    rfunc_one_sm_names = []
     for name, smdata in data["stressmodels"].items():
-        sm = _load_stressmodel(smdata, data)
-        ml.add_stressmodel(sm)
+        sm = _load_stressmodel(smdata, model=ml)
+        if sm.rfunc is not None and sm.rfunc._name == "One":
+            rfunc_one_sm_names.append(name)
+
+    # Copy parameters from file to avoid modifying the original data when renaming parameters
+    file_parameters = data["parameters"].copy()
 
     # Add transform
-    if "transform" in data.keys():
+    if "transform" in data:
+        if data["transform"]["class"] == "ThresholdTransform":
+            # the parameters of ThresholdTransform were renamed from 1 and 2 to d and f in pastas 2.0.0,
+            # so we need to check if the old parameter names are present and rename them to the new ones
+            # TODO: remove this check if pas files < 2.0 are no longer supported
+            transform_name = data["transform"]["name"]
+            if (
+                f"{transform_name}_1" in file_parameters.index
+                or f"{transform_name}_2" in file_parameters.index
+            ):
+                rename_map = {
+                    f"{transform_name}_1": f"{transform_name}_d",
+                    f"{transform_name}_2": f"{transform_name}_f",
+                }
+                logger.warning(
+                    "Renaming ThresholdTransform parameters to Pastas 2.0 naming convention: %s",
+                    ", ".join(
+                        f"{old_name} -> {new_name}"
+                        for old_name, new_name in rename_map.items()
+                    ),
+                )
+                file_parameters = file_parameters.rename(index=rename_map)
+
         transform = getattr(ps.transform, data["transform"].pop("class"))
+        data["transform"]["model"] = ml
         transform = transform(**data["transform"])
-        ml.add_transform(transform)
 
     # Add noisemodel if present
-    if "noisemodel" in data.keys():
-        # fixes to read pas-files from before pastas version 1.5
-        # TODO: uncomment in pastas 2.0.0
-        # if data["noisemodel"]["class"] == "NoiseModel":
-        #     data["noisemodel"]["class"] = "ArNoiseModel"
-        # if data["noisemodel"]["class"] == "ArmaModel":
-        #     data["noisemodel"]["class"] = "ArmaNoiseModel"
-        n = getattr(ps.noisemodels, data["noisemodel"].pop("class"))()
-        ml.add_noisemodel(n)
+    if "noisemodel" in data:
+        # Fixes to read pas-files from before pastas version 1.5
+        # TODO: Deprecate if pas-files < 2.0 are no longer supported
+        if data["noisemodel"]["class"] == "NoiseModel":
+            data["noisemodel"]["class"] = "ArNoiseModel"
+        elif data["noisemodel"]["class"] == "ArmaModel":
+            data["noisemodel"]["class"] = "ArmaNoiseModel"
+        data["noisemodel"]["model"] = ml
+        getattr(ps.noisemodels, data["noisemodel"].pop("class"))(**data["noisemodel"])
 
-    # Add solver object to the model from pas-files < 1.3.0  TODO Deprecate
-    if "fit" in data.keys():
-        logger.warning(
-            "The solver object is stored in the model.solver attribute since Pastas "
-            "1.3. Please update your pas-file to the new format by loading and saving "
-            "the file with Pastas 1.3."
-        )
-        solver = getattr(ps.solver, data["fit"].pop("class"))
-        ml.add_solver(solver(**data["fit"]))
+    solver_name = None
+    for solver_key in ("fit", "solver"):
+        if solver_key not in data:
+            continue
+        if solver_key == "fit":
+            # TODO: Deprecate if pas-files < 1.3 are no longer supported
+            logger.error(
+                "The solver object is stored in the model.solver attribute since Pastas "
+                "1.3. Please update your pas-file to the new format by loading and saving "
+                "the file with Pastas 1.3."
+            )
+        solver_name = data[solver_key].pop("class")
+        solver_name = "Lmfit" if solver_name == "LmfitSolve" else solver_name
+        solver_name = "Emcee" if solver_name == "EmceeSolve" else solver_name
 
-    # Add solver object to the model
-    if "solver" in data.keys():
-        solver = getattr(ps.solver, data["solver"].pop("class"))
-        ml.add_solver(solver(**data["solver"]))
+        data[solver_key]["model"] = ml
+        getattr(ps.solver, solver_name)(**data[solver_key])
 
-    # Add parameters, use update to maintain correct order
-    ml._parameters = ml.get_init_parameters()
-    ml._parameters.update(data["parameters"])
+    # Fix old parameter names for One response functions to match the naming convention from Pastas 2.0
+    # TODO: Deprecate if pas-files < 2.0 are no longer supported
+    for rfunc_one_sm_name in rfunc_one_sm_names:
+        if f"{rfunc_one_sm_name}_d" in file_parameters.index:
+            logger.warning(
+                f"Renaming parameter {rfunc_one_sm_name}_d to {rfunc_one_sm_name}_A to match"
+                " the naming convention of the ps.One() response function in Pastas 2.0."
+            )
+            file_parameters = file_parameters.rename(
+                index={f"{rfunc_one_sm_name}_d": f"{rfunc_one_sm_name}_A"}
+            )
+
+    # Remove columns that are no longer used by default in the parameters table since 2.0
+    if "dist" in file_parameters.columns and solver_name != "EmceeSolve":
+        file_parameters = file_parameters.drop(columns=["dist"])
+
+    # Remove stderr column if it is empty, as this column is no longer used by default in the parameters table since 2.0
+    if "stderr" in file_parameters.columns and file_parameters["stderr"].isnull().all():
+        file_parameters = file_parameters.drop(columns=["stderr"])
+
+    # Merge defaults with file parameters: file values win, defaults fill gaps.
+    # Populate the model parameters with the file parameters, keeping defaults for missing parameters
+    init_parameters = ml.get_init_parameters()
+    ml._parameters = init_parameters.reindex(
+        columns=init_parameters.columns.union(file_parameters.columns, sort=False)
+    )
+    ml._parameters.loc[file_parameters.index, file_parameters.columns] = file_parameters
 
     # Convert parameters to numeric
     ml._parameters = ml._parameters.infer_objects()
 
     # When parameter initial values and bounds changed
+    # set it as well in the stressmodel, noisemodel
+    # and solver instances
     for pname, pdata in ml.parameters.iterrows():
         ml.set_parameter(
             name=pname,
@@ -170,7 +219,7 @@ def _load_model(data: dict) -> Model:
     return ml
 
 
-def _load_stressmodel(ts, data):
+def _load_stressmodel(ts, model):
     # Create and add stress model
     stressmodel = getattr(ps.stressmodels, ts.pop("class"))
 
@@ -182,7 +231,7 @@ def _load_stressmodel(ts, data):
         rfunc.update_rfunc_settings(up=rfunc_up, gain_scale_factor=rfunc_gsf)
         ts[key] = rfunc
 
-    if "recharge" in ts.keys():
+    if "recharge" in ts:
         recharge_class = ts["recharge"].pop("class")
         ts["recharge"] = getattr(ps.recharge, recharge_class)(**ts["recharge"])
 
@@ -190,7 +239,7 @@ def _load_stressmodel(ts, data):
     settings = []
 
     # Unpack the stress time series
-    if "stress" in ts.keys():
+    if "stress" in ts:
         # Only in the case of the wellmodel stresses are a list
         if isinstance(ts["stress"], list):
             for i, stress in enumerate(ts["stress"]):
@@ -204,19 +253,19 @@ def _load_stressmodel(ts, data):
             metadata.append(meta)
             settings.append(setting)
 
-    if "prec" in ts.keys():
+    if "prec" in ts:
         series, meta, setting = _unpack_series(ts["prec"])
         ts["prec"] = series
         metadata.append(meta)
         settings.append(setting)
 
-    if "evap" in ts.keys():
+    if "evap" in ts:
         series, meta, setting = _unpack_series(ts["evap"])
         ts["evap"] = series
         metadata.append(meta)
         settings.append(setting)
 
-    if "temp" in ts.keys() and ts["temp"] is not None:
+    if "temp" in ts and ts["temp"] is not None:
         series, meta, setting = _unpack_series(ts["temp"])
         ts["temp"] = series
         metadata.append(meta)
@@ -226,13 +275,15 @@ def _load_stressmodel(ts, data):
         ts["metadata"] = metadata if len(metadata) > 1 else metadata[0]
     if settings:
         ts["settings"] = settings if len(settings) > 1 else settings[0]
+    if "model" not in ts:
+        ts["model"] = model
 
     sm = stressmodel(**ts)
     return sm
 
 
 def _unpack_series(data: dict):
-    """
+    """Unpack series data from a dictionary.
 
     Parameters
     ----------
@@ -252,7 +303,7 @@ def _unpack_series(data: dict):
 
 
 def dump(fname: str, data: dict, **kwargs):
-    """Method to save a pastas-model to a file.
+    """Save a pastas-model to a file.
 
     Parameters
     ----------

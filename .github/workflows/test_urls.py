@@ -1,11 +1,13 @@
+"""Script to check for URLs in markdown files and test their accessibility."""
+
 import re
 from pathlib import Path
 
 import requests
 
 
-def check_urls(file_path):
-    # If extension is md, check for URLs in markdown files
+def check_urls(file_path: Path) -> None:
+    """Check for URLs in markdown files."""
     if file_path.suffix == ".md":
         url_pattern = re.compile(
             r"\[.*?\]\(https?://[^\s\"\'<>]+(?:[^\s\"\'<>.,;:!?)]|/)+\)\s*\(https?://[^\s\"\'<>]+(?:[^\s\"\'<>.,;:!?)]|/)+\)"
@@ -26,6 +28,7 @@ def check_urls(file_path):
 
 
 def main():
+    """Check URLs in all relevant files."""
     project_dir = Path(__file__).parent.parent.parent
     for file_path in project_dir.rglob("*"):
         if file_path.is_file() and file_path.suffix in {".py", ".md", ".toml"}:

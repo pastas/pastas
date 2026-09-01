@@ -6,12 +6,13 @@ import warnings
 
 from pandas.plotting import register_matplotlib_converters
 
-import pastas.objective_functions as objfunc
 import pastas.recharge as rch
 import pastas.timeseries_utils as ts
-from pastas import check, extensions, forecast, stats
+from pastas import check, extensions, forecast, solver, stats
+from pastas._options import options
 from pastas.dataset import list_datasets, load_dataset
 from pastas.decorators import (
+    deprecate_class_func_or_method,
     get_use_cache,
     get_use_numba,
     set_use_cache,
@@ -23,7 +24,6 @@ from pastas.model import Model
 from pastas.noisemodels import ArmaNoiseModel, ArNoiseModel
 from pastas.plotting import plots
 from pastas.plotting.modelcompare import CompareModels
-from pastas.plotting.plots import TrackSolve
 from pastas.rcparams import rcParams
 from pastas.rfunc import (
     DoubleExponential,
@@ -37,7 +37,8 @@ from pastas.rfunc import (
     Polder,
     Spline,
 )
-from pastas.solver import EmceeSolve, LeastSquares, LmfitSolve
+from pastas.solver import objective, timer
+from pastas.solver.trackers import TrackSolve
 from pastas.stressmodels import (
     ChangeModel,
     Constant,
@@ -59,3 +60,30 @@ logger = logging.getLogger(__name__)
 # https://github.com/pastas/pastas/issues/92
 
 register_matplotlib_converters()
+
+
+@deprecate_class_func_or_method(
+    version="2.4.0",
+    reason="The LmfitSolve class will be removed from the pastas module namespace. Please use ps.solver.Lmfit instead.",
+)
+def LmfitSolve(*args, **kwargs):
+    """Use ps.solver.Lmfit instead (deprecated)."""
+    return solver.Lmfit(*args, **kwargs)
+
+
+@deprecate_class_func_or_method(
+    version="2.4.0",
+    reason="The EmceeSolve class will be removed from the pastas module namespace. Please use ps.solver.Emcee instead.",
+)
+def EmceeSolve(*args, **kwargs):
+    """Use ps.solver.Emcee instead (deprecated)."""
+    return solver.Emcee(*args, **kwargs)
+
+
+@deprecate_class_func_or_method(
+    version="2.4.0",
+    reason="The LeastSquares class will be removed from the pastas module namespace. Please use ps.solver.LeastSquares instead.",
+)
+def LeastSquares(*args, **kwargs):
+    """Use ps.solver.LeastSquares instead (deprecated)."""
+    return solver.LeastSquares(*args, **kwargs)
