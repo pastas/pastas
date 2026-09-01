@@ -17,7 +17,7 @@ from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike, Model
 
 from .base import SolverBase
-from .objective_function import misfit
+from .objective.misfit import misfit
 
 logger = getLogger(__name__)
 

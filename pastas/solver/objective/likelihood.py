@@ -1,16 +1,76 @@
-"""Module containing the likelihood functions.
+"""Module containing the likelihood functions used in Pastas for solvers.
 
-Used in Pastas for solvers using Bayesian approaches (e.g., MCMC)
-to compute the likelihood of the model given the data.
+These likelihood functions are used in conjunction with Bayesian approaches
+(e.g., MCMC) to compute the likelihood of the model given the data.
 """
 
-import numpy as np
+from abc import ABC, abstractmethod
+
+from numpy import log, pi
 from pandas import DataFrame
 
-from pastas.typing import ArrayLike
+from ...typing import ArrayLike
 
 
-class GaussianLikelihood:
+class LikelihoodBase(ABC):
+    """Abstract base class for likelihood functions.
+
+    This class defines the interface for likelihood functions used in Pastas.
+    All likelihood functions should inherit from this class and implement the
+    required methods.
+
+    Attributes
+    ----------
+    _name : str
+        Name of the likelihood function.
+    nparam : int
+        Number of parameters in the likelihood function.
+    """
+
+    @abstractmethod
+    def get_init_parameters(self, name: str) -> DataFrame:
+        """Get initial parameters for the likelihood function.
+
+        Parameters
+        ----------
+        name: str
+            Name of the likelihood function.
+
+        Returns
+        -------
+        parameters: DataFrame
+            Initial parameters for the likelihood function.
+        """
+
+    @abstractmethod
+    def compute(self, res: ArrayLike, p: ArrayLike) -> float:
+        """Compute the log-likelihood.
+
+        Parameters
+        ----------
+        res: array
+            Residuals of the model.
+        p: array or list
+            Parameters of the likelihood function.
+
+        Returns
+        -------
+        ln: float
+            Log-likelihood.
+        """
+
+    @property
+    def _name(self) -> str:
+        """Name of the likelihood function."""
+        return self.__class__.__name__
+
+    @property
+    @abstractmethod
+    def nparam(self) -> int:
+        """Number of parameters in the likelihood function."""
+
+
+class GaussianLikelihood(LikelihoodBase):
     r"""Gaussian likelihood function for homoscedastic, uncorrelated errors.
 
     Notes
@@ -62,12 +122,12 @@ class GaussianLikelihood:
         )
         return parameters
 
-    def compute(self, rv: ArrayLike, p: ArrayLike) -> float:
+    def compute(self, res: ArrayLike, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
         ----------
-        rv: array
+        res: array
             Residuals of the model.
         p: array or list
             Parameters of the log-likelihood function.
@@ -79,14 +139,9 @@ class GaussianLikelihood:
 
         """
         var = p[-1]
-        N = rv.size
-        ln = -0.5 * N * np.log(2 * np.pi * var) + sum(-(rv**2) / (2 * var))
+        N = len(res)
+        ln = -0.5 * N * log(2 * pi * var) + sum(-(res**2) / (2 * var))
         return ln
-
-    @property
-    def _name(self) -> str:
-        """Name of the log-likelihood function."""
-        return self.__class__.__name__
 
     @property
     def nparam(self) -> int:
@@ -94,7 +149,7 @@ class GaussianLikelihood:
         return 1
 
 
-class GaussianLikelihoodAr1:
+class GaussianLikelihoodAr1(LikelihoodBase):
     r"""Gaussian likelihood function for homoscedastic, autocorrelated residuals.
 
     Notes
@@ -152,12 +207,12 @@ class GaussianLikelihoodAr1:
             index=[name + "_var", name + "_phi"],
         )
 
-    def compute(self, rv: ArrayLike, p: ArrayLike) -> float:
+    def compute(self, res: ArrayLike, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
         ----------
-        rv: array
+        res: array
             Residuals of the model.
         p: array or list
             Parameters of the log-likelihood function.
@@ -170,16 +225,11 @@ class GaussianLikelihoodAr1:
         """
         var = p[-2]
         phi = p[-1]
-        N = rv.size
-        ln = -(N - 1) / 2 * np.log(2 * np.pi * var) + sum(
-            -((rv[1:] - phi * rv[0:-1]) ** 2) / (2 * var)
+        N = len(res)
+        ln = -(N - 1) / 2 * log(2 * pi * var) + sum(
+            -((res[1:] - phi * res[0:-1]) ** 2) / (2 * var)
         )
         return ln
-
-    @property
-    def _name(self) -> str:
-        """Name of the log-likelihood function."""
-        return self.__class__.__name__
 
     @property
     def nparam(self) -> int:
