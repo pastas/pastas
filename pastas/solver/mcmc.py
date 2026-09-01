@@ -14,7 +14,8 @@ from pastas.typing import ArrayLike, CallBack, Model
 
 from .._options import options
 from .base import SolverBase
-from .objective_function import GaussianLikelihood, GaussianLikelihoodAr1, misfit
+from .objective.likelihood import GaussianLikelihood, LikelihoodBase
+from .objective.misfit import misfit
 
 logger = getLogger(__name__)
 
@@ -32,7 +33,7 @@ class Emcee(SolverBase):
 
     Parameters
     ----------
-    objfunction: pastas.solver.objective_function, optional
+    objfunction: pastas.solver.objective.likelihood.LikelihoodBase, optional
         The objective function to be minimized.
     nwalkers: int, optional
         Number of walkers to use. Default is 20.
@@ -56,7 +57,7 @@ class Emcee(SolverBase):
     emcee.EnsembleSampler
     emcee.moves
     emcee.backend
-    pastas.solver.objective_function
+    pastas.solver.objective.likelihood
 
     Notes
     -----
@@ -87,7 +88,7 @@ class Emcee(SolverBase):
         self,
         model: Model,
         name: str = "solver",
-        objfunction: GaussianLikelihood | GaussianLikelihoodAr1 | None = None,
+        objfunction: LikelihoodBase | None = None,
         nwalkers: int = 20,
         nsteps: int = 5_000,
         backend: Any | None = None,
@@ -105,8 +106,8 @@ class Emcee(SolverBase):
                 reason="Use the argument objfunction instead",
             )
             objfunction = kwargs.pop("objective_function")
-        if objfunction is None:
-            objfunction = GaussianLikelihood()
+
+        objfunction = GaussianLikelihood() if objfunction is None else objfunction
 
         self.objfunction = objfunction
 

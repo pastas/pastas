@@ -1,4 +1,4 @@
-"""Tests for the likelihood functions in pastas.solver.objective_function."""
+"""Tests for the likelihood functions in pastas.solver.objective."""
 
 from typing import Any
 
@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pastas.solver import GaussianLikelihood, GaussianLikelihoodAr1
+from pastas.solver.objective.likelihood import GaussianLikelihood, GaussianLikelihoodAr1
 
 
 class TestGaussianLikelihood:

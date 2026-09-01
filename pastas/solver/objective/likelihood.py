@@ -1,78 +1,76 @@
-"""Module containing the objective function for solvers.
+"""Module containing the likelihood functions used in Pastas for solvers.
 
-This contains the misfit which calculates the calculate residuals or noise.
-
-This module also contains the likelihood function used in Pastas for solvers
-using Bayesian approaches (e.g., MCMC) to compute the likelihood of the model
-given the data.
+These likelihood functions are used in conjunction with Bayesian approaches
+(e.g., MCMC) to compute the likelihood of the model given the data.
 """
 
-from collections.abc import Callable
+from abc import ABC, abstractmethod
 
 from numpy import log, pi
-from pandas import DataFrame, Series
+from pandas import DataFrame
 
-from pastas.typing import ArrayLike, Model
+from ...typing import ArrayLike
 
 
-def misfit(
-    model: Model,
-    p: ArrayLike,
-    noise: bool,
-    weights: Series | None = None,
-    callback: Callable | None = None,
-    returnseparate: bool = False,
-) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
-    """
-    Shared objective function for solvers to calculate residuals or noise.
+class LikelihoodBase(ABC):
+    """Abstract base class for likelihood functions.
 
-    Parameters
+    This class defines the interface for likelihood functions used in Pastas.
+    All likelihood functions should inherit from this class and implement the
+    required methods.
+
+    Attributes
     ----------
-    model: object
-        The model instance containing residuals and noise methods.
-    p: np.ndarray
-        Array of parameter values.
-    noise: bool
-        If True, minimizes the sum of squared noise computed by the NoiseModel.
-    weights: pandas.Series, optional
-        Weights to scale the residuals or noise.
-    callback: Callable, optional
-        Function to call after each iteration.
-    returnseparate: bool, optional
-        If True, returns residuals, noise, and noise weights separately.
-
-    Returns
-    -------
-    np.ndarray or tuple[np.ndarray, np.ndarray, np.ndarray]
-        The calculated residuals or noise, optionally with separate components.
+    _name : str
+        Name of the likelihood function.
+    nparam : int
+        Number of parameters in the likelihood function.
     """
-    # Get the residuals or the noise
-    res = model.residuals(p)
-    if noise:
-        res = model.noise(p=p, res=res) * model._noise_weights(p=p, res=res)
 
-    # Apply weights if provided
-    if weights is not None:
-        weights = weights.reindex(res.index)
-        weights.fillna(1.0, inplace=True)
-        res = res.multiply(weights)
+    @abstractmethod
+    def get_init_parameters(self, name: str) -> DataFrame:
+        """Get initial parameters for the likelihood function.
 
-    # Call the callback function if provided
-    if callback is not None:
-        callback(p)
+        Parameters
+        ----------
+        name: str
+            Name of the likelihood function.
 
-    # Return separate components if requested
-    if returnseparate:
-        return (
-            res.to_numpy(copy=True),
-            model.noise(p=p, res=res).to_numpy(copy=True),
-            model._noise_weights(p=p, res=res).to_numpy(copy=True),
-        )
+        Returns
+        -------
+        parameters: DataFrame
+            Initial parameters for the likelihood function.
+        """
 
-    return res.to_numpy(copy=True)
+    @abstractmethod
+    def compute(self, res: ArrayLike, p: ArrayLike) -> float:
+        """Compute the log-likelihood.
+
+        Parameters
+        ----------
+        res: array
+            Residuals of the model.
+        p: array or list
+            Parameters of the likelihood function.
+
+        Returns
+        -------
+        ln: float
+            Log-likelihood.
+        """
+
+    @property
+    def _name(self) -> str:
+        """Name of the likelihood function."""
+        return self.__class__.__name__
+
+    @property
+    @abstractmethod
+    def nparam(self) -> int:
+        """Number of parameters in the likelihood function."""
 
 
-class GaussianLikelihood:
+class GaussianLikelihood(LikelihoodBase):
     r"""Gaussian likelihood function for homoscedastic, uncorrelated errors.
 
     Notes
@@ -146,17 +144,12 @@ class GaussianLikelihood:
         return ln
 
     @property
-    def _name(self) -> str:
-        """Name of the log-likelihood function."""
-        return self.__class__.__name__
-
-    @property
     def nparam(self) -> int:
         """Number of parameters in the log-likelihood function."""
         return 1
 
 
-class GaussianLikelihoodAr1:
+class GaussianLikelihoodAr1(LikelihoodBase):
     r"""Gaussian likelihood function for homoscedastic, autocorrelated residuals.
 
     Notes
@@ -237,11 +230,6 @@ class GaussianLikelihoodAr1:
             -((res[1:] - phi * res[0:-1]) ** 2) / (2 * var)
         )
         return ln
-
-    @property
-    def _name(self) -> str:
-        """Name of the log-likelihood function."""
-        return self.__class__.__name__
 
     @property
     def nparam(self) -> int:

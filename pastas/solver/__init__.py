@@ -3,4 +3,3 @@
 
 from .least_squares import LeastSquares, Lmfit
 from .mcmc import Emcee
-from .objective_function import GaussianLikelihood, GaussianLikelihoodAr1, misfit

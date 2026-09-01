@@ -37,7 +37,7 @@ from pastas.rfunc import (
     Polder,
     Spline,
 )
-from pastas.solver import objective_function, timer
+from pastas.solver import objective, timer
 from pastas.solver.trackers import TrackSolve
 from pastas.stressmodels import (
     ChangeModel,

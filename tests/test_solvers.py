@@ -9,7 +9,7 @@ import pytest
 from scipy.optimize._numdiff import approx_derivative
 
 import pastas as ps
-from pastas.solver.objective_function import misfit
+from pastas.solver.objective import misfit
 
 
 # Existing integration tests with real models
