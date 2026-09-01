@@ -222,10 +222,10 @@ def forecast(
 
     residuals = {}
     vars = {}
-    day = Timedelta("1D")
+    sim_freq = Timedelta(f"1{model.settings['freq']}")
 
     if post_process:
-        dt = model.settings["freq_obs"] / day
+        dt = model.settings["freq_obs"] / Timedelta("1D")
         t = linspace(1, index.size, index.size)
         correction = {}
 
@@ -258,7 +258,9 @@ def forecast(
             for stress_name, fc in fc_data.items():
                 if isinstance(fc, Series):
                     fc = fc.to_frame()
-                old_stress = getattr(sm, stress_name).series_original.loc[: tmin - day]
+                old_stress = getattr(sm, stress_name).series_original.loc[
+                    : tmin - sim_freq
+                ]
                 new_stress = fc.iloc[:, member]
                 ts = concat([old_stress, new_stress], axis=0)
                 setattr(sm, stress_name, ts)
