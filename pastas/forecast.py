@@ -108,15 +108,6 @@ def _check_forecast_data(
                 index = fc.index
                 columns = fc.columns.get_level_values(0).unique().tolist()
                 logger.debug(f"First forecast found with {n} ensemble members")
-            # If the number of columns is not the same, raise an error
-            if columns != fc.columns.get_level_values(0).unique().tolist():
-                msg = (
-                    f"The column names of the forecasts are not the same for all "
-                    f"Expected {columns}, got {fc.columns.get_level_values(0).unique().tolist()} in "
-                    f"stressmodel '{sm_name}'."
-                )
-                logger.debug(msg)
-                columns = range(n)  # Reset columns to a range of integers
             elif n != fc.columns.size:
                 msg = (
                     f"The number of ensemble members is not the same for all forecasts. "
@@ -131,6 +122,15 @@ def _check_forecast_data(
                 )
                 logger.error(msg)
                 raise ValueError(msg)
+            # If the number of columns is not the same, raise an error
+            if columns != fc.columns.get_level_values(0).unique().tolist():
+                msg = (
+                    f"The column names of the forecasts are not the same for all "
+                    f"Expected {columns}, got {fc.columns.get_level_values(0).unique().tolist()} in "
+                    f"stressmodel '{sm_name}'."
+                )
+                logger.debug(msg)
+                columns = range(n)  # Reset columns to a range of integers
 
     if n is None:
         msg = "No valid forecast data found in any of the stressmodels"
