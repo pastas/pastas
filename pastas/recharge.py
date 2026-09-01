@@ -949,3 +949,169 @@ class Peterson(RechargeBase):
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
         data = DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
         return data
+
+
+class Ireson(RechargeBase):
+    """Nonlinear recharge model with soil moisture deficit approach.
+
+    Calculated according to the simple recharge model evaluated in
+    :cite:t:`ireson_nonlinear_2013`. This approach is similar to
+    conventional approaches for modelling recharge to Chalk aquifers.
+
+    Notes
+    -----
+    The water balance tracks the actual soil moisture deficit (SMDa).
+    Bypass flow (B) occurs when precipitation (P) exceeds a threshold (TH):
+    B = BF * (P - TH)
+
+    A potential soil moisture deficit (SMDp) is calculated using potential
+    evaporation (Ep): SMDp = SMDa(t-1) - (P - B) + Ep
+
+    Drainage (D) occurs when SMDp is negative. Recharge (R) is the sum
+    of drainage and bypass flow: R = D + B
+
+    The parameter `apwp` represents the difference between the permanent
+    wilting point and the root constant. The actual permanent wilting point
+    is calculated as `rc + apwp`.
+
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    @property
+    def nparam(self) -> int:
+        """Number of parameters of the Ireson recharge model."""
+        return 4
+
+    def get_init_parameters(self, name: str) -> DataFrame:
+        """Get initial parameters and bounds for the Ireson recharge model."""
+        parameters = DataFrame(
+            [
+                (500.0, 10.0, 2000.0, True, name),  # rc: root constant
+                (1500.0, 10.0, 2000.0, False, name),  # apwp: additive PWP (PWP - RC)
+                (0.0, 0.0, 0.15, False, name),  # bf: bypass fraction
+                (0.0, 0.0, 30.0, False, name),  # th: bypass threshold
+            ],
+            columns=["initial", "pmin", "pmax", "vary", "name"],
+            index=[name + "_rc", name + "_apwp", name + "_bf", name + "_th"],
+        )
+        return parameters
+
+    def simulate(
+        self,
+        prec: ArrayLike,
+        evap: ArrayLike,
+        p: ArrayLike,
+        dt: float = 1.0,
+        return_full: bool = False,
+        **kwargs,
+    ) -> ArrayLike | tuple[ArrayLike, ...]:
+        """Simulate the recharge flux.
+
+        Parameters
+        ----------
+        prec: array_like
+            Precipitation flux in mm/d. Must have the same length as evap.
+        evap: array_like
+            Potential evapotranspiration flux in mm/d.
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters. Note p[1] is the difference between PWP and RC.
+        dt: float, optional
+            time step for the calculation of the recharge. Only dt=1 is possible now.
+        return_full: bool
+            return all fluxes and states as NumPy arrays.
+
+        Returns
+        -------
+        r: array_like or tuple of array_like
+            Recharge flux calculated by the model if the argument full_output is
+            False, otherwise a tuple with all fluxes and states.
+        """
+        rc = p[0]  # Get the root constant parameter
+        apwp = p[1]  # Get the additive PWP parameter
+        pwp = rc + apwp  # Calculate actual PWP
+        r, smda, smdp, ea, b, d = self.get_recharge(
+            prec, evap, rc=rc, pwp=pwp, bf=p[2], th=p[3], dt=dt
+        )
+        if return_full:
+            # Strip imaginary part when not doing complex-step Jacobian
+            if not np.iscomplexobj(p):
+                return r.real, smda.real, smdp.real, ea.real, b.real, d.real
+            return r, smda, smdp, ea, b, d
+        else:
+            result = nan_to_num(r)
+            return result if np.iscomplexobj(p) else result.real
+
+    @staticmethod
+    @njit
+    def get_recharge(
+        prec: ArrayLike,
+        evap: ArrayLike,
+        rc: complex | float,
+        pwp: complex | float,
+        bf: complex | float,
+        th: complex | float,
+        dt: float = 1.0,
+    ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
+        """Calculate recharge flux sped up with numba."""
+        n = prec.size
+        # Create empty arrays to store the fluxes and states
+        r = zeros(n, dtype=complex128)  # Recharge flux
+        ea = zeros(n, dtype=complex128)  # Actual evaporation
+        b = zeros(n, dtype=complex128)  # Bypass flow
+        d = zeros(n, dtype=complex128)  # Soil drainage
+        smda = zeros(n + 1, dtype=complex128)  # Actual soil moisture deficit
+        smdp = zeros(n, dtype=complex128)  # Potential soil moisture deficit
+
+        # Initial condition
+        smda[0] = 0.0
+
+        for t in range(n):
+            # Calculate bypass flow (B)
+            if (prec[t] - th).real > 0.0:
+                b[t] = bf * (prec[t] - th)
+            else:
+                b[t] = 0.0
+
+            # Calculate potential soil moisture deficit (SMDp)
+            smdp[t] = smda[t] - (prec[t] - b[t]) + evap[t]
+
+            # Calculate actual evaporation (Ea)
+            if smdp[t].real <= rc.real:
+                ea[t] = evap[t]
+            elif smdp[t].real < pwp.real:
+                ea[t] = evap[t] * ((pwp - smdp[t]) / (pwp - rc))
+            else:
+                ea[t] = 0.0
+
+            # Calculate soil drainage (D)
+            if smdp[t].real < 0.0:
+                d[t] = -smdp[t]
+            else:
+                d[t] = 0.0
+
+            # Update actual soil moisture deficit (SMDa) for next step
+            if smdp[t].real < 0.0:
+                smda[t + 1] = 0.0
+            else:
+                smda[t + 1] = smda[t] - (prec[t] - b[t]) + ea[t]
+
+            # Calculate total recharge (R)
+            r[t] = d[t] + b[t]
+
+        return r, smda[:-1], smdp, ea, b, d
+
+    def get_water_balance(
+        self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, dt: float = 1.0, **kwargs
+    ) -> DataFrame:
+        """Get the water balance for the Ireson recharge model."""
+        r, smda, smdp, ea, b, d = self.simulate(
+            prec, evap, p=p, dt=dt, return_full=True, **kwargs
+        )
+        data = DataFrame(
+            data=vstack((smda, smdp, ea, b, d, r)).T,
+            columns=["SMDa", "SMDp", "Ea", "B", "D", "R"],
+        )
+        return data
