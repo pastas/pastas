@@ -29,22 +29,27 @@ jobs:
             python: "3.11"
             toxenv: py311
             experimental: false
+            pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
           - name: Test suite with py312-ubuntu
             python: "3.12"
             toxenv: py312
             experimental: false
+            pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
           - name: Test suite with py313-ubuntu
             python: "3.13"
             toxenv: py313
             experimental: false
+            pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
           - name: Test suite with py314-ubuntu
             python: "3.14"
             toxenv: py314
             experimental: false
+            pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
           - name: Test suite for all unit tests including Notebooks
             python: "3.13"
             toxenv: all
             experimental: false
+            pytest_addopts: "--color=yes"
     env:
       BADGE_GIST_COVERAGE_TOKEN: ${{ secrets.BADGE_GIST_COVERAGE_TOKEN }}
       CI_PASFILES: "0" # do not generate pas files for these tests
@@ -54,7 +59,7 @@ jobs:
       # Tox
       PY_COLORS: 1
       # Pytest
-      PYTEST_ADDOPTS: "--color=yes"
+      PYTEST_ADDOPTS: ${{ matrix.pytest_addopts }}
     steps:
       - uses: actions/checkout@v7
 
