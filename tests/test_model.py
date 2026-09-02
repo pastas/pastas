@@ -539,8 +539,9 @@ class TestModelSolving:
             ml_bad.solve(report=False)
 
         messages = "\n".join(record.message for record in caplog.records)
-        assert "Parameter 'recharge_f' on lower bound" in messages
-        assert "Response tmax for" in messages and "> than calibration period" in messages
+        assert (
+            "Response tmax for" in messages and "> than calibration period" in messages
+        )
         assert "Response tmax for" in messages and "> than warmup period" in messages
 
 

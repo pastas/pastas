@@ -1,9 +1,13 @@
 name: CI NB
 
 on:
-  pull_request:
+  push:
     branches:
       - master
+      - dev
+  pull_request:
+    branches:
+      - dev
 
 concurrency:
   # Group by workflow name and ref (branch or pull request ref).

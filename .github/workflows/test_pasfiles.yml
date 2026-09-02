@@ -1,15 +1,14 @@
 name: CI PASFILES
 
 on:
-  # Trigger the workflow on push or pull request on master,
-  # and only on pull-requests on dev branch
+  # Trigger the workflow on direct push on master and dev,
+  # and on pull-requests targeting dev
   push:
     branches:
       - master
       - dev
   pull_request:
     branches:
-      - master
       - dev
 
 concurrency:

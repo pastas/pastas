@@ -1,9 +1,13 @@
 name: CI SPELLING
 
 on:
-  pull_request:
+  push:
     branches:
       - master
+      - dev
+  pull_request:
+    branches:
+      - dev
 
 jobs:
   code-spell-check:

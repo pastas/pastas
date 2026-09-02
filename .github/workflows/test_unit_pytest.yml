@@ -7,7 +7,6 @@ on:
       - dev
   pull_request:
     branches:
-      - master
       - dev
 
 concurrency:
