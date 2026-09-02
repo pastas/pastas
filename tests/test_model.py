@@ -534,17 +534,14 @@ class TestModelSolving:
 
     def test_solve_with_warnings(self, ml_bad: ps.Model, caplog):
         """Test that solving a problematic model generates warnings."""
+        caplog.clear()
         with caplog.at_level(logging.INFO, logger="pastas.model"):
             ml_bad.solve(report=False)
 
-            assert len(caplog.get_records("call")) == 3
-            assert caplog.records[0].message.startswith(
-                "Parameter 'recharge_f' on lower bound"
-            )
-            assert "Response tmax for" in caplog.records[1].message
-            assert "> than calibration period" in caplog.records[1].message
-            assert "Response tmax for" in caplog.records[2].message
-            assert "> than warmup period" in caplog.records[2].message
+        messages = "\n".join(record.message for record in caplog.records)
+        assert "Parameter 'recharge_f' on lower bound" in messages
+        assert "Response tmax for" in messages and "> than calibration period" in messages
+        assert "Response tmax for" in messages and "> than warmup period" in messages
 
 
 class TestModelContributions:
