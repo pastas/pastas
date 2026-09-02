@@ -24,13 +24,11 @@ except (ModuleNotFoundError, ImportError):
     CACHETOOLS_AVAILABLE = False
 
 logger = getLogger(__name__)
-# Test against base-version, formatted as a Version (.base_version returns a str)
-CURRENT_PASTAS_VERSION = parse_version(__version__).__replace__(
-    pre=None, post=None, dev=None, local=None
-)
+
+CURRENT_PASTAS_VERSION = parse_version(parse_version(__version__).base_version)
 
 # Keep these for backward compatibility but they now delegate to central settings
-# These will be removed in a future version 2.3.0
+# These will be removed in a future version 2.4.0
 USE_NUMBA = True
 USE_CACHE = False
 

@@ -9,7 +9,7 @@ import pytest
 from scipy.optimize._numdiff import approx_derivative
 
 import pastas as ps
-from pastas.solver.objective_function import misfit
+from pastas.solver.objective import misfit
 
 
 # Existing integration tests with real models
@@ -45,7 +45,7 @@ def test_misfit_uses_sqrt_weights(ml_recharge: ps.Model) -> None:
     weights = pd.Series(1.0, index=residuals.index)
     weights.iloc[::5] = 0.25
 
-    misfit = ps.solver.misfit(model=ml_recharge, p=p, noise=False, weights=weights)
+    misfit = ps.objective.misfit(model=ml_recharge, p=p, noise=False, weights=weights)
     expected = (residuals * weights).values
 
     np.testing.assert_allclose(misfit, expected)
@@ -90,7 +90,7 @@ def test_emcee(ml_recharge: ps.Model) -> None:
         ml_recharge.solve()
         ml_recharge.del_noisemodel()
 
-        ps.solver.Emcee(model=ml_recharge, nwalkers=10)
+        ps.solver.Emcee(model=ml_recharge, nwalkers=10, nsteps=2, progress_bar=False)
 
         ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)
 
@@ -100,7 +100,6 @@ def test_emcee(ml_recharge: ps.Model) -> None:
         ml_recharge.solve(
             initial=False,
             fit_constant=True,
-            steps=2,
         )
     except ImportError:
         pytest.skip("emcee not installed, skipping test")

@@ -17,7 +17,7 @@ from pastas.plotting.plotutil import _table_formatter_stderr
 from pastas.typing import ArrayLike, Model
 
 from .base import SolverBase
-from .objective_function import misfit
+from .objective.misfit import misfit
 
 logger = getLogger(__name__)
 
@@ -714,7 +714,7 @@ class LeastSquares(LeastSquaresBase):
         self,
         model: Model,
         name: str = "solver",
-        jac: Literal["2-point", "3-point", "cs"] = "3-point",
+        jac: Literal["2-point", "3-point", "cs"] = "2-point",
         method: Literal["trf", "dogbox", "lm"] = "trf",
         ftol: float = 1e-8,
         xtol: float = 1e-8,
@@ -1062,6 +1062,7 @@ class LeastSquares(LeastSquaresBase):
 
         >>> print(ml.fit_report)
         """
+        obj_func = self.result.cost if self.result is not None else np.nan
         return super().fit_report(
             corr=corr,
             stderr=stderr,

@@ -265,9 +265,11 @@ class RfuncBase(ABC):
             elif gain_scale_factor < 0 and up is True:
                 gain_scale_factor = gain_scale_factor * -1
             elif gain_scale_factor == 0.0:
-                msg = "The gain_scale_factor, the factor to scale the initial value of"
-                " the gain parameter, cannot be zero, setting to 1.0. Consider "
-                "providing a custom gain_scale_factor."
+                msg = (
+                    "The gain_scale_factor, the factor to scale the initial value of"
+                    " the gain parameter, cannot be zero, setting to 1.0. Consider "
+                    "providing a custom gain_scale_factor."
+                )
                 logger.warning(msg)
                 gain_scale_factor = 1.0
             self.gain_scale_factor = gain_scale_factor
@@ -1059,14 +1061,21 @@ class Hantush(RfuncBase):
         tmax = wrightomega(log_z).real * a
         return tmax
 
-    def _f_step(self, t: float, A: float, a: float, b: float, cutoff: float) -> float:
-        """Objective function for root finding (t varies, other params fixed)."""
+    def _f_step(self, t: float, a: float, b: float, cutoff: float) -> float:
+        """Objective function for root finding (t varies, other params fixed).
+
+        This function computes the difference between the step response at time t
+        and the specified cutoff. It is used in root-finding algorithms to determine
+        the time t at which the step response reaches the cutoff value.
+        """
         t_arr = np.array([t], dtype=float)
+        A = 1.0
         if self.quad:
             step_val = self.quad_step(A=A, a=a, b=b, t=t_arr)[0]
         else:
             step_val = self.numpy_step(A=A, a=a, b=b, t=t_arr)[0]
-        return (step_val / A) - cutoff
+        # would actually be (step_val / A - cutoff) but A=1.0 so it's the same
+        return step_val - cutoff
 
     def get_tmax(self, p: ArrayLike, cutoff: float | None = None) -> float:
         """Calculate `tmax` using either the approximation or root finding.
@@ -1090,17 +1099,17 @@ class Hantush(RfuncBase):
         if self.approximate_tmax:
             return t0
 
-        A, a, b = p[0], p[1], p[2]
+        a, b = p[1], p[2]
 
         # Use Brentq's method
         tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
         root, info = brentq(
             f=self._f_step,
-            a=1e-30,  # avoid divide by zero warnings
+            a=1e-30,  # choose a small positive lower bound to avoid division by zero
             b=t0,
             xtol=tol,
             maxiter=100,  # generally converges within 10 iterations
-            args=(A, a, b, cutoff),
+            args=(a, b, cutoff),
             full_output=True,
             disp=False,
         )
