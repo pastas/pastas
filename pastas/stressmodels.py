@@ -1534,8 +1534,10 @@ class WellModel(StressModelBase):
         """Get distances for the stress(es)."""
         if istress is None:
             return self.distances
-        elif isinstance(istress, int):
+        elif isinstance(istress, int) and ((istress >= 0) or (istress < -1)):
             return self.distances.iloc[istress : istress + 1]
+        elif isinstance(istress, int) and istress == -1:
+            return self.distances.iloc[istress:]
         else:
             return self.distances.iloc[istress]
 
