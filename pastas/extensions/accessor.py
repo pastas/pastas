@@ -1,6 +1,4 @@
-"""Provides accessor registration for extending Pastas model classes with custom
-properties.
-"""
+"""Module for accessor registration for extending Pastas model classes."""
 
 # copied and adapted from pandas/core/accessor.py
 import logging
@@ -9,8 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class CachedAccessor:
-    """
-    Custom property-like object.
+    """Custom property-like object.
 
     A descriptor for caching accessors.
 
@@ -27,6 +24,11 @@ class CachedAccessor:
         self._accessor = accessor
 
     def __get__(self, obj, cls):
+        """Get the accessor object for the instance.
+
+        Returns the accessor class if accessed from the class, or creates and caches
+        an instance of the accessor if accessed from an instance.
+        """
         if obj is None:
             # we're accessing the attribute of the class, i.e., Dataset.geo
             return self._accessor
@@ -103,6 +105,18 @@ def _register_accessor(name: str, cls):
 
 
 def register_model_accessor(name: str):
+    """Register a custom accessor for Pastas Model classes.
+
+    Parameters
+    ----------
+    name : str
+        The name of the accessor to register.
+
+    Returns
+    -------
+    decorator : callable
+        A decorator to apply to the accessor class.
+    """
     from pastas import Model
 
     return _register_accessor(name, Model)

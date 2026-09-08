@@ -31,17 +31,16 @@ def generate_test_data(
     evap = pd.read_csv(data_path / "evap.csv", index_col=0, parse_dates=True).squeeze()
 
     # Temperature series
-    index = (
-        pd.read_csv(data_path / "evap.csv", index_col=0, parse_dates=True)
-        .squeeze()
-        .index
-    )
+    index = evap.index
     temp = pd.Series(
-        index=index, data=np.sin(np.arange(index.size) / 2200), dtype=float
+        index=index,
+        data=np.sin(np.arange(index.size) / 2200),
+        dtype=float,
+        name="TG_380",
     )
 
     # Step series (e.g., pumping)
-    step = pd.Series(np.zeros(len(dates)), index=dates, name="step")
+    step = pd.Series(np.zeros(len(dates)), index=dates, name="PUMP")
     step.loc[dates[len(dates) // 3] :] = 1.0  # Step at 1/3 of the time series
 
     return head, prec, evap, temp, step
@@ -95,8 +94,25 @@ def ml_basic(head: pd.Series) -> ps.Model:
 def ml_recharge(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
     """Return a model with a recharge (rain) model."""
     ml = ps.Model(head, name="recharge_model")
-    sm = ps.RechargeModel(prec, evap, name="rch", rfunc=ps.Exponential())
-    ml.add_stressmodel(sm)
+    ps.RechargeModel(
+        model=ml,
+        prec=prec,
+        evap=evap,
+        name="rch",
+        rfunc=ps.Exponential(),
+    )
+    return ml
+
+
+@pytest.fixture
+def ml_with_interpolation(
+    head: pd.Series, prec: pd.Series, evap: pd.Series
+) -> ps.Model:
+    """Return a model with a recharge (rain) model with some offset added to the head-series."""
+    head_offset = head.copy()
+    head_offset.index = head_offset.index + pd.Timedelta(hours=12)
+    ml = ps.Model(head_offset, name="recharge_model")
+    ps.RechargeModel(ml, prec, evap, name="rch", rfunc=ps.Exponential())
     return ml
 
 
@@ -112,11 +128,21 @@ def ml_solved(ml_recharge: ps.Model) -> ps.Model:
 def ml_sm(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
     """Return a model with multiple stress models."""
     ml = ps.Model(head, name="multistress_model")
-    sm1 = ps.StressModel(prec, name="prec", rfunc=ps.Exponential(), settings="prec")
-    sm2 = ps.StressModel(
-        evap, name="evap", rfunc=ps.Exponential(), settings="evap", up=False
+    ps.StressModel(
+        model=ml,
+        stress=prec,
+        name="prec",
+        rfunc=ps.Exponential(),
+        settings="prec",
     )
-    ml.add_stressmodel([sm1, sm2])
+    ps.StressModel(
+        model=ml,
+        stress=evap,
+        name="evap",
+        rfunc=ps.Exponential(),
+        settings="evap",
+        up=False,
+    )
     return ml
 
 
@@ -124,17 +150,21 @@ def ml_sm(head: pd.Series, prec: pd.Series, evap: pd.Series) -> ps.Model:
 def ml_step_and_exp(head: pd.Series, prec: pd.Series, step: pd.Series) -> ps.Model:
     """Return a model with step and exponential response functions."""
     ml = ps.Model(head, name="step_exp_model")
-    sm1 = ps.StressModel(prec, name="prec", rfunc=ps.Exponential(), settings="prec")
-    sm2 = ps.StressModel(step, name="step", rfunc=ps.StepResponse())
-    ml.add_stressmodel([sm1, sm2])
+    ps.StressModel(
+        model=ml,
+        stress=prec,
+        name="prec",
+        rfunc=ps.Exponential(),
+        settings="prec",
+    )
+    ps.StressModel(model=ml, stress=step, name="step", rfunc=ps.StepResponse())
     return ml
 
 
 @pytest.fixture
 def ml_with_transform(ml_solved: ps.Model) -> ps.Model:
     """Add a transform to the basic recharge model."""
-    transform = ps.ThresholdTransform()
-    ml_solved.add_transform(transform)
+    ps.ThresholdTransform(model=ml_solved)
     return ml_solved
 
 
@@ -142,8 +172,7 @@ def ml_with_transform(ml_solved: ps.Model) -> ps.Model:
 def ml_noisemodel(ml_solved: ps.Model) -> ps.Model:
     """Return an already solved model."""
     ml_copy = ml_solved.copy()
-    noise = ps.ArNoiseModel()
-    ml_copy.add_noisemodel(noise)
+    ps.ArNoiseModel(model=ml_copy)
     ml_copy.solve(report=False)
     return ml_copy
 

@@ -27,7 +27,7 @@ def test_plotly_plot(ml_solved: ps.Model) -> None:
     try:
         plot = ml.plotly.plot()
         assert plot is not None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         pytest.fail(f"Generating plotly plot failed: {e}")
 
 
@@ -40,7 +40,7 @@ def test_plotly_results_plot(ml_solved: ps.Model) -> None:
     try:
         plot = ml.plotly.results()
         assert plot is not None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         pytest.fail(f"Generating plotly results plot failed: {e}")
 
 
@@ -53,5 +53,5 @@ def test_plotly_diagnostics_plot(ml_solved: ps.Model) -> None:
     try:
         plot = ml.plotly.diagnostics()
         assert plot is not None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         pytest.fail(f"Generating plotly diagnostics plot failed: {e}")

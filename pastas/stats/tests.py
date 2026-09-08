@@ -22,16 +22,16 @@ from pastas.timeseries_utils import _get_time_offset, get_equidistant_series_nea
 
 logger = getLogger(__name__)
 __all__ = [
+    "diagnostics",
     "durbin_watson",
     "ljung_box",
     "runs_test",
     "stoffer_toloi",
-    "diagnostics",
 ]
 
 
 def durbin_watson(series: Series) -> float:
-    """Durbin-Watson test for autocorrelation.
+    r"""Durbin-Watson test for autocorrelation.
 
     Parameters
     ----------
@@ -99,7 +99,7 @@ def durbin_watson(series: Series) -> float:
 def ljung_box(
     series: Series, lags: int = 15, nparam: int = 0, full_output: bool = False
 ) -> tuple[float, float]:
-    """Ljung-box test for autocorrelation.
+    r"""Test for autocorrelation using the Ljung-Box test.
 
     Parameters
     ----------
@@ -118,6 +118,13 @@ def ljung_box(
         The computed Q test statistic.
     pval: float
         The probability of the computed Q test statistic.
+
+    See Also
+    --------
+    pastas.stats.acf
+        This method is called to compute the autocorrelation function.
+    pastas.stats.stoffer_toloi
+        Similar method but adapted for time series with missing data.
 
     Notes
     -----
@@ -161,13 +168,6 @@ def ljung_box(
     >>>          "autocorrelation. p =", p.round(2))
     >>> else:
     >>>    print("Reject the Null-hypothesis. p =", p.round(2))
-
-    See Also
-    --------
-    pastas.stats.acf
-        This method is called to compute the autocorrelation function.
-    pastas.stats.stoffer_toloi
-        Similar method but adapted for time series with missing data.
     """
     if not infer_freq(series.index):
         logger.warning(
@@ -194,7 +194,7 @@ def ljung_box(
 
 
 def runs_test(series: Series, cutoff: str = "median") -> tuple[float, float]:
-    """Runs test for autocorrelation.
+    r"""Test for autocorrelation using the runs test.
 
     Parameters
     ----------
@@ -295,7 +295,7 @@ def stoffer_toloi(
     freq: str = "D",
     snap_to_equidistant_timestamps: bool = False,
 ) -> tuple[float, float]:
-    """Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
+    r"""Adapted Ljung-Box test to deal with missing data [stoffer_1992]_.
 
     Parameters
     ----------
@@ -321,6 +321,10 @@ def stoffer_toloi(
         Adapted Ljung-Box test statistic.
     pval: float
         p-value for the test statistic, based on a chi-squared distribution.
+
+    See Also
+    --------
+    pastas.timeseries_utils.get_equidistant_series_nearest
 
     Notes
     -----
@@ -362,10 +366,6 @@ def stoffer_toloi(
     >>>          "autocorrelation. p =", p.round(2))
     >>> else:
     >>>    print("Reject the Null-hypothesis")
-
-    See Also
-    --------
-    pastas.timeseries_utils.get_equidistant_series_nearest
     """
     if snap_to_equidistant_timestamps:
         # create equidistant time series snapping values from the original series to
@@ -407,7 +407,7 @@ def stoffer_toloi(
     da = zeros(nlags)
     de = zeros(nlags)
 
-    for i in range(0, nlags):
+    for i in range(nlags):
         hh = y[: -i - 1] * y[i + 1 :]
         dz[i] = hh.sum() / nobs
         hh = yn[: -i - 1] * yn[i + 1 :]
@@ -486,7 +486,6 @@ def diagnostics(
     In this example, the Null-hypothesis is not rejected and the data may be assumed
     to be white noise.
     """
-
     cols = ["Checks", "Statistic", "P-value"]
     df = DataFrame(index=stats, columns=cols)
 
@@ -516,7 +515,7 @@ def diagnostics(
         stat, p = stoffer_toloi(series, nparam=nparam, lags=lags)
         df.loc["Stoffer-Toloi", cols] = "Autocorr.", stat, p
 
-    df["Reject H0 ($\\alpha$={:.2f})".format(alpha)] = df.loc[:, "P-value"] < alpha
+    df[f"Reject H0 ($\\alpha$={alpha:.2f})"] = df.loc[:, "P-value"] < alpha
     df.loc[:, "P-value"] = df.loc[:, "P-value"].apply(float_fmt.format)
     df.loc[:, "Statistic"] = df.loc[:, "Statistic"].apply(float_fmt.format)
     return df

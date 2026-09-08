@@ -2,9 +2,11 @@ name: CI RUFF
 
 on:
   push:
-  pull_request:
     branches:
       - master
+      - dev
+  pull_request:
+    branches:
       - dev
 
 jobs:
@@ -28,13 +30,13 @@ jobs:
       # Pytest
       PYTEST_ADDOPTS: "--color=yes"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.11"
-          enable-cache: true
+          python-version: "3.13"
+          enable-cache: false
 
       - name: Install dependencies
         run: |
@@ -46,4 +48,3 @@ jobs:
 
       - name: Test
         run: uv run tox -e ${{ matrix.toxenv }} --skip-pkg-install
-

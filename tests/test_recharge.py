@@ -5,54 +5,67 @@ import pastas as ps
 
 
 def test_berendrecht(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(prec=prec, evap=evap, recharge=ps.rch.Berendrecht())
-    ml_basic.add_stressmodel(rm)
+    ps.RechargeModel(
+        model=ml_basic,
+        prec=prec,
+        evap=evap,
+        recharge=ps.rch.Berendrecht(),
+    )
     ml_basic.simulate()
 
 
 def test_peterson(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(prec=prec, evap=evap, recharge=ps.rch.Peterson())
-    ml_basic.add_stressmodel(rm)
+    ps.RechargeModel(model=ml_basic, prec=prec, evap=evap, recharge=ps.rch.Peterson())
     ml_basic.simulate()
 
 
 def test_linear(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(prec=prec, evap=evap, recharge=ps.rch.Linear())
-    ml_basic.add_stressmodel(rm)
+    ps.RechargeModel(model=ml_basic, prec=prec, evap=evap, recharge=ps.rch.Linear())
     ml_basic.simulate()
 
 
 def test_flexmodel(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(prec=prec, evap=evap, recharge=ps.rch.FlexModel())
-    ml_basic.add_stressmodel(rm)
+    ps.RechargeModel(
+        model=ml_basic,
+        prec=prec,
+        evap=evap,
+        recharge=ps.rch.FlexModel(),
+    )
     ml_basic.simulate()
 
 
 def test_flexmodel_no_interception(
     ml_basic: ps.Model, prec: Series, evap: Series
 ) -> None:
-    rm = ps.RechargeModel(
-        prec=prec, evap=evap, recharge=ps.rch.FlexModel(interception=False)
+    ps.RechargeModel(
+        model=ml_basic,
+        prec=prec,
+        evap=evap,
+        recharge=ps.rch.FlexModel(interception=False),
     )
-    ml_basic.add_stressmodel(rm)
     ml_basic.simulate()
 
 
 def test_flexmodel_gw_uptake(ml_basic: ps.Model, prec: Series, evap: Series) -> None:
-    rm = ps.RechargeModel(
-        prec=prec, evap=evap, recharge=ps.rch.FlexModel(gw_uptake=True)
+    ps.RechargeModel(
+        model=ml_basic,
+        prec=prec,
+        evap=evap,
+        recharge=ps.rch.FlexModel(gw_uptake=True),
     )
-    ml_basic.add_stressmodel(rm)
     ml_basic.simulate()
 
 
 def test_flexmodel_snow(
     ml_basic: ps.Model, prec: Series, evap: Series, temp: Series
 ) -> None:
-    rm = ps.RechargeModel(
-        prec=prec, evap=evap, temp=temp, recharge=ps.rch.FlexModel(snow=True)
+    ps.RechargeModel(
+        model=ml_basic,
+        prec=prec,
+        evap=evap,
+        temp=temp,
+        recharge=ps.rch.FlexModel(snow=True),
     )
-    ml_basic.add_stressmodel(rm)
     ml_basic.simulate(tmin=evap.index[0], tmax=evap.index[100])
 
 
@@ -196,12 +209,12 @@ def test_njit_peterson_recharge(prec: Series, evap: Series) -> None:
     e = evap.to_numpy()
 
     # Test with default parameters
-    r, s, ea, pe = ps.rch.Peterson.get_recharge.py_func(prec=p, evap=e)
+    _r, s, _ea, _pe = ps.rch.Peterson.get_recharge.py_func(prec=p, evap=e)
     # Check that the final state is reasonable (not NaN or inf)
     assert isclose(s[-1], s[-1])  # Quick way to check for NaN
 
     # Test with custom parameters
-    r, s, ea, pe = ps.rch.Peterson.get_recharge(
+    _r, s, _ea, _pe = ps.rch.Peterson.get_recharge(
         prec=p, evap=e, scap=1.0, alpha=1.0, ksat=1.0, beta=0.5, gamma=1.0
     )
     # Check that the final state is reasonable (not NaN or inf)

@@ -8,7 +8,7 @@ import pastas as ps
 def test_frequency_is_supported() -> None:
     ps.ts._frequency_is_supported("D")
     ps.ts._frequency_is_supported("7D")
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         ps.ts._frequency_is_supported("SMS")
 
 

@@ -1,3 +1,10 @@
+"""Functions to load and save Pastas models to and from JSON files.
+
+This module provides the `load` and `dump` functions for reading and writing
+Pastas models using JSON format. It also includes helper functions for
+encoding and decoding Pandas-specific types.
+"""
+
 import datetime
 import json
 from collections import OrderedDict
@@ -28,12 +35,39 @@ logger = getLogger(__name__)
 
 
 def load(fname: str) -> dict:
+    """Load a Pastas model from a JSON file.
+
+    Parameters
+    ----------
+    fname : str
+        Filename of the JSON file to load.
+
+    Returns
+    -------
+    dict
+        Dictionary containing the model data.
+    """
     with open(fname, "r") as file:
         data = json.load(file, object_hook=pastas_hook)
     return data
 
 
 def pastas_hook(obj: dict):
+    """Decode Pastas-specific types from JSON.
+
+    This function is used as the object_hook parameter in json.load() to convert
+    JSON data back to Python/Pandas types used by Pastas.
+
+    Parameters
+    ----------
+    obj : dict
+        Dictionary from the JSON file.
+
+    Returns
+    -------
+    dict
+        Dictionary with Pastas types decoded.
+    """
     for key, value in obj.items():
         if key in ["tmin", "tmax", "date_modified", "date_created"]:
             val = Timestamp(value)
@@ -45,13 +79,13 @@ def pastas_hook(obj: dict):
                 obj[key] = read_json(
                     stringIO(value), typ="series", orient="split"
                 ).astype(float)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.debug(e)
                 obj[key] = value
             if isinstance(obj[key], Series):
                 obj[key].index = obj[key].index.tz_localize(None)
         elif key in ["time_offset", "warmup"]:
-            if isinstance(value, int) or isinstance(value, float):
+            if isinstance(value, (int, float)):
                 obj[key] = Timedelta(value, "D")
             else:
                 obj[key] = Timedelta(value)
@@ -66,13 +100,22 @@ def pastas_hook(obj: dict):
         else:
             try:
                 obj[key] = json.loads(value, object_hook=pastas_hook)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.debug(e)
                 obj[key] = value
     return obj
 
 
 def dump(fname: str, data: dict) -> None:
+    """Save a Pastas model to a JSON file.
+
+    Parameters
+    ----------
+    fname : str
+        Filename to save the JSON data to.
+    data : dict
+        Dictionary containing the model data to save.
+    """
     with open(fname, "w") as file:
         json.dump(data, file, indent=4, cls=PastasEncoder)
     logger.info("%s file successfully exported", fname)
@@ -89,6 +132,18 @@ class PastasEncoder(json.JSONEncoder):
     """
 
     def default(self, o):
+        """Encode special types to JSON.
+
+        Parameters
+        ----------
+        o : object
+            Object to encode.
+
+        Returns
+        -------
+        object
+            JSON-serializable representation of the object.
+        """
         if isinstance(o, (Timestamp, datetime.datetime, datetime.date)):
             return o.isoformat()
         elif isinstance(o, Series):
@@ -108,4 +163,4 @@ class PastasEncoder(json.JSONEncoder):
         elif isinstance(o, integer):
             return int(o)
         else:
-            return super(PastasEncoder, self).default(o)
+            return super().default(o)

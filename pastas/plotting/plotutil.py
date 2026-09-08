@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pandas import Series, Timedelta
 
-from pastas.typing import Axes
+from pastas.typing import Axes, Model
 
 logger = logging.getLogger(__name__)
 
 
 def _table_formatter_params(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting parameters in tables in Pastas plots.
+    """Format parameters in tables in Pastas plots.
 
     Parameters
     ----------
@@ -28,16 +28,14 @@ def _table_formatter_params(s: float, na_rep: str = "") -> str:
         return na_rep
     elif s == 0.0:
         return f"{s:.2f}"
-    elif np.floor(np.log10(np.abs(s))) <= -2:
-        return f"{s:.2e}"
-    elif np.floor(np.log10(np.abs(s))) > 5:
+    elif np.floor(np.log10(np.abs(s))) <= -2 or np.floor(np.log10(np.abs(s))) > 5:
         return f"{s:.2e}"
     else:
         return f"{s:.2f}"
 
 
 def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
-    """Internal method for formatting stderrs in tables in Pastas plots.
+    """Format stderrs in tables in Pastas plots.
 
     Parameters
     ----------
@@ -53,9 +51,7 @@ def _table_formatter_stderr(s: float, na_rep: str = "") -> str:
         return na_rep
     elif s == 0.0:
         return f"±{s * 100:.2e}%"
-    elif np.floor(np.log10(np.abs(s))) <= -4:
-        return f"±{s * 100.0:.2e}%"
-    elif np.floor(np.log10(np.abs(s))) > 3:
+    elif np.floor(np.log10(np.abs(s))) <= -4 or np.floor(np.log10(np.abs(s))) > 3:
         return f"±{s * 100.0:.2e}%"
     else:
         return f"±{s:.2%}"
@@ -65,16 +61,16 @@ def _get_height_ratios(ylims: list[tuple[float, float]]) -> list[float]:
     return [0.0 if np.isnan(ylim[1] - ylim[0]) else ylim[1] - ylim[0] for ylim in ylims]
 
 
-def _get_stress_series(ml, split: bool = True) -> list[Series]:
+def _get_stress_series(model: Model, split: bool = True) -> list[Series]:
     stresses = []
-    for name in ml.stressmodels.keys():
-        nstress = len(ml.stressmodels[name].stresses)
+    for name in model.stressmodels:
+        nstress = len(model.stressmodels[name].stresses)
         if split and nstress > 1:
             for istress in range(nstress):
-                stress = ml.get_stress(name, istress=istress)
+                stress = model.get_stress(name, istress=istress)
                 stresses.append(stress)
         else:
-            stress = ml.get_stress(name)
+            stress = model.get_stress(name)
             if isinstance(stress, list):
                 stresses.extend(stress)
             else:
@@ -83,7 +79,7 @@ def _get_stress_series(ml, split: bool = True) -> list[Series]:
 
 
 def share_xaxes(axes: list[Axes]) -> None:
-    """share x-axes"""
+    """Share x-axes."""
     for i, iax in enumerate(axes):
         if i < (len(axes) - 1):
             iax.sharex(axes[-1])
@@ -92,7 +88,7 @@ def share_xaxes(axes: list[Axes]) -> None:
 
 
 def share_yaxes(axes: list[Axes]) -> None:
-    """share y-axes"""
+    """Share y-axes."""
     for iax in axes[1:]:
         iax.sharey(axes[0])
         for t in iax.get_yticklabels():
@@ -100,7 +96,10 @@ def share_yaxes(axes: list[Axes]) -> None:
 
 
 def plot_series_with_gaps(
-    series: Series, gap: Timedelta | None = None, ax: Axes | None = None, **kwargs
+    series: Series,
+    gap: Timedelta | float = np.inf,
+    ax: Axes | None = None,
+    **kwargs,
 ) -> Axes:
     """Plot a pandas Series with gaps if index difference is larger than gap.
 
@@ -108,11 +107,10 @@ def plot_series_with_gaps(
     ----------
     series: pd.Series
         The series to plot.
-    gap: Timedelta | None
-        Timedelta to be considered as a gap. If the difference between two
-        consecutive index values is larger than gap, a gap is inserted in the
-        plot. If None, the maximum value between the 95th percentile of the
-        differences and 50 days is used as gap.
+    gap: Timedelta | float
+        Timedelta or float (in days) to be considered as a gap. If the difference
+        between two consecutive index values is larger than gap, a gap is inserted
+        in the plot. Default is infinity.
     ax: Axes | None
         The axes to plot on. if None, a new figure is created.
     kwargs: dict
@@ -122,10 +120,10 @@ def plot_series_with_gaps(
         _, ax = plt.subplots()
 
     td_diff = series.index[1:] - series.index[:-1]
-    if gap is None:
-        gapq = np.quantile(td_diff, 0.95)
-        gap = max(gapq, Timedelta(50, unit="D"))
-
+    if isinstance(gap, float) and np.isinf(gap):
+        gap = max(td_diff) + Timedelta(1, unit="D")
+    else:
+        gap = Timedelta(gap, unit="D")
     s_split = np.append(0.0, np.cumsum(td_diff >= gap))
 
     series.name = kwargs.pop("label") if "label" in kwargs else series.name

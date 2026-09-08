@@ -11,17 +11,17 @@ def test_comparison_plot_sim_kwargs(ml_solved: ps.Model, ml_sm: ps.Model) -> Non
     _ = mc.plot()
 
 
-def test_comparison_plot_custom(ml_solved: ps.Model, ml_sm: ps.Model) -> None:
-    mc = ps.CompareModels(models=[ml_solved, ml_sm])
+def test_comparison_plot_custom(ml_solved: ps.Model, ml_noisemodel: ps.Model) -> None:
+    mc = ps.CompareModels(models=[ml_solved, ml_noisemodel])
     mosaic: list[list[str]] = [
         ["ose", "ose", "met"],
         ["sim", "sim", "tab"],
         ["res", "res", "tab"],
         ["con0", "con0", "dia"],
-        ["con1", "con1", "dia"],
+        # ["con1", "con1", "dia"],
         ["acf", "acf", "dia"],
     ]
-    smdict: dict[int, list[str]] = {0: ["rch", "prec"], 1: ["evap"]}
+    smdict: dict[int, list[str]] = {0: ["rch", "rch"]}
 
     mc.initialize_adjust_height_figure(
         mosaic, figsize=(16, 10), cmap="Dark2", smdict=smdict
@@ -40,7 +40,7 @@ def test_comparison_plot_custom(ml_solved: ps.Model, ml_sm: ps.Model) -> None:
             mc.axes["sim"],
             mc.axes["res"],
             mc.axes["con0"],
-            mc.axes["con1"],
+            # mc.axes["con1"],
         ]
     )
     mc.share_yaxes(

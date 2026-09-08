@@ -10,9 +10,9 @@ authors:
   - family-names: "Schaars"
     given-names: "F"
 title: "Pastas: open-source software for the analysis of hydrogeological time series"
-version: 0.22.0
-doi: 10.5281/zenodo.1465866
-date-released: 2022-08-02
+version: "latest"
+doi: "10.5281/zenodo.1465866"
+date-released: "YYYY-MM-DD"
 url: "https://github.com/pastas/pastas"
 preferred-citation:
   type: article

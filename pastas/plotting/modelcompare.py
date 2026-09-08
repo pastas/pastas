@@ -141,7 +141,7 @@ class CompareModels:
         return_ax: bool = False,
         **fig_kwargs,
     ) -> None:
-        """initialize a custom figure based on a mosaic.
+        """Initialize a custom figure based on a mosaic.
 
         Parameters
         ----------
@@ -172,7 +172,7 @@ class CompareModels:
         smdict: dict[int, list[str]] | None = None,
         **fig_kwargs,
     ) -> None:
-        """initialize subplots based on a mosaic with equal vertical scales.
+        """Initialize subplots based on a mosaic with equal vertical scales.
 
         The height of each subplot is calculated based on the y-data limits in each
         subplot. This is calculation is performed on the first column of axes in the
@@ -271,7 +271,7 @@ class CompareModels:
         self.mosaic = mosaic
         fig, axes = plt.subplot_mosaic(
             self.mosaic,
-            gridspec_kw=dict(height_ratios=heights_list),
+            gridspec_kw={"height_ratios": heights_list},
             **fig_kwargs,
         )
 
@@ -284,7 +284,7 @@ class CompareModels:
             if axlbl in ["sim", "res"] or axlbl.startswith("con"):
                 self.axes[axlbl].autoscale(enable=None, axis="y", tight=True)
 
-    def get_unique_stressmodels(self, models: list[Model] = None) -> list[str]:
+    def get_unique_stressmodels(self, models: list[Model] | None = None) -> list[str]:
         """Get all unique stressmodel names.
 
         Parameters
@@ -328,8 +328,8 @@ class CompareModels:
 
         return mosaic
 
-    def get_tmin_tmax(self, models: list[Model] = None) -> DataFrame:
-        """get tmin and tmax of all models.
+    def get_tmin_tmax(self, models: list[Model] | None = None) -> DataFrame:
+        """Get tmin and tmax of all models.
 
         Parameters
         ----------
@@ -353,7 +353,7 @@ class CompareModels:
         models: list[Model] | None = None,
         metric_selection: list[str] | None = None,
     ) -> DataFrame:
-        """get metrics of all models in a DataFrame.
+        """Get metrics of all models in a DataFrame.
 
         Parameters
         ----------
@@ -391,7 +391,7 @@ class CompareModels:
         param_col: str = "optimal",
         param_selection: list[str] | None = None,
     ) -> DataFrame:
-        """get parameter values of all models in a DataFrame.
+        """Get parameter values of all models in a DataFrame.
 
         Parameters
         ----------
@@ -404,7 +404,7 @@ class CompareModels:
 
         Returns
         -------
-        params : pd.DataFrame
+        p : pd.DataFrame
             parameter DataFrame containing parameters for each model.
         """
         if models is None:
@@ -415,16 +415,16 @@ class CompareModels:
         else:
             modelnames = self.modelnames
 
-        params = concat([ml.parameters[param_col] for ml in models], axis=1, sort=False)
-        params.columns = modelnames
+        p = concat([ml.parameters[param_col] for ml in models], axis=1, sort=False)
+        p.columns = modelnames
 
         if param_selection:
             sel = np.array([])
             for sub in param_selection:
-                sel = np.append(sel, [idx for idx in params.index if sub in idx])
-            return params.loc[sel].sort_index()
+                sel = np.append(sel, [idx for idx in p.index if sub in idx])
+            return p.loc[sel].sort_index()
         else:
-            return params
+            return p
 
     def get_diagnostics(
         self, models: list[Model] | None = None, diag_col: str = "P-value"
@@ -483,11 +483,11 @@ class CompareModels:
                 markersize=3,
             )
         else:
-            for i, oseries in enumerate(oseries):
+            for i, o in enumerate(oseries):
                 axs[axn].scatter(
-                    oseries.index,
-                    oseries.values,
-                    label=oseries.name,
+                    o.index,
+                    o.values,
+                    label=o.name,
                     color=self.cmap(i),
                     s=15,
                     edgecolor="k",
@@ -496,7 +496,7 @@ class CompareModels:
         return axs[axn]
 
     def plot_simulation(self, axn: str = "sim") -> None:
-        """plot model simulation.
+        """Plot model simulation.
 
         Parameters
         ----------
@@ -527,7 +527,7 @@ class CompareModels:
         return axs[axn]
 
     def plot_residuals(self, axn: str = "res") -> None:
-        """plot residuals.
+        """Plot residuals.
 
         Parameters
         ----------
@@ -552,7 +552,7 @@ class CompareModels:
         return axs[axn]
 
     def plot_noise(self, axn: str = "res") -> None:
-        """plot noise.
+        """Plot noise.
 
         Parameters
         ----------
@@ -584,7 +584,7 @@ class CompareModels:
         axn: str = "rf{i}",
         response: str = "step",
     ) -> None:
-        """plot step or block responses.
+        """Plot step or block responses.
 
         Parameters
         ----------
@@ -624,13 +624,7 @@ class CompareModels:
                     if response == "step":
                         kwargs = {}
                         p = None
-                        if ml.stressmodels[smn].rfunc is not None:
-                            if isinstance(ml.stressmodels[smn], WellModel):
-                                kwargs = {"warn": False}
-                                p = ml.stressmodels[smn].get_parameters(
-                                    model=ml, istress=0
-                                )
-                        step = ml.get_step_response(smn, p=p, add_0=True, **kwargs)
+                        step = ml.get_step_response(name=smn, add_0=True, **kwargs)
                         if step is None:
                             continue
                         if self.axes is None:
@@ -649,12 +643,11 @@ class CompareModels:
                     elif response == "block":
                         kwargs = {}
                         p = None
-                        if ml.stressmodels[smn].rfunc is not None:
-                            if isinstance(ml.stressmodels[smn], WellModel):
-                                kwargs = {"warn": False}
-                                p = ml.stressmodels[smn].get_parameters(
-                                    model=ml, istress=0
-                                )
+                        if ml.stressmodels[smn].rfunc is not None and isinstance(
+                            ml.stressmodels[smn], WellModel
+                        ):
+                            kwargs = {"warn": False}
+                            p = ml.stressmodels[smn].get_parameters(model=ml, istress=0)
                         block = ml.get_block_response(smn, p=p, add_0=True, **kwargs)
                         if block is None:
                             continue
@@ -680,7 +673,7 @@ class CompareModels:
         axn: str = "con{i}",
         normalized: bool = False,
     ) -> None:
-        """plot stressmodel contributions.
+        """Plot stressmodel contributions.
 
         Parameters
         ----------
@@ -751,7 +744,7 @@ class CompareModels:
             return axs[axn.format(i=0)]
 
     def plot_stress(self, axn: str = "stress", names: list[str] | None = None) -> None:
-        """plot stresses time series.
+        """Plot stresses time series.
 
         Parameters
         ----------
@@ -783,7 +776,7 @@ class CompareModels:
         return axs[axn]
 
     def plot_acf(self, axn: str = "acf") -> None:
-        """plot autocorrelation plot.
+        """Plot autocorrelation plot.
 
         Parameters
         ----------
@@ -799,7 +792,7 @@ class CompareModels:
 
         for i, ml in enumerate(self.models):
             noise = ml.residuals() if ml.noisemodel is None else ml.noise()
-            r = acf(x=noise, full_output=True)
+            r = acf(series=noise, full_output=True)
             conf = r.conf.rolling(10, min_periods=1).mean().values
 
             axs[axn].fill_between(
@@ -853,7 +846,7 @@ class CompareModels:
         param_col: str = "optimal",
         param_selection: list[str] | None = None,
     ) -> None:
-        """plot model parameters table.
+        """Plot model parameters table.
 
         Parameters
         ----------
@@ -865,21 +858,21 @@ class CompareModels:
             string to filter parameter names that are included in table, by default
             None.
         """
-        params = self.get_parameters(
+        p = self.get_parameters(
             self.models,
             param_selection=param_selection,
             param_col=param_col,
         ).apply(lambda x: x.apply(_table_formatter_params), axis=1)
 
         # add separate column with parameter names
-        params.loc[:, "Parameters"] = params.index
-        cols = params.columns.to_list()[-1:] + params.columns.to_list()[:-1]
-        return self.plot_table(axn=axn, df=params[cols])
+        p.loc[:, "Parameters"] = p.index
+        cols = p.columns.to_list()[-1:] + p.columns.to_list()[:-1]
+        return self.plot_table(axn=axn, df=p[cols])
 
     def plot_table_metrics(
         self, axn: str = "met", metric_selection: list[str] | None = None
     ) -> None:
-        """plot metrics table.
+        """Plot metrics table.
 
         Parameters
         ----------
@@ -911,7 +904,7 @@ class CompareModels:
     def plot_table_diagnostics(
         self, axn: str = "diag", diag_col: str = "P-value"
     ) -> None:
-        """plot diagnostics table.
+        """Plot diagnostics table.
 
         Parameters
         ----------
@@ -927,7 +920,7 @@ class CompareModels:
         return self.plot_table(axn=axn, df=diags[cols])
 
     def share_xaxes(self, axes: list[Axes]) -> None:
-        """share x-axes.
+        """Share x-axes.
 
         Parameters
         ----------
@@ -937,7 +930,7 @@ class CompareModels:
         share_xaxes(axes)
 
     def share_yaxes(self, axes: list[Axes]) -> None:
-        """share y-axes.
+        """Share y-axes.
 
         Parameters
         ----------
@@ -977,7 +970,7 @@ class CompareModels:
         legend_kwargs: dict[str, Any] | None = None,
         **fig_kwargs,
     ) -> None:
-        """plot the models in a comparison plot.
+        """Plot the models in a comparison plot.
 
         The resulting plot is similar to `ml.plots.results()`.
 
@@ -1031,7 +1024,7 @@ class CompareModels:
         # share x-axes
         xshare_left = []
         xshare_right = []
-        for axn in self.axes.keys():
+        for axn in self.axes:
             if axn not in ("tab", "met", "dia"):
                 self.axes[axn].grid(grid)
                 if legend and not axn.startswith("rf"):

@@ -1,11 +1,11 @@
-"""This module contains methods to generate forecasts using a Pastas model instance.
+"""Methods to generate forecasts using a Pastas model instance.
 
 Examples
 --------
 Generate forecasts using ensembles of stress forecasts::
 
     forecasts = ...  # dictionary or list of dataframes with time series forecasts
-    ps.forecast(ml, forecasts)
+    ps.forecast(model, forecasts)
 
 """
 
@@ -32,8 +32,8 @@ logger = getLogger(__name__)
 def _check_forecast_data(
     forecasts: dict[str, list[DataFrame | Series]]
     | dict[str, dict[str, DataFrame | Series]],
-) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
-    """Internal method to check the integrity of the forecasts data.
+) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex, list]:
+    """Check the integrity of the forecasts data.
 
     Parameters
     ----------
@@ -52,6 +52,8 @@ def _check_forecast_data(
         The maximum datetime in the forecasts.
     index: DatetimeIndex
         The datetime index of the forecasts.
+    columns: list
+        The list of column names of the forecasts.
 
     Notes
     -----
@@ -70,6 +72,7 @@ def _check_forecast_data(
     tmax = None
     tmin = None
     index = None
+    columns = None
 
     for sm_name, fc_data in forecasts.items():
         if isinstance(fc_data, list):
@@ -95,7 +98,7 @@ def _check_forecast_data(
             if fc.empty:
                 msg = f"Empty DataFrame in forecasts for stressmodel '{sm_name}' for stress '{stress_name}'"
                 logger.error(msg)
-                continue
+                raise ValueError(msg)
 
             # Check if the number of columns is the same for all DataFrames
             if n is None:
@@ -103,8 +106,8 @@ def _check_forecast_data(
                 tmin = fc.index[0]
                 tmax = fc.index[-1]
                 index = fc.index
+                columns = fc.columns.get_level_values(0).unique().tolist()
                 logger.debug(f"First forecast found with {n} ensemble members")
-            # If the number of columns is not the same, raise an error
             elif n != fc.columns.size:
                 msg = (
                     f"The number of ensemble members is not the same for all forecasts. "
@@ -119,27 +122,36 @@ def _check_forecast_data(
                 )
                 logger.error(msg)
                 raise ValueError(msg)
+            # If the number of columns is not the same, raise an error
+            if columns != fc.columns.get_level_values(0).unique().tolist():
+                msg = (
+                    f"The column names of the forecasts are not the same for all "
+                    f"Expected {columns}, got {fc.columns.get_level_values(0).unique().tolist()} in "
+                    f"stressmodel '{sm_name}'."
+                )
+                logger.debug(msg)
+                columns = range(n)  # Reset columns to a range of integers
 
     if n is None:
         msg = "No valid forecast data found in any of the stressmodels"
         logger.error(msg)
         raise ValueError(msg)
 
-    return n, tmin, tmax, index
+    return n, tmin, tmax, index, columns
 
 
 def forecast(
-    ml: Model,
+    model: Model,
     forecasts: dict[str, list[DataFrame | Series]]
     | dict[str, dict[str, DataFrame | Series]],
     p: ArrayLike | None = None,
     post_process: bool = False,
 ) -> DataFrame:
-    """Method to forecast the head from ensembles of stress forecasts.
+    """Forecast the head from ensembles of stress forecasts.
 
     Parameters
     ----------
-    ml: pastas.Model
+    model: pastas.Model
         Pastas Model instance.
     forecasts: dict
         Dictionary containing the forecasts data. The keys are the stressmodel names
@@ -170,13 +182,17 @@ def forecast(
 
     Please note that only the AR1 noise model is supported at this moment for post-processing.
 
+    .. versionchanged:: 2.0.0
+        The ``forecasts`` argument no longer accepts a list of DataFrames per
+        stressmodel. It now requires a dictionary of DataFrames, where the
+        keys are the keyword arguments of the stressmodel.
     """
     # Check the integrity of the forecasts data
-    n, tmin, tmax, index = _check_forecast_data(forecasts)
+    n, tmin, tmax, index, columns = _check_forecast_data(forecasts)
     logger.info(f"Working with {n} ensemble members from {tmin} to {tmax}")
 
-    if post_process and not isinstance(ml.noisemodel, ArNoiseModel):
-        if ml.noisemodel is None:
+    if post_process and not isinstance(model.noisemodel, ArNoiseModel):
+        if model.noisemodel is None:
             msg = "No noise model present in the model instance. Please add a noise model to the model instance or set post_process=False."
         else:
             msg = "Only the AR1 noise model is supported for post-processing at this moment. Please use an AR1 noise model or set post_process=False."
@@ -187,7 +203,7 @@ def forecast(
     if p is None:
         logger.info("No parameter provided, using the optimal parameters.")
         # In case no parameters are provided, use optimal values
-        p = [ml.parameters.loc[:, "optimal"].values]
+        p = [model.parameters.loc[:, "optimal"].values]
         nparam = len(p)
     else:
         if len(p) == 0:
@@ -206,43 +222,45 @@ def forecast(
 
     residuals = {}
     vars = {}
-    day = Timedelta("1D")
+    sim_freq = Timedelta(f"1{model.settings['freq']}")
 
     if post_process:
-        dt = ml.settings["freq_obs"] / day
+        dt = model.settings["freq_obs"] / Timedelta("1D")
         t = linspace(1, index.size, index.size)
         correction = {}
 
     # Preprocess residuals and variances for each parameter set as they only depend on parameters and not on ensemble members
     for i, param in enumerate(p):
-        residuals[i] = ml.residuals(tmax=tmin, p=param).dropna()
+        residuals[i] = model.residuals(tmax=tmin, p=param).dropna()
 
         if post_process:
             # Compute the time varying variance for the AR1 noise model
             phi = exp(-dt / param[-1])
             denominator = 1.0 - phi**2
             phi_scaling_factor = (1.0 - phi ** (2.0 * t / dt)) / denominator
-            vars[i] = ml.noise(tmax=tmin, p=param).var() * phi_scaling_factor
+            vars[i] = model.noise(tmax=tmin, p=param).var() * phi_scaling_factor
 
-            correction[i] = ml.noisemodel.get_correction(
+            correction[i] = model.noisemodel.get_correction(
                 residuals[i], [param[-1]], index
             ).values
         else:
             vars[i] = residuals[i].var() * ones(forecast_length)
 
     # Copy the model so old model is unaffected when replacing the stresses.
-    ml = ml.copy()
+    model = model.copy()
     idx = 0
 
     # 1. iterate over the ensemble members
     for member in range(n):
         # Update stresses with ensemble member data
         for sm_name, fc_data in forecasts.items():
-            sm = ml.stressmodels[sm_name]  # Select stressmodel
+            sm = model.stressmodels[sm_name]  # Select stressmodel
             for stress_name, fc in fc_data.items():
                 if isinstance(fc, Series):
                     fc = fc.to_frame()
-                old_stress = getattr(sm, stress_name).series_original.loc[: tmin - day]
+                old_stress = getattr(sm, stress_name).series_original.loc[
+                    : tmin - sim_freq
+                ]
                 new_stress = fc.iloc[:, member]
                 ts = concat([old_stress, new_stress], axis=0)
                 setattr(sm, stress_name, ts)
@@ -250,7 +268,7 @@ def forecast(
         # 2. iterate over the parameter sets
         for i, param in enumerate(p):
             # Generate the forecasts
-            sim = ml.simulate(tmin=tmin, tmax=tmax, p=param).values
+            sim = model.simulate(tmin=tmin, tmax=tmax, p=param).values
 
             if post_process:
                 # Add the correction from the noise model
@@ -262,7 +280,7 @@ def forecast(
 
     # Create DataFrames to store data
     mi = MultiIndex.from_product(
-        [range(n), range(nparam), ["mean", "var"]],
+        [columns, range(nparam), ["mean", "var"]],
         names=["ensemble_member", "param_member", "forecast"],
     )
     df = DataFrame(data=result_array.T, index=index, columns=mi, dtype=float)
@@ -271,7 +289,7 @@ def forecast(
 
 
 def get_overall_mean_and_variance(df: DataFrame) -> tuple[DataFrame, DataFrame]:
-    """Method to get the overall mean and variance of the forecast ensemble.
+    """Get overall mean and variance of the forecast ensemble.
 
     Parameters
     ----------

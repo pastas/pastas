@@ -1,12 +1,12 @@
-"""Tests for the objective functions in pastas.objective_functions."""
+"""Tests for the likelihood functions in pastas.solver.objective."""
 
-from typing import Any, Type
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from pastas.objective_functions import GaussianLikelihood, GaussianLikelihoodAr1
+from pastas.solver.objective.likelihood import GaussianLikelihood, GaussianLikelihoodAr1
 
 
 class TestGaussianLikelihood:
@@ -33,7 +33,6 @@ class TestGaussianLikelihood:
         assert params.loc["test_var", "pmax"] == 1
         assert params.loc["test_var", "vary"]
         assert params.loc["test_var", "name"] == "test"
-        assert params.loc["test_var", "dist"] == "uniform"
 
     def test_compute(self) -> None:
         """Test compute method."""
@@ -138,7 +137,7 @@ class TestGaussianLikelihoodAr1:
 @pytest.mark.parametrize(
     "likelihood_class", [GaussianLikelihood, GaussianLikelihoodAr1]
 )
-def test_likelihood_parameter_types(likelihood_class: Type[Any]) -> None:
+def test_likelihood_parameter_types(likelihood_class: type[Any]) -> None:
     """Test parameter types returned by get_init_parameters."""
     likelihood = likelihood_class()
     params = likelihood.get_init_parameters("test")
@@ -149,6 +148,4 @@ def test_likelihood_parameter_types(likelihood_class: Type[Any]) -> None:
     assert isinstance(
         params.loc[:, "vary"].values[0], (bool, np.bool_)
     )  # Allow Python bool
-    assert isinstance(params.loc[:, "stderr"].values[0], float)
     assert isinstance(params.loc[:, "name"].values[0], str)
-    assert isinstance(params.loc[:, "dist"].values[0], str)

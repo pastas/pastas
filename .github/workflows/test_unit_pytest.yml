@@ -7,9 +7,7 @@ on:
       - dev
   pull_request:
     branches:
-      - master
       - dev
-      - dev2
 
 concurrency:
   # Group by workflow name and ref (branch or pull request ref).
@@ -31,23 +29,29 @@ jobs:
             python: "3.11"
             toxenv: py311
             experimental: false
+            pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
           - name: Test suite with py312-ubuntu
             python: "3.12"
             toxenv: py312
             experimental: false
+            pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
           - name: Test suite with py313-ubuntu
             python: "3.13"
             toxenv: py313
             experimental: false
+            pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
           - name: Test suite with py314-ubuntu
             python: "3.14"
             toxenv: py314
-            experimental: true
+            experimental: false
+            pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
           - name: Test suite for all unit tests including Notebooks
-            python: "3.11"
+            python: "3.13"
             toxenv: all
             experimental: false
+            pytest_addopts: "--color=yes"
     env:
+      BADGE_GIST_COVERAGE_TOKEN: ${{ secrets.BADGE_GIST_COVERAGE_TOKEN }}
       CI_PASFILES: "0" # do not generate pas files for these tests
       # Color Output
       # Rich (pip)
@@ -55,15 +59,15 @@ jobs:
       # Tox
       PY_COLORS: 1
       # Pytest
-      PYTEST_ADDOPTS: "--color=yes"
+      PYTEST_ADDOPTS: ${{ matrix.pytest_addopts }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up uv with Python ${{ matrix.python }}
         uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python }}
-          enable-cache: true
+          enable-cache: false
 
       - name: Install dependencies
         run: |
@@ -76,9 +80,28 @@ jobs:
       - name: Test
         run: uv run tox -e ${{ matrix.toxenv }} --skip-pkg-install
 
-      - name: Run codacy-coverage-reporter
-        if: ${{ matrix.toxenv == 'all' && github.repository == 'pastas/pastas' && success() }}
-        uses: codacy/codacy-coverage-reporter-action@master
+      - name: Export Coverage Percent
+        if: matrix.toxenv == 'all'
+        id: coverage
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = json.loads(Path("coverage.json").read_text())
+          coverage = data["totals"]["percent_covered_display"]
+          print(f"Coverage: {coverage}%")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as fh:
+              fh.write(f"coverage={coverage}\n")
+          PY
+
+      - name: Update Coverage Badge
+        if: matrix.toxenv == 'all' && github.event_name == 'push' && env.BADGE_GIST_COVERAGE_TOKEN != ''
+        uses: Schneegans/dynamic-badges-action@v1.9.0
         with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          coverage-reports: coverage.xml
+          auth: ${{ env.BADGE_GIST_COVERAGE_TOKEN }}
+          gistID: "02bcb92e1d487ffc9143752296b8db72"
+          filename: coverage.json
+          label: coverage
+          message: ${{ steps.coverage.outputs.coverage }}%

@@ -71,8 +71,7 @@ Quick Example
 
             # Create and calibrate Pastas model
             ml = ps.Model(obs, name="head")
-            sm = ps.RechargeModel(prec, evap, rfunc=ps.Exponential(), name="recharge")
-            ml.add_stressmodel(sm)
+            sm = ps.RechargeModel(ml, prec, evap, rfunc=ps.Exponential(), name="recharge")
             ml.solve()
 
             # Visualize the model results

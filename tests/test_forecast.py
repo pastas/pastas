@@ -37,7 +37,7 @@ class TestCheckForecastData:
         empty_df = pd.DataFrame()
         forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": empty_df}}
         with pytest.raises(
-            ValueError, match="No valid forecast data found in any of the stressmodels"
+            ValueError, match="Empty DataFrame in forecasts for stressmodel"
         ):
             _check_forecast_data(forecasts)
 
@@ -70,11 +70,12 @@ class TestCheckForecastData:
         df1: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index)
         df2: DataFrame = pd.DataFrame(np.random.rand(10, 3), index=index)
         forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": df1, "evap": df2}}
-        n, tmin, tmax, result_index = _check_forecast_data(forecasts)
+        n, tmin, tmax, result_index, columns = _check_forecast_data(forecasts)
         assert n == 3
         assert tmin == index[0]
         assert tmax == index[-1]
         assert (result_index == index).all()
+        assert (columns == df1.columns).all()
 
     def test_series_input(self) -> None:
         """Test that a Series is converted to a 1-column DataFrame."""
@@ -82,11 +83,12 @@ class TestCheckForecastData:
         s1: Series = pd.Series(np.random.rand(10), index=index)
         s2: Series = pd.Series(np.random.rand(10), index=index)
         forecasts: dict[str, dict[str, DataFrame]] = {"sm1": {"prec": s1, "evap": s2}}
-        n, tmin, tmax, result_index = _check_forecast_data(forecasts)
+        n, tmin, tmax, result_index, columns = _check_forecast_data(forecasts)
         assert n == 1
         assert tmin == index[0]
         assert tmax == index[-1]
         assert (result_index == index).all()
+        assert (columns == s1.to_frame().columns).all()
 
 
 class TestGetOverallMeanAndVariance:
@@ -170,8 +172,6 @@ class TestForecast:
         self, ml_noisemodel: Model, forecast_data: dict[str, dict[str, DataFrame]]
     ) -> None:
         """Test forecast with valid input and post-processing enabled."""
-        # Ensure noise model is present
-        print(ml_noisemodel.oseries)
         result = forecast(ml_noisemodel, forecast_data, post_process=True)
         assert isinstance(result, pd.DataFrame)
         assert not result.empty
@@ -190,7 +190,7 @@ class TestForecast:
         """Test forecast with missing required key in forecast_data."""
         # Remove the key expected by the model (simulate missing stressmodel)
         bad_data = {"wrong_key": forecast_data["rch"]}
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             forecast(ml_noisemodel, bad_data)
 
     def test_forecast_output_shape(

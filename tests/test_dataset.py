@@ -13,18 +13,18 @@ def test_load_multiple_csv() -> None:
     try:
         dataset = load_dataset("collenteur_2023")
     except requests.exceptions.HTTPError as e:
-        if e.response is not None and e.response.status_code == 429:
-            pytest.skip(f"Rate limit exceeded: {e}")
+        if e.response is not None and e.response.status_code in (403, 429):
+            pytest.skip(f"HTTP Error that signals valid API behavior: {e}")
         raise
     assert isinstance(dataset, dict)
     assert len(dataset) > 1
-    for _, value in dataset.items():
+    for value in dataset.values():
         assert isinstance(value, DataFrame)
 
 
 def test_invalid_folder_name() -> None:
     # Test loading dataset with invalid folder name
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         load_dataset("invalid_folder_name")
 
 
@@ -33,8 +33,8 @@ def test_list_datasets() -> None:
     try:
         datasets_list = list_datasets(silent=False)
     except requests.exceptions.HTTPError as e:
-        if e.response is not None and e.response.status_code == 429:
-            pytest.skip(f"Rate limit exceeded: {e}")
+        if e.response is not None and e.response.status_code in (403, 429):
+            pytest.skip(f"HTTP Error that signals valid API behavior: {e}")
         raise
     # Add assertions here to verify the output of the function
     # For example, you can check if the output contains certain dataset names

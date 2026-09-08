@@ -20,10 +20,10 @@ from pandas import (
 from pandas import __version__ as pd_version
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
-from scipy import interpolate
 from pandas.tseries.offsets import BaseOffset
+from scipy import interpolate
 
-from .decorators import PastasDeprecationWarning, njit
+from .decorators import deprecate_args_or_kwargs, deprecate_class_func_or_method, njit
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def _offset_to_timedelta(offset: BaseOffset) -> Timedelta:
 
 
 def _frequency_is_supported(freq: str) -> str:
-    """Method to check if frequency string is supported by Pastas Model.
+    """Check if frequency string is supported by Pastas Model.
 
     Parameters
     ----------
@@ -92,7 +92,7 @@ def _frequency_is_supported(freq: str) -> str:
     offset = to_offset(freq)
     try:
         _offset_to_timedelta(offset)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         msg = "Frequency %s not supported."
         logger.error(msg, freq)
         logger.debug(e)
@@ -105,7 +105,7 @@ def _frequency_is_supported(freq: str) -> str:
 
 
 def _get_stress_dt(freq: str) -> float:
-    """Internal method to obtain a timestep in days from a frequency string.
+    """Obtain a timestep in days from a frequency string.
 
     Parameters
     ----------
@@ -129,8 +129,8 @@ def _get_stress_dt(freq: str) -> float:
     offset = to_offset(freq)
     try:
         dt = _offset_to_timedelta(offset) / Timedelta(1, "D")
-    except Exception as e:
-        logging.debug(e)
+    except Exception as e:  # noqa: BLE001
+        logger.debug(e)
         num = offset.n
         freq = offset._prefix
         if freq in ["A", "Y", "AS", "YS", "YE", "BA", "BY", "BAS", "BYS"]:
@@ -155,18 +155,17 @@ def _get_stress_dt(freq: str) -> float:
             # hour
             dt = num * 1.0 / 24.0
         else:
-            raise (ValueError("freq of {} not supported".format(freq)))
+            raise (ValueError(f"freq of {freq} not supported"))
 
     # Check if dt can be an integer, if so convert to int
-    if not isinstance(dt, int):
-        if dt.is_integer():
-            dt = int(dt)
+    if not isinstance(dt, int) and dt.is_integer():
+        dt = int(dt)
 
     return dt
 
 
 def _get_dt(freq: str) -> float:
-    """Internal method to obtain a timestep in DAYS from a frequency string.
+    """Obtain a timestep in DAYS from a frequency string.
 
     Parameters
     ----------
@@ -188,7 +187,7 @@ def _get_dt(freq: str) -> float:
 
 
 def _get_time_offset(t: Timestamp | DatetimeIndex, freq: str) -> Timedelta:
-    """Internal method to calculate the time offset of a Timestamp.
+    """Calculate the time offset of a Timestamp.
 
     Parameters
     ----------
@@ -209,7 +208,7 @@ def _get_time_offset(t: Timestamp | DatetimeIndex, freq: str) -> Timedelta:
 
 
 def _infer_fixed_freq(tindex: Index) -> str:
-    """Internal method to get the frequency string.
+    """Get frequency string.
 
     This methods avoids returning anchored offsets, e.g.
     'W-TUE' will return 7D.
@@ -241,14 +240,14 @@ def _infer_fixed_freq(tindex: Index) -> str:
 def _get_sim_index(
     tmin: Timestamp, tmax: Timestamp, freq: str, time_offset: Timedelta
 ) -> DatetimeIndex:
-    """Internal method to determine the simulation index
+    """Determine the simulation index.
 
     Parameters
     ----------
     tmin : pandas.Timestamp
-        Timestamp of the end date for the simulation period.
-    tmax : pandas.Timestamp
         Timestamp of the start date for the simulation period.
+    tmax : pandas.Timestamp
+        Timestamp of the end date for the simulation period.
     freq : str
         String representing the desired frequency of the time series. Must be one
         of the following: (D, h, m, s, ms, us, ns) or a multiple of that e.g. "7D".
@@ -260,14 +259,13 @@ def _get_sim_index(
     sim_index: pandas.DatetimeIndex
         Pandas DatetimeIndex instance with the datetimes values for which the
         model is simulated.
-
     """
     tmin = tmin.floor(freq) + time_offset
-    sim_index = date_range(tmin, tmax, freq=freq)
+    sim_index = date_range(start=tmin, end=tmax, freq=freq, unit="us")
     return sim_index
 
 
-def _parse_warmup(warmup):
+def _parse_warmup(warmup: Timedelta | float | str) -> Timedelta:
     """Parse the warmup period to a pandas Timedelta.
 
     Parameters
@@ -290,8 +288,7 @@ def _parse_warmup(warmup):
 
 
 def get_sample(tindex: DatetimeIndex, ref_tindex: DatetimeIndex) -> DatetimeIndex:
-    """Sample the index of a pandas Series or DataFrame so that the frequency is not
-    higher than the frequency of ref_tindex.
+    """Sample the index of a pandas Series or DataFrame so that the frequency is not higher than the frequency of ref_tindex.
 
     Parameters
     ----------
@@ -323,26 +320,30 @@ def get_sample(tindex: DatetimeIndex, ref_tindex: DatetimeIndex) -> DatetimeInde
 
 
 def get_sample_for_freq(
-    s: Series | DataFrame,
-    freq: str,
+    series: Series | DataFrame | None = None,
+    freq: str | None = None,
     tmin: Timestamp | str | None = None,
     tmax: Timestamp | str | None = None,
+    **kwargs,
 ):
-    """Sample a pandas Series or DataFrame so that the frequency is not higher than a
-    supplied frequency.
+    """Sample a pandas Series or DataFrame so that the frequency is not higher than a supplied frequency.
+
+    .. versionchanged:: 2.0
+        The ``s`` parameter was renamed to ``series``. Passing ``s`` still works
+        but raises a deprecation warning.
 
     Parameters
     ----------
-    s : pandas.Series or pandas.DataFrame
+    series : pandas.Series or pandas.DataFrame
         The original Series or DataFrame to be sampled.
     freq : str
         A frequency string accepted by `pandas.date_range()`.
     tmin : pandas.Timestamp or str, optional
         The start date of the sampled series. If None, the tmin is set to the first
-        index of s. The default is None.
+        index of series. The default is None.
     tmax : pandas.Timestamp or str, optional
         The end date of the sampled series. If None, the tmax is set to the last
-        index of s. The default is None.
+        index of series. The default is None.
 
     Returns
     -------
@@ -350,21 +351,47 @@ def get_sample_for_freq(
         The sampled series, consisting of a subset of the original series.
 
     """
+    if "s" in kwargs:
+        deprecate_args_or_kwargs(
+            name="s",
+            version="2.4.0",
+            reason="Please use `series` instead of `s`.",
+        )
+        if series is None:
+            series = kwargs.pop("s")
+
+    if kwargs:
+        raise TypeError(
+            f"get_sample_for_freq() got unexpected keyword argument '{next(iter(kwargs))}'"
+        )
+
+    if series is None:
+        raise TypeError("get_sample_for_freq() missing required argument: 'series'")
+    if freq is None:
+        raise TypeError("get_sample_for_freq() missing required argument: 'freq'")
+
     if tmin is None:
-        tmin = s.index.min()
+        tmin = series.index.min()
     if tmax is None:
-        tmax = s.index.max()
+        tmax = series.index.max()
     ref_tindex = date_range(tmin, tmax, freq=freq)
-    return s.loc[get_sample(s.index, ref_tindex)]
+    return series.loc[get_sample(series.index, ref_tindex)]
 
 
-@PastasDeprecationWarning(
-    version="2.1",
+@deprecate_class_func_or_method(
+    version="2.0.0",
     reason="`timestep_weighted_resample` is replaced by `time_weighted_resample`.",
 )
-def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> Series:
-    """Resample a time series to a new time index, using an overlapping period
-    weighted average.
+def timestep_weighted_resample(
+    series: Series | None = None,
+    index: Index | None = None,
+    fast: bool = False,
+    **kwargs,
+) -> Series:
+    """Resample a time series to a new time index, using an overlapping period weighted average.
+
+    .. deprecated:: 2.0.0
+        Use :func:`time_weighted_resample` instead.
 
     The original series and the new index do not have to be equidistant. Also, the
     timestep-edges of the new index do not have to overlap with the original series.
@@ -383,7 +410,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
 
     Parameters
     ----------
-    s : pandas.Series
+    series : pandas.Series
         The original series to be resampled
     index : pandas.Index
         The index to which to resample the series
@@ -392,28 +419,52 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
 
     Returns
     -------
-    s_new : pandas.Series
+    pandas.Series
         The resampled series
     """
-    if isinstance(s, DataFrame):
-        if len(s.columns) == 1:
-            s = s.iloc[:, 0]
-        elif len(s.columns) > 1:
+    if "s" in kwargs:
+        deprecate_args_or_kwargs(
+            name="s",
+            version="2.4.0",
+            reason="Please use `series` instead of `s`.",
+        )
+        if series is None:
+            series = kwargs.pop("s")
+
+    if kwargs:
+        raise TypeError(
+            "timestep_weighted_resample() got unexpected keyword argument "
+            f"'{next(iter(kwargs))}'"
+        )
+
+    if series is None:
+        raise TypeError(
+            "timestep_weighted_resample() missing required argument: 'series'"
+        )
+    if index is None:
+        raise TypeError(
+            "timestep_weighted_resample() missing required argument: 'index'"
+        )
+
+    if isinstance(series, DataFrame):
+        if len(series.columns) == 1:
+            series = series.iloc[:, 0]
+        elif len(series.columns) > 1:
             # helpful specific message for multi-column DataFrames
             msg = "DataFrame with multiple columns. Please select one."
             logger.error(msg)
             raise ValueError(msg)
 
-    dt = _get_dt_array(s.index)
+    dt = _get_dt_array(series.index)
 
     if fast:
-        if s.isna().any():
-            raise ValueError("s cannot contain NaN values when fast=True")
-        if not api.types.is_float_dtype(s):
-            raise ValueError("s must be of dtype float")
+        if series.isna().any():
+            raise ValueError("series cannot contain NaN values when fast=True")
+        if not api.types.is_float_dtype(series):
+            raise ValueError("series must be of dtype float")
 
         # first multiply by the timestep
-        s_new = s * dt
+        s_new = series * dt
 
         # calculate the cumulative sum
         s_new = s_new.cumsum()
@@ -431,12 +482,12 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
         s_new = s_new / _get_dt_array(s_new.index)
 
         # set values after the end of the original series to NaN
-        s_new[s_new.index > s.index[-1]] = np.nan
+        s_new[s_new.index > series.index[-1]] = np.nan
     else:
-        t_e = s.index.view("int64")
+        t_e = _index_to_int64(series.index)
         t_s = t_e - dt
-        v = s.values
-        t_new = index.view("int64")
+        v = series.values
+        t_new = _index_to_int64(index)
         v_new = _ts_resample_slow(t_s, t_e, v, t_new)
         s_new = Series(v_new, index)
 
@@ -444,7 +495,7 @@ def timestep_weighted_resample(s: Series, index: Index, fast: bool = False) -> S
 
 
 def _get_dt_array(index):
-    dt = np.diff(index.view("int64"))
+    dt = np.diff(_index_to_int64(index))
     # assume the first value has an equal timestep as the second value
     dt = np.hstack((dt[0], dt))
     return dt
@@ -475,7 +526,7 @@ def _ts_resample_slow(t_s, t_e, v, t_new):
 
 def time_weighted_resample(
     s: Series,
-    index: Index,
+    tindex: DatetimeIndex,
     method: str = "stepwise",
     add_first_index: bool = True,
     require_full_coverage: bool = False,
@@ -483,11 +534,16 @@ def time_weighted_resample(
     """
     Time-weighted resampling of a time series to arbitrary periods.
 
+    .. versionadded:: 1.14
+
+    .. versionchanged:: 2.0.0
+        The ``index`` parameter was renamed to ``tindex``.
+
     Parameters
     ----------
     s : pandas.Series
         Original time series with a datetime-like index.
-    index : pandas.Index
+    tindex : pandas.DatetimeIndex
         Target time index defining the boundaries of the new periods.
     method : {"linear", "stepwise", "state", "flux"}, optional
         Interpretation of the original series:
@@ -503,17 +559,17 @@ def time_weighted_resample(
         If True, periods that are not fully covered by the original data are masked with NaN. If False,
         only periods completely outside the range of the original data are masked. Default is False.
 
-    Raises
-    ------
-    ValueError
-        If `method` is not supported or input is not strictly increasing.
-
     Returns
     -------
     s_new : pandas.Series
         Resampled time series. Each value represents the time-weighted mean
         over the corresponding period. Periods not covered by the original
         data are NaN.
+
+    Raises
+    ------
+    ValueError
+        If `method` is not supported or input is not strictly increasing.
     """
     # Validate inputs
     if isinstance(s, DataFrame):
@@ -525,10 +581,10 @@ def time_weighted_resample(
             logger.error(msg)
             raise ValueError(msg)
     if s.isna().any():
-        raise Exception("s cannot contain NaN values")
+        raise ValueError("s cannot contain NaN values")
     if not s.index.is_monotonic_increasing:
         raise ValueError("Series index must be strictly increasing.")
-    if not index.is_monotonic_increasing:
+    if not tindex.is_monotonic_increasing:
         raise ValueError("Target index must be strictly increasing.")
 
     # Normalize method aliases
@@ -546,7 +602,7 @@ def time_weighted_resample(
     s_org = s.copy()
 
     # Ensure all target boundaries exist in the original series
-    missing = index.difference(s.index)
+    missing = tindex.difference(s.index)
     if not missing.empty:
         s = concat([s, Series(np.nan, index=missing)]).sort_index()
 
@@ -557,7 +613,7 @@ def time_weighted_resample(
         s = s.bfill()
 
     # Limit to resampling domain
-    s = s.loc[index[0] : index[-1]]
+    s = s.loc[tindex[0] : tindex[-1]]
 
     # Compute time differences in seconds
     dt = s.index.to_series().diff().iloc[1:].dt.total_seconds().values
@@ -577,32 +633,32 @@ def time_weighted_resample(
     duration[s_int.isna()] = 0
 
     # Aggregate to new periods
-    bins = cut(s_int.index, index, right=True)
+    bins = cut(s_int.index, tindex, right=True)
     s_new = (
         s_int.groupby(bins, observed=False).sum()
         / duration.groupby(bins, observed=False).sum()
     )
-    s_new.index = index[1:]
+    s_new.index = tindex[1:]
 
     if require_full_coverage:
         # Mask incomplete periods
-        mask = (index[:-1] < s_org.first_valid_index()) | (
-            index[1:] > s_org.last_valid_index()
+        mask = (tindex[:-1] < s_org.first_valid_index()) | (
+            tindex[1:] > s_org.last_valid_index()
         )
     else:
         # Mask periods completely outside the original data range
-        mask = (index[1:] < s_org.first_valid_index()) | (
-            index[:-1] > s_org.last_valid_index()
+        mask = (tindex[1:] < s_org.first_valid_index()) | (
+            tindex[:-1] > s_org.last_valid_index()
         )
     s_new[mask] = np.nan
 
     if add_first_index:
         # Add first index with NaN value
-        if require_full_coverage or index[0] < s_org.first_valid_index():
+        if require_full_coverage or tindex[0] < s_org.first_valid_index():
             first_value = np.nan
         else:
             first_value = s.iloc[0]
-        s_new = concat([Series(first_value, index=[index[0]]), s_new])
+        s_new = concat([Series(first_value, index=[tindex[0]]), s_new])
 
     # copy name and attributes from original series
     s_new.name = s_org.name
@@ -645,7 +701,6 @@ def get_equidistant_series_nearest(
     time series. Values are filled as close as possible to their original timestamp
     in the new equidistant time series.
     """
-
     # build new equidistant index
     t_offset = _get_time_offset(series.index, freq).value_counts().idxmax()
     # use t_offset to pick time that will keep the most data without shifting in time
@@ -658,23 +713,23 @@ def get_equidistant_series_nearest(
 
     # get linear interpolated index from original series
     fl = interpolate.interp1d(
-        series.index.view("int64"),
+        _index_to_int64(series.index),
         np.arange(0, series.index.size),
         kind="linear",
         bounds_error=False,
         fill_value="extrapolate",
     )
-    ind_linear = fl(idx.view("int64"))
+    ind_linear = fl(_index_to_int64(idx))
 
     # get the nearest index from original series
     f = interpolate.interp1d(
-        series.index.view("int64"),
+        _index_to_int64(series.index),
         np.arange(0, series.index.size),
         kind="nearest",
         bounds_error=False,
         fill_value="extrapolate",
     )
-    ind = f(idx.view("int64")).astype(int)
+    ind = f(_index_to_int64(idx)).astype(int)
 
     # create a new equidistant series
     s = Series(index=idx, data=np.nan)
@@ -852,5 +907,51 @@ def resample(
         https://pandas.pydata.org/docs/reference/resampling.html
 
     """
-
     return series.resample(freq, closed=closed, label=label, **kwargs)
+
+
+def _index_to_int64(tindex: DatetimeIndex) -> np.ndarray:
+    """Convert a pandas index to int64 representation."""
+    if hasattr(tindex, "as_unit") and tindex.unit != "us":  # pandas >= 3.0
+        # In pandas 3.0, the default resolution for newly created datetime-like objects
+        # is datetime64[us] (microseconds)
+        tindex = tindex.as_unit("us")
+    return tindex.view("int64")
+
+
+def _get_interpolation_weights(
+    sim_tindex: DatetimeIndex, obs_tindex: DatetimeIndex
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Calculate indices and weights for linear interpolation.
+
+    This function computes the necessary indices and weights to interpolate values
+    from a simulation time grid (`sim_tindex`) to an observation time grid (`obs_tindex`).
+
+    Parameters
+    ----------
+    sim_tindex : pandas.DatetimeIndex
+        The time index of the simulation.
+    obs_tindex : pandas.DatetimeIndex
+        The time index of the observations.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        A tuple containing:
+        - indices (np.ndarray): An array of shape (n_obs, 2) with the indices
+          of the two simulation points surrounding each observation.
+        - weights (np.ndarray): An array of shape (n_obs, 2) with the
+          corresponding weights for interpolation.
+    """
+    sim_idx_int = _index_to_int64(sim_tindex)
+    obs_idx_int = _index_to_int64(obs_tindex)
+    indices = np.searchsorted(sim_idx_int, obs_idx_int, side="right") - 1
+    indices = np.vstack([indices, indices + 1]).T
+    np.clip(indices, a_min=0, a_max=len(sim_idx_int) - 1, out=indices)
+    # avoid division by zero for cases where obs index is on sim_index at start/end
+    num = obs_idx_int - sim_idx_int[indices[:, 0]]
+    den = sim_idx_int[indices[:, 1]] - sim_idx_int[indices[:, 0]]
+    weights = np.divide(num, den, out=np.zeros_like(num, dtype=float), where=den != 0)
+    weights = np.vstack([1 - weights, weights]).T
+    return indices, weights

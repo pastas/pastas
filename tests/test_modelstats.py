@@ -65,6 +65,17 @@ class TestStatistics:
         mae_weighted = ml_solved.stats.mae(weighted=True)
         assert isinstance(mae_weighted, float)
 
+    def test_me(self, ml_solved: ps.Model) -> None:
+        """Test ME calculation."""
+        me = ml_solved.stats.me()
+
+        # Should return a float value
+        assert isinstance(me, float)
+
+        # Test weighted version
+        me_weighted = ml_solved.stats.me(weighted=True)
+        assert isinstance(me_weighted, float)
+
     def test_nse(self, ml_solved: ps.Model) -> None:
         """Test NSE calculation."""
         nse = ml_solved.stats.nse()
@@ -163,7 +174,7 @@ class TestStatistics:
         assert isinstance(summary, pd.DataFrame)
 
         # Should contain default stats
-        for stat in ["rmse", "sse", "mae", "rsq", "evp"]:
+        for stat in ["rmse", "sse", "mae", "me", "rsq", "evp"]:
             assert stat in summary.index
 
         # Get summary with specific stats
