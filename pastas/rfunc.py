@@ -1103,31 +1103,31 @@ class Hantush(RfuncBase):
 
         # Use Brentq's method
         tol = min(10.0 ** np.floor(np.log10(t0)) / 1e2, 0.1)
-        root, info = brentq(
-            f=self._f_step,
-            a=1e-30,  # choose a small positive lower bound to avoid division by zero
-            b=t0,
-            xtol=tol,
-            maxiter=100,  # generally converges within 10 iterations
-            args=(a, b, cutoff),
-            full_output=True,
-            disp=False,
-        )
-        # Check the convergence flag directly
-        if info.converged:
-            logger.debug(
-                "Root finding for tmax converged successfully. Brentq RootResults: %s",
-                info,
+        try:
+            root, info = brentq(
+                f=self._f_step,
+                a=1e-30,  # choose a small positive lower bound to avoid division by zero
+                b=t0,
+                xtol=tol,
+                maxiter=100,  # generally converges within 10 iterations
+                args=(a, b, cutoff),
+                full_output=True,
+                disp=True,
             )
-            return root
-        else:
+        except (RuntimeError, ValueError) as e:
             logger.warning(
-                "Root finding for tmax did not converge, returning approximate tmax. "
-                "Consider setting approximate_tmax=True for the Hantush response. "
-                "Brentq RootResults: %s",
-                info,
+                "Root finding for tmax of Hantush response failed, returning approximate tmax."
+                " Consider setting approximate_tmax=True for the Hantush response."
+                f" {e.__class__.__name__}: {e}"
             )
             return t0
+
+        # Check the convergence flag directly
+        logger.debug(
+            "Root finding for tmax of Hantush response converged successfully. Brentq RootResults: %s",
+            info,
+        )
+        return float(root)
 
     def gain(self, p: ArrayLike) -> float:
         """Return the gain of the Hantush response function.
@@ -1168,11 +1168,13 @@ class Hantush(RfuncBase):
         k0rho = kv(0, rho)
         if k0rho == 0.0:
             logger.warning(
-                f"K_0(rho) is underflowing to 0.0 for b: {b:.4e}, rho = {rho:.4e}. "
-                "The parameter `b` is too high or which means that the observation well "
-                "is too far away. Consider lowering the initial value and bounds for b "
-                "to prevent this error."
+                "K_0(rho) is underflowing to 0.0 because parameter `b` is too high. This means that "
+                "the response time is extremely long and the step response is NaN. Consider lowering "
+                "the upper bound for `b` to silence this warning. For debugging purposes, the values "
+                f"are as follows: {b=:.4e}, rho=(2.0*np.sqrt(b))={rho:.4e}.",
             )
+            return np.full_like(t, np.nan)
+
         exp1_rho = exp1(rho)
         w = (exp1_rho - k0rho) / (exp1_rho - exp1(rho / 2.0))
         w_minus_1 = w - 1.0
@@ -2561,25 +2563,22 @@ class FourParam(RfuncBase):
                 maxiter=200,
                 args=(p, cutoff, impulse_integral),
                 full_output=True,
-                disp=False,
+                disp=True,
             )
-        except ValueError as err:
+        except (RuntimeError, ValueError) as e:
             logger.warning(
-                "Exact FourParam tmax root finding failed (%s). Returning approximate "
-                "tmax.",
-                err,
+                "Root finding for tmax of FourParam response failed, returning approximate tmax."
+                " Consider setting approximate_tmax=True for the FourParam response."
+                f" {e.__class__.__name__}: {e}"
             )
             return t0
 
-        if info.converged:
-            return float(root)
-
-        logger.warning(
-            "Root finding for FourParam tmax did not converge, returning "
-            "approximate tmax. Brentq RootResults: %s",
+        # Check the convergence flag directly
+        logger.debug(
+            "Root finding for tmax of FourParam response converged successfully. Brentq RootResults: %s",
             info,
         )
-        return t0
+        return float(root)
 
     def gain(self, p: ArrayLike) -> float:
         """Return the gain of the FourParam response function.
