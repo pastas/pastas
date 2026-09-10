@@ -1168,10 +1168,10 @@ class Hantush(RfuncBase):
         k0rho = kv(0, rho)
         if k0rho == 0.0:
             logger.warning(
-                "K_0(rho) is underflowing to 0.0 because parameter `b` is too high. This means that the "
-                "response time is extremely long and the step response is NaN. Consider lowering the "
-                "bound for `b` to silence this warning. For debugging purposes, the values are are as"
-                f" follows: {b=:.4e}, rho=(2.0*np.sqrt(b))={rho:.4e}.",
+                "K_0(rho) is underflowing to 0.0 because parameter `b` is too high. This means that "
+                "the response time is extremely long and the step response is NaN. Consider lowering "
+                "the upper bound for `b` to silence this warning. For debugging purposes, the values "
+                f"are as follows: {b=:.4e}, rho=(2.0*np.sqrt(b))={rho:.4e}.",
             )
             return np.full_like(t, np.nan)
 
