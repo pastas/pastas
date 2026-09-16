@@ -3,16 +3,12 @@
 Stressmodels are used to translate an input time series into contribution that
 explains (part of) the output series.
 
-See Also
---------
-pastas.model.Model.add_stressmodel
-
 Examples
 --------
 Add a stress model to a Pastas model::
 
-    sm = ps.StressModel(stress, rfunc=ps.Gamma(), name="sm1")
-    ml.add_stressmodel(stressmodel=sm)
+    sm = ps.StressModel(ml, stress, rfunc=ps.Gamma(), name="sm1")
+
 """
 
 from abc import ABC, abstractmethod
@@ -1856,9 +1852,8 @@ class RechargeModel(StressModelBase):
 
     Examples
     --------
-    >>> sm = ps.RechargeModel(rain, evap, rfunc=ps.Exponential(),
+    >>> sm = ps.RechargeModel(ml, rain, evap, rfunc=ps.Exponential(),
     >>>                       recharge=ps.rch.FlexModel(), name="rch")
-    >>> ml.add_stressmodel(sm)
     """
 
     @check_argument_model
@@ -2284,9 +2279,8 @@ class RechargeModel(StressModelBase):
 
         Examples
         --------
-        >>> sm = ps.RechargeModel(prec, evap, ps.Gamma(), ps.rch.FlexModel(),
+        >>> sm = ps.RechargeModel(ml, prec, evap, ps.Gamma(), ps.rch.FlexModel(),
         >>>                       name="rch")
-        >>> ml.add_stressmodel(sm)
         >>> ml.solve()
         >>> wb = sm.get_water_balance(ml.get_parameters("rch"))
         >>> wb.plot(subplots=True)
