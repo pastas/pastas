@@ -182,10 +182,18 @@ class Plotting:
             axes is returned. Default is False.
         **kwargs: dict, optional
             Optional arguments, passed on to the matplotlib.pyplot.figure method.
+            Notable keyword arguments include:
+
+            - ``figsize``: tuple or "auto", optional. Figure size in inches as
+              a ``(width, height)`` tuple. Use ``"auto"`` for a dynamic figure
+              size based on the number of contributions
+              ``(8.0, 4.0 + 2 * n_contributions)``. Default is ``(10, 8)``.
 
         Returns
         -------
-        Dictionary with the matplotlib.axes.Axes
+        dict[str, matplotlib.axes.Axes] or list[matplotlib.axes.Axes]
+            Dictionary with the matplotlib.axes.Axes if ``return_dict=True``,
+            otherwise a list of axes.
 
         Examples
         --------
@@ -272,7 +280,9 @@ class Plotting:
             if adjust_height
             else kwargs.pop("height_ratios", None)
         )
-        figsize = kwargs.pop("figsize", (8.0, 4.0 + 2 * len(contribs)))
+        figsize = kwargs.pop("figsize", (10.0, 8.0))
+        if figsize == "auto":
+            figsize = (8.0, 4.0 + 2 * len(contribs))
         layout = kwargs.pop("layout", "constrained")
         fig = kwargs.pop("fig", None)
         if fig is None:
