@@ -6,8 +6,7 @@ Examples
 --------
 Add a threshold transform to a model::
 
-    transform = ps.ThresholdTransform()
-    ml.add_transform(transform)
+    transform = ps.ThresholdTransform(model=ml)
 
 """
 

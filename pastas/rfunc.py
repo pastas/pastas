@@ -5,8 +5,7 @@ Examples
 Use response functions in stress models::
 
     rfunc = ps.Gamma()
-    sm = ps.StressModel(stress, rfunc=rfunc, name="well")
-    ml.add_stressmodel(sm)
+    sm = ps.StressModel(ml, stress, rfunc=rfunc, name="well")
 
 """
 
