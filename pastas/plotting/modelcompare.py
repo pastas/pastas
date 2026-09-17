@@ -213,20 +213,22 @@ class CompareModels:
         )
         for ml in self.models:
             # get sim min/max
-            sim = ml.simulate()
-            o = ml.observations()
+            sim = ml.simulate(tmin=self.tmin, tmax=self.tmax)
+            o = ml.observations(tmin=self.tmin, tmax=self.tmax)
             sim_minmax[0] = np.nanmin([np.nanmin([sim.min(), o.min()]), sim_minmax[0]])
             sim_minmax[1] = np.nanmax([np.nanmax([sim.max(), o.max()]), sim_minmax[1]])
 
             # get res min/max
-            res = ml.residuals()
+            res = ml.residuals(tmin=self.tmin, tmax=self.tmax)
             res_minmax[0] = np.nanmin([res.min(), res_minmax[0]])
             res_minmax[1] = np.nanmax([res.max(), res_minmax[1]])
 
             # get contrib min/max
             smnames = ml.get_stressmodel_names()
             for smname in smnames:
-                contribution = ml.get_contribution(smname)
+                contribution = ml.get_contribution(
+                    smname, tmin=self.tmin, tmax=self.tmax
+                )
                 contrib_minmax.loc[smname, "min"] = np.nanmin(
                     [contrib_minmax.loc[smname, "min"], np.min(contribution)]
                 )
@@ -468,7 +470,9 @@ class CompareModels:
         else:
             axs = self.axes
 
-        oseries = [ml.oseries.series[self.tmin : self.tmax] for ml in self.models]
+        oseries = [
+            ml.observations(tmin=self.tmin, tmax=self.tmax) for ml in self.models
+        ]
         equals = np.array([])
         for pair in combinations(oseries, 2):
             equals = np.append(equals, np.array_equal(pair[0], pair[1]))
@@ -514,7 +518,7 @@ class CompareModels:
             if self.modelnames is not None:
                 name = self.modelnames[i]
             else:
-                name = ml.model
+                name = ml.name
             simulation = ml.simulate(tmin=self.tmin, tmax=self.tmax)
             axs[axn].plot(
                 simulation.index,
@@ -791,7 +795,11 @@ class CompareModels:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
-            noise = ml.residuals() if ml.noisemodel is None else ml.noise()
+            noise = (
+                ml.residuals(tmin=self.tmin, tmax=self.tmax)
+                if ml.noisemodel is None
+                else ml.noise(tmin=self.tmin, tmax=self.tmax)
+            )
             r = acf(series=noise, full_output=True)
             conf = r.conf.rolling(10, min_periods=1).mean().values
 
