@@ -56,6 +56,7 @@ PAS_FILES = (
 
 XFAIL = {
     "ChangeModel.pas": "Known issue with ChangeModel in <=1.13.2",
+    "Ireson.pas": "No Ireson recharge model in <=1.14.0",
 }
 
 
