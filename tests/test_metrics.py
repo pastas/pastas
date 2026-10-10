@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -112,3 +113,11 @@ def test_picp_mismatched_index() -> None:
     )
     with pytest.raises(ValueError):
         ps.stats.metrics.picp(obs=obs, bounds=bounds)
+
+
+@pytest.mark.parametrize("metric", ["evp", "nse", "rsq"])
+def test_missing_obs_dropped(metric: str) -> None:
+    func = getattr(ps.stats.metrics, metric)
+    obs_nan = pd.concat([obs, pd.Series([np.nan], index=[pd.Timestamp("2010-01-05")])])
+    sim_long = pd.concat([sim, pd.Series([30.0], index=[pd.Timestamp("2010-01-05")])])
+    assert pytest.approx(func(obs=obs_nan, sim=sim_long), tol) == func(obs=obs, sim=sim)

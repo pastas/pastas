@@ -336,6 +336,7 @@ def evp(
     :math:`\\sigma_r^2` is the variance of the errors. The returned value is
     bounded between 0% and 100%.
     """
+    obs = obs.dropna() if missing == "drop" else obs
     err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
@@ -397,6 +398,7 @@ def nse(
 
     .. math:: \\text{NSE} = 1 - \\frac{\\sum(h_s-h_o)^2}{\\sum(h_o-\\mu_{h,o})}
     """
+    obs = obs.dropna() if missing == "drop" else obs
     err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
@@ -511,6 +513,7 @@ def rsq(
     When nparam is provided, the :math:`\\rho` is adjusted for the number of
     calibration parameters.
     """
+    obs = obs.dropna() if missing == "drop" else obs
     err = _compute_err(obs=obs, sim=sim, res=res, missing=missing)
 
     # Return nan if the time indices of the sim and obs don't match
