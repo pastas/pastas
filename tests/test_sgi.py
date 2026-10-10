@@ -26,3 +26,10 @@ def test_sgi_period2(head: Series) -> None:
 def test_sgi_perioderror(head: Series) -> None:
     with pytest.raises(ValueError):
         _ = ps.stats.sgi(head, timescale_months=4)
+
+
+def test_sgi_missing_months(head: Series) -> None:
+    head = head[head.index.month.isin(range(3, 10))]
+    sgi = ps.stats.sgi(head, timescale_months=1)
+    assert sgi.index.equals(head.dropna().index)
+    assert sgi.notna().all()

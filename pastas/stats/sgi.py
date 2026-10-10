@@ -59,6 +59,8 @@ def sgi(series: Series, timescale_months: int = 1) -> Series:
             sel = array(range(timescale_months)) + month
             data = series[series.index.month.isin(sel)]
             n = data.size  # Number of observations
+            if n == 0:
+                continue
             pmin = 1 / (2 * n)
             pmax = 1 - pmin
             sgi_values = norm.ppf(linspace(pmin, pmax, n))
