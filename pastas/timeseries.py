@@ -223,8 +223,10 @@ class TimeSeries:
         # Use user provided name or set from series
         if name is None:
             name = series.name
-        self.name = validate_name(name)
-        self._series_original.name = validate_name(name)
+
+        name = validate_name(name)
+        self.name = name
+        self._series_original.name = name
 
         if metadata is not None:
             self.metadata.update(metadata)

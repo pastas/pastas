@@ -24,8 +24,7 @@ Examples
 Use recharge models with a RechargeModel stress model::
 
     rch = ps.rch.FlexModel()
-    sm = ps.RechargeModel(prec, evap, recharge=rch, rfunc=ps.Gamma(), name="rch")
-    ml.add_stressmodel(sm)
+    sm = ps.RechargeModel(ml, prec, evap, recharge=rch, rfunc=ps.Gamma(), name="rch")
 
 After solving a model, the simulated recharge flux can be obtained::
 
