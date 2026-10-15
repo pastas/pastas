@@ -29,3 +29,20 @@ def test_date_max() -> None:
     head = Series(index=idx, data=np.random.rand(len(idx)), dtype=float)
     head[head.index.dayofyear == 1] = head.max()
     assert round(ps.stats.signatures.date_max(head)) == 1
+
+
+def test_bimodality_coefficient() -> None:
+    """Test the bimodality coefficient against the example distributions in Table A1
+    of Pfister et al. (2013), https://doi.org/10.3389/fpsyg.2013.00700.
+    """
+    freqs = {
+        0.34: [3, 5, 5, 10, 17, 20, 17, 10, 5, 5, 3],
+        0.79: [2, 26, 14, 6, 2, 0, 2, 6, 14, 26, 2],
+        0.73: [2, 3, 3, 3, 3, 4, 5, 11, 21, 41, 4],
+        0.67: [2, 3, 6, 17, 3, 4, 5, 12, 14, 30, 4],
+    }
+    for expected, freq in freqs.items():
+        data = np.repeat(np.arange(1, 12), freq).astype(float)
+        head = Series(index=date_range("2000", periods=data.size), data=data)
+        bc = ps.stats.signatures.bimodality_coefficient(head, normalize=False)
+        assert round(bc, 2) == expected

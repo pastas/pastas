@@ -1129,11 +1129,11 @@ def bimodality_coefficient(series: Series, normalize: bool = True) -> float:
     )
     skew *= (sqrt(n * (n - 1))) / (n - 2)
 
-    # Compute the kurtosis for a finite sample
-    kurt = (1 / n) * sum(series_mean_diff**4) / (
-        ((1 / n) * sum(series_mean_diff**2)) ** 2
-    ) - 3
-    kurt = ((n - 1) * ((n + 1) * kurt - 3 * (n - 1)) / ((n - 2) * (n - 3))) + 3
+    # Compute the excess kurtosis for a finite sample
+    kurt = (
+        (1 / n) * sum(series_mean_diff**4) / (((1 / n) * sum(series_mean_diff**2)) ** 2)
+    )
+    kurt = (n - 1) * ((n + 1) * kurt - 3 * (n - 1)) / ((n - 2) * (n - 3))
 
     return ((skew**2) + 1) / (kurt + ((3 * ((n - 1) ** 2)) / ((n - 2) * (n - 3))))
 
