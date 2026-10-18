@@ -24,7 +24,8 @@ Examples
 Use recharge models with a RechargeModel stress model::
 
     rch = ps.rch.FlexModel()
-    sm = ps.RechargeModel(ml, prec, evap, recharge=rch, rfunc=ps.Gamma(), name="rch")
+    sm = ps.RechargeModel(prec, evap, recharge=rch, rfunc=ps.Gamma(), name="rch")
+    ml.add_stressmodel(sm)
 
 After solving a model, the simulated recharge flux can be obtained::
 
@@ -303,7 +304,9 @@ class FlexModel(RechargeBase):
         )
 
         # report big water balance errors (error > 0.1%.)
-        error = (sr[0] - sr[-1] + (pe - m + r + ea + q).sum()) / (
+        m_last = m[-1] if np.ndim(m) > 0 else m
+        sr_end = sr[-1] + dt * (pe[-1] - m_last + r[-1] + ea[-1] + q[-1])
+        error = (sr[0] - sr_end + (pe - m + r + ea + q).sum()) / (
             pe.sum() + 1e-10
         )  # avoid division by zero
         error_value = error.real if is_complex else error
@@ -403,13 +406,18 @@ class FlexModel(RechargeBase):
                 sr[t] = 0.0
 
             # Calculate evaporation from the root zone reservoir
-            if (sr[t] / lp_scaled).real < 1.0:
+            if lp_scaled.real <= 0.0:
+                ea[t] = ep[t] if sr[t].real > 0.0 else 0.0
+            elif (sr[t] / lp_scaled).real < 1.0:
                 ea[t] = ep[t] * sr[t] / lp_scaled
             else:
                 ea[t] = ep[t]
 
             # Calculate the recharge flux
-            recharge = ks * (sr[t] / srmax) ** gamma
+            if srmax.real <= 0.0 or sr[t].real <= 0.0:
+                recharge = 0.0
+            else:
+                recharge = ks * (sr[t] / srmax) ** gamma
 
             # Update storage in the root zone
             if recharge.real < sr[t].real:
@@ -594,7 +602,8 @@ class FlexModel(RechargeBase):
     def check_snow_balance(self, prec: ArrayLike, temp: ArrayLike, **kwargs) -> float:
         """Check the water balance of the snow reservoir."""
         ss, ps, m = self.get_snow_balance(prec, temp)
-        error = ss[0] - ss[-1] + (ps + m).sum()
+        ss_end = ss[-1] + (ps[-1] + m[-1])
+        error = ss[0] - ss_end + (ps + m).sum()
         return error
 
     def check_interception_balance(
@@ -602,7 +611,8 @@ class FlexModel(RechargeBase):
     ) -> float:
         """Check the water balance of the interception reservoir."""
         si, ei, pi = self.get_interception_balance(prec, evap)
-        error = si[0] - si[-1] + (pi + ei).sum()
+        si_end = si[-1] + (pi[-1] + ei[-1])
+        error = si[0] - si_end + (pi + ei).sum()
         return error
 
     def check_root_zone_balance(
@@ -610,7 +620,8 @@ class FlexModel(RechargeBase):
     ) -> float:
         """Check the water balance of the root zone reservoir."""
         sr, r, ea, q, pe = self.get_root_zone_balance(prec, evap)
-        error = sr[0] - sr[-1] + (r + ea + q + pe).sum()
+        sr_end = sr[-1] + (r[-1] + ea[-1] + q[-1] + pe[-1])
+        error = sr[0] - sr_end + (r + ea + q + pe).sum()
         return error
 
     def to_dict(self) -> dict[str, Any]:
@@ -756,7 +767,7 @@ class Berendrecht(RechargeBase):
         r = zeros(n, dtype=dtype)  # Recharge flux
         ea = zeros(n, dtype=dtype)  # Actual evaporation flux
 
-        for t in range(n - 1):
+        for t in range(n):
             # Make sure the reservoir is not too full or empty.
             if s[t].real < 0.05:
                 s[t] = 0.05 * exp(20.0 * s[t] - 1.0)
@@ -767,10 +778,13 @@ class Berendrecht(RechargeBase):
             ea[t] = (1.0 - exp(-3 * s[t] / sr)) * ep[t]
 
             # Calculate the recharge flux
-            r[t] = ks * s[t] ** l * (1.0 - (1.0 - s[t] ** (1.0 / m)) ** m) ** 2
+            base_inner = 1.0 - s[t] ** (1.0 / m)
+            inner_pow = base_inner ** m if base_inner.real > 0.0 else 0.0
+            r[t] = ks * s[t] ** l * (1.0 - inner_pow) ** 2
 
-            # Calculate the
-            s[t + 1] = s[t] + dt / de * (pe[t] - ea[t] - r[t])
+            # Calculate the next state
+            if t < n - 1:
+                s[t + 1] = s[t] + dt / de * (pe[t] - ea[t] - r[t])
         return r, s, ea, pe
 
     def get_water_balance(
@@ -928,10 +942,12 @@ class Peterson(RechargeBase):
             sm_frac = sm[t] / smsc
             pe[t] = prec[t] * power(1 - sm_frac, alpha)
             # Use .real for comparisons to support complex-step differentiation
+            avail = sm[t] + pe[t] * dt
             ea_val = evap[t] * power(sm_frac, gamma)
-            ea[t] = ea_val if ea_val.real > sm[t + 1].real else sm[t + 1]
+            ea[t] = ea_val if (ea_val * dt).real < avail.real else avail / dt
+            rem = avail - ea[t] * dt
             r_val = ksat * power(sm_frac, beta)
-            r[t] = r_val if r_val.real > sm[t + 1].real else sm[t + 1]
+            r[t] = r_val if (r_val * dt).real < rem.real else rem / dt
             sm_new = sm[t] + (pe[t] - ea[t] - r[t]) * dt
             if sm_new.real < 0.0:
                 sm[t + 1] = 0.0
