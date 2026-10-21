@@ -291,6 +291,21 @@ class TestRechargeModel:
         assert rm.recharge._name == "Linear"
         assert len(rm.stresses) == 2  # prec and evap
 
+    def test_simulate_uses_initial_parameters_when_omitted(self) -> None:
+        """Simulate recharge without an explicit parameter vector."""
+        rm = RechargeModel(
+            model=_component_model(self.prec.index),
+            prec=self.prec,
+            evap=self.evap,
+            name="rech_default",
+            recharge=ps.rch.Linear(),
+        )
+
+        expected = rm.simulate(p=rm.parameters.initial.values)
+        result = rm.simulate()
+
+        pd.testing.assert_series_equal(result, expected)
+
     def test_init_flex(self) -> None:
         """Test initialization with FlexModel recharge model."""
         rm = RechargeModel(

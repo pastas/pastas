@@ -2097,8 +2097,10 @@ class RechargeModel(StressModelBase):
         dt: float = 1.0,
         istress: int | None = None,
     ) -> Series:
-        """Simulate the stressmodel's contribution."""
-        return self._simulate(tuple(p), tmin, tmax, freq, dt, istress)
+        """Simulate recharge using initial parameters when p is omitted."""
+        return self._simulate(
+            None if p is None else tuple(p), tmin, tmax, freq, dt, istress
+        )
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
