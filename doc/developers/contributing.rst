@@ -61,12 +61,13 @@ formatting and linting standard. Check out the Pastas Code Style section to lear
 more about the formatting of code and docstrings.
 
 .. note::
-    Contributions to Pastas generated solely by AI are unwanted. While it is not
-    prohibited to use LLMs as a learning aid or a development tool (e.g., for code
-    completions), contributors should be able to justify and explain any code they
-    submit within reason. The golden rule is that a contribution should be worth
-    more to the project than the time it takes to review it, which is usually not
-    the case if large parts of your PR were written by LLMs.
+    Contributions to Pastas generated solely by AI are not welcome and will be 
+    rejected. While it is not prohibited to use LLMs as a learning aid or a
+    development tool (e.g., for code completions), contributors should be able
+    to justify and explain any code they submit within reason. The golden rule is
+    that a contribution should be worth more to the project than the time it
+    takes to review it. This is usually not the case if large parts of your PR
+    were written by LLMs.
 
 .. note::
     To make sure your code is up to standards, you can run the following:
