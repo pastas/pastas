@@ -152,7 +152,7 @@ def test_series(ml_noisemodel: Model) -> None:
     plt.close()
 
     # Test with different styles and subplots
-    _ = ml_noisemodel.plots.series(figsize=(10, 8))
+    _ = ml_noisemodel.plots.series(figsize=(10.0, 8.0))
     plt.close()
 
 
@@ -167,7 +167,7 @@ def test_cum_frequency(ml_noisemodel: Model) -> None:
     plt.close()
 
     # Test with custom arguments
-    _ = ml_noisemodel.plots.cum_frequency(figsize=(8, 6))
+    _ = ml_noisemodel.plots.cum_frequency(figsize=(8.0, 6.0))
     plt.close()
 
 
@@ -196,7 +196,7 @@ def test_standalone_series(prec: Series, evap: Series, head: Series) -> None:
         titles=False,
         tmin="2011",
         tmax="2014",
-        figsize=(8, 6),
+        figsize=(8.0, 6.0),
     )
     assert axes is not None
     plt.close()
@@ -218,7 +218,7 @@ def test_standalone_cum_frequency(head: Series) -> None:
     plt.close()
 
     # With custom figure size
-    ax = cum_frequency(oseries=head, figsize=(8, 4))
+    ax = cum_frequency(oseries=head, figsize=(8.0, 4.0))
     assert ax is not None
     plt.close()
 
@@ -233,6 +233,6 @@ def test_standalone_acf(head: Series) -> None:
     plt.close()
 
     # With custom parameters
-    ax = acf(series=head, alpha=0.01, lags=100, smooth_conf=False, figsize=(10, 6))
+    ax = acf(series=head, alpha=0.01, lags=100, smooth_conf=False, figsize=(10.0, 6.0))
     assert ax is not None
     plt.close()
