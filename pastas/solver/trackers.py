@@ -244,13 +244,13 @@ class TrackSolve:
         return sim
 
     def initialize_figure(
-        self, figsize: tuple[int] = (10, 8), dpi: int = 100
+        self, figsize: tuple[float, float] = (10.0, 8.0), dpi: int = 100
     ) -> Figure:
         """Initialize figure for plotting optimization progress.
 
         Parameters
         ----------
-        figsize : tuple, optional
+        figsize : tuple[float, float], optional
             figure size, passed to plt.subplots(), by default (10, 8).
         dpi : int, optional
             dpi of the figure passed to plt.subplots(), by default 100.
