@@ -147,16 +147,18 @@ class CompareModels:
         ----------
         mosaic : list, optional
             subplot mosaic, by default None which uses the default mosaic.
-        figsize : tuple, optional
-            figure size, by default (10, 8).
         cmap : str, optional
             colormap, by default "tab10".
+        return_ax : bool, optional
+            if True, return axes dictionary instead of setting self.axes, by default
+            False.
+        **fig_kwargs : dict
+            additional keyword arguments passed to plt.subplot_mosaic().
         """
         if mosaic is None:
             mosaic = self.get_default_mosaic()
 
         self.cmap = plt.get_cmap(cmap)
-
         figure, axes = plt.subplot_mosaic(mosaic, **fig_kwargs)
         if return_ax:
             return axes
@@ -463,7 +465,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -505,7 +507,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -536,7 +538,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -561,7 +563,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -605,7 +607,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn.format(i=0)]], figsize=(5, 3), return_ax=True
+                mosaic=[[axn.format(i=0)]], figsize=(5.0, 3.0), return_ax=True
             )
 
         if smdict is None and self.smdict is None:
@@ -695,7 +697,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn.format(i=0)]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn.format(i=0)]], figsize=(10.0, 3.0), return_ax=True
             )
 
         if smdict is None and self.smdict is None:
@@ -755,7 +757,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -785,7 +787,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -819,7 +821,9 @@ class CompareModels:
             column that is shown.
         """
         if self.axes is None:
-            axs = self.initialize_figure(mosaic=[[axn]], figsize=(6, 4), return_ax=True)
+            axs = self.initialize_figure(
+                mosaic=[[axn]], figsize=(6.0, 4.0), return_ax=True
+            )
         else:
             axs = self.axes
 
@@ -1003,7 +1007,7 @@ class CompareModels:
         """
         self.adjust_height = adjust_height
         if "figsize" not in fig_kwargs:
-            fig_kwargs["figsize"] = (10, 8)
+            fig_kwargs["figsize"] = (10.0, 8.0)
         if self.axes is None and not self.adjust_height:
             self.initialize_figure(**fig_kwargs)
         if self.axes is None and self.adjust_height:
