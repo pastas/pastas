@@ -505,7 +505,7 @@ class Plotting:
         tmax: Timestamp | str | None = None,
         ytick_base: bool = True,
         split_contributions: bool = True,
-        axes: Axes | None = None,
+        axes: list[Axes] | None = None,
         name: str | None = None,
         return_warmup: bool = False,
         min_ylim_diff: float | None = None,
@@ -527,8 +527,9 @@ class Plotting:
             Make the ytick-base constant if True, set this base to float if a float.
         split_contributions: bool, optional
             Split the stresses in multiple stresses when possible. Default is True.
-        axes: matplotlib.axes.Axes instance, optional
-            Matplotlib Axes instance to plot the figure on to.
+        axes: list of matplotlib.axes.Axes instances, optional
+            Matplotlib Axes to plot the figure on to. Number of axes should be equal
+            to the number of (split) contributions + 1.
         name: str, optional
             Name to give the simulated time series in the legend.
         return_warmup: bool, optional
@@ -614,8 +615,10 @@ class Plotting:
             set_axes_properties = True
         else:
             if len(axes) != nrows:
-                msg = "Makes sure the number of axes equals the number of series"
-                raise ValueError(msg)
+                raise ValueError(
+                    f"Makes sure the number of axes: {len(axes)} equals"
+                    f" the number of (split) contributions: {nrows}."
+                )
             fig = axes[0].figure
             o_label = ""
             set_axes_properties = False
