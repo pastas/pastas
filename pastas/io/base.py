@@ -14,6 +14,7 @@ from logging import getLogger
 from os import path
 from pathlib import Path
 
+from numpy import log
 from packaging.version import parse as parse_version
 
 import pastas as ps
@@ -55,10 +56,10 @@ def load(fname: str | Path, **kwargs) -> Model:
     # Get dicts for all data sources
     data = load_mod.load(fname, **kwargs)
 
-    file_version = data["file_info"]["pastas_version"]
+    file_version = parse_version(data["file_info"]["pastas_version"])
 
     # A single catch for old pas-files, no longer supported
-    if parse_version(file_version) < parse_version("0.23.0"):
+    if file_version < parse_version("0.23.0"):
         msg = (
             "This file was created with a Pastas version prior to 0.23 "
             "and cannot be loaded with Pastas >= 1.0. Please load and "
@@ -82,6 +83,9 @@ def load(fname: str | Path, **kwargs) -> Model:
 
 def _load_model(data: dict) -> Model:
     """Create a model from a dictionary."""
+    # Get version with which the Pastas Model was created
+    file_version = parse_version(data["file_info"]["pastas_version"])
+
     # Create model
     oseries = data["oseries"]["series"]
     metadata = data["oseries"]["metadata"]
@@ -215,6 +219,38 @@ def _load_model(data: dict) -> Model:
             pmin=pdata.at["pmin"],
             pmax=pdata.at["pmax"],
         )
+
+    if file_version < parse_version("2.0.0") and any(
+        "HantushWellModel" == sm.__class__.__name__ for _, sm in ml.stressmodels
+    ):
+        # Transform parameter b of HantushWellModel
+        # In Pastas 1.0 it was log_e scaled, in Pastas 2.0 it is log_10 scaled
+        for sm_name, sm in ml.stressmodels:
+            if sm.__class__.__name__ == "HantushWellModel":
+                b_ini, b_min, b_max = ml.parameters.loc[
+                    f"{sm_name}_b", ["initial", "pmin", "pmax"]
+                ]
+                trans_value = log(10)
+                extra_pars = {}
+                if "optimal" in ml.parameters.columns:
+                    extra_pars["optimal"] = (
+                        ml.parameters.loc[f"{sm_name}_b", "optimal"] / trans_value
+                    )
+                if "stderr" in ml.parameters.columns:
+                    extra_pars["stderr"] = (
+                        ml.parameters.loc[f"{sm_name}_b", "stderr"] / trans_value
+                    )
+                ml.set_parameter(
+                    name=f"{sm_name}_b",
+                    initial=b_ini / trans_value,
+                    pmin=b_min / trans_value,
+                    pmax=b_max / trans_value,
+                    **extra_pars,
+                )
+                logger.info(
+                    "The parameter b of the HantushWellModel was transformed from log_e to log_10 scale."
+                    " This behavior changed in Pastas 2.0: https://github.com/pastas/pastas/pull/1134."
+                )
 
     return ml
 
