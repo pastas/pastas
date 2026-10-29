@@ -221,12 +221,12 @@ def _load_model(data: dict) -> Model:
         )
 
     if file_version < parse_version("2.0.0") and any(
-        "HantushWellModel" == sm.__class__.__name__ for _, sm in ml.stressmodels
+        "WellModel" == sm.__class__.__name__ for sm in ml.stressmodels.values()
     ):
-        # Transform parameter b of HantushWellModel
+        # Transform parameter b of WellModel
         # In Pastas 1.0 it was log_e scaled, in Pastas 2.0 it is log_10 scaled
-        for sm_name, sm in ml.stressmodels:
-            if sm.__class__.__name__ == "HantushWellModel":
+        for sm_name, sm in ml.stressmodels.items():
+            if sm.__class__.__name__ == "WellModel":
                 b_ini, b_min, b_max = ml.parameters.loc[
                     f"{sm_name}_b", ["initial", "pmin", "pmax"]
                 ]
@@ -248,7 +248,7 @@ def _load_model(data: dict) -> Model:
                     **extra_pars,
                 )
                 logger.info(
-                    "The parameter b of the HantushWellModel was transformed from log_e to log_10 scale."
+                    f"The parameter b of the WellModel {sm_name} was transformed from log_e to log_10 scale."
                     " This behavior changed in Pastas 2.0: https://github.com/pastas/pastas/pull/1134."
                 )
 
