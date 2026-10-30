@@ -182,7 +182,6 @@ class Plotting:
             axes is returned. Default is False.
         **kwargs: dict, optional
             Optional arguments, passed on to the matplotlib.pyplot.figure method.
-            Notable keyword arguments include:
 
         Returns
         -------
