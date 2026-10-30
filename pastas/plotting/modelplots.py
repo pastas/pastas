@@ -94,7 +94,7 @@ class Plotting:
         kwargs = {} or kwargs
         if ax is None:
             layout = kwargs.pop("layout", "tight")
-            figsize = kwargs.pop("figsize", (8.0, 4.0))
+            figsize = kwargs.pop("figsize", (10.0, 4.0))
             _, ax = plt.subplots(figsize=figsize, layout=layout, **kwargs)
 
         if oseries:
@@ -182,10 +182,13 @@ class Plotting:
             axes is returned. Default is False.
         **kwargs: dict, optional
             Optional arguments, passed on to the matplotlib.pyplot.figure method.
+            Notable keyword arguments include:
 
         Returns
         -------
-        Dictionary with the matplotlib.axes.Axes
+        dict[str, matplotlib.axes.Axes] or list[matplotlib.axes.Axes]
+            Dictionary with the matplotlib.axes.Axes if ``return_dict=True``,
+            otherwise a list of axes.
 
         Examples
         --------
@@ -272,7 +275,7 @@ class Plotting:
             if adjust_height
             else kwargs.pop("height_ratios", None)
         )
-        figsize = kwargs.pop("figsize", (8.0, 4.0 + 2 * len(contribs)))
+        figsize = kwargs.pop("figsize", (10.0, 8.0))
         layout = kwargs.pop("layout", "constrained")
         fig = kwargs.pop("fig", None)
         if fig is None:
@@ -502,7 +505,7 @@ class Plotting:
         tmax: Timestamp | str | None = None,
         ytick_base: bool = True,
         split_contributions: bool = True,
-        axes: Axes | None = None,
+        axes: list[Axes] | None = None,
         name: str | None = None,
         return_warmup: bool = False,
         min_ylim_diff: float | None = None,
@@ -524,8 +527,9 @@ class Plotting:
             Make the ytick-base constant if True, set this base to float if a float.
         split_contributions: bool, optional
             Split the stresses in multiple stresses when possible. Default is True.
-        axes: matplotlib.axes.Axes instance, optional
-            Matplotlib Axes instance to plot the figure on to.
+        axes: list of matplotlib.axes.Axes instances, optional
+            Matplotlib Axes to plot the figure on to. Number of axes should be equal
+            to the number of (split) contributions + 1.
         name: str, optional
             Name to give the simulated time series in the legend.
         return_warmup: bool, optional
@@ -597,7 +601,7 @@ class Plotting:
             # open a new figure
             gridspec_kw = {"height_ratios": height_ratios}
             layout = kwargs.pop("layout", "tight")
-            figsize = kwargs.pop("figsize", (8.0, 2.0 + 1.5 * len(contribs)))
+            figsize = kwargs.pop("figsize", (10.0, 8.0))
             fig, axes = plt.subplots(
                 nrows=nrows,
                 sharex=True,
@@ -611,8 +615,10 @@ class Plotting:
             set_axes_properties = True
         else:
             if len(axes) != nrows:
-                msg = "Makes sure the number of axes equals the number of series"
-                raise ValueError(msg)
+                raise ValueError(
+                    f"Makes sure the number of axes: {len(axes)} equals"
+                    f" the number of (split) contributions: {nrows}."
+                )
             fig = axes[0].figure
             o_label = ""
             set_axes_properties = False
@@ -801,12 +807,12 @@ class Plotting:
             List with the stressmodels to plot the block response for.
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
-        figsize: tuple, optional
-            Tuple with the height and width of the figure in inches.
         legend: bool, optional
             Boolean to determine to show the legend. Default is True.
         all_responses: bool, optional
             Optional to show all the step responses from the stressmodel(s)
+        **kwargs: dict, optional
+            Optional arguments, passed on to the matplotlib.pyplot.subplots method.
 
         Returns
         -------
@@ -855,7 +861,7 @@ class Plotting:
             List with the stressmodels to plot the block response for.
         ax: matplotlib.axes.Axes, optional
             Axes to add the plot to.
-        figsize: tuple, optional
+        figsize: tuple[float, float], optional
             Tuple with the height and width of the figure in inches.
         legend: bool, optional
             Boolean to determine to show the legend. Default is True.
@@ -898,7 +904,7 @@ class Plotting:
         cols: int = 1,
         split: bool = True,
         sharex: bool = True,
-        figsize: tuple = (10, 8),
+        figsize: tuple[float, float] = (10.0, 8.0),
         **kwargs,
     ) -> list[Axes]:
         """Create a graph with all the stresses used in the model.
@@ -919,7 +925,7 @@ class Plotting:
             Split the stress
         sharex: bool, optional
             Sharex the x-axis.
-        figsize: tuple, optional
+        figsize: tuple[float, float], optional
             Tuple with the height and width of the figure in inches.
 
         Returns
@@ -959,7 +965,7 @@ class Plotting:
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         ax: Axes | None = None,
-        figsize: Figure | None = None,
+        figsize: tuple[float, float] | None = None,
         split: bool = True,
         partition: str = "std",
         wedgeprops: dict | None = None,
@@ -984,8 +990,9 @@ class Plotting:
         ax: matplotlib.axes.Axes, optional
             The Axes to plot the pie chart on. A new figure and axes will be created of
             not provided.
-        figsize: tuple, optional
-            tuple of size 2 to determine the figure size in inches.
+        figsize: tuple[float, float], optional
+            Tuple with the height and width of the figure in inches. Only used if ax is
+            None.
         split: bool, optional
             Split the stresses in multiple stresses when possible.
         partition : str
@@ -1168,18 +1175,29 @@ class Plotting:
         tmax: str or Timestamp
         split: bool, optional
             Split the stresses in multiple stresses when possible.
+        oseries: pd.Series
+            Pandas time series with DatetimeIndex.
+        stresses: list of pd.Series
+            List with Pandas time series with DatetimeIndex.
         hist: bool
-            Histogram for the Series. Returns the number of observations, mean,
-            skew and kurtosis as well. For the head series the result of the
-            shapiro-wilk test (p > 0.05) for normality is reported.
-        bins: float
-            Number of bins in the histogram plot.
+            Histogram for the series. The number of bins is determined with Sturges rule.
+        kde: bool
+            Kernel density estimate for the series. The kde is obtained from
+            scipy.gaussian_kde using scott to calculate the estimator bandwidth. Returns
+            the number of observations, mean, skew and kurtosis.
+        table: bool
+            Show table with some basic statistics such as the number of
+            observations, mean, skew and kurtosis.
         titles: bool
-            Set the titles or not. Taken from the name attribute of the Series.
+            Set the titles or not. Taken from the name attribute of the series.
+        colors_stresses: list of str
+            List with the matplotlib colorcodes to use for plotting each stress timeseries.
+            If list is shorter than number of stresses, the remaining stresses are plotted
+            in black. If None (default), default matplotlib colors will be used.
         labels: list of str
             List with the labels for each subplot.
-        figsize: tuple
-            Set the size of the figure.
+        figsize: tuple[float, float]
+            Size of the figure in inches.
 
         Returns
         -------
@@ -1187,7 +1205,7 @@ class Plotting:
         """
         obs = self.model.observations(tmin=tmin, tmax=tmax)
         stresses = _get_stress_series(self.model, split=split)
-        ax = series(obs, stresses=stresses, **kwargs)
+        ax = series(oseries=obs, stresses=stresses, **kwargs)
         return ax
 
     @model_tmin_tmax
@@ -1370,14 +1388,14 @@ class Plotting:
                     [["con", "rf"]],
                     width_ratios=[4, 1],
                     constrained_layout=True,
-                    figsize=(8.0, 2.0),
+                    figsize=(10.0, 2.0),
                 )
 
             else:
                 _, axd = plt.subplot_mosaic(
                     [["con"]],
                     constrained_layout=True,
-                    figsize=(8.0, 2.0),
+                    figsize=(10.0, 2.0),
                 )
         else:
             if not isinstance(ax, dict):

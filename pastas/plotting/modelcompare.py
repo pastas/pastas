@@ -147,16 +147,18 @@ class CompareModels:
         ----------
         mosaic : list, optional
             subplot mosaic, by default None which uses the default mosaic.
-        figsize : tuple, optional
-            figure size, by default (10, 8).
         cmap : str, optional
             colormap, by default "tab10".
+        return_ax : bool, optional
+            if True, return axes dictionary instead of setting self.axes, by default
+            False.
+        **fig_kwargs : dict
+            additional keyword arguments passed to plt.subplot_mosaic().
         """
         if mosaic is None:
             mosaic = self.get_default_mosaic()
 
         self.cmap = plt.get_cmap(cmap)
-
         figure, axes = plt.subplot_mosaic(mosaic, **fig_kwargs)
         if return_ax:
             return axes
@@ -213,20 +215,22 @@ class CompareModels:
         )
         for ml in self.models:
             # get sim min/max
-            sim = ml.simulate()
-            o = ml.observations()
+            sim = ml.simulate(tmin=self.tmin, tmax=self.tmax)
+            o = ml.observations(tmin=self.tmin, tmax=self.tmax)
             sim_minmax[0] = np.nanmin([np.nanmin([sim.min(), o.min()]), sim_minmax[0]])
             sim_minmax[1] = np.nanmax([np.nanmax([sim.max(), o.max()]), sim_minmax[1]])
 
             # get res min/max
-            res = ml.residuals()
+            res = ml.residuals(tmin=self.tmin, tmax=self.tmax)
             res_minmax[0] = np.nanmin([res.min(), res_minmax[0]])
             res_minmax[1] = np.nanmax([res.max(), res_minmax[1]])
 
             # get contrib min/max
             smnames = ml.get_stressmodel_names()
             for smname in smnames:
-                contribution = ml.get_contribution(smname)
+                contribution = ml.get_contribution(
+                    smname, tmin=self.tmin, tmax=self.tmax
+                )
                 contrib_minmax.loc[smname, "min"] = np.nanmin(
                     [contrib_minmax.loc[smname, "min"], np.min(contribution)]
                 )
@@ -463,12 +467,14 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
 
-        oseries = [ml.oseries.series[self.tmin : self.tmax] for ml in self.models]
+        oseries = [
+            ml.observations(tmin=self.tmin, tmax=self.tmax) for ml in self.models
+        ]
         equals = np.array([])
         for pair in combinations(oseries, 2):
             equals = np.append(equals, np.array_equal(pair[0], pair[1]))
@@ -505,7 +511,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -514,7 +520,7 @@ class CompareModels:
             if self.modelnames is not None:
                 name = self.modelnames[i]
             else:
-                name = ml.model
+                name = ml.name
             simulation = ml.simulate(tmin=self.tmin, tmax=self.tmax)
             axs[axn].plot(
                 simulation.index,
@@ -536,7 +542,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -561,7 +567,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -605,7 +611,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn.format(i=0)]], figsize=(5, 3), return_ax=True
+                mosaic=[[axn.format(i=0)]], figsize=(5.0, 3.0), return_ax=True
             )
 
         if smdict is None and self.smdict is None:
@@ -695,7 +701,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn.format(i=0)]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn.format(i=0)]], figsize=(10.0, 3.0), return_ax=True
             )
 
         if smdict is None and self.smdict is None:
@@ -755,7 +761,7 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
@@ -785,13 +791,17 @@ class CompareModels:
         """
         if self.axes is None:
             axs = self.initialize_figure(
-                mosaic=[[axn]], figsize=(10, 3), return_ax=True
+                mosaic=[[axn]], figsize=(10.0, 3.0), return_ax=True
             )
         else:
             axs = self.axes
 
         for i, ml in enumerate(self.models):
-            noise = ml.residuals() if ml.noisemodel is None else ml.noise()
+            noise = (
+                ml.residuals(tmin=self.tmin, tmax=self.tmax)
+                if ml.noisemodel is None
+                else ml.noise(tmin=self.tmin, tmax=self.tmax)
+            )
             r = acf(series=noise, full_output=True)
             conf = r.conf.rolling(10, min_periods=1).mean().values
 
@@ -819,7 +829,9 @@ class CompareModels:
             column that is shown.
         """
         if self.axes is None:
-            axs = self.initialize_figure(mosaic=[[axn]], figsize=(6, 4), return_ax=True)
+            axs = self.initialize_figure(
+                mosaic=[[axn]], figsize=(6.0, 4.0), return_ax=True
+            )
         else:
             axs = self.axes
 
@@ -1003,7 +1015,7 @@ class CompareModels:
         """
         self.adjust_height = adjust_height
         if "figsize" not in fig_kwargs:
-            fig_kwargs["figsize"] = (10, 8)
+            fig_kwargs["figsize"] = (10.0, 8.0)
         if self.axes is None and not self.adjust_height:
             self.initialize_figure(**fig_kwargs)
         if self.axes is None and self.adjust_height:
