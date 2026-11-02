@@ -14,6 +14,7 @@ from logging import getLogger
 from os import path
 from pathlib import Path
 
+from numpy import log
 from packaging.version import parse as parse_version
 
 import pastas as ps
@@ -55,10 +56,10 @@ def load(fname: str | Path, **kwargs) -> Model:
     # Get dicts for all data sources
     data = load_mod.load(fname, **kwargs)
 
-    file_version = data["file_info"]["pastas_version"]
+    file_version = parse_version(data["file_info"]["pastas_version"])
 
     # A single catch for old pas-files, no longer supported
-    if parse_version(file_version) < parse_version("0.23.0"):
+    if file_version < parse_version("0.23.0"):
         msg = (
             "This file was created with a Pastas version prior to 0.23 "
             "and cannot be loaded with Pastas >= 1.0. Please load and "
@@ -82,6 +83,9 @@ def load(fname: str | Path, **kwargs) -> Model:
 
 def _load_model(data: dict) -> Model:
     """Create a model from a dictionary."""
+    # Get version with which the Pastas Model was created
+    file_version = parse_version(data["file_info"]["pastas_version"])
+
     # Create model
     oseries = data["oseries"]["series"]
     metadata = data["oseries"]["metadata"]
@@ -215,6 +219,31 @@ def _load_model(data: dict) -> Model:
             pmin=pdata.at["pmin"],
             pmax=pdata.at["pmax"],
         )
+
+    if file_version < parse_version("2.0.0"):
+        # Transform parameter b of WellModel
+        # In Pastas 1.0 it was log_e scaled, in Pastas 2.0 it is log_10 scaled
+        wellmodel_names = [
+            sm_name
+            for sm_name, sm in ml.stressmodels.items()
+            if sm._name == "WellModel"
+        ]
+        if wellmodel_names:
+            trans_value = log(10)
+            b_names = [f"{sm_name}_b" for sm_name in wellmodel_names]
+            scale_cols = [
+                col
+                for col in ("initial", "pmin", "pmax", "optimal", "stderr")
+                if col in ml.parameters.columns
+            ]
+            scaled_pars = ml.parameters.loc[b_names, scale_cols] / trans_value
+            for sm_name in wellmodel_names:
+                pname = f"{sm_name}_b"
+                ml.set_parameter(name=pname, **scaled_pars.loc[pname].to_dict())
+                logger.info(
+                    f"The parameter b of the WellModel {sm_name} was transformed from log_e to log_10 scale."
+                    " This behavior changed in Pastas 2.0: https://github.com/pastas/pastas/pull/1134."
+                )
 
     return ml
 

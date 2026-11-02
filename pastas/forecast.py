@@ -32,7 +32,7 @@ logger = getLogger(__name__)
 def _check_forecast_data(
     forecasts: dict[str, list[DataFrame | Series]]
     | dict[str, dict[str, DataFrame | Series]],
-) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex]:
+) -> tuple[int, Timestamp | str, Timestamp | str, DatetimeIndex, list]:
     """Check the integrity of the forecasts data.
 
     Parameters
@@ -52,6 +52,8 @@ def _check_forecast_data(
         The maximum datetime in the forecasts.
     index: DatetimeIndex
         The datetime index of the forecasts.
+    columns: list
+        The list of column names of the forecasts.
 
     Notes
     -----
@@ -70,6 +72,7 @@ def _check_forecast_data(
     tmax = None
     tmin = None
     index = None
+    columns = None
 
     for sm_name, fc_data in forecasts.items():
         if isinstance(fc_data, list):
@@ -103,8 +106,8 @@ def _check_forecast_data(
                 tmin = fc.index[0]
                 tmax = fc.index[-1]
                 index = fc.index
+                columns = fc.columns.get_level_values(0).unique().tolist()
                 logger.debug(f"First forecast found with {n} ensemble members")
-            # If the number of columns is not the same, raise an error
             elif n != fc.columns.size:
                 msg = (
                     f"The number of ensemble members is not the same for all forecasts. "
@@ -119,13 +122,22 @@ def _check_forecast_data(
                 )
                 logger.error(msg)
                 raise ValueError(msg)
+            # If the number of columns is not the same, raise an error
+            if columns != fc.columns.get_level_values(0).unique().tolist():
+                msg = (
+                    f"The column names of the forecasts are not the same for all "
+                    f"Expected {columns}, got {fc.columns.get_level_values(0).unique().tolist()} in "
+                    f"stressmodel '{sm_name}'."
+                )
+                logger.debug(msg)
+                columns = range(n)  # Reset columns to a range of integers
 
     if n is None:
         msg = "No valid forecast data found in any of the stressmodels"
         logger.error(msg)
         raise ValueError(msg)
 
-    return n, tmin, tmax, index
+    return n, tmin, tmax, index, columns
 
 
 def forecast(
@@ -176,7 +188,7 @@ def forecast(
         keys are the keyword arguments of the stressmodel.
     """
     # Check the integrity of the forecasts data
-    n, tmin, tmax, index = _check_forecast_data(forecasts)
+    n, tmin, tmax, index, columns = _check_forecast_data(forecasts)
     logger.info(f"Working with {n} ensemble members from {tmin} to {tmax}")
 
     if post_process and not isinstance(model.noisemodel, ArNoiseModel):
@@ -210,10 +222,10 @@ def forecast(
 
     residuals = {}
     vars = {}
-    day = Timedelta("1D")
+    sim_freq = Timedelta(f"1{model.settings['freq']}")
 
     if post_process:
-        dt = model.settings["freq_obs"] / day
+        dt = model.settings["freq_obs"] / Timedelta("1D")
         t = linspace(1, index.size, index.size)
         correction = {}
 
@@ -246,7 +258,9 @@ def forecast(
             for stress_name, fc in fc_data.items():
                 if isinstance(fc, Series):
                     fc = fc.to_frame()
-                old_stress = getattr(sm, stress_name).series_original.loc[: tmin - day]
+                old_stress = getattr(sm, stress_name).series_original.loc[
+                    : tmin - sim_freq
+                ]
                 new_stress = fc.iloc[:, member]
                 ts = concat([old_stress, new_stress], axis=0)
                 setattr(sm, stress_name, ts)
@@ -266,7 +280,7 @@ def forecast(
 
     # Create DataFrames to store data
     mi = MultiIndex.from_product(
-        [range(n), range(nparam), ["mean", "var"]],
+        [columns, range(nparam), ["mean", "var"]],
         names=["ensemble_member", "param_member", "forecast"],
     )
     df = DataFrame(data=result_array.T, index=index, columns=mi, dtype=float)
