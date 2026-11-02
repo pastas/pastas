@@ -123,6 +123,7 @@ env_list = ["py311", "py312", "py313", "py314", "py315", "ruff", "notebooks"]
 [tool.tox.env_run_base]
 description = "run unit tests"
 extras = ["ci"]
+pass_env = ["CI_PASFILES"]
 commands = [
     [
         "pytest",
