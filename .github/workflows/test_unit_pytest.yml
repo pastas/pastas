@@ -45,6 +45,11 @@ jobs:
             toxenv: py314
             experimental: false
             pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
+          - name: Test suite with py315-ubuntu
+            python: "3.15"
+            toxenv: py315
+            experimental: false
+            pytest_addopts: "--color=yes --ignore=tests/test_dataset.py"
           - name: Test suite for all unit tests including Notebooks
             python: "3.13"
             toxenv: all

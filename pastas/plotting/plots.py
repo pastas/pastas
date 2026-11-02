@@ -85,7 +85,7 @@ def series(
     tmax: Timestamp | str | None = None,
     colors_stresses: list[str] | None = None,
     labels: list[str] | None = None,
-    figsize: tuple = (8.0, 4.0),
+    figsize: tuple[float, float] = (10.0, 4.0),
     **kwargs,
 ) -> Axes:
     """Plot all the input time Series in a single plot.
@@ -115,8 +115,8 @@ def series(
         in black. If None (default), default matplotlib colors will be used.
     labels: list of str
         List with the labels for each subplot.
-    figsize: tuple
-        Set the size of the figure.
+    figsize: tuple[float, float]
+        Size of the figure in inches.
     kwargs:
         keyword arguments passed to plotting functions of stress timeseries
 
@@ -427,7 +427,7 @@ def diagnostics(
 
     # Create the figure and axes
     kwargs = {} or kwargs
-    figsize = kwargs.pop("figsize", (8.0, 4.0))
+    figsize = kwargs.pop("figsize", (10.0, 4.0))
     layout = kwargs.pop("layout", "constrained")
     if heteroscedasicity:
         mosaic = [["series", "hist", "het_res"], ["acf", "qq", "het_sqrt"]]
@@ -607,7 +607,7 @@ def pairplot(
 
     mosaic = np.array(mosaic)
 
-    f, axd = plt.subplot_mosaic(mosaic, figsize=(6.5, 6))
+    f, axd = plt.subplot_mosaic(mosaic, figsize=(10.0, 10.0))
 
     for i, (column, mos) in enumerate(zip(columns, mosaic)):
         # plot histogram

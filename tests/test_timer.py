@@ -27,7 +27,7 @@ class TestSolveTimer:
         assert timer.desc == "Custom progress"
         assert timer.total == 100
 
-    @patch("pastas.timer.tqdm.update")
+    @patch("pastas.solver.timer.tqdm.update")
     def test_timer_callback(self, mock_update: Any) -> None:
         """Test the timer callback function."""
         # Setup mock return value for parent update method
@@ -46,7 +46,7 @@ class TestSolveTimer:
         timer.timer(None, n=5)
         mock_update.assert_called_once_with(5)
 
-    @patch("pastas.timer.tqdm.__init__")
+    @patch("pastas.solver.timer.tqdm.__init__")
     def test_custom_kwargs_passed_to_parent(self, mock_init: Any) -> None:
         """Test that custom kwargs are passed to parent class."""
         mock_init.return_value = None
