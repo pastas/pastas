@@ -1,9 +1,13 @@
 name: CI URLs
 
 on:
-  pull_request:
+  push:
     branches:
       - master
+      - dev
+  pull_request:
+    branches:
+      - dev
 
 jobs:
   check-urls:

@@ -24,7 +24,7 @@ def test_comparison_plot_custom(ml_solved: ps.Model, ml_noisemodel: ps.Model) ->
     smdict: dict[int, list[str]] = {0: ["rch", "rch"]}
 
     mc.initialize_adjust_height_figure(
-        mosaic, figsize=(16, 10), cmap="Dark2", smdict=smdict
+        mosaic, figsize=(16.0, 10.0), cmap="Dark2", smdict=smdict
     )
     mc.plot_oseries(axn="ose")
     mc.plot_simulation()
