@@ -461,6 +461,12 @@ def parameter_bounds(model: Model, parameters: list[str] | str | None = None):
     upperhit = Series(index=ml_parameters.index, dtype=bool)
 
     for p in ml_parameters.index:
+        vary = ml_parameters.at[p, "vary"]
+        if not vary:
+            logger.debug(f"Parameter {p} is not varied, setting bounds to False.")
+            lowerhit.at[p] = vary
+            upperhit.at[p] = vary
+            continue
         optimal = ml_parameters.at[p, "optimal"]
         pmin = ml_parameters.at[p, "pmin"]
         pmax = ml_parameters.at[p, "pmax"]
