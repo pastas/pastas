@@ -1,36 +1,48 @@
 """Gapfill module for filling gaps in head time series using Pastas models."""
 
+from typing import Optional, Union
+
 from numpy import exp, isnan
-from pandas import Series, Timedelta, concat
+from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp, concat
 from scipy.stats import norm
 
+from pastas.typing import Model
 
-def gap_fill(head, ml, tmin=None, tmax=None, sig_level=None, use_noisemodel=True):
+
+def gap_fill(
+    head: Series,
+    ml: Model,
+    tmin: Timestamp | str | None = None,
+    tmax: Timestamp | str | None = None,
+    sig_level: float | None = 0.05,
+    use_noisemodel: bool = True,
+) -> Union[Series, DataFrame]:
     """Fill gaps in a hydraulic head time series using a Pastas model.
 
     Parameters
     ----------
     head : pd.Series
-        hydraulic head time series with gaps. The timestamps where the gaps occur
+        Hydraulic head time series with gaps. The timestamps where the gaps occur
         should be present in the index, but the values should be NaN.
     ml : ps.Model
         Pastas model to simulate the head.
-    tmin : str
-        Start date of the simulation.
-    tmax : str
-        End date of the simulation.
+    tmin : str or pd.Timestamp, optional
+        Start date of the simulation. If None, uses the start of the head series.
+    tmax : str or pd.Timestamp, optional
+        End date of the simulation. If None, uses the end of the head series.
     sig_level : float, optional
-        Significance level for the prediction intervals. 0.05 by default to compute the
-        95% prediction intervals. If None, no prediction intervals are computed.
+        Significance level for the prediction intervals. 0.05 by default to compute
+        the 95% prediction intervals. If None, no prediction intervals are computed.
     use_noisemodel : bool, optional
         Whether to use the noise model for the correction. Default is True.
-        Currentlynly works with a `ps.ArNoiseModel`.
+        Currently only works with a `ps.ArNoiseModel`.
 
     Returns
     -------
     pd.Series or pd.DataFrame
         Head time series with gaps filled as a Pandas Series if sig_level is None,
-        otherwise as a Pandas DataFrame with columns "head_filled", "lower", and "upper", representing the filled head and the prediction intervals.
+        otherwise as a Pandas DataFrame with columns "head_filled", "lower", and
+        "upper", representing the filled head and the prediction intervals.
 
     Notes
     -----
@@ -56,7 +68,15 @@ def gap_fill(head, ml, tmin=None, tmax=None, sig_level=None, use_noisemodel=True
 
     ends = diff[diff.shift(-1) == -1.0].index
 
+    if isnan(head_filled.iloc[-1]):
+        ends = ends.append(head_filled.index[-1])
+
     # Get the simulation and the residuals
+    if tmin is None:
+        tmin = head_filled.index[0]
+    if tmax is None:
+        tmax = head_filled.index[-1]
+
     sim = ml.simulate(tmin=tmin, tmax=tmax)
     res = ml.residuals(tmin=tmin, tmax=tmax)
 
@@ -105,21 +125,41 @@ def gap_fill(head, ml, tmin=None, tmax=None, sig_level=None, use_noisemodel=True
         return head_filled
 
 
-def compute_correction(r0, r1, tindex, ml=None, use_noisemodel=True):
+def compute_correction(
+    r0: Series,
+    r1: Series,
+    tindex: DatetimeIndex,
+    ml: Model,
+    use_noisemodel: bool = True,
+) -> Series:
     """Compute the correction for filling gaps in the head time series.
 
     Parameters
     ----------
     r0 : pd.Series
-        Measured head before the gap. Should be a Pandas Series with a single value and a timestamp as the index.
+        Measured head before the gap. Should be a Pandas Series with a single value
+        and a timestamp as the index.
     r1 : pd.Series
-        Measured head after the gap. Should be a Pandas Series with a single value and a timestamp as the index.
+        Measured head after the gap. Should be a Pandas Series with a single value
+        and a timestamp as the index.
     tindex : pd.DatetimeIndex
         Timestamps of the gap.
-    ml : ps.Model, optional
-        Pastas model, not used in the current implementation.
+    ml : ps.Model
+        Pastas model.
     use_noisemodel : bool, optional
         Whether to use the noise model for the correction. Default is True.
+
+    Returns
+    -------
+    pd.Series
+        Correction values as a Pandas Series with the timestamps of the gap as the
+        index.
+
+    Raises
+    ------
+    ValueError
+        Raised if use_noisemodel is True but no noise model is available in the
+        Pastas model.
 
     Notes
     -----
@@ -159,7 +199,13 @@ def compute_correction(r0, r1, tindex, ml=None, use_noisemodel=True):
     return correction
 
 
-def compute_prediction_variance(t0, t1, tindex, ml=None, use_noisemodel=True):
+def compute_prediction_variance(
+    t0: Timestamp,
+    t1: Timestamp,
+    tindex: DatetimeIndex,
+    ml: Model,
+    use_noisemodel: bool = True,
+) -> Series:
     """Compute the prediction variance for the gap filling.
 
     Parameters
@@ -170,8 +216,8 @@ def compute_prediction_variance(t0, t1, tindex, ml=None, use_noisemodel=True):
         Timestamp of the first measurement after the gap.
     tindex : pd.DatetimeIndex
         Timestamps of the gap.
-    ml : ps.Model, optional
-        Pastas model, by default None
+    ml : Model
+        Pastas model.
     use_noisemodel : bool, optional
         Whether to use the noise model for the prediction variance. Default is True.
 
