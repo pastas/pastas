@@ -105,6 +105,105 @@ def test_emcee(ml_recharge: ps.Model) -> None:
         pytest.skip("emcee not installed, skipping test")
 
 
+def _capture_initial_state(monkeypatch: pytest.MonkeyPatch) -> dict:
+    """Capture the initial_state passed to emcee's EnsembleSampler.run_mcmc."""
+    import emcee
+
+    captured: dict = {}
+    original = emcee.EnsembleSampler.run_mcmc
+
+    def spy(self, initial_state, *args, **kwargs):
+        captured["initial_state"] = np.array(initial_state, dtype=float)
+        return original(self, initial_state, *args, **kwargs)
+
+    monkeypatch.setattr(emcee.EnsembleSampler, "run_mcmc", spy)
+    return captured
+
+
+def test_emcee_pinit_from_prior(
+    ml_recharge: ps.Model, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """By default the walkers start at positions drawn from the parameter priors."""
+    try:
+        import emcee  # noqa: F401
+    except ImportError:
+        pytest.skip("emcee not installed, skipping test")
+
+    captured = _capture_initial_state(monkeypatch)
+    nwalkers = 10
+    ps.solver.Emcee(model=ml_recharge, nwalkers=nwalkers, nsteps=2, progress_bar=False)
+    ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)
+    for name in ml_recharge.parameters.index:
+        ml_recharge.set_parameter(name, dist="uniform")
+    np.random.seed(42)
+    ml_recharge.solve(report=False, initial=False)
+
+    pinit = captured["initial_state"]
+    vary = ml_recharge.parameters.vary.to_numpy(dtype=bool)
+    ndim = int(vary.sum())
+    lb = ml_recharge.parameters.pmin.to_numpy(dtype=float)[vary]
+    ub = ml_recharge.parameters.pmax.to_numpy(dtype=float)[vary]
+    initial = ml_recharge.parameters.initial.to_numpy(dtype=float)[vary]
+    assert pinit.shape == (nwalkers, ndim)
+    # drawn within the bounds (rejection sampling of the priors)
+    assert np.all(pinit >= lb) and np.all(pinit <= ub)
+    # drawn from the uniform priors: spread over the bounds, not a 1e-2 ball
+    # around the initial values
+    assert np.all(np.ptp(pinit, axis=0) > 0.5 * (ub - lb))
+    assert np.any(np.abs(pinit - initial) > 1e-2 * np.abs(initial) + 1e-12)
+
+
+def test_emcee_pinit_override(
+    ml_recharge: ps.Model, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A manually provided pinit is used as the starting positions of the walkers."""
+    try:
+        import emcee  # noqa: F401
+    except ImportError:
+        pytest.skip("emcee not installed, skipping test")
+
+    captured = _capture_initial_state(monkeypatch)
+    nwalkers = 10
+    ps.solver.Emcee(model=ml_recharge, nwalkers=nwalkers, nsteps=2, progress_bar=False)
+    ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)
+    for name in ml_recharge.parameters.index:
+        ml_recharge.set_parameter(name, dist="uniform")
+    vary = ml_recharge.parameters.vary.to_numpy(dtype=bool)
+    ndim = int(vary.sum())
+    lb = ml_recharge.parameters.pmin.to_numpy(dtype=float)[vary]
+    ub = ml_recharge.parameters.pmax.to_numpy(dtype=float)[vary]
+    rng = np.random.default_rng(42)
+    pinit = rng.uniform(lb, ub, size=(nwalkers, ndim))
+
+    # passed at solve time
+    ml_recharge.solve(report=False, initial=False, pinit=pinit)
+    np.testing.assert_allclose(captured["initial_state"], pinit)
+
+
+def test_emcee_pinit_invalid(ml_recharge: ps.Model) -> None:
+    """A pinit with the wrong shape or outside the bounds raises a ValueError."""
+    try:
+        import emcee  # noqa: F401
+    except ImportError:
+        pytest.skip("emcee not installed, skipping test")
+
+    ps.solver.Emcee(model=ml_recharge, nwalkers=10, nsteps=1, progress_bar=False)
+    ml_recharge.set_parameter("constant_d", pmin=26, pmax=29.0)
+    for name in ml_recharge.parameters.index:
+        ml_recharge.set_parameter(name, dist="uniform")
+    vary = ml_recharge.parameters.vary.to_numpy(dtype=bool)
+    ndim = int(vary.sum())
+
+    with pytest.raises(ValueError, match="pinit has shape"):
+        ml_recharge.solve(report=False, initial=False, pinit=np.zeros((10, ndim + 1)))
+
+    ps.solver.Emcee(model=ml_recharge, nwalkers=10, nsteps=1, progress_bar=False)
+    ub = ml_recharge.parameters.pmax.to_numpy(dtype=float)[vary]
+    pinit = np.tile(ub[None, :] + 1.0, (10, 1))
+    with pytest.raises(ValueError, match="outside the parameter bounds"):
+        ml_recharge.solve(report=False, initial=False, pinit=pinit)
+
+
 class TestOptionalSolvers:
     """Tests for solvers that depend on optional dependencies."""
 
