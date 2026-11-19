@@ -955,3 +955,46 @@ def _get_interpolation_weights(
     weights = np.divide(num, den, out=np.zeros_like(num, dtype=float), where=den != 0)
     weights = np.vstack([1 - weights, weights]).T
     return indices, weights
+
+
+def convolve_ensemble(stress: np.ndarray, B: np.ndarray) -> np.ndarray:
+    """Convolve a stress with an ensemble of block responses in a single FFT pass.
+
+    Parameters
+    ----------
+    stress : array_like, shape (n_points,) or (n_real, n_points)
+        The stress time series. If 2-D, each row is convolved with the
+        corresponding row of `B` (used when the "stress" itself depends on the
+        parameters, e.g. the step series of a StepModel).
+    B : array_like, shape (n_real, n_b)
+        Block responses, one per realization, zero-padded to a common length
+        `n_b`. Ragged block responses (different length per realization) are
+        padded with zeros, which is exact for linear convolution.
+
+    Returns
+    -------
+    np.ndarray, shape (n_real, n_points)
+        The convolved series truncated to `n_points`, equivalent to
+        `fftconvolve(stress, b, "full")[:n_points]` for each row `b` of `B`.
+
+    Notes
+    -----
+    The FFT of the stress is computed once and reused for all realizations:
+    `irfft(rfft(B, n, axis=1) * rfft(stress, n), n, axis=1)[:, :n_points]` with
+    `n = n_points + n_b - 1`, matching the FFT size used by
+    `scipy.signal.fftconvolve(..., "full")`. Complex input (e.g. for
+    complex-step differentiation) is handled with a full complex FFT.
+    """
+    stress = np.asarray(stress)
+    B = np.asarray(B)
+    n_points = stress.shape[-1]
+    n_fft = n_points + B.shape[1] - 1
+    if np.iscomplexobj(stress) or np.iscomplexobj(B):
+        fft, ifft = np.fft.fft, np.fft.ifft
+    else:
+        fft, ifft = np.fft.rfft, np.fft.irfft
+    S = fft(stress, n_fft, axis=-1)
+    if S.ndim == 1:
+        S = S[np.newaxis, :]
+    conv = ifft(fft(B, n_fft, axis=1) * S, n_fft, axis=1)
+    return conv[:, :n_points]
