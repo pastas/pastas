@@ -11,6 +11,7 @@ from logging import getLogger
 from typing import Any
 from warnings import warn
 
+import numpy as np
 from packaging.version import parse as parse_version
 from pandas import Timestamp
 
@@ -351,6 +352,17 @@ def njit(function: Callable | None = None, **kwargs) -> Callable:
     return njit_decorator
 
 
+@njit
+def _real(x):
+    """Return the real part of `x` (a no-op view for real input).
+
+    NumPy and Numba do not define ordering on complex numbers, so comparisons
+    in jitted kernels compare real parts via this helper to support
+    complex-step differentiation (`jac="cs"`). For real input, `x.real` is `x`.
+    """
+    return x.real
+
+
 @deprecate_class_func_or_method(
     version="2.0.0",
     reason="latexify was archived and is no longer maintained. This decorator will be removed in a future release.",
@@ -362,11 +374,25 @@ def latexfun(**kwargs) -> None:
     """
 
 
+def _has_2d_array(args: tuple, kwargs: dict) -> bool:
+    """Return True if any argument is a 2-D (or higher) numpy array.
+
+    2-D arrays (e.g. an ensemble of parameter sets) are unhashable cache keys
+    and must bypass the cache.
+    """
+    for value in (*args, *kwargs.values()):
+        if isinstance(value, np.ndarray) and value.ndim > 1:
+            return True
+    return False
+
+
 def conditional_cachedmethod(cache_getter):
     """Conditionally cache a method using cachetools.cachedmethod.
 
     This decorator checks the global USE_CACHE flag and only applies caching when
-    both cachetools is available and caching is enabled.
+    both cachetools is available and caching is enabled. Calls with 2-D numpy
+    array arguments (e.g. 2-D ensemble parameter arrays) always bypass the
+    cache, since such arrays are unhashable.
 
     Parameters
     ----------
@@ -385,7 +411,7 @@ def conditional_cachedmethod(cache_getter):
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if options.cache:
+            if options.cache and not _has_2d_array(args, kwargs):
                 return cached_func(self, *args, **kwargs)
             else:
                 return func(self, *args, **kwargs)
