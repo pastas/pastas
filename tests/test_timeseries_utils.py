@@ -173,20 +173,29 @@ class TestConvolve:
 
         rng = np.random.default_rng(8)
         stress = rng.normal(size=100)
+        stress2d = rng.normal(size=(3, 100))
         B = rng.normal(size=(3, 20))
 
-        # parallel on + scipy workers untouched -> all cores (-1)
+        # parallel on + scipy workers untouched -> batched transforms use all
+        # cores (-1); a lone 1-D stress FFT is not batched and gets None.
         # parallel off, or user-configured scipy workers -> None (scipy default)
         old = options.parallel
         try:
             with sp_fft.set_workers(1):
                 options.parallel = True
                 calls.clear()
+                out = convolve(stress2d, B)
+                np.testing.assert_allclose(
+                    out, self._ref(stress2d, B), rtol=self.RTOL, atol=1e-12
+                )
+                assert calls and all(w == -1 for w in calls)
+                # 1-D stress: stress FFT gets None, batched B/ifft calls get -1
+                calls.clear()
                 out = convolve(stress, B)
                 np.testing.assert_allclose(
                     out, self._ref(stress, B), rtol=self.RTOL, atol=1e-12
                 )
-                assert calls and all(w == -1 for w in calls)
+                assert calls == [None, -1, -1]
                 options.parallel = False
                 calls.clear()
                 convolve(stress, B)
