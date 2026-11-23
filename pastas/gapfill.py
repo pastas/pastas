@@ -1,7 +1,8 @@
 """Gapfill module for filling gaps in head time series using Pastas models."""
 
-from typing import Optional, Union
+from typing import Union
 
+import pandas as pd
 from numpy import exp, isnan
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp, concat
 from scipy.stats import norm
@@ -55,27 +56,33 @@ def gap_fill(
     >>> ps.gapfill(head=head.asfreq("D"), ml=ml, tmin="2000-01-01", tmax="2000-12-31")
 
     """
-    # Make a copy of the head to avoid modifying the original data
+    # Handle empty series first without tmin or tmax provided
+    if len(head) == 0 and (tmin is None or tmax is None):
+        raise ValueError(
+            "An empty head series was provided, please provide tmin and tmax."
+        )
+
+    # Determine tmin and tmax first, converting strings to Timestamp
+    if tmin is None:
+        tmin = head.index[0]
+    elif isinstance(tmin, str):
+        tmin = Timestamp(tmin)
+
+    if tmax is None:
+        tmax = head.index[-1]
+    elif isinstance(tmax, str):
+        tmax = Timestamp(tmax)
+
     head_filled = head.copy()
 
+    # Check if we need to extend the series
+    if tmin < head.index[0] or tmax > head.index[-1]:
+        new_index = _get_new_index(head, tmin=tmin, tmax=tmax)
+        # Reindex the series to the new date range, preserving original values
+        head_filled = head_filled.reindex(new_index)
+
     # Find start and end dates of the gaps
-    diff = head_filled.isna().astype(int).diff()
-    starts = diff[diff == 1.0].index
-
-    # If the time series starts with a gap
-    if isnan(head_filled.iloc[0]):
-        starts = starts.insert(0, head_filled.index[0])
-
-    ends = diff[diff.shift(-1) == -1.0].index
-
-    if isnan(head_filled.iloc[-1]):
-        ends = ends.append(head_filled.index[-1])
-
-    # Get the simulation and the residuals
-    if tmin is None:
-        tmin = head_filled.index[0]
-    if tmax is None:
-        tmax = head_filled.index[-1]
+    starts, ends = _get_gap_starts_ends(head_filled)
 
     sim = ml.simulate(tmin=tmin, tmax=tmax)
     res = ml.residuals(tmin=tmin, tmax=tmax)
@@ -256,3 +263,108 @@ def compute_prediction_variance(
         var = ml.residuals().var()
 
     return Series(var, index=tindex)
+
+
+def _get_gap_starts_ends(head: Series) -> tuple[DatetimeIndex, DatetimeIndex]:
+    """Identify the start and end indices of gaps in a time series.
+
+    Parameters
+    ----------
+    head : pd.Series
+        Time series with a DatetimeIndex that may contain NaN values (gaps).
+
+    Returns
+    -------
+    tuple[pd.DatetimeIndex, pd.DatetimeIndex]
+        A tuple containing:
+        - starts: DatetimeIndex of the start timestamps of all gaps
+        - ends: DatetimeIndex of the end timestamps of all gaps
+
+    Notes
+    -----
+    This is a private helper function used by gap_fill to identify gaps.
+    A gap is defined as a contiguous sequence of NaN values in the series.
+
+    Examples
+    --------
+    >>> head = pd.Series([1, np.nan, np.nan, 4, 5],
+    ...                  index=pd.date_range('2000-01-01', periods=5, freq='D'))
+    >>> starts, ends = _get_gap_starts_ends(head)
+    >>> starts
+    DatetimeIndex(['2000-01-02'], dtype='datetime64[ns]', freq=None)
+    >>> ends
+    DatetimeIndex(['2000-01-03'], dtype='datetime64[ns]', freq=None)
+
+    """
+    # Find start and end dates of the gaps
+    diff = head.isna().astype(int).diff()
+    starts = diff[diff == 1.0].index
+
+    # If the time series starts with a gap
+    if isnan(head.iloc[0]):
+        starts = starts.insert(0, head.index[0])
+
+    ends = diff[diff.shift(-1) == -1.0].index
+
+    if isnan(head.iloc[-1]):
+        ends = ends.union([head.index[-1]])
+
+    return starts, ends
+
+
+def _get_new_index(
+    head: Series,
+    tmin: Timestamp,
+    tmax: Timestamp,
+    freq: str | None = None,
+) -> Series:
+    """Get a new index if tmin and tmax are outside the range of the head series.
+
+    Parameters
+    ----------
+    head : pd.Series
+        The original head time series with a DatetimeIndex.
+    tmin : pd.Timestamp or str
+        Start date for the extended series.
+    tmax : pd.Timestamp or str
+        End date for the extended series.
+    freq : str, optional
+        Frequency for the extended date range. If None, tries to infer from the head
+        series.
+
+    Returns
+    -------
+    pd.DatetimeIndex
+        The extended date range covering the full tmin-tmax range with the specified frequency.
+
+    Examples
+    --------
+    >>> head = pd.Series([1, 2, 3], index=pd.date_range('2000-01-01', periods=3, freq='D'))
+    >>> _get_new_index(head, tmin='1999-12-30', tmax='2000-01-05', freq='D')
+    DatetimeIndex(['1999-12-30', '1999-12-31', '2000-01-01', '2000-01-02',
+                   '2000-01-03', '2000-01-04', '2000-01-05'],
+                  dtype='datetime64[ns]', freq='D')
+
+    """
+    # Determine frequency if not provided
+    if freq is None:
+        # Try to infer from the head series
+        if hasattr(head.index, "freq") and head.index.freq is not None:
+            freq = head.index.freq
+        else:
+            # Try to infer from the first few differences
+            if len(head) > 1:
+                diffs = head.index.to_series().diff().dropna()
+                if len(diffs) > 0:
+                    # Use the most common difference as the frequency
+                    freq = diffs.mode()[0]
+            if freq is None:
+                raise ValueError(
+                    "Cannot infer frequency from head series. "
+                    "Please provide the freq parameter explicitly."
+                )
+
+    # Create the new date range
+    new_index = pd.date_range(start=tmin, end=tmax, freq=freq, name=head.index.name)
+
+    return new_index
