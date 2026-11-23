@@ -345,36 +345,31 @@ class StressModelBase(ABC):
         return model.get_parameters(self.name)
 
     def _get_block(
-        self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
-    ) -> ArrayLike:
-        """Get block-response function.
-
-        For a 2-D `p` of shape (n_real, n_param), the block response of
-        each row is computed at its natural length in a single loop and
-        scattered into a zero-padded matrix of shape (n_real, n_max), where
-        n_max = max_k len(b_k). Zero-padding is exact for linear convolution.
-        """
+        self,
+        p: ArrayLike,
+        dt: float,
+        tmin: Timestamp | str | None,
+        tmax: Timestamp | str | None,
+    ) -> np.ndarray:
+        """Get block-response function."""
         if tmin is not None and tmax is not None:
             day = Timedelta(1, "D")
             maxtmax = (Timestamp(tmax) - Timestamp(tmin)) / day
         else:
             maxtmax = None
+
         p = np.asarray(p)
-        if p.ndim > 1:
-            blocks = []
-            sizes = np.empty(p.shape[0], dtype=np.int64)
-            for i in range(p.shape[0]):
-                b = self.rfunc.block(p[i], dt, maxtmax=maxtmax)
-                blocks.append(b)
-                sizes[i] = b.size
-            n_max = int(sizes.max())
-            flat = np.concatenate(blocks)
-            B = np.zeros((p.shape[0], n_max), dtype=np.result_type(flat, np.float64))
-            # scatter the ragged rows row-major, matching `flat`
-            B[np.arange(n_max)[None, :] < sizes[:, None]] = flat
-            return B
-        b = self.rfunc.block(p, dt, maxtmax=maxtmax)
-        return b
+        if p.ndim == 1:
+            return self.rfunc.block(p, dt, maxtmax=maxtmax)
+
+        n_reals = p.shape[0]
+        blocks = [self.rfunc.block(p[i], dt, maxtmax=maxtmax) for i in range(n_reals)]
+        n_max = max(b.size for b in blocks)
+        dtype = np.result_type(blocks[0].dtype, np.float64)
+        B = np.zeros((n_reals, n_max), dtype=dtype)
+        for i, b in enumerate(blocks):
+            B[i, : b.size] = b
+        return B
 
     def _get_responses(
         self,
