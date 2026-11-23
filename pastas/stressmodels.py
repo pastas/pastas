@@ -376,17 +376,6 @@ class StressModelBase(ABC):
         b = self.rfunc.block(p, dt, maxtmax=maxtmax)
         return b
 
-    @staticmethod
-    def _dispatch_p(p: ArrayLike) -> tuple[float, ...] | ArrayLike:
-        """Prepare `p` for `_simulate`.
-
-        A 1-D p becomes a hashable tuple (cache key), a 2-D p stays an ndarray
-        (the cache is bypassed for 2-D input).
-        """
-        if np.ndim(p) > 1:
-            return np.asarray(p)
-        return tuple(p)
-
     def _get_responses(
         self,
         block_or_step: Literal["block", "step"] = "step",
@@ -648,7 +637,8 @@ class StressModel(StressModelBase):
         A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
         and a DataFrame (one column per realization) is returned.
         """
-        return self._simulate(self._dispatch_p(p), tmin, tmax, freq, dt)
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
@@ -808,7 +798,8 @@ class StepModel(StressModelBase):
         A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
         and a DataFrame (one column per realization) is returned.
         """
-        return self._simulate(self._dispatch_p(p), tmin, tmax, freq, dt)
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
@@ -1507,7 +1498,8 @@ class WellModel(StressModelBase):
         A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
         and a DataFrame (one column per realization) is returned.
         """
-        return self._simulate(self._dispatch_p(p), tmin, tmax, freq, dt, istress)
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt, istress)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
@@ -2166,7 +2158,8 @@ class RechargeModel(StressModelBase):
         A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
         and a DataFrame (one column per realization) is returned.
         """
-        return self._simulate(self._dispatch_p(p), tmin, tmax, freq, dt, istress)
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt, istress)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
@@ -2687,8 +2680,9 @@ class TarsoModel(RechargeModel):
         A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
         and a DataFrame (one column per realization) is returned.
         """
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
         return self._simulate(
-            self._dispatch_p(p), tmin=tmin, tmax=tmax, freq=freq, dt=dt, istress=istress
+            p, tmin=tmin, tmax=tmax, freq=freq, dt=dt, istress=istress
         )
 
     @conditional_cachedmethod(lambda self: self._cache)
