@@ -1529,7 +1529,7 @@ class HantushWellModel(RfuncBase):
             r = p[3]
         return r
 
-    def _get_hantush_params(self, p: ArrayLike, warn: bool = True) -> np.ndarray:
+    def _get_hantush_params(self, p: ArrayLike, warn: bool = True) -> ArrayLike:
         """Convert the HantushWellModel parameters to the Hantush parameters.
 
         Parameters
@@ -1541,7 +1541,7 @@ class HantushWellModel(RfuncBase):
 
         Returns
         -------
-        p_h : np.ndarray
+        p_h : array_like
             Hantush parameters [A_h, a, b_h].
         """
         r = self._get_distance_from_params(p, warn=warn)

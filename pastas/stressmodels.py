@@ -28,7 +28,6 @@ from pandas import (
     concat,
     date_range,
 )
-from scipy.signal import fftconvolve
 
 from pastas.typing import (
     ArrayLike,
@@ -50,7 +49,7 @@ from .decorators import (
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
-from .timeseries_utils import convolve_ensemble
+from .timeseries_utils import convolve
 from .utils import validate_name
 
 try:
@@ -378,7 +377,7 @@ class StressModelBase(ABC):
         return b
 
     @staticmethod
-    def _dispatch_p(p: ArrayLike) -> tuple | np.ndarray:
+    def _dispatch_p(p: ArrayLike) -> tuple[float, ...] | ArrayLike:
         """Prepare `p` for `_simulate`.
 
         A 1-D p becomes a hashable tuple (cache key), a 2-D p stays an ndarray
@@ -390,7 +389,7 @@ class StressModelBase(ABC):
 
     def _ensemble_contribution(
         self,
-        p_arr: np.ndarray,
+        p_arr: ArrayLike,
         stress: ArrayLike,
         dt: float,
         tmin: Timestamp | str,
@@ -401,7 +400,7 @@ class StressModelBase(ABC):
 
         Parameters
         ----------
-        p_arr: np.ndarray, shape (n_real, n_param)
+        p_arr: array_like, shape (n_real, n_param)
             Parameter sets, one per realization (the block responses of the
             rows are zero-padded to a common length, which is exact).
         stress: array_like, shape (n_points,) or (n_real, n_points)
@@ -417,7 +416,7 @@ class StressModelBase(ABC):
             Contribution with `index` as rows and one column per realization.
         """
         B = self._get_block(p_arr, dt, tmin, tmax)
-        data = convolve_ensemble(np.asarray(stress), B)
+        data = convolve(np.asarray(stress), B)
         return DataFrame(
             data=data.T,
             index=index,
@@ -691,7 +690,7 @@ class StressModel(StressModelBase):
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
         self,
-        p: tuple | np.ndarray,
+        p: tuple[float, ...] | ArrayLike,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
@@ -736,7 +735,7 @@ class StressModel(StressModelBase):
             )
         b = self._get_block(p, dt, tmin, tmax)
         h = Series(
-            data=fftconvolve(stress, b, "full")[:n_points],
+            data=convolve(stress, b)[:n_points],
             index=stress.index,
             name=self.name,
             dtype=np.asarray(p).dtype,
@@ -887,7 +886,7 @@ class StepModel(StressModelBase):
         b = self._get_block(p[:-1], dt, tmin, tmax)
         n_points = h.index.size
         h = Series(
-            data=fftconvolve(h, b, "full")[:n_points],
+            data=convolve(h, b)[:n_points],
             index=h.index,
             name=self.name,
         )
@@ -1651,7 +1650,7 @@ class WellModel(StressModelBase):
             n_points = stress.index.size
             p_with_r = np.concatenate([p_arr, np.array([r])])
             b = self._get_block(p_with_r, dt, tmin, tmax)
-            c = fftconvolve(stress, b, "full")[:n_points]
+            c = convolve(stress, b)[:n_points]
             h = h.add(Series(c, index=stress.index), fill_value=0.0)
         if istress is not None:
             if isinstance(istress, list):
@@ -2273,7 +2272,7 @@ class RechargeModel(StressModelBase):
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
         self,
-        p: tuple | np.ndarray | None = None,
+        p: tuple[float, ...] | ArrayLike | None = None,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
@@ -2341,7 +2340,7 @@ class RechargeModel(StressModelBase):
                 name = f"{self.name} ({self.stresses[istress].name})"
 
         return Series(
-            data=fftconvolve(stress, b, "full")[: stress.size],
+            data=convolve(stress, b)[: stress.size],
             index=self.prec.series.index,
             name=name,
             dtype=p.dtype,
@@ -2353,7 +2352,7 @@ class RechargeModel(StressModelBase):
         tmin: Timestamp | str | None,
         tmax: Timestamp | str | None,
         freq: str | None,
-    ) -> tuple[np.ndarray, DatetimeIndex]:
+    ) -> tuple[ArrayLike, DatetimeIndex]:
         """Compute the recharge flux values and the corresponding index.
 
         A 1-D `p` returns an array of shape (n_points,), a 2-D `p` of shape
@@ -2799,7 +2798,7 @@ class TarsoModel(RechargeModel):
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
         self,
-        p: tuple | np.ndarray | None = None,
+        p: tuple[float, ...] | ArrayLike | None = None,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
@@ -3217,12 +3216,12 @@ class ChangeModel(StressModelBase):
         omega = 1 / (np.exp(beta * (t - sigma)) + 1)
 
         h1 = Series(
-            data=fftconvolve(stress, rfunc1, "full")[:n_points],
+            data=convolve(stress, rfunc1)[:n_points],
             index=stress.index,
             name=f"{self.name}_1",
         )
         h2 = Series(
-            data=fftconvolve(stress, rfunc2, "full")[:n_points],
+            data=convolve(stress, rfunc2)[:n_points],
             index=stress.index,
             name=f"{self.name}_2",
         )
