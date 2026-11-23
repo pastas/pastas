@@ -389,18 +389,18 @@ class StressModelBase(ABC):
 
     def _ensemble_contribution(
         self,
-        p_arr: ArrayLike,
+        p: ArrayLike,
         stress: ArrayLike,
         dt: float,
         tmin: Timestamp | str,
         tmax: Timestamp | str,
         index: DatetimeIndex,
     ) -> DataFrame:
-        """Ensemble convolution of a stress with the block responses of `p_arr`.
+        """Ensemble convolution of a stress with the block responses of `p`.
 
         Parameters
         ----------
-        p_arr: array_like, shape (n_real, n_param)
+        p: array_like, shape (n_real, n_param)
             Parameter sets, one per realization (the block responses of the
             rows are zero-padded to a common length, which is exact).
         stress: array_like, shape (n_points,) or (n_real, n_points)
@@ -415,13 +415,13 @@ class StressModelBase(ABC):
         pandas.DataFrame
             Contribution with `index` as rows and one column per realization.
         """
-        B = self._get_block(p_arr, dt, tmin, tmax)
+        B = self._get_block(p, dt, tmin, tmax)
         data = convolve(np.asarray(stress), B)
         return DataFrame(
             data=data.T,
             index=index,
-            columns=np.arange(p_arr.shape[0]),
-            dtype=np.asarray(p_arr).dtype,
+            columns=np.arange(p.shape[0]),
+            dtype=np.asarray(p).dtype,
         )
 
     def _get_responses(
@@ -728,10 +728,10 @@ class StressModel(StressModelBase):
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
         stress = self.stress.series
         n_points = stress.index.size
-        p_arr = np.asarray(p)
-        if p_arr.ndim > 1:
+        p = np.asarray(p)
+        if p.ndim > 1:
             return self._ensemble_contribution(
-                p_arr, stress.to_numpy(), dt, tmin, tmax, stress.index
+                p, stress.to_numpy(), dt, tmin, tmax, stress.index
             )
         b = self._get_block(p, dt, tmin, tmax)
         h = Series(
@@ -866,19 +866,16 @@ class StepModel(StressModelBase):
         dt: float = 1.0,
     ) -> Series | DataFrame:
         tindex = date_range(tmin, tmax, freq=freq, unit="us")
-        p_arr = np.asarray(p)
-        if p_arr.ndim > 1:
+        p = np.asarray(p)
+        if p.ndim > 1:
             # binary step series per realization (tstart is the last parameter),
             # use datetime64[us] to avoid overflow for ordinals beyond year 2262
             tstarts = np.array(
-                [
-                    np.datetime64(Timestamp.fromordinal(int(v)), "us")
-                    for v in p_arr[:, -1]
-                ]
+                [np.datetime64(Timestamp.fromordinal(int(v)), "us") for v in p[:, -1]]
             )
             tindex64 = tindex.to_numpy().astype("datetime64[us]")
             H = (tindex64[:, None] > tstarts[None, :]).astype(float).T
-            return self._ensemble_contribution(p_arr[:, :-1], H, dt, tmin, tmax, tindex)
+            return self._ensemble_contribution(p[:, :-1], H, dt, tmin, tmax, tindex)
         tstart = Timestamp.fromordinal(int(p[-1]))
         h = Series(0, tindex, name=self.name)
         h.loc[h.index > tstart] = 1
@@ -1075,29 +1072,23 @@ class LinearTrend(StressModelBase):
         DataFrame (one column per realization) is returned.
         """
         tindex = date_range(tmin, tmax, freq=freq)
-        p_arr = np.asarray(p)
+        p = np.asarray(p)
 
-        if p_arr.ndim > 1:
+        if p.ndim > 1:
             # use datetime64[us] to avoid overflow for ordinals beyond year 2262
             ts1 = np.array(
-                [
-                    np.datetime64(Timestamp.fromordinal(int(v)), "us")
-                    for v in p_arr[:, 1]
-                ]
+                [np.datetime64(Timestamp.fromordinal(int(v)), "us") for v in p[:, 1]]
             )
             ts2 = np.array(
-                [
-                    np.datetime64(Timestamp.fromordinal(int(v)), "us")
-                    for v in p_arr[:, 2]
-                ]
+                [np.datetime64(Timestamp.fromordinal(int(v)), "us") for v in p[:, 2]]
             )
             tmin_ts = np.where(
-                p_arr[:, 1] < tindex[0].toordinal(),
+                p[:, 1] < tindex[0].toordinal(),
                 np.datetime64(tindex[0], "us"),
                 ts1,
             )
             tmax_ts = np.where(
-                p_arr[:, 2] >= tindex[-1].toordinal(),
+                p[:, 2] >= tindex[-1].toordinal(),
                 np.datetime64(tindex[-1], "us"),
                 ts2,
             )
@@ -1107,8 +1098,8 @@ class LinearTrend(StressModelBase):
             )
             d = (tindex.to_series().diff() / Timedelta(1, "D")).to_numpy()
             D = np.where(mask, d[:, None], 0.0)
-            data = np.cumsum(D, axis=0) * p_arr[:, 0][None, :]
-            return DataFrame(data=data, index=tindex, columns=np.arange(p_arr.shape[0]))
+            data = np.cumsum(D, axis=0) * p[:, 0][None, :]
+            return DataFrame(data=data, index=tindex, columns=np.arange(p.shape[0]))
 
         if p[1] < tindex[0].toordinal():
             tmin = tindex[0]
@@ -1618,19 +1609,19 @@ class WellModel(StressModelBase):
 
         distances = self.get_distances(istress=istress)
 
-        p_arr = np.asarray(p)
-        if p_arr.ndim > 1:
+        p = np.asarray(p)
+        if p.ndim > 1:
             if istress is not None:
                 raise NotImplementedError(
                     "istress is not supported for a 2-D parameter array."
                 )
             # same parameters for all wells: one ensemble convolution per well
             index = selected_stresses[0].series.index
-            n_real = p_arr.shape[0]
+            n_real = p.shape[0]
             stress_by_name = {s.name: s.series for s in selected_stresses}
             h = None
             for name, r in distances.items():
-                p_with_r = np.column_stack([p_arr, np.full(n_real, r)])
+                p_with_r = np.column_stack([p, np.full(n_real, r)])
                 contrib = self._ensemble_contribution(
                     p_with_r, stress_by_name[name].to_numpy(), dt, tmin, tmax, index
                 )
@@ -1648,7 +1639,7 @@ class WellModel(StressModelBase):
         for name, r in distances.items():
             stress = stress_by_name[name]
             n_points = stress.index.size
-            p_with_r = np.concatenate([p_arr, np.array([r])])
+            p_with_r = np.concatenate([p, np.array([r])])
             b = self._get_block(p_with_r, dt, tmin, tmax)
             c = convolve(stress, b)[:n_points]
             h = h.add(Series(c, index=stress.index), fill_value=0.0)
@@ -2806,12 +2797,12 @@ class TarsoModel(RechargeModel):
         istress: int | None = None,
     ) -> Series | DataFrame:
         _ = istress  # istress is not used for TarsoModel
-        p_arr = np.asarray(p) if p is not None else None
-        if p_arr is not None and p_arr.ndim > 1:
+        p = np.asarray(p) if p is not None else None
+        if p is not None and p.ndim > 1:
             # ensemble: recharge matrix (n_real, n_points) + ensemble tarso kernel
-            r, index = self._recharge_values(p_arr, tmin, tmax, freq)
-            h = self._tarso_ensemble(p_arr[:, : -self.recharge.nparam], r, dt)
-            return DataFrame(data=h.T, index=index, columns=np.arange(p_arr.shape[0]))
+            r, index = self._recharge_values(p, tmin, tmax, freq)
+            h = self._tarso_ensemble(p[:, : -self.recharge.nparam], r, dt)
+            return DataFrame(data=h.T, index=index, columns=np.arange(p.shape[0]))
         stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
         h = self.tarso(np.asarray(p)[: -self.recharge.nparam], stress.to_numpy(), dt)
         sim = Series(h, name=self.name, index=stress.index)
