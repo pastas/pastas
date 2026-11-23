@@ -5,7 +5,6 @@ from logging import getLogger
 from typing import Any
 
 import numpy as np
-from numpy import add, complex128, exp, multiply, nan_to_num, vstack, zeros
 from pandas import DataFrame
 
 from pastas.typing import ArrayLike
@@ -107,16 +106,16 @@ class Linear(RechargeBase):
         ArrayLike
             Recharge flux (mm/d) for 1-D or 2-D `p`.
         """
-        return add(prec, multiply(evap, np.asarray(p)))
+        return np.add(prec, np.multiply(evap, np.asarray(p)))
 
     def get_water_balance(
         self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, **kwargs
     ) -> DataFrame:
         """Get the water balance for the linear recharge model."""
         _ = kwargs
-        ea = multiply(evap, p)
-        r = add(prec, multiply(evap, p))
-        return DataFrame(data=vstack((prec, ea, -r)).T, columns=["P", "Ea", "R"])
+        ea = np.multiply(evap, p)
+        r = np.add(prec, np.multiply(evap, p))
+        return DataFrame(data=np.vstack((prec, ea, -r)).T, columns=["P", "Ea", "R"])
 
     def to_dict(self) -> dict[str, Any]:
         """Export the recharge model object to a dictionary."""
@@ -326,10 +325,10 @@ class FlexModel(RechargeBase):
         cls,
         pe: ArrayLike,
         ep: ArrayLike,
-        srmax: float | complex128 | ArrayLike = 250.0,
-        lp: float | complex128 | ArrayLike = 0.25,
-        ks: float | complex128 | ArrayLike = 100.0,
-        gamma: float | complex128 | ArrayLike = 4.0,
+        srmax: float | np.complex128 | ArrayLike = 250.0,
+        lp: float | np.complex128 | ArrayLike = 0.25,
+        ks: float | np.complex128 | ArrayLike = 100.0,
+        gamma: float | np.complex128 | ArrayLike = 4.0,
         dt: float = 1.0,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Compute the water balance of the root zone reservoir (1-D or 2-D)."""
@@ -376,10 +375,10 @@ class FlexModel(RechargeBase):
     @njit
     def _root_zone_kernel(pe, ep, srmax, lp, ks, gamma, dt, dtype):
         n_real, n = pe.shape
-        sr = zeros((n_real, n), dtype=dtype)
-        ea = zeros((n_real, n), dtype=dtype)
-        r = zeros((n_real, n), dtype=dtype)
-        q = zeros((n_real, n), dtype=dtype)
+        sr = np.zeros((n_real, n), dtype=dtype)
+        ea = np.zeros((n_real, n), dtype=dtype)
+        r = np.zeros((n_real, n), dtype=dtype)
+        q = np.zeros((n_real, n), dtype=dtype)
         for i in range(n_real):
             srmax_i = srmax[i]
             lp_scaled_i = lp[i] * srmax_i
@@ -416,7 +415,7 @@ class FlexModel(RechargeBase):
         cls,
         pr: ArrayLike,
         ep: ArrayLike,
-        simax: float | complex128 | ArrayLike = 2.0,
+        simax: float | np.complex128 | ArrayLike = 2.0,
         dt: float = 1.0,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Compute the water balance of the interception reservoir (1-D or 2-D)."""
@@ -439,9 +438,9 @@ class FlexModel(RechargeBase):
     @njit
     def _interception_kernel(pr, ep, simax, dt, dtype):
         n_real, n = pr.shape
-        si = zeros((n_real, n), dtype=dtype)
-        ei = zeros((n_real, n), dtype=dtype)
-        pi = zeros((n_real, n), dtype=dtype)
+        si = np.zeros((n_real, n), dtype=dtype)
+        ei = np.zeros((n_real, n), dtype=dtype)
+        pi = np.zeros((n_real, n), dtype=dtype)
         for i in range(n_real):
             simax_i = simax[i]
             si_cur = 0.0
@@ -467,8 +466,8 @@ class FlexModel(RechargeBase):
         cls,
         prec: ArrayLike,
         temp: ArrayLike,
-        tt: float | complex128 | ArrayLike = 0.0,
-        k: float | complex128 | ArrayLike = 2.0,
+        tt: float | np.complex128 | ArrayLike = 0.0,
+        k: float | np.complex128 | ArrayLike = 2.0,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Compute the water balance of the snow reservoir (1-D or 2-D)."""
         is_1d = (
@@ -503,9 +502,9 @@ class FlexModel(RechargeBase):
     @njit
     def _snow_kernel(prec, temp, tt, k, dtype):
         n_real, n = prec.shape
-        ss = zeros((n_real, n), dtype=dtype)
-        ps = zeros((n_real, n), dtype=dtype)
-        m = zeros((n_real, n), dtype=dtype)
+        ss = np.zeros((n_real, n), dtype=dtype)
+        ps = np.zeros((n_real, n), dtype=dtype)
+        m = np.zeros((n_real, n), dtype=dtype)
         for i in range(n_real):
             tt_i = tt[i]
             tt_real = _real(tt_i)
@@ -519,7 +518,7 @@ class FlexModel(RechargeBase):
                     m_t = 0.0
                 else:
                     ps_t = 0.0
-                    melt = k_i * (temp_t - tt_i) * (1.0 - exp(-(ss_cur / 1.5)))
+                    melt = k_i * (temp_t - tt_i) * (1.0 - np.exp(-(ss_cur / 1.5)))
                     m_t = melt if _real(melt) < _real(ss_cur) else ss_cur
                 ps[i, t] = ps_t
                 m[i, t] = -m_t
@@ -673,7 +672,7 @@ class Berendrecht(RechargeBase):
         if return_full:
             out = np.stack((r, s, ea, pe))
             return out[:, 0, :] if is_1d else out
-        r_clean = nan_to_num(r)
+        r_clean = np.nan_to_num(r)
         return r_clean[0] if is_1d else r_clean
 
     @classmethod
@@ -681,13 +680,13 @@ class Berendrecht(RechargeBase):
         cls,
         prec: ArrayLike,
         evap: ArrayLike,
-        fi: float | complex128 | ArrayLike = 1.0,
-        fc: float | complex128 | ArrayLike = 1.0,
-        sr: float | complex128 | ArrayLike = 0.5,
-        de: float | complex128 | ArrayLike = 250.0,
-        l: float | complex128 | ArrayLike = -2.0,
-        m: float | complex128 | ArrayLike = 0.5,
-        ks: float | complex128 | ArrayLike = 50.0,
+        fi: float | np.complex128 | ArrayLike = 1.0,
+        fc: float | np.complex128 | ArrayLike = 1.0,
+        sr: float | np.complex128 | ArrayLike = 0.5,
+        de: float | np.complex128 | ArrayLike = 250.0,
+        l: float | np.complex128 | ArrayLike = -2.0,
+        m: float | np.complex128 | ArrayLike = 0.5,
+        ks: float | np.complex128 | ArrayLike = 50.0,
         dt: float = 1.0,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Calculate recharge flux sped up with numba (1-D or 2-D)."""
@@ -715,10 +714,10 @@ class Berendrecht(RechargeBase):
     @njit
     def _recharge_kernel(prec, evap, fi, fc, sr, de, l, m, ks, dt, dtype):
         n_real, n = prec.shape
-        s = zeros((n_real, n), dtype=dtype)
-        r = zeros((n_real, n), dtype=dtype)
-        ea = zeros((n_real, n), dtype=dtype)
-        pe = zeros((n_real, n), dtype=dtype)
+        s = np.zeros((n_real, n), dtype=dtype)
+        r = np.zeros((n_real, n), dtype=dtype)
+        ea = np.zeros((n_real, n), dtype=dtype)
+        pe = np.zeros((n_real, n), dtype=dtype)
         for i in range(n_real):
             fi_i = fi[i]
             fc_i = fc[i]
@@ -734,10 +733,10 @@ class Berendrecht(RechargeBase):
                 ep_t = fc_i * evap[i, t]
                 s_real = _real(s_cur)
                 if s_real < 0.05:
-                    s_cur = 0.05 * exp(20.0 * s_cur - 1.0)
+                    s_cur = 0.05 * np.exp(20.0 * s_cur - 1.0)
                 elif s_real > 0.95:
-                    s_cur = 1.0 - 0.05 * exp(19.0 - 20.0 * s_cur)
-                ea_t = (1.0 - exp(-3.0 * s_cur / sr_i)) * ep_t
+                    s_cur = 1.0 - 0.05 * np.exp(19.0 - 20.0 * s_cur)
+                ea_t = (1.0 - np.exp(-3.0 * s_cur / sr_i)) * ep_t
                 r_t = ks_i * (s_cur**l_i) * (1.0 - (1.0 - s_cur**inv_m_i) ** m_i) ** 2
                 s[i, t] = s_cur
                 pe[i, t] = pe_t
@@ -756,7 +755,9 @@ class Berendrecht(RechargeBase):
             raise NotImplementedError("get_water_balance is only supported for 1-D p.")
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
         s = s * p[3]
-        return DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
+        return DataFrame(
+            data=np.vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"]
+        )
 
 
 class Peterson(RechargeBase):
@@ -874,7 +875,7 @@ class Peterson(RechargeBase):
         if return_full:
             out = np.stack((r, s, ea, pe))
             return out[:, 0, :] if is_1d else out
-        r_clean = nan_to_num(r)
+        r_clean = np.nan_to_num(r)
         return r_clean[0] if is_1d else r_clean
 
     @classmethod
@@ -882,11 +883,11 @@ class Peterson(RechargeBase):
         cls,
         prec: ArrayLike,
         evap: ArrayLike,
-        scap: float | complex128 | ArrayLike = 1.0,
-        alpha: float | complex128 | ArrayLike = 1.0,
-        ksat: float | complex128 | ArrayLike = 1.0,
-        beta: float | complex128 | ArrayLike = 0.5,
-        gamma: float | complex128 | ArrayLike = 1.0,
+        scap: float | np.complex128 | ArrayLike = 1.0,
+        alpha: float | np.complex128 | ArrayLike = 1.0,
+        ksat: float | np.complex128 | ArrayLike = 1.0,
+        beta: float | np.complex128 | ArrayLike = 0.5,
+        gamma: float | np.complex128 | ArrayLike = 1.0,
         dt: float = 1.0,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Calculate recharge flux sped up with numba (1-D or 2-D)."""
@@ -914,10 +915,10 @@ class Peterson(RechargeBase):
     @njit
     def _recharge_kernel(prec, evap, scap, alpha, ksat, beta, gamma, dt, dtype):
         n_real, n = prec.shape
-        pe = zeros((n_real, n), dtype=dtype)
-        sm = zeros((n_real, n), dtype=dtype)
-        r = zeros((n_real, n), dtype=dtype)
-        ea = zeros((n_real, n), dtype=dtype)
+        pe = np.zeros((n_real, n), dtype=dtype)
+        sm = np.zeros((n_real, n), dtype=dtype)
+        r = np.zeros((n_real, n), dtype=dtype)
+        ea = np.zeros((n_real, n), dtype=dtype)
         for i in range(n_real):
             smsc_i = 10.0 ** scap[i]
             alpha_i = alpha[i]
@@ -952,4 +953,6 @@ class Peterson(RechargeBase):
         if np.ndim(p) > 1:
             raise NotImplementedError("get_water_balance is only supported for 1-D p.")
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
-        return DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
+        return DataFrame(
+            data=np.vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"]
+        )
