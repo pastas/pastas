@@ -1,52 +1,11 @@
-"""Module containing the classes for recharge models.
-
-This module contains the different classes that can be used to simulate the effect of
-precipitation and evapotranspiration on groundwater levels. Depending on the
-mathematical formulation this effect may be interpreted as:
-
-1. seepage to the groundwater
-2. precipitation excess,
-3. groundwater recharge.
-
-For the implementation of each model we refer to the references listed in the
-documentation of each recharge model.
-
-The classes defined here are designed to be used in conjunction with the stressmodel
-"RechargeModel", which requires an instance of one of the classes defined here.
-
-See Also
---------
-pastas.stressmodels.RechargeModel
-    The recharge models listed above are provided to a RechargeModel.
-
-Examples
---------
-Use recharge models with a RechargeModel stress model::
-
-    rch = ps.rch.FlexModel()
-    sm = ps.RechargeModel(ml, prec, evap, recharge=rch, rfunc=ps.Gamma(), name="rch")
-
-After solving a model, the simulated recharge flux can be obtained::
-
-    rch_sim = ml.get_stress("rch")
-"""
+"""Recharge models for Pastas."""
 
 from abc import ABC, abstractmethod
 from logging import getLogger
 from typing import Any
 
 import numpy as np
-from numpy import (
-    add,
-    complex128,
-    exp,
-    multiply,
-    nan_to_num,
-    power,
-    vstack,
-    where,
-    zeros,
-)
+from numpy import add, complex128, exp, multiply, nan_to_num, vstack, zeros
 from pandas import DataFrame
 
 from pastas.typing import ArrayLike
@@ -54,6 +13,14 @@ from pastas.typing import ArrayLike
 from .decorators import _real, njit
 
 logger = getLogger(__name__)
+
+
+def _prepare_2d_flux(flux: ArrayLike, n_real: int) -> np.ndarray:
+    """Return a 2-D (n_real, n_points) view without copying 1-D inputs."""
+    arr = np.asarray(flux)
+    if arr.ndim == 1:
+        return np.broadcast_to(arr, (n_real, arr.shape[0]))
+    return arr
 
 
 class RechargeBase(ABC):
@@ -117,39 +84,36 @@ class Linear(RechargeBase):
 
     def get_init_parameters(self, name: str) -> DataFrame:
         """Get initial parameters and bounds for the Linear recharge model."""
-        parameters = DataFrame(
+        return DataFrame(
             [(-1.0, -2.0, 0.0, True, name)],
             columns=["initial", "pmin", "pmax", "vary", "name"],
             index=[name + "_f"],
         )
 
-        return parameters
-
-    def simulate(
-        self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, **kwargs
-    ) -> ArrayLike:
+    def simulate(self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike) -> ArrayLike:
         """Simulate the precipitation excess flux.
 
         Parameters
         ----------
-        prec, evap: array_like
-            array with the precipitation and evapotranspiration values. These arrays
-            must be of the same length and at the same time steps.
-        p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
+        prec : ArrayLike
+            Precipitation flux values.
+        evap : ArrayLike
+            Evaporation flux values.
+        p : ArrayLike
+            Recharge model parameters (1-D or 2-D array).
 
         Returns
         -------
-        recharge: array_like
-            array with the recharge series.
+        ArrayLike
+            Recharge flux (mm/d) for 1-D or 2-D `p`.
         """
-        return add(prec, multiply(evap, p))
+        return add(prec, multiply(evap, np.asarray(p)))
 
     def get_water_balance(
         self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, **kwargs
     ) -> DataFrame:
         """Get the water balance for the linear recharge model."""
+        _ = kwargs
         ea = multiply(evap, p)
         r = add(prec, multiply(evap, p))
         return DataFrame(data=vstack((prec, ea, -r)).T, columns=["P", "Ea", "R"])
@@ -263,9 +227,8 @@ class FlexModel(RechargeBase):
         p: ArrayLike,
         dt: float = 1.0,
         return_full: bool = False,
-        **kwargs,
     ) -> ArrayLike:
-        """Simulate the soil water balance model.
+        """Simulate the soil water balance model for 1-D or 2-D `p`.
 
         Parameters
         ----------
@@ -293,380 +256,275 @@ class FlexModel(RechargeBase):
             the first axis: (n_fluxes, n_points) for a 1-D `p` and
             (n_fluxes, n_real, n_points) for a 2-D `p`.
         """
-        if np.ndim(p) > 1:
-            return self._simulate_ensemble(
-                prec, evap, temp, np.asarray(p), dt, return_full=return_full
-            )
-        is_complex = np.iscomplexobj(p)
-        ep = evap * p[4]
+        p_arr = np.asarray(p)
+        is_1d = p_arr.ndim == 1
+        P = np.atleast_2d(p_arr)
+
+        prec_arr = np.asarray(prec)
+        evap_arr = np.asarray(evap)
+        ep = evap_arr[None, :] * P[:, 4:5]
 
         if self.snow:
-            ss, ps, m = self.get_snow_balance(prec=prec, temp=temp, tt=p[-2], k=p[-1])
-            pr = prec - ps  # Remove snowfall from precipitation
+            ss, ps, m = self.get_snow_balance(
+                prec=prec_arr, temp=temp, tt=P[:, -2], k=P[:, -1]
+            )
+            pr = prec_arr[None, :] - ps
         else:
-            pr = prec  # All precipitation is rainfall and melt is zero
+            pr = prec_arr
             m = 0.0
 
         if self.interception:
-            si, ei, pi = self.get_interception_balance(pr=pr, ep=ep, simax=p[5])
-            ep = ep + ei  # Update potential evaporation after interception
-            pe = pr - pi  # Update rainfall after interception
+            si, ei, pi = self.get_interception_balance(pr=pr, ep=ep, simax=P[:, 5])
+            ep = ep + ei
+            pe = (pr[None, :] if np.ndim(pr) == 1 else pr) - pi
         else:
             pe = pr
 
-        sr, r, ea, q, _ = self.get_root_zone_balance(
-            pe=pe - m, ep=ep, srmax=p[0], lp=p[1], ks=p[2], gamma=p[3], dt=dt
+        pe_in = (pe[None, :] if np.ndim(pe) == 1 else pe) - m
+        sr, r, ea, q, pe_out = self.get_root_zone_balance(
+            pe=pe_in, ep=ep, srmax=P[:, 0], lp=P[:, 1], ks=P[:, 2], gamma=P[:, 3], dt=dt
         )
 
-        # report big water balance errors (error > 0.1%.)
-        error = (sr[0] - sr[-1] + (pe - m + r + ea + q).sum()) / (
-            pe.sum() + 1e-10
-        )  # avoid division by zero
-        error_value = error.real if is_complex else error
-        if abs(error) > 0.1:
-            p_log = p.real.astype(float) if is_complex else p.astype(float)
-            logger.info(
-                "Water balance error: %s %% of the total pe flux. Parameters: %s",
-                error_value.round(2),
-                p_log.round(2),
-            )
-
-        if self.gw_uptake:
-            # Compute leftover potential evaporation
-            if self.interception:
-                gf = p[6]
+        # Report big water balance errors (error > 0.1%)
+        error = (sr[:, 0] - sr[:, -1] + (pe_out + r + ea + q).sum(axis=1)) / (
+            pe_out.sum(axis=1) + 1e-10
+        )
+        bad = np.abs(error) > 0.1
+        if np.any(bad):
+            if is_1d:
+                err_val = error[0].real if np.iscomplexobj(error) else error[0]
+                logger.info(
+                    "Water balance error: %s %% of the total pe flux. Parameters: %s",
+                    err_val.round(2),
+                    p_arr.real.astype(float).round(2),
+                )
             else:
-                gf = p[5]
-            eg = ep + ea  # positive flux
-            r = r + gf * eg
-
-        if return_full:
-            data = (sr, -r, ea, q, pe)
-            if self.interception:
-                data += (si, ei, pi)
-            if self.snow:
-                data += (ss, ps, m)
-            return np.stack(data)
-        return -r
-
-    def _simulate_ensemble(
-        self,
-        prec: ArrayLike,
-        evap: ArrayLike,
-        temp: ArrayLike,
-        P: ArrayLike,
-        dt: float = 1.0,
-        return_full: bool = False,
-    ) -> ArrayLike:
-        """Simulate the soil water balance for a 2-D parameter array (no loop).
-
-        Parameters
-        ----------
-        prec, evap, temp: array_like
-            Input fluxes, shape (n_points,), shared over all realizations.
-        P: array_like, shape (n_real, n_param)
-            Parameter sets, one per realization.
-        dt: float, optional
-            Time step for the calculation of the recharge.
-        return_full: bool, optional
-            Return all fluxes and states stacked along the first axis.
-
-        Returns
-        -------
-        array_like
-            The recharge flux for each realization, shape (n_real, n_points).
-            With `return_full=True`, all fluxes and states stacked along the
-            first axis: shape (n_fluxes, n_real, n_points).
-        """
-        n_real = P.shape[0]
-        prec = np.asarray(prec)
-        evap = np.asarray(evap)
-        prec2 = np.repeat(prec[None, :], n_real, axis=0)
-        evap2 = np.repeat(evap[None, :], n_real, axis=0)
-        ep = evap2 * P[:, 4][:, None]
-
-        if self.snow:
-            temp2 = np.repeat(np.asarray(temp)[None, :], n_real, axis=0)
-            ss, ps, m = self._snow_balance_ensemble(prec2, temp2, P[:, -2], P[:, -1])
-            pr = prec2 - ps  # Remove snowfall from precipitation
-        else:
-            pr = prec2  # All precipitation is rainfall and melt is zero
-            m = 0.0
-
-        if self.interception:
-            si, ei, pi = self._interception_balance_ensemble(pr, ep, P[:, 5])
-            ep = ep + ei  # Update potential evaporation after interception
-            pe = pr - pi  # Update rainfall after interception
-        else:
-            pe = pr
-
-        sr, r, ea, q, _ = self._root_zone_balance_ensemble(
-            pe - m, ep, P[:, 0], P[:, 1], P[:, 2], P[:, 3], dt
-        )
-
-        # report big water balance errors (error > 0.1%)
-        error = (sr[:, 0] - sr[:, -1] + (pe - m + r + ea + q).sum(axis=1)) / (
-            pe.sum(axis=1) + 1e-10
-        )  # avoid division by zero
-        if np.any(np.abs(error) > 0.1):
-            logger.info(
-                "Water balance error > 0.1%% of the total pe flux for %s "
-                "realization(s). Parameters: %s",
-                int(np.sum(np.abs(error) > 0.1)),
-                P[np.abs(error) > 0.1].real.astype(float).round(2),
-            )
+                logger.info(
+                    "Water balance error > 0.1%% of the total pe flux for %s "
+                    "realization(s). Parameters: %s",
+                    int(np.sum(bad)),
+                    P[bad].real.astype(float).round(2),
+                )
 
         if self.gw_uptake:
-            # Compute leftover potential evaporation
-            gf = P[:, 6][:, None] if self.interception else P[:, 5][:, None]
-            eg = ep + ea  # positive flux
-            r = r + gf * eg
+            gf = P[:, 6:7] if self.interception else P[:, 5:6]
+            r = r + gf * (ep + ea)
 
         if return_full:
-            data = (sr, -r, ea, q, pe)
+            data = (sr, -r, ea, q, pe_out)
             if self.interception:
                 data += (si, ei, pi)
             if self.snow:
                 data += (ss, ps, m)
-            return np.stack(data)
-        return -r
+            out = np.stack(data)
+            return out[:, 0, :] if is_1d else out
 
-    @staticmethod
-    @njit
+        return -r[0] if is_1d else -r
+
+    @classmethod
     def get_root_zone_balance(
+        cls,
         pe: ArrayLike,
         ep: ArrayLike,
-        srmax: float | complex128 = 250.0,
-        lp: float | complex128 = 0.25,
-        ks: float | complex128 = 100.0,
-        gamma: float | complex128 = 4.0,
+        srmax: float | complex128 | ArrayLike = 250.0,
+        lp: float | complex128 | ArrayLike = 0.25,
+        ks: float | complex128 | ArrayLike = 100.0,
+        gamma: float | complex128 | ArrayLike = 4.0,
         dt: float = 1.0,
-    ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Compute the water balance of the root zone reservoir.
-
-        Parameters
-        ----------
-        pe: array_like
-            Effective precipitation flux in mm/d.
-        ep: array_like
-            Potential evaporation flux in mm/d.
-        srmax: float, optional
-            Maximum storage capacity of the root zone.
-        lp: float, optional
-            Parameter determining when actual evaporation equals potential.
-        ks: float, optional
-            Saturated hydraulic conductivity in mm/d.
-        gamma: float, optional
-            Parameter determining the nonlinearity of outflow / recharge.
-        dt: float, optional
-            time step for the calculation of the recharge. Only dt=1 is possible now.
-
-        Returns
-        -------
-        sr: array_like
-            Storage in the root zone reservoir.
-        r: array_like
-            Recharge flux in mm/d
-        ea: array_like
-            Evaporation flux in mm/d. Consists of transpiration and soil evaporation.
-            Does not include interception evaporation.
-        q: array_like
-            surface runoff flux in mm/d.
-        pe: array_like
-            Incoming infiltration flux in mm/d.
-
-        Notes
-        -----
-        Thin 1-D adapter over the `_root_zone_balance_ensemble` static method: the inputs are
-        reshaped to (1, n_points) and the parameters to (1,) arrays, so a single
-        2-D-native kernel implementation serves both the 1-D and the ensemble
-        path.
-        """
-        sr, r, ea, q, pe_out = _root_zone_balance_ensemble(
-            pe.reshape(1, -1),
-            ep.reshape(1, -1),
-            np.full(1, srmax),
-            np.full(1, lp),
-            np.full(1, ks),
-            np.full(1, gamma),
-            dt,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Compute the water balance of the root zone reservoir (1-D or 2-D)."""
+        is_1d = (
+            np.ndim(pe) == 1
+            and np.ndim(ep) == 1
+            and np.ndim(srmax) == 0
+            and np.ndim(lp) == 0
+            and np.ndim(ks) == 0
+            and np.ndim(gamma) == 0
         )
-        return sr[0], r[0], ea[0], q[0], pe_out[0]
+        srmax_1d = np.atleast_1d(srmax)
+        lp_1d = np.atleast_1d(lp)
+        ks_1d = np.atleast_1d(ks)
+        gamma_1d = np.atleast_1d(gamma)
+        n_real = max(
+            srmax_1d.shape[0],
+            lp_1d.shape[0],
+            ks_1d.shape[0],
+            gamma_1d.shape[0],
+            np.atleast_2d(pe).shape[0],
+            np.atleast_2d(ep).shape[0],
+        )
+        pe_2d = _prepare_2d_flux(pe, n_real)
+        ep_2d = _prepare_2d_flux(ep, n_real)
+        dtype = np.result_type(
+            pe_2d, ep_2d, srmax_1d, lp_1d, ks_1d, gamma_1d, np.float64
+        )
+        sr, r, ea, q = cls._root_zone_kernel(
+            pe_2d,
+            ep_2d,
+            np.broadcast_to(srmax_1d, (n_real,)),
+            np.broadcast_to(lp_1d, (n_real,)),
+            np.broadcast_to(ks_1d, (n_real,)),
+            np.broadcast_to(gamma_1d, (n_real,)),
+            dt,
+            dtype,
+        )
+        if is_1d:
+            return sr[0], r[0], ea[0], q[0], pe_2d[0]
+        return sr, r, ea, q, pe_2d
 
     @staticmethod
     @njit
-    def _root_zone_balance_ensemble(pe, ep, srmax, lp, ks, gamma, dt=1.0):
-        """Root zone water balance for an ensemble of realizations (2-D fluxes).
-
-        Fluxes are (n_real, n_points) arrays and the scalar parameters are
-        (n_real,) arrays, so all realizations are computed in a single pass
-        over time.
-        """
+    def _root_zone_kernel(pe, ep, srmax, lp, ks, gamma, dt, dtype):
         n_real, n = pe.shape
-        # Infer target dtype purely from the scalar parameters
-        dtype = np.asarray(srmax[0] + lp[0] + ks[0] + gamma[0]).dtype
-        sr = zeros((n_real, n + 1), dtype=dtype)
-        sr[:, 0] = 0.5 * srmax
+        sr = zeros((n_real, n), dtype=dtype)
         ea = zeros((n_real, n), dtype=dtype)
         r = zeros((n_real, n), dtype=dtype)
         q = zeros((n_real, n), dtype=dtype)
-        lp_scaled = lp * srmax
-        for t in range(n):
-            sr_t = sr[:, t].copy()
-            over = _real(sr_t) > _real(srmax)
-            under = (~over) & (_real(sr_t) < 0.0)
-            q[:, t] = where(over, sr_t - srmax, 0.0)
-            sr[:, t] = where(over, srmax, where(under, 0.0, sr_t))
-            ea[:, t] = where(
-                _real(sr[:, t] / lp_scaled) < 1.0,
-                ep[:, t] * sr[:, t] / lp_scaled,
-                ep[:, t],
-            )
-            recharge = ks * (sr[:, t] / srmax) ** gamma
-            r[:, t] = where(_real(recharge) < _real(sr[:, t]), recharge, sr[:, t])
-            sr[:, t + 1] = sr[:, t] + dt * (pe[:, t] - r[:, t] - ea[:, t])
-        return sr[:, :-1], -r, -ea, -q, pe
+        for i in range(n_real):
+            srmax_i = srmax[i]
+            lp_scaled_i = lp[i] * srmax_i
+            ks_i = ks[i]
+            gamma_i = gamma[i]
+            sr_cur = 0.5 * srmax_i
+            for t in range(n):
+                if _real(sr_cur) > _real(srmax_i):
+                    q_t = sr_cur - srmax_i
+                    sr_cur = srmax_i
+                elif _real(sr_cur) < 0.0:
+                    q_t = 0.0
+                    sr_cur = 0.0
+                else:
+                    q_t = 0.0
 
-    @staticmethod
-    @njit
+                if _real(sr_cur / lp_scaled_i) < 1.0:
+                    ea_t = ep[i, t] * sr_cur / lp_scaled_i
+                else:
+                    ea_t = ep[i, t]
+
+                recharge = ks_i * (sr_cur / srmax_i) ** gamma_i
+                r_t = recharge if _real(recharge) < _real(sr_cur) else sr_cur
+
+                sr[i, t] = sr_cur
+                q[i, t] = -q_t
+                ea[i, t] = -ea_t
+                r[i, t] = -r_t
+                sr_cur = sr_cur + dt * (pe[i, t] - r_t - ea_t)
+        return sr, r, ea, q
+
+    @classmethod
     def get_interception_balance(
+        cls,
         pr: ArrayLike,
         ep: ArrayLike,
-        simax: float | complex128 = 2.0,
+        simax: float | complex128 | ArrayLike = 2.0,
         dt: float = 1.0,
-    ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
-        r"""Compute the water balance of the interception reservoir.
-
-        Parameters
-        ----------
-        pr: array_like
-            NumPy Array with rainfall in mm/day.
-        ep: array_like
-            NumPy Array with potential evaporation in mm/day.
-        simax: float, optional
-            storage capacity of the interception reservoir.
-        dt: float
-            time step used for computation. Only dt=1.0 is possible now.
-
-        Returns
-        -------
-        si: array_like
-            Interception storage.
-        ei: array_like
-            Interception evaporation.
-        pi: array_like
-            Incoming rainfall that is intercepted.
-
-        Notes
-        -----
-        The water balance for the snow storage reservoir is defined as follows:
-
-        .. math::
-
-            \\frac{dS_i}{dt} = P_r - E_i - P_e
-
-        where $S_i$ [L] is the interception storage, $P_r$ [L/T] is the incoming
-        rainfall, $E_i$ [L/T] the interception evaporation, and $P_e$ [L/T] the
-        overflow from the interception reservoir.
-
-        Notes
-        -----
-        Thin 1-D adapter over the `_interception_balance_ensemble` static method.
-        """
-        si, ei, pi = _interception_balance_ensemble(
-            pr.reshape(1, -1), ep.reshape(1, -1), np.full(1, simax), dt
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Compute the water balance of the interception reservoir (1-D or 2-D)."""
+        is_1d = np.ndim(pr) == 1 and np.ndim(ep) == 1 and np.ndim(simax) == 0
+        simax_1d = np.atleast_1d(simax)
+        n_real = max(
+            simax_1d.shape[0], np.atleast_2d(pr).shape[0], np.atleast_2d(ep).shape[0]
         )
-        return si[0], ei[0], pi[0]
+        pr_2d = _prepare_2d_flux(pr, n_real)
+        ep_2d = _prepare_2d_flux(ep, n_real)
+        dtype = np.result_type(pr_2d, ep_2d, simax_1d, np.float64)
+        si, ei, pi = cls._interception_kernel(
+            pr_2d, ep_2d, np.broadcast_to(simax_1d, (n_real,)), dt, dtype
+        )
+        if is_1d:
+            return si[0], ei[0], pi[0]
+        return si, ei, pi
 
     @staticmethod
     @njit
-    def _interception_balance_ensemble(pr, ep, simax, dt=1.0):
-        """Compute the interception reservoir water balance for an ensemble of realizations."""
+    def _interception_kernel(pr, ep, simax, dt, dtype):
         n_real, n = pr.shape
-        dtype = np.asarray(simax[0]).dtype
-        si = zeros((n_real, n + 1), dtype=dtype)
-        pe = zeros((n_real, n), dtype=dtype)
+        si = zeros((n_real, n), dtype=dtype)
         ei = zeros((n_real, n), dtype=dtype)
-        for t in range(n):
-            ei[:, t] = where(_real(ep[:, t]) < _real(si[:, t]), ep[:, t], si[:, t])
-            si[:, t + 1] = si[:, t] + dt * (pr[:, t] - ei[:, t])
-            diff = si[:, t + 1] - simax
-            pe[:, t] = where(_real(diff) > 0.0, diff, 0.0)
-            si[:, t + 1] = si[:, t + 1] - pe[:, t]
-        pi = pr - pe  # Compute intercepted precipitation
-        return si[:, :-1], -ei, pi
+        pi = zeros((n_real, n), dtype=dtype)
+        for i in range(n_real):
+            simax_i = simax[i]
+            si_cur = 0.0
+            for t in range(n):
+                si[i, t] = si_cur
+                ep_t = ep[i, t]
+                pr_t = pr[i, t]
+                ei_t = ep_t if _real(ep_t) < _real(si_cur) else si_cur
+                si_next = si_cur + dt * (pr_t - ei_t)
+                diff = si_next - simax_i
+                if _real(diff) > 0.0:
+                    pe_t = diff
+                    si_next = si_next - diff
+                else:
+                    pe_t = 0.0
+                ei[i, t] = -ei_t
+                pi[i, t] = pr_t - pe_t
+                si_cur = si_next
+        return si, ei, pi
 
-    @staticmethod
-    @njit
+    @classmethod
     def get_snow_balance(
+        cls,
         prec: ArrayLike,
         temp: ArrayLike,
-        tt: float | complex128 = 0.0,
-        k: float | complex128 = 2.0,
-    ) -> tuple[ArrayLike, ArrayLike, ArrayLike]:
-        r"""Compute the water balance of the snow reservoir.
-
-        Parameters
-        ----------
-        prec: array_like
-            NumPy Array with precipitation in mm/day.
-        temp: array_like
-            NumPy Array with the mean daily temperature in degree Celsius.
-        tt: float, optional
-            Temperature threshold for snowfall in degree Celsius.
-        k: float, optional
-            Degree-day factor in mm/d/°C.
-
-        Returns
-        -------
-        ss: array_like
-            storage in the snow reservoir.
-        ps: array_like
-            snowfall flux in mm/d.
-        m: array_like
-            snow melt flux in mm/d.
-
-        Notes
-        -----
-        The water balance from the snow reservoir is as follows:
-
-        .. math::
-
-            \\frac{dS_s}{dt} = P_s - M
-
-        where $S_s$ [L] is the snow storage, $P_s$ [L/T] the snowfall, and $M$ [L/T]
-        the snow melt from the snow reservoir.
-
-        Notes
-        -----
-        Thin 1-D adapter over the `_snow_balance_ensemble` static method.
-        """
-        ss, ps, m = _snow_balance_ensemble(
-            prec.reshape(1, -1), temp.reshape(1, -1), np.full(1, tt), np.full(1, k)
+        tt: float | complex128 | ArrayLike = 0.0,
+        k: float | complex128 | ArrayLike = 2.0,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Compute the water balance of the snow reservoir (1-D or 2-D)."""
+        is_1d = (
+            np.ndim(prec) == 1
+            and np.ndim(temp) == 1
+            and np.ndim(tt) == 0
+            and np.ndim(k) == 0
         )
-        return ss[0], ps[0], m[0]
+        tt_1d = np.atleast_1d(tt)
+        k_1d = np.atleast_1d(k)
+        n_real = max(
+            tt_1d.shape[0],
+            k_1d.shape[0],
+            np.atleast_2d(prec).shape[0],
+            np.atleast_2d(temp).shape[0],
+        )
+        prec_2d = _prepare_2d_flux(prec, n_real)
+        temp_2d = _prepare_2d_flux(temp, n_real)
+        dtype = np.result_type(prec_2d, temp_2d, tt_1d, k_1d, np.float64)
+        ss, ps, m = cls._snow_kernel(
+            prec_2d,
+            temp_2d,
+            np.broadcast_to(tt_1d, (n_real,)),
+            np.broadcast_to(k_1d, (n_real,)),
+            dtype,
+        )
+        if is_1d:
+            return ss[0], ps[0], m[0]
+        return ss, ps, m
 
     @staticmethod
     @njit
-    def _snow_balance_ensemble(prec, temp, tt, k):
-        """Snow reservoir water balance for an ensemble of realizations.
-
-        prec, temp: (n_real, n_points); tt, k: (n_real,).
-        """
+    def _snow_kernel(prec, temp, tt, k, dtype):
         n_real, n = prec.shape
-        # promote types via scalar arithmetic (Numba compiles this at compile-time)
-        dtype = np.asarray(tt[0] + k[0]).dtype
-        ss = zeros((n_real, n + 1), dtype=dtype)  # Snow Storage
-        m = zeros((n_real, n), dtype=dtype)  # Potential Snow melt
-        ps = where(temp <= _real(tt)[:, None], prec, 0.0)  # Snowfall
-        for t in range(n):
-            warm = temp[:, t] > _real(tt)
-            melt = k * (temp[:, t] - tt) * (1.0 - exp(-(ss[:, t] / 1.5)))
-            m[:, t] = where(
-                warm, where(_real(melt) < _real(ss[:, t]), melt, ss[:, t]), 0.0
-            )
-            ss[:, t + 1] = ss[:, t] + ps[:, t] - m[:, t]
-        return ss[:, :-1], ps, -m
+        ss = zeros((n_real, n), dtype=dtype)
+        ps = zeros((n_real, n), dtype=dtype)
+        m = zeros((n_real, n), dtype=dtype)
+        for i in range(n_real):
+            tt_i = tt[i]
+            tt_real = _real(tt_i)
+            k_i = k[i]
+            ss_cur = 0.0
+            for t in range(n):
+                ss[i, t] = ss_cur
+                temp_t = temp[i, t]
+                if temp_t <= tt_real:
+                    ps_t = prec[i, t]
+                    m_t = 0.0
+                else:
+                    ps_t = 0.0
+                    melt = k_i * (temp_t - tt_i) * (1.0 - exp(-(ss_cur / 1.5)))
+                    m_t = melt if _real(melt) < _real(ss_cur) else ss_cur
+                ps[i, t] = ps_t
+                m[i, t] = -m_t
+                ss_cur = ss_cur + ps_t - m_t
+        return ss, ps, m
 
     def get_water_balance(
         self,
@@ -683,7 +541,6 @@ class FlexModel(RechargeBase):
         data = self.simulate(
             prec=prec, evap=evap, temp=temp, p=p, dt=dt, return_full=True, **kwargs
         )
-
         columns = [
             "State Root zone (Sr)",
             "Recharge (R)",
@@ -691,53 +548,46 @@ class FlexModel(RechargeBase):
             "Surface Runoff (Q)",
             "Effective precipitation (Pe)",
         ]
-
         if self.interception:
             columns += [
                 "State Interception (Si)",
                 "Interception evaporation (Ei)",
                 "Intercepted precipitation (Pi)",
             ]
-
         if self.snow:
             columns += [
                 "State Snow (Ss)",
                 "Snowfall (Ps)",
                 "Snowmelt (M)",
             ]
-
         return DataFrame(data=np.asarray(data).T, columns=columns)
 
     def check_snow_balance(self, prec: ArrayLike, temp: ArrayLike, **kwargs) -> float:
         """Check the water balance of the snow reservoir."""
         ss, ps, m = self.get_snow_balance(prec, temp)
-        error = ss[0] - ss[-1] + (ps + m).sum()
-        return error
+        return ss[0] - ss[-1] + (ps + m).sum()
 
     def check_interception_balance(
         self, prec: ArrayLike, evap: ArrayLike, **kwargs
     ) -> float:
         """Check the water balance of the interception reservoir."""
         si, ei, pi = self.get_interception_balance(prec, evap)
-        error = si[0] - si[-1] + (pi + ei).sum()
-        return error
+        return si[0] - si[-1] + (pi + ei).sum()
 
     def check_root_zone_balance(
         self, prec: ArrayLike, evap: ArrayLike, **kwargs
     ) -> float:
         """Check the water balance of the root zone reservoir."""
         sr, r, ea, q, pe = self.get_root_zone_balance(prec, evap)
-        error = sr[0] - sr[-1] + (r + ea + q + pe).sum()
-        return error
+        return sr[0] - sr[-1] + (r + ea + q + pe).sum()
 
     def to_dict(self) -> dict[str, Any]:
         """Export the recharge model object to a dictionary."""
-        data = super().to_dict() | {
+        return super().to_dict() | {
             "interception": self.interception,
             "snow": self.snow,
             "gw_uptake": self.gw_uptake,
         }
-        return data
 
 
 class Berendrecht(RechargeBase):
@@ -762,7 +612,6 @@ class Berendrecht(RechargeBase):
 
     For a detailed description of the recharge model and parameters we refer to the
     original publication.
-
     """
 
     def __init__(self) -> None:
@@ -775,7 +624,7 @@ class Berendrecht(RechargeBase):
 
     def get_init_parameters(self, name: str) -> DataFrame:
         """Get initial parameters and bounds for the Berendrecht recharge model."""
-        parameters = DataFrame(
+        return DataFrame(
             [
                 (0.9, 0.7, 1.3, False, name),  # fi
                 (1.0, 0.7, 1.3, False, name),  # fc
@@ -796,137 +645,107 @@ class Berendrecht(RechargeBase):
                 name + "_ks",
             ],
         )
-        return parameters
 
     def simulate(
         self,
         prec: ArrayLike,
         evap: ArrayLike,
         p: ArrayLike,
-        dt: ArrayLike = 1.0,
+        dt: float = 1.0,
         return_full: bool = False,
-        **kwargs,
     ) -> ArrayLike:
-        """Simulate the recharge flux.
-
-        Parameters
-        ----------
-        prec: array_like
-            Precipitation flux in mm/d. Has to have the same length as evap.
-        evap: array_like
-            Potential evapotranspiration flux in mm/d.
-        p: array_like
-            array_like object with the values as floats representing the model
-            parameters.
-        dt: float, optional
-            time step for the calculation of the recharge. Only dt=1 is possible now.
-        return_full: bool, optional
-            Return all fluxes and states stacked along the first axis of a
-            single array, instead of only the recharge flux.
-
-        Returns
-        -------
-        array_like
-            Recharge flux calculated by the model: shape (n_points,) for a 1-D
-            `p`, (n_real, n_points) for a 2-D `p` of shape (n_real, n_param).
-            With `return_full=True`, all fluxes and states are stacked along
-            the first axis: (n_fluxes, n_points) for a 1-D `p` and
-            (n_fluxes, n_real, n_points) for a 2-D `p`.
-        """
-        if np.ndim(p) > 1:
-            P = np.asarray(p)
-            n_real = P.shape[0]
-            prec2 = np.repeat(np.asarray(prec)[None, :], n_real, axis=0)
-            evap2 = np.repeat(np.asarray(evap)[None, :], n_real, axis=0)
-            r, s, ea, pe = self._berendrecht_recharge_ensemble(
-                prec2,
-                evap2,
-                P[:, 0],
-                P[:, 1],
-                P[:, 2],
-                P[:, 3],
-                P[:, 4],
-                P[:, 5],
-                P[:, 6],
-                dt,
-            )
-            if return_full:
-                return np.stack((r, s, ea, pe))
-            return nan_to_num(r)
+        """Simulate the recharge flux for 1-D or 2-D `p`."""
+        p_arr = np.asarray(p)
+        is_1d = p_arr.ndim == 1
+        P = np.atleast_2d(p_arr)
         r, s, ea, pe = self.get_recharge(
             prec,
             evap,
-            fi=p[0],
-            fc=p[1],
-            sr=p[2],
-            de=p[3],
-            l=p[4],
-            m=p[5],
-            ks=p[6],
+            fi=P[:, 0],
+            fc=P[:, 1],
+            sr=P[:, 2],
+            de=P[:, 3],
+            l=P[:, 4],
+            m=P[:, 5],
+            ks=P[:, 6],
             dt=dt,
         )
         if return_full:
-            return np.stack((r, s, ea, pe))
-        return nan_to_num(r)
+            out = np.stack((r, s, ea, pe))
+            return out[:, 0, :] if is_1d else out
+        r_clean = nan_to_num(r)
+        return r_clean[0] if is_1d else r_clean
 
-    @staticmethod
-    @njit
+    @classmethod
     def get_recharge(
+        cls,
         prec: ArrayLike,
         evap: ArrayLike,
-        fi: float | complex128 = 1.0,
-        fc: float | complex128 = 1.0,
-        sr: float | complex128 = 0.5,
-        de: float | complex128 = 250.0,
-        l: float | complex128 = -2.0,
-        m: float | complex128 = 0.5,
-        ks: float | complex128 = 50.0,
+        fi: float | complex128 | ArrayLike = 1.0,
+        fc: float | complex128 | ArrayLike = 1.0,
+        sr: float | complex128 | ArrayLike = 0.5,
+        de: float | complex128 | ArrayLike = 250.0,
+        l: float | complex128 | ArrayLike = -2.0,
+        m: float | complex128 | ArrayLike = 0.5,
+        ks: float | complex128 | ArrayLike = 50.0,
         dt: float = 1.0,
-    ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Calculate recharge flux sped up with numba.
-
-        Notes
-        -----
-        Thin 1-D adapter over the `_berendrecht_recharge_ensemble` static method.
-        """
-        r, s, ea, pe = _berendrecht_recharge_ensemble(
-            prec.reshape(1, -1),
-            evap.reshape(1, -1),
-            np.full(1, fi),
-            np.full(1, fc),
-            np.full(1, sr),
-            np.full(1, de),
-            np.full(1, l),
-            np.full(1, m),
-            np.full(1, ks),
-            dt,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Calculate recharge flux sped up with numba (1-D or 2-D)."""
+        params = [np.atleast_1d(x) for x in (fi, fc, sr, de, l, m, ks)]
+        is_1d = (
+            np.ndim(prec) == 1
+            and np.ndim(evap) == 1
+            and all(np.ndim(x) == 0 for x in (fi, fc, sr, de, l, m, ks))
         )
-        return r[0], s[0], ea[0], pe[0]
+        n_real = max(
+            *(x.shape[0] for x in params),
+            np.atleast_2d(prec).shape[0],
+            np.atleast_2d(evap).shape[0],
+        )
+        prec_2d = _prepare_2d_flux(prec, n_real)
+        evap_2d = _prepare_2d_flux(evap, n_real)
+        dtype = np.result_type(prec_2d, evap_2d, *params, np.float64)
+        b_params = [np.broadcast_to(x, (n_real,)) for x in params]
+        r, s, ea, pe = cls._recharge_kernel(prec_2d, evap_2d, *b_params, dt, dtype)
+        if is_1d:
+            return r[0], s[0], ea[0], pe[0]
+        return r, s, ea, pe
 
     @staticmethod
     @njit
-    def _berendrecht_recharge_ensemble(prec, evap, fi, fc, sr, de, l, m, ks, dt=1.0):
-        """Berendrecht recharge for an ensemble of realizations (2-D fluxes)."""
+    def _recharge_kernel(prec, evap, fi, fc, sr, de, l, m, ks, dt, dtype):
         n_real, n = prec.shape
-        pe = fi[:, None] * prec  # Effective precipitation flux
-        ep = fc[:, None] * evap  # Potential evaporation flux
-        dtype = np.asarray(fi[0] + fc[0] + sr[0] + de[0] + l[0] + m[0] + ks[0]).dtype
-        s = zeros((n_real, n), dtype=dtype)  # Root zone storage state
-        s[:, 0] = 0.5  # Set the initial system state
-        r = zeros((n_real, n), dtype=dtype)  # Recharge flux
-        ea = zeros((n_real, n), dtype=dtype)  # Actual evaporation flux
-        for t in range(n - 1):
-            s_t = s[:, t]
-            low = _real(s_t) < 0.05
-            high = (~low) & (_real(s_t) > 0.95)
-            s[:, t] = where(
-                low,
-                0.05 * exp(20.0 * s_t - 1.0),
-                where(high, 1.0 - (0.05 * exp(19.0 - 20.0 * s_t)), s_t),
-            )
-            ea[:, t] = (1.0 - exp(-3.0 * s[:, t] / sr)) * ep[:, t]
-            r[:, t] = ks * s[:, t] ** l * (1.0 - (1.0 - s[:, t] ** (1.0 / m)) ** m) ** 2
-            s[:, t + 1] = s[:, t] + dt / de * (pe[:, t] - ea[:, t] - r[:, t])
+        s = zeros((n_real, n), dtype=dtype)
+        r = zeros((n_real, n), dtype=dtype)
+        ea = zeros((n_real, n), dtype=dtype)
+        pe = zeros((n_real, n), dtype=dtype)
+        for i in range(n_real):
+            fi_i = fi[i]
+            fc_i = fc[i]
+            sr_i = sr[i]
+            de_i = de[i]
+            l_i = l[i]
+            m_i = m[i]
+            inv_m_i = 1.0 / m_i
+            ks_i = ks[i]
+            s_cur = 0.5
+            for t in range(n - 1):
+                pe_t = fi_i * prec[i, t]
+                ep_t = fc_i * evap[i, t]
+                s_real = _real(s_cur)
+                if s_real < 0.05:
+                    s_cur = 0.05 * exp(20.0 * s_cur - 1.0)
+                elif s_real > 0.95:
+                    s_cur = 1.0 - 0.05 * exp(19.0 - 20.0 * s_cur)
+                ea_t = (1.0 - exp(-3.0 * s_cur / sr_i)) * ep_t
+                r_t = ks_i * (s_cur**l_i) * (1.0 - (1.0 - s_cur**inv_m_i) ** m_i) ** 2
+                s[i, t] = s_cur
+                pe[i, t] = pe_t
+                ea[i, t] = ea_t
+                r[i, t] = r_t
+                s_cur = s_cur + (dt / de_i) * (pe_t - ea_t - r_t)
+            s[i, n - 1] = s_cur
+            pe[i, n - 1] = fi_i * prec[i, n - 1]
         return r, s, ea, pe
 
     def get_water_balance(
@@ -936,9 +755,8 @@ class Berendrecht(RechargeBase):
         if np.ndim(p) > 1:
             raise NotImplementedError("get_water_balance is only supported for 1-D p.")
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
-        s = s * p[3]  # Because S is computed dimensionless in this model
-        data = DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
-        return data
+        s = s * p[3]
+        return DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
 
 
 class Peterson(RechargeBase):
@@ -988,7 +806,7 @@ class Peterson(RechargeBase):
 
     def get_init_parameters(self, name: str) -> DataFrame:
         """Get initial parameters and bounds for the Peterson recharge model."""
-        parameters = DataFrame(
+        return DataFrame(
             [
                 (1.5, 0.5, 3.0, True, name),  # scap
                 (1.0, 0.0, 1.5, True, name),  # alpha
@@ -1005,7 +823,6 @@ class Peterson(RechargeBase):
                 name + "_gamma",
             ],
         )
-        return parameters
 
     def simulate(
         self,
@@ -1014,118 +831,119 @@ class Peterson(RechargeBase):
         p: ArrayLike,
         dt: float = 1.0,
         return_full: bool = False,
-        **kwargs,
     ) -> ArrayLike:
-        """Simulate the recharge flux.
+        """Simulate the recharge flux for 1-D or 2-D `p`.
 
         Parameters
         ----------
         prec: array_like
             Precipitation flux in mm/d. Must have the same length as evap.
         evap: array_like
-            Potential evapotranspiration flux in mm/d.
+            Potential evaporation flux in mm/d.
         p: array_like
             array_like object with the values as floats representing the model
-            parameters.
+            parameters. Must be length self.nparam.
         dt: float, optional
-            time step for the calculation of the recharge.
+            time step for the calculation of the recharge. Only dt=1 is possible now.
         return_full: bool, optional
             Return all fluxes and states stacked along the first axis of a
             single array, instead of only the recharge flux.
 
         Returns
         -------
-        r: array_like or list of array_like
-            Recharge flux calculated by the model is the argument full_output is
-            False, otherwise a list with all fluxes and states. For a 2-D `p` of
-            shape (n_real, n_param), an array of shape
-            (n_real, n_points) is returned.
-
+        array_like
+            Recharge flux calculated by the model: shape (n_points,) for a 1-D
+            `p`, (n_real, n_points) for a 2-D `p` of shape (n_real, n_param). With
+            `return_full=True`, all fluxes and  states are stacked along the first
+            axis: (n_fluxes, n_points) for a 1-D `p` and (n_fluxes, n_real, n_points)
+            for a 2-D `p`.
         """
-        if np.ndim(p) > 1:
-            P = np.asarray(p)
-            n_real = P.shape[0]
-            prec2 = np.repeat(np.asarray(prec)[None, :], n_real, axis=0)
-            evap2 = np.repeat(np.asarray(evap)[None, :], n_real, axis=0)
-            r, s, ea, pe = self._peterson_recharge_ensemble(
-                prec2, evap2, P[:, 0], P[:, 1], P[:, 2], P[:, 3], P[:, 4], dt
-            )
-            if return_full:
-                return np.stack((r, s, ea, pe))
-            return nan_to_num(r)
+        p_arr = np.asarray(p)
+        is_1d = p_arr.ndim == 1
+        P = np.atleast_2d(p_arr)
         r, s, ea, pe = self.get_recharge(
             prec,
             evap,
-            scap=p[0],
-            alpha=p[1],
-            ksat=p[2],
-            beta=p[3],
-            gamma=p[4],
+            scap=P[:, 0],
+            alpha=P[:, 1],
+            ksat=P[:, 2],
+            beta=P[:, 3],
+            gamma=P[:, 4],
             dt=dt,
         )
         if return_full:
-            return np.stack((r, s, ea, pe))
-        return nan_to_num(r)
+            out = np.stack((r, s, ea, pe))
+            return out[:, 0, :] if is_1d else out
+        r_clean = nan_to_num(r)
+        return r_clean[0] if is_1d else r_clean
 
-    @staticmethod
-    @njit
+    @classmethod
     def get_recharge(
+        cls,
         prec: ArrayLike,
         evap: ArrayLike,
-        scap: float | complex128 = 1.0,
-        alpha: float | complex128 = 1.0,
-        ksat: float | complex128 = 1.0,
-        beta: float | complex128 = 0.5,
-        gamma: float | complex128 = 1.0,
+        scap: float | complex128 | ArrayLike = 1.0,
+        alpha: float | complex128 | ArrayLike = 1.0,
+        ksat: float | complex128 | ArrayLike = 1.0,
+        beta: float | complex128 | ArrayLike = 0.5,
+        gamma: float | complex128 | ArrayLike = 1.0,
         dt: float = 1.0,
-    ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
-        """Calculate recharge flux sped up with numba.
-
-        Notes
-        -----
-        Thin 1-D adapter over the `_peterson_recharge_ensemble` static method.
-        """
-        r, sm, ea, pe = _peterson_recharge_ensemble(
-            prec.reshape(1, -1),
-            evap.reshape(1, -1),
-            np.full(1, scap),
-            np.full(1, alpha),
-            np.full(1, ksat),
-            np.full(1, beta),
-            np.full(1, gamma),
-            dt,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Calculate recharge flux sped up with numba (1-D or 2-D)."""
+        params = [np.atleast_1d(x) for x in (scap, alpha, ksat, beta, gamma)]
+        is_1d = (
+            np.ndim(prec) == 1
+            and np.ndim(evap) == 1
+            and all(np.ndim(x) == 0 for x in (scap, alpha, ksat, beta, gamma))
         )
-        return r[0], sm[0], ea[0], pe[0]
+        n_real = max(
+            *(x.shape[0] for x in params),
+            np.atleast_2d(prec).shape[0],
+            np.atleast_2d(evap).shape[0],
+        )
+        prec_2d = _prepare_2d_flux(prec, n_real)
+        evap_2d = _prepare_2d_flux(evap, n_real)
+        dtype = np.result_type(prec_2d, evap_2d, *params, np.float64)
+        b_params = [np.broadcast_to(x, (n_real,)) for x in params]
+        r, sm, ea, pe = cls._recharge_kernel(prec_2d, evap_2d, *b_params, dt, dtype)
+        if is_1d:
+            return r[0], sm[0], ea[0], pe[0]
+        return r, sm, ea, pe
 
     @staticmethod
     @njit
-    def _peterson_recharge_ensemble(prec, evap, scap, alpha, ksat, beta, gamma, dt=1.0):
-        """Peterson recharge for an ensemble of realizations (2-D fluxes)."""
+    def _recharge_kernel(prec, evap, scap, alpha, ksat, beta, gamma, dt, dtype):
         n_real, n = prec.shape
-        dtype = np.asarray(scap[0] + alpha[0] + ksat[0] + beta[0] + gamma[0]).dtype
-        pe = zeros((n_real, n), dtype=dtype)  # Effective precipitation flux
-        sm = zeros((n_real, n + 1), dtype=dtype)  # Root zone storage state
-        r = zeros((n_real, n), dtype=dtype)  # Recharge flux
-        ea = zeros((n_real, n), dtype=dtype)  # Actual evaporation flux
-        # Update params
-        smsc = power(10, scap)
-        ksat_ = power(10, ksat)
-        beta_ = power(10, beta)
-        sm[:, 0] = smsc / 2  # Set the initial system state
-        for t in range(n):
-            sm_frac = sm[:, t] / smsc
-            pe[:, t] = prec[:, t] * power(1.0 - sm_frac, alpha)
-            ea_val = evap[:, t] * power(sm_frac, gamma)
-            ea[:, t] = where(_real(ea_val) > _real(sm[:, t + 1]), ea_val, sm[:, t + 1])
-            r_val = ksat_ * power(sm_frac, beta_)
-            r[:, t] = where(_real(r_val) > _real(sm[:, t + 1]), r_val, sm[:, t + 1])
-            sm_new = sm[:, t] + (pe[:, t] - ea[:, t] - r[:, t]) * dt
-            sm[:, t + 1] = where(
-                _real(sm_new) < 0.0,
-                0.0,
-                where(_real(sm_new) > _real(smsc), smsc, sm_new),
-            )
-        return r, sm[:, 1:], ea, pe
+        pe = zeros((n_real, n), dtype=dtype)
+        sm = zeros((n_real, n), dtype=dtype)
+        r = zeros((n_real, n), dtype=dtype)
+        ea = zeros((n_real, n), dtype=dtype)
+        for i in range(n_real):
+            smsc_i = 10.0 ** scap[i]
+            alpha_i = alpha[i]
+            ksat_i = 10.0 ** ksat[i]
+            beta_i = 10.0 ** beta[i]
+            gamma_i = gamma[i]
+            sm_cur = 0.5 * smsc_i
+            for t in range(n):
+                sm_frac = sm_cur / smsc_i
+                pe_t = prec[i, t] * ((1.0 - sm_frac) ** alpha_i)
+                ea_val = evap[i, t] * (sm_frac**gamma_i)
+                ea_t = ea_val if _real(ea_val) > 0.0 else 0.0
+                r_val = ksat_i * (sm_frac**beta_i)
+                r_t = r_val if _real(r_val) > 0.0 else 0.0
+                sm_new = sm_cur + (pe_t - ea_t - r_t) * dt
+                if _real(sm_new) < 0.0:
+                    sm_cur = 0.0
+                elif _real(sm_new) > _real(smsc_i):
+                    sm_cur = smsc_i
+                else:
+                    sm_cur = sm_new
+                pe[i, t] = pe_t
+                ea[i, t] = ea_t
+                r[i, t] = r_t
+                sm[i, t] = sm_cur
+        return r, sm, ea, pe
 
     def get_water_balance(
         self, prec: ArrayLike, evap: ArrayLike, p: ArrayLike, dt: float = 1.0, **kwargs
@@ -1134,16 +952,4 @@ class Peterson(RechargeBase):
         if np.ndim(p) > 1:
             raise NotImplementedError("get_water_balance is only supported for 1-D p.")
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
-        data = DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
-        return data
-
-
-# Module-level aliases to the ensemble kernels, which are defined as static
-# methods on the classes above. Numba resolves jitted callees through module
-# globals, so the jitted 1-D adapters (e.g. FlexModel.get_root_zone_balance)
-# call these aliases.
-_root_zone_balance_ensemble = FlexModel._root_zone_balance_ensemble
-_interception_balance_ensemble = FlexModel._interception_balance_ensemble
-_snow_balance_ensemble = FlexModel._snow_balance_ensemble
-_berendrecht_recharge_ensemble = Berendrecht._berendrecht_recharge_ensemble
-_peterson_recharge_ensemble = Peterson._peterson_recharge_ensemble
+        return DataFrame(data=vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"])
