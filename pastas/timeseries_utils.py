@@ -23,7 +23,6 @@ from pandas.tseries.frequencies import to_offset
 from pandas.tseries.offsets import BaseOffset
 from scipy import fft as scipy_fft
 from scipy import interpolate
-from scipy.signal import fftconvolve
 
 from .decorators import deprecate_args_or_kwargs, deprecate_class_func_or_method, njit
 from .typing import ArrayLike
@@ -960,14 +959,14 @@ def _get_interpolation_weights(
     return indices, weights
 
 
-def convolve(stress: ArrayLike, B: ArrayLike) -> ArrayLike:
-    """Convolve a stress with block response(s), batched over realizations.
+def convolve(stress: ArrayLike, B: ArrayLike) -> np.ndarray:
+    """
+    Convolve a stress with block response(s), batched over realizations.
 
     Supports all 1-D/2-D broadcasting combinations of a stress and block
     response(s), computed in a single batched FFT pass:
 
-    - `stress` (n_points,) + `B` (n_b,): 1-D fast path, delegates to
-      `scipy.signal.fftconvolve(stress, B, "full")[:n_points]`
+    - `stress` (n_points,) + `B` (n_b,) -> (n_points,)
     - `stress` (n_points,) + `B` (n_real, n_b) -> (n_real, n_points)
     - `stress` (n_real, n_points) + `B` (n_real, n_b) -> (n_real, n_points)
     - `stress` (n_real, n_points) + `B` (n_b,) or (1, n_b) -> (n_real, n_points)
@@ -986,9 +985,10 @@ def convolve(stress: ArrayLike, B: ArrayLike) -> ArrayLike:
     Returns
     -------
     np.ndarray
-        The convolved series truncated to `n_points`: shape (n_points,) for
-        the 1-D fast path, (n_real, n_points) otherwise. Equivalent to
-        `fftconvolve(stress, b, "full")[:n_points]` for each row `b` of `B`.
+        The convolved series truncated to `n_points`: shape `(n_points,)` when
+        both inputs are 1-D, `(n_real, n_points)` otherwise. Equivalent to
+        `scipy.signal.fftconvolve(stress, b, "full")[:n_points]` for each row
+        `b` of `B`.
 
     Notes
     -----
@@ -1012,11 +1012,7 @@ def convolve(stress: ArrayLike, B: ArrayLike) -> ArrayLike:
     B = np.asarray(B)
     n_points = stress.shape[-1]
 
-    # 1-D fast path (single convolution; workers is only relevant when batched)
-    if stress.ndim == 1 and B.ndim == 1:
-        return fftconvolve(stress, B, mode="full")[:n_points]
-
-    # Normalize 1-D B to (1, n_b) when stress is 2-D
+    is_1d = stress.ndim == 1 and B.ndim == 1
     if B.ndim == 1:
         B = B[np.newaxis, :]
 
@@ -1034,8 +1030,11 @@ def convolve(stress: ArrayLike, B: ArrayLike) -> ArrayLike:
         else (scipy_fft.rfft, scipy_fft.irfft)
     )
 
-    S = fft(stress, n_fft, axis=-1, workers=workers)
-    B_fft = fft(B, n_fft, axis=1, workers=workers)
+    s_workers = None if stress.ndim == 1 else workers
+    b_workers = None if is_1d else workers
+
+    S = fft(stress, n_fft, axis=-1, workers=s_workers)
+    B_fft = fft(B, n_fft, axis=1, workers=b_workers)
 
     if S.ndim == 2 and B_fft.shape[0] == 1 and S.shape[0] > 1:
         prod = B_fft * S
@@ -1043,5 +1042,5 @@ def convolve(stress: ArrayLike, B: ArrayLike) -> ArrayLike:
         B_fft *= S
         prod = B_fft
 
-    conv = ifft(prod, n_fft, axis=1, overwrite_x=True, workers=workers)
-    return conv[:, :n_points]
+    conv = ifft(prod, n_fft, axis=1, overwrite_x=True, workers=b_workers)[:, :n_points]
+    return conv[0] if is_1d else conv
