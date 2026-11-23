@@ -700,23 +700,21 @@ class Model:
                 )
 
         if self._interpolate_simulation:
-            if isinstance(sim, DataFrame):
-                sim = self._simulate_interpolated_ensemble(sim=sim, obs=obs)
-            else:
-                sim = self._simulate_interpolated(sim=sim, obs=obs)
+            sim = self._simulate_interpolated(sim=sim, obs=obs)
         else:
             # All the observation indexes are in the simulation
             sim = sim.reindex(obs.index)
 
         return sim
 
-    def _simulate_interpolated(self, sim: Series, obs: Series) -> Series:
-        """Simulate the time series model and interpolate to the observation index.
+    def _simulate_interpolated(
+        self, sim: Series | DataFrame, obs: Series
+    ) -> Series | DataFrame:
+        """Interpolate simulated values to the observation index.
 
         Uses (pre-calculated) weights and indices for linear interpolation to speed
-        up the process.
+        up the process for both 1-D simulations (Series) and ensembles (DataFrame).
         """
-        # Interpolate using pre-calculated weights and indices
         sim_values = sim.to_numpy()
 
         # check assumes that obs_index is the same if sim_index is the same
@@ -730,38 +728,18 @@ class Model:
             )
 
         indices, weights = self._interpolation_indices_weights
-        sim_interp = (
-            sim_values[indices[:, 0]] * weights[:, 0]
-            + sim_values[indices[:, 1]] * weights[:, 1]
-        )
-        sim = Series(data=sim_interp, index=obs.index, name="Simulation")
-        return sim
-
-    def _simulate_interpolated_ensemble(self, sim: DataFrame, obs: Series) -> DataFrame:
-        """Interpolate an ensemble simulation to the observation index.
-
-        Reuses the (pre-calculated) interpolation weights and indices of
-        `_simulate_interpolated`, applied to all realizations (columns) at once.
-        """
-        sim_values = sim.to_numpy()  # (n_points, n_real)
-
-        # check assumes that obs_index is the same if sim_index is the same
-        if self._interpolation_indices_weights is None or not sim.index.equals(
-            self._sim_index
-        ):
-            # recompute interpolation weights and indices if sim_index has changed
-            self._interpolation_indices_weights = _get_interpolation_weights(
-                sim_tindex=sim.index,
-                obs_tindex=obs.index,
+        if sim_values.ndim == 1:
+            sim_interp = (
+                sim_values[indices[:, 0]] * weights[:, 0]
+                + sim_values[indices[:, 1]] * weights[:, 1]
             )
+            return Series(data=sim_interp, index=obs.index, name="Simulation")
 
-        indices, weights = self._interpolation_indices_weights
         sim_interp = (
             sim_values[indices[:, 0]] * weights[:, 0, np.newaxis]
             + sim_values[indices[:, 1]] * weights[:, 1, np.newaxis]
         )
-        sim = DataFrame(data=sim_interp, index=obs.index, columns=sim.columns)
-        return sim
+        return DataFrame(data=sim_interp, index=obs.index, columns=sim.columns)
 
     def residuals(
         self,
@@ -804,24 +782,16 @@ class Model:
         sim = self._simulate_on_observations(
             p=p, tmin=tmin, tmax=tmax, freq=freq, warmup=warmup
         )
-        if isinstance(sim, DataFrame):
-            # 2-D p: residuals per realization (one column each)
-            res = sim.rsub(obs, axis=0)
-            if res.isna().to_numpy().any():
-                res = res.dropna()
-                logger.warning("Nan-values were removed from the residuals.")
-            if self._fit_constant is False:
-                res = res.subtract(res.mean(axis=0))
-            return res
+        res = obs.sub(sim, axis=0)
+        if isinstance(res, Series):
+            res = res.rename("Residuals")
 
-        res = obs.subtract(sim).rename("Residuals")
-
-        if res.hasnans:
+        if res.isna().to_numpy().any():
             res = res.dropna()
             logger.warning("Nan-values were removed from the residuals.")
 
         if self._fit_constant is False:
-            res = res.subtract(np.mean(res))
+            res = res.sub(res.mean(axis=0))
 
         return res
 
