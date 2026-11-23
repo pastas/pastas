@@ -14,7 +14,7 @@ Add a stress model to a Pastas model::
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from collections.abc import Iterable
-from inspect import isclass
+from inspect import isclass, signature
 from logging import getLogger
 from typing import Any, Literal
 
@@ -2251,16 +2251,18 @@ class RechargeModel(StressModelBase):
 
         prec = self.prec.series.to_numpy()
         evap = self.evap.series.to_numpy()
-        temp = None
-        if self.temp is not None:
-            temp = self.temp.series.to_numpy()
+        temp = self.temp or self.temp.series.to_numpy()
         if p is None:
             p = self.parameters.loc[:, "initial"].to_numpy()
         p = np.asarray(p)
         p_rch = (
             p[-self.recharge.nparam :] if p.ndim == 1 else p[:, -self.recharge.nparam :]
         )
-        r = self.recharge.simulate(prec=prec, evap=evap, p=p_rch, temp=temp)
+        # parse self.temp if simulate accepts temp as a keyword argument
+        if "temp" in signature(self.recharge.simulate).parameters:
+            r = self.recharge.simulate(prec=prec, evap=evap, temp=temp, p=p_rch)
+        else:
+            r = self.recharge.simulate(prec=prec, evap=evap, p=p_rch)
         return np.asarray(r), self.prec.series.index
 
     def get_stress(
