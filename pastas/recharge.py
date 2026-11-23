@@ -331,7 +331,40 @@ class FlexModel(RechargeBase):
         gamma: float | np.complex128 | ArrayLike = 4.0,
         dt: float = 1.0,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Compute the water balance of the root zone reservoir (1-D or 2-D)."""
+        """Compute the water balance of the root zone reservoir (1-D or 2-D).
+
+        Parameters
+        ----------
+        pe: array_like
+            Effective precipitation flux in mm/d.
+        ep: array_like
+            Potential evaporation flux in mm/d.
+        srmax: float, optional
+            Maximum storage capacity of the root zone.
+        lp: float, optional
+            Parameter determining when actual evaporation equals potential.
+        ks: float, optional
+            Saturated hydraulic conductivity in mm/d.
+        gamma: float, optional
+            Parameter determining the nonlinearity of outflow / recharge.
+        dt: float, optional
+            time step for the calculation of the recharge. Only dt=1 is possible now.
+
+        Returns
+        -------
+        sr: array_like
+            Storage in the root zone reservoir.
+        r: array_like
+            Recharge flux in mm/d
+        ea: array_like
+            Evaporation flux in mm/d. Consists of transpiration and soil evaporation.
+            Does not include interception evaporation.
+        q: array_like
+            surface runoff flux in mm/d.
+        pe: array_like
+            Incoming infiltration flux in mm/d.
+
+        """
         is_1d = (
             np.ndim(pe) == 1
             and np.ndim(ep) == 1
@@ -418,7 +451,40 @@ class FlexModel(RechargeBase):
         simax: float | np.complex128 | ArrayLike = 2.0,
         dt: float = 1.0,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Compute the water balance of the interception reservoir (1-D or 2-D)."""
+        r"""Compute the water balance of the interception reservoir (1-D or 2-D).
+
+        Parameters
+        ----------
+        pr: array_like
+            NumPy Array with rainfall in mm/day.
+        ep: array_like
+            NumPy Array with potential evaporation in mm/day.
+        simax: float, optional
+            storage capacity of the interception reservoir.
+        dt: float
+            time step used for computation. Only dt=1.0 is possible now.
+
+        Returns
+        -------
+        si: array_like
+            Interception storage.
+        ei: array_like
+            Interception evaporation.
+        pi: array_like
+            Incoming rainfall that is intercepted.
+
+        Notes
+        -----
+        The water balance for the snow storage reservoir is defined as follows:
+
+        .. math::
+
+            \\frac{dS_i}{dt} = P_r - E_i - P_e
+
+        where $S_i$ [L] is the interception storage, $P_r$ [L/T] is the incoming
+        rainfall, $E_i$ [L/T] the interception evaporation, and $P_e$ [L/T] the
+        overflow from the interception reservoir.
+        """
         is_1d = np.ndim(pr) == 1 and np.ndim(ep) == 1 and np.ndim(simax) == 0
         simax_1d = np.atleast_1d(simax)
         n_real = max(
@@ -469,7 +535,39 @@ class FlexModel(RechargeBase):
         tt: float | np.complex128 | ArrayLike = 0.0,
         k: float | np.complex128 | ArrayLike = 2.0,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Compute the water balance of the snow reservoir (1-D or 2-D)."""
+        r"""Compute the water balance of the snow reservoir (1-D or 2-D).
+
+        Parameters
+        ----------
+        prec: array_like
+            NumPy Array with precipitation in mm/day.
+        temp: array_like
+            NumPy Array with the mean daily temperature in degree Celsius.
+        tt: float, optional
+            Temperature threshold for snowfall in degree Celsius.
+        k: float, optional
+            Degree-day factor in mm/d/°C.
+
+        Returns
+        -------
+        ss: array_like
+            storage in the snow reservoir.
+        ps: array_like
+            snowfall flux in mm/d.
+        m: array_like
+            snow melt flux in mm/d.
+
+        Notes
+        -----
+        The water balance from the snow reservoir is as follows:
+
+        .. math::
+
+            \\frac{dS_s}{dt} = P_s - M
+
+        where $S_s$ [L] is the snow storage, $P_s$ [L/T] the snowfall, and $M$ [L/T]
+        the snow melt from the snow reservoir.
+        """
         is_1d = (
             np.ndim(prec) == 1
             and np.ndim(temp) == 1
@@ -653,7 +751,28 @@ class Berendrecht(RechargeBase):
         dt: float = 1.0,
         return_full: bool = False,
     ) -> ArrayLike:
-        """Simulate the recharge flux for 1-D or 2-D `p`."""
+        """Simulate the recharge flux for 1-D or 2-D `p`.
+
+        Parameters
+        ----------
+        prec: array_like
+            Precipitation flux in mm/d. Has to have the same length as evap.
+        evap: array_like
+            Potential evapotranspiration flux in mm/d.
+        p: array_like
+            array_like object with the values as floats representing the model
+            parameters.
+        dt: float, optional
+            time step for the calculation of the recharge. Only dt=1 is possible now.
+        return_full: bool
+            return all fluxes and states as NumPy arrays.
+
+        Returns
+        -------
+        r: array_like or list of array_like
+            Recharge flux calculated by the model is the argument full_output is
+            False, otherwise a list with all fluxes and states.
+        """
         p_arr = np.asarray(p)
         is_1d = p_arr.ndim == 1
         P = np.atleast_2d(p_arr)
@@ -754,7 +873,7 @@ class Berendrecht(RechargeBase):
         if np.ndim(p) > 1:
             raise NotImplementedError("get_water_balance is only supported for 1-D p.")
         r, s, ea, pe = self.simulate(prec, evap, p=p, dt=dt, return_full=True, **kwargs)
-        s = s * p[3]
+        s = s * p[3]  # Because S is computed dimensionless in this model
         return DataFrame(
             data=np.vstack((s, pe, ea, r)).T, columns=["S", "Pe", "Ea", "R"]
         )
