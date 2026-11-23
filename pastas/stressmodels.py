@@ -2251,7 +2251,7 @@ class RechargeModel(StressModelBase):
 
         prec = self.prec.series.to_numpy()
         evap = self.evap.series.to_numpy()
-        temp = self.temp or self.temp.series.to_numpy()
+        temp = self.temp.series.to_numpy() if self.temp is not None else None
         if p is None:
             p = self.parameters.loc[:, "initial"].to_numpy()
         p = np.asarray(p)
