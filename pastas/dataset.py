@@ -86,7 +86,7 @@ def load_dataset(name: DATASET_NAMES) -> DataFrame | dict[str, DataFrame]:
 
     # Check if requests status is okay, otherwise raise error and return status code
     if not r.status_code == 200:
-        raise HTTPError(f"Error: {r.status_code}. Reason: {r.reason}. ")
+        raise HTTPError(f"Error: {r.status_code}. Reason: {r.reason}. ", response=r)
 
     # Get information about the files in the folder
     data = {}
