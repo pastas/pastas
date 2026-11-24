@@ -11,7 +11,7 @@ Generate forecasts using ensembles of stress forecasts::
 
 from logging import getLogger
 
-from numpy import array, empty, exp, linspace, ones
+from numpy import array, asarray, empty, exp, linspace, ones
 from pandas import (
     DataFrame,
     DatetimeIndex,
@@ -173,12 +173,12 @@ def forecast(
 
     Notes
     -----
-    For efficiency, the iteration over the different ensemble members and parameters sets is done in the following order using a double for-loop:
-
-    1. iterate over the ensemble members
-    2. iterate over the parameter sets
-
-    All computations that only depend on the parameter sets and not on the ensemble members are performed outside this double for-loop.
+    For efficiency, the iteration over the different ensemble members is done in a
+    for-loop, and all parameter sets are simulated at once per ensemble member using
+    a 2-D parameter array (a single batched convolution per stressmodel). All
+    computations that only depend on the parameter sets and not on the ensemble
+    members (residuals, variances, noise corrections) are performed outside the
+    loop over ensemble members.
 
     Please note that only the AR1 noise model is supported at this moment for post-processing.
 
@@ -248,6 +248,7 @@ def forecast(
 
     # Copy the model so old model is unaffected when replacing the stresses.
     model = model.copy()
+    P = asarray(p)  # (nparam, n_param)
     idx = 0
 
     # 1. iterate over the ensemble members
@@ -265,11 +266,10 @@ def forecast(
                 ts = concat([old_stress, new_stress], axis=0)
                 setattr(sm, stress_name, ts)
 
-        # 2. iterate over the parameter sets
-        for i, param in enumerate(p):
-            # Generate the forecasts
-            sim = model.simulate(tmin=tmin, tmax=tmax, p=param).values
-
+        # 2. simulate all parameter sets at once with a 2-D parameter array
+        sims = model.simulate(tmin=tmin, tmax=tmax, p=P).to_numpy()
+        for i in range(nparam):
+            sim = sims[:, i]
             if post_process:
                 # Add the correction from the noise model
                 sim = sim + correction[i]
