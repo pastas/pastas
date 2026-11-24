@@ -377,18 +377,28 @@ def conditional_cachedmethod(cache_getter):
 
     def decorator(func):
         if not CACHETOOLS_AVAILABLE:
-            # No cachetools available - just return the original function
             return func
 
-        # Create the cached version once at decoration time
-        cached_func = cachedmethod(cache_getter)(func)
+        from cachetools.keys import methodkey
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if options.cache:
-                return cached_func(self, *args, **kwargs)
-            else:
+            if not options.cache:
                 return func(self, *args, **kwargs)
+
+            cache = cache_getter(self)
+            key = methodkey(self, *args, **kwargs)
+            try:
+                return cache[key]
+            except KeyError:
+                pass
+
+            result = func(self, *args, **kwargs)
+            try:
+                cache[key] = result
+            except ValueError:
+                pass  # Result is too large for the cache.
+            return result
 
         return wrapper
 
