@@ -410,11 +410,7 @@ def conditional_cachedmethod(cache_getter):
             if not options.cache or _has_2d_array(args, kwargs):
                 return func(self, *args, **kwargs)
             cache = cache_getter(self)
-            try:
-                key = methodkey(self, *args, **kwargs)
-            except TypeError:
-                # unhashable arguments (e.g. numpy arrays) cannot be cached
-                return func(self, *args, **kwargs)
+            key = methodkey(self, *args, **kwargs)
             try:
                 return cache[key]
             except KeyError:
