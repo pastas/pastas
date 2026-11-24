@@ -7,6 +7,7 @@ and other convenient methods for handling time, numba compiled code, etc.
 from collections.abc import Callable
 from contextlib import contextmanager
 from functools import wraps
+from importlib.util import find_spec
 from logging import getLogger
 from typing import Any
 from warnings import warn
@@ -16,12 +17,7 @@ from pandas import Timestamp
 
 from pastas.version import __version__
 
-try:
-    from cachetools import cachedmethod
-
-    CACHETOOLS_AVAILABLE = True
-except (ModuleNotFoundError, ImportError):
-    CACHETOOLS_AVAILABLE = False
+CACHETOOLS_AVAILABLE = find_spec("cachetools") is not None
 
 logger = getLogger(__name__)
 
