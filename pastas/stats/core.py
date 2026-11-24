@@ -11,6 +11,7 @@ import numpy as np
 from pandas import DataFrame, DatetimeIndex, Index, Series, Timedelta, to_timedelta
 from scipy.stats import norm
 
+from .._options import options
 from ..decorators import deprecate_args_or_kwargs, njit
 from ..typing import ArrayLike
 
@@ -259,10 +260,17 @@ def ccf(
         # create integer arrays for the results
         lags = lags.astype(float)
 
+    use_numba = options.numba and hasattr(_compute_ccf_gaussian, "signatures")
     if bin_method == "rectangle":
-        c, b = _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width)
+        if use_numba:
+            c, b = _compute_ccf_rectangle(lags, t_x, x, t_y, y, bin_width)
+        else:
+            c, b = _compute_ccf_rectangle_numpy(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "gaussian":
-        c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
+        if use_numba:
+            c, b = _compute_ccf_gaussian(lags, t_x, x, t_y, y, bin_width)
+        else:
+            c, b = _compute_ccf_gaussian_numpy(lags, t_x, x, t_y, y, bin_width)
     elif bin_method == "regular":
         c, b = _compute_ccf_regular(lags, x, y)
     else:
@@ -321,7 +329,7 @@ def _preprocess(
     dt = x_idx / Timedelta(1, "D")
     dt_mu = dt[dt < max_gap].mean()  # Deal with big gaps if present
     dt_mu = max(dt_mu, 1)  # Prevent division by zero error
-    t = dt.cumsum()
+    t = np.concatenate(([0.0], dt.cumsum()))
 
     # Normalize the values and create numpy arrays
     x_vals = series.to_numpy()  # pandas 3.0: ensure writeable array
@@ -339,30 +347,90 @@ def _compute_ccf_rectangle(
     y: ArrayLike,
     bin_width: float = 0.5,
 ) -> tuple[ArrayLike, ArrayLike]:
-    """Compute the ccf."""
+    """Compute the ccf using rectangular binning."""
     c = np.empty_like(lags)
     b = np.empty_like(lags)
     n = len(t_x)
 
-    for k in prange(len(lags)):
-        cl = 0.0
-        b_sum = 0.0
-        lag_k = lags[k]
-        # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
-        for j in range(n):
-            yj = y[j]
-            t_yj = t_y[j]
-            for i in range(j, n):
-                d = abs(t_x[i] - t_yj) - lag_k
-                if abs(d) <= bin_width:
-                    cl += x[i] * yj
-                    b_sum += 1.0
-        if b_sum == 0.0:
-            c[k] = np.nan
-            b[k] = 1e-16  # Prevent division by zero error
-        else:
-            c[k] = cl / b_sum
-            b[k] = b_sum
+    is_sorted = True
+    for idx in range(1, n):
+        if t_x[idx] < t_x[idx - 1] or t_y[idx] < t_y[idx - 1]:
+            is_sorted = False
+            break
+
+    if is_sorted:
+        for k in prange(len(lags)):
+            cl = 0.0
+            b_sum = 0.0
+            lag_k = lags[k]
+            tol = 1e-12 * max(1.0, abs(lag_k) + bin_width)
+            bw_tol = bin_width + tol
+            i_pos = 0
+            i_neg = 0
+            for j in range(n):
+                yj = y[j]
+                t_yj = t_y[j]
+
+                # Positive branch: t_x[i] >= t_yj and
+                # |t_x[i] - t_yj - lag_k| <= bin_width
+                p_low = t_yj + lag_k - bw_tol
+                if p_low < t_yj:
+                    p_low = t_yj
+                p_high = t_yj + lag_k + bw_tol
+                if i_pos < j:
+                    i_pos = j
+                while i_pos < n and t_x[i_pos] < p_low:
+                    i_pos += 1
+                i = i_pos
+                while i < n and t_x[i] <= p_high:
+                    if abs(abs(t_x[i] - t_yj) - lag_k) <= bin_width:
+                        cl += x[i] * yj
+                        b_sum += 1.0
+                    i += 1
+
+                # Negative branch: t_x[i] < t_yj (only possible when t_x[j] < t_yj)
+                if t_x[j] < t_yj:
+                    n_low = t_yj - lag_k - bw_tol
+                    n_high = t_yj - lag_k + bw_tol
+                    if n_high > t_yj:
+                        n_high = t_yj
+                    if i_neg < j:
+                        i_neg = j
+                    while i_neg < n and t_x[i_neg] < n_low:
+                        i_neg += 1
+                    i = i_neg
+                    while i < n and t_x[i] < t_yj and t_x[i] <= n_high:
+                        if abs(abs(t_x[i] - t_yj) - lag_k) <= bin_width:
+                            cl += x[i] * yj
+                            b_sum += 1.0
+                        i += 1
+
+            if b_sum == 0.0:
+                c[k] = np.nan
+                b[k] = 1e-16  # Prevent division by zero error
+            else:
+                c[k] = cl / b_sum
+                b[k] = b_sum
+    else:
+        for k in prange(len(lags)):
+            cl = 0.0
+            b_sum = 0.0
+            lag_k = lags[k]
+            # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
+            for j in range(n):
+                yj = y[j]
+                t_yj = t_y[j]
+                for i in range(j, n):
+                    d = abs(t_x[i] - t_yj) - lag_k
+                    if abs(d) <= bin_width:
+                        cl += x[i] * yj
+                        b_sum += 1.0
+            if b_sum == 0.0:
+                c[k] = np.nan
+                b[k] = 1e-16  # Prevent division by zero error
+            else:
+                c[k] = cl / b_sum
+                b[k] = b_sum
     return c, b
 
 
@@ -375,7 +443,7 @@ def _compute_ccf_gaussian(
     y: ArrayLike,
     bin_width: float = 0.5,
 ) -> tuple[ArrayLike, ArrayLike]:
-    """Compute the ccf."""
+    """Compute the ccf using Gaussian kernel binning."""
     c = np.empty_like(lags)
     b = np.empty_like(lags)
     n = len(t_x)
@@ -384,27 +452,196 @@ def _compute_ccf_gaussian(
     den2 = np.sqrt(2 * np.pi * bin_width)  # denominator 2
     six_den2 = 6 * den2  # six std. dev.
 
-    for k in prange(len(lags)):
+    is_sorted = True
+    for idx in range(1, n):
+        if t_x[idx] < t_x[idx - 1] or t_y[idx] < t_y[idx - 1]:
+            is_sorted = False
+            break
+
+    if is_sorted:
+        for k in prange(len(lags)):
+            cl = 0.0
+            b_sum = 0.0
+            lag_k = lags[k]
+            i_start = 0
+            for j in range(n):
+                t_yj = t_y[j]
+                yj = y[j]
+                t_low = t_yj + lag_k - six_den2
+                t_high = t_yj + lag_k + six_den2
+                if i_start < j:
+                    i_start = j
+                while i_start < n and t_x[i_start] <= t_low:
+                    i_start += 1
+                i = i_start
+                while i < n and t_x[i] < t_high:
+                    dtlag = t_x[i] - t_yj - lag_k
+                    if abs(dtlag) < six_den2:
+                        d = np.exp(dtlag**2 / den1) / den2
+                        cl += x[i] * yj * d
+                        b_sum += d
+                    i += 1
+            if b_sum == 0.0:
+                c[k] = np.nan
+                b[k] = 1e-16  # Prevent division by zero error
+            else:
+                c[k] = cl / b_sum
+                b[k] = b_sum
+    else:
+        for k in prange(len(lags)):
+            cl = 0.0
+            b_sum = 0.0
+            lag_k = lags[k]
+            # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
+            for j in range(n):
+                t_yj = t_y[j]
+                yj = y[j]
+                for i in range(j, n):
+                    dtlag = t_x[i] - t_yj - lag_k
+                    if abs(dtlag) < six_den2:
+                        d = np.exp(dtlag**2 / den1) / den2
+                        cl += x[i] * yj * d
+                        b_sum += d
+            if b_sum == 0.0:
+                c[k] = np.nan
+                b[k] = 1e-16  # Prevent division by zero error
+            else:
+                c[k] = cl / b_sum
+                b[k] = b_sum
+    return c, b
+
+
+def _expand_index_windows(
+    lo: np.ndarray, hi: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Expand per-row index intervals ``[lo[j], hi[j])`` into flat ``(j, i)`` pairs."""
+    counts = hi - lo
+    valid = counts > 0
+    if not np.any(valid):
+        return np.empty(0, dtype=np.intp), np.empty(0, dtype=np.intp)
+    j_valid = np.nonzero(valid)[0]
+    c_valid = counts[valid]
+    lo_valid = lo[valid]
+    total = int(c_valid.sum())
+    j_idx = np.repeat(j_valid, c_valid)
+    starts = np.cumsum(c_valid) - c_valid
+    i_idx = (
+        np.arange(total, dtype=np.intp)
+        - np.repeat(starts, c_valid)
+        + np.repeat(lo_valid, c_valid)
+    )
+    return j_idx, i_idx
+
+
+def _compute_ccf_rectangle_numpy(
+    lags: ArrayLike,
+    t_x: ArrayLike,
+    x: ArrayLike,
+    t_y: ArrayLike,
+    y: ArrayLike,
+    bin_width: float = 0.5,
+) -> tuple[ArrayLike, ArrayLike]:
+    """Vectorized NumPy implementation of rectangular binning when Numba is disabled."""
+    n = len(t_x)
+    if n > 1 and (np.any(np.diff(t_x) < 0) or np.any(np.diff(t_y) < 0)):
+        py_fn = getattr(_compute_ccf_rectangle, "py_func", _compute_ccf_rectangle)
+        return py_fn(lags, t_x, x, t_y, y, bin_width)
+
+    c = np.empty_like(lags, dtype=float)
+    b = np.empty_like(lags, dtype=float)
+    j_all = np.arange(n, dtype=np.intp)
+    has_neg = bool(np.any(t_x < t_y))
+
+    for k in range(len(lags)):
+        lag_k = lags[k]
+        tol = 1e-12 * max(1.0, abs(lag_k) + bin_width)
+        bw_tol = bin_width + tol
         cl = 0.0
         b_sum = 0.0
-        lag_k = lags[k]
-        # traverse the lower diagonal of NxN matrix: np.dot(x.T, y)
-        for j in range(n):
-            t_yj = t_y[j]
-            yj = y[j]
-            for i in range(j, n):
-                dtlag = t_x[i] - t_yj - lag_k
-                if abs(dtlag) < six_den2:
-                    d = np.exp(dtlag**2 / den1) / den2
-                    # if d > 1e-5:
-                    cl += x[i] * yj * d
-                    b_sum += d
+
+        # Positive branch: t_x[i] >= t_y[j]
+        p_low = np.maximum(t_y, t_y + lag_k - bw_tol)
+        p_high = t_y + lag_k + bw_tol
+        lo = np.maximum(j_all, np.searchsorted(t_x, p_low, side="left"))
+        hi = np.searchsorted(t_x, p_high, side="right")
+        j_idx, i_idx = _expand_index_windows(lo, hi)
+        if j_idx.size > 0:
+            exact = np.abs(np.abs(t_x[i_idx] - t_y[j_idx]) - lag_k) <= bin_width
+            if np.any(exact):
+                j_ex = j_idx[exact]
+                i_ex = i_idx[exact]
+                cl += float(np.dot(x[i_ex], y[j_ex]))
+                b_sum += float(j_ex.size)
+
+        # Negative branch: t_x[i] < t_y[j]
+        if has_neg:
+            n_low = t_y - lag_k - bw_tol
+            lo_n = np.maximum(j_all, np.searchsorted(t_x, n_low, side="left"))
+            hi_n = np.minimum(
+                np.searchsorted(t_x, t_y, side="left"),
+                np.searchsorted(t_x, t_y - lag_k + bw_tol, side="right"),
+            )
+            jn, in_ = _expand_index_windows(lo_n, hi_n)
+            if jn.size > 0:
+                exact = np.abs(np.abs(t_x[in_] - t_y[jn]) - lag_k) <= bin_width
+                if np.any(exact):
+                    jn_ex = jn[exact]
+                    in_ex = in_[exact]
+                    cl += float(np.dot(x[in_ex], y[jn_ex]))
+                    b_sum += float(jn_ex.size)
+
         if b_sum == 0.0:
             c[k] = np.nan
-            b[k] = 1e-16  # Prevent division by zero error
+            b[k] = 1e-16
         else:
             c[k] = cl / b_sum
             b[k] = b_sum
+    return c, b
+
+
+def _compute_ccf_gaussian_numpy(
+    lags: ArrayLike,
+    t_x: ArrayLike,
+    x: ArrayLike,
+    t_y: ArrayLike,
+    y: ArrayLike,
+    bin_width: float = 0.5,
+) -> tuple[ArrayLike, ArrayLike]:
+    """Vectorized NumPy implementation of Gaussian binning when Numba is disabled."""
+    n = len(t_x)
+    if n > 1 and (np.any(np.diff(t_x) < 0) or np.any(np.diff(t_y) < 0)):
+        py_fn = getattr(_compute_ccf_gaussian, "py_func", _compute_ccf_gaussian)
+        return py_fn(lags, t_x, x, t_y, y, bin_width)
+
+    c = np.empty_like(lags, dtype=float)
+    b = np.empty_like(lags, dtype=float)
+    j_all = np.arange(n, dtype=np.intp)
+    den1 = -2.0 * bin_width**2
+    den2 = np.sqrt(2.0 * np.pi * bin_width)
+    six_den2 = 6.0 * den2
+    # Beyond 9 * bin_width, exp(-40.5) < 3e-18 (negligible in float64)
+    eff_cutoff = min(six_den2, 9.0 * bin_width)
+
+    for k in range(len(lags)):
+        lag_k = lags[k]
+        lo = np.maximum(
+            j_all, np.searchsorted(t_x, t_y + lag_k - eff_cutoff, side="right")
+        )
+        hi = np.searchsorted(t_x, t_y + lag_k + eff_cutoff, side="left")
+        j_idx, i_idx = _expand_index_windows(lo, hi)
+        if j_idx.size == 0:
+            c[k] = np.nan
+            b[k] = 1e-16
+        else:
+            dtlag = t_x[i_idx] - t_y[j_idx] - lag_k
+            w = np.exp((dtlag * dtlag) / den1) / den2
+            b_sum = float(w.sum())
+            if b_sum == 0.0:
+                c[k] = np.nan
+                b[k] = 1e-16
+            else:
+                c[k] = float(np.dot(x[i_idx] * y[j_idx], w)) / b_sum
+                b[k] = b_sum
     return c, b
 
 
