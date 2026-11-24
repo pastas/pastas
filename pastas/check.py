@@ -897,7 +897,7 @@ def get_checks_literature(
     author: str
         Author of the checklist to retrieve. Must be one of
         ["brakenhoff_2022", "zaadnoordijk_2019"].
-    recharge_model: str, optional
+    recharge_model_name: str, optional
         Name of the recharge model. Required for "zaadnoordijk_2019" checklist to
         obtain parameters related to the recharge model.
 

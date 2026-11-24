@@ -20,14 +20,14 @@ class TrackSolve:
 
     Parameters
     ----------
-    ml : pastas.model.Model
+    model : pastas.model.Model
         pastas Model to track
     tmin: pandas.Timestamp or str, optional
         start time for simulation, by default None which defaults to first index in
-        ml.oseries.series
+        model.oseries.series
     tmax: pandas.Timestamp or str, optional
         end time for simulation, by default None which defaults to last index in
-        ml.oseries.series
+        model.oseries.series
     update_iter : int, optional
         if visualizing optimization progress, update plot every update_iter
         iterations, by default nparam

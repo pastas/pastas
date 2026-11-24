@@ -1227,10 +1227,6 @@ class Plotting:
             A string or pandas.Timestamp with the end date for the period
             (E.g. '2020-01-01 00:00:00'). Strings are converted to
             pandas.Timestamp internally.
-        fname: str, optional
-            string with the file name / path to store the PDF file.
-        dpi: int, optional
-            dpi to save the figure with.
         results_kwargs: dict, optional
             dictionary passed on to ml.plots.results method.
         diagnostics_kwargs: dict, optional

@@ -137,8 +137,6 @@ class Plotly:
 
         Parameters
         ----------
-        ml : pastas.Model
-            model to plot results for
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
             (E.g. '1980-01-01 00:00:00'). Strings are converted to
@@ -506,11 +504,6 @@ class Plotly:
 
     def diagnostics(self):
         """Create Plotly version of pastas.Model.plots.diagnostics().
-
-        Parameters
-        ----------
-        ml : pastas.Model
-            model to plot results for
 
         Returns
         -------
