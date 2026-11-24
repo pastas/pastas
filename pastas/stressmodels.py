@@ -14,13 +14,20 @@ Add a stress model to a Pastas model::
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from collections.abc import Iterable
-from inspect import isclass
+from inspect import isclass, signature
 from logging import getLogger
 from typing import Any, Literal
 
 import numpy as np
-from pandas import DataFrame, Series, Timedelta, Timestamp, concat, date_range
-from scipy.signal import fftconvolve
+from pandas import (
+    DataFrame,
+    DatetimeIndex,
+    Series,
+    Timedelta,
+    Timestamp,
+    concat,
+    date_range,
+)
 
 from pastas.typing import (
     ArrayLike,
@@ -31,6 +38,7 @@ from pastas.typing import (
 )
 
 from .decorators import (
+    _real,
     check_argument_model,
     conditional_cachedmethod,
     deprecate_args_or_kwargs,
@@ -41,6 +49,7 @@ from .decorators import (
 from .recharge import Linear
 from .rfunc import Exponential, HantushWellModel, One
 from .timeseries import TimeSeries
+from .timeseries_utils import convolve
 from .utils import validate_name
 
 try:
@@ -336,16 +345,31 @@ class StressModelBase(ABC):
         return model.get_parameters(self.name)
 
     def _get_block(
-        self, p: ArrayLike, dt: float, tmin: Timestamp | str, tmax: Timestamp | str
-    ) -> ArrayLike:
+        self,
+        p: ArrayLike,
+        dt: float,
+        tmin: Timestamp | str | None,
+        tmax: Timestamp | str | None,
+    ) -> np.ndarray:
         """Get block-response function."""
         if tmin is not None and tmax is not None:
             day = Timedelta(1, "D")
             maxtmax = (Timestamp(tmax) - Timestamp(tmin)) / day
         else:
             maxtmax = None
-        b = self.rfunc.block(p, dt, maxtmax=maxtmax)
-        return b
+
+        p = np.asarray(p)
+        if p.ndim == 1:
+            return self.rfunc.block(p, dt, maxtmax=maxtmax)
+
+        n_reals = p.shape[0]
+        blocks = [self.rfunc.block(p[i], dt, maxtmax=maxtmax) for i in range(n_reals)]
+        n_max = max(b.size for b in blocks)
+        dtype = np.result_type(blocks[0].dtype, np.float64)
+        B = np.zeros((n_reals, n_max), dtype=dtype)
+        for i, b in enumerate(blocks):
+            B[i, : b.size] = b
+        return B
 
     def _get_responses(
         self,
@@ -602,26 +626,32 @@ class StressModel(StressModelBase):
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
-    ) -> Series:
-        """Simulate the stressmodel's contribution."""
-        return self._simulate(tuple(p), tmin, tmax, freq, dt)
+    ) -> Series | DataFrame:
+        """Simulate the stressmodel's contribution.
+
+        A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
+        and a DataFrame (one column per realization) is returned.
+        """
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
         self,
-        p: tuple,
+        p: tuple[float, ...] | ArrayLike,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
-    ) -> Series:
+    ) -> Series | DataFrame:
         """Simulate the head contribution.
 
         Parameters
         ----------
         p: array_like
             array_like object with the values as floats representing the model
-            parameters.
+            parameters. A 2-D array of shape (n_real, n_param) simulates
+            an ensemble and returns a DataFrame with one column per realization.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
             (E.g. '1980-01-01 00:00:00'). Strings are converted to
@@ -638,21 +668,18 @@ class StressModel(StressModelBase):
 
         Returns
         -------
-        pandas.Series
-            The simulated head contribution.
+        pandas.Series or pandas.DataFrame
+            The simulated head contribution. A Series for a 1-D `p`, a DataFrame
+            with one column per realization for a 2-D `p`.
 
         """
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        b = self._get_block(p, dt, tmin, tmax)
         stress = self.stress.series
-        npoints = stress.index.size
-        h = Series(
-            data=fftconvolve(stress, b, "full")[:npoints],
-            index=stress.index,
-            name=self.name,
-            dtype=np.asarray(p).dtype,
-        )
-        return h
+        p = np.asarray(p)
+        b = self._get_block(p, dt, tmin, tmax)  # (n_b,) or (n_real, n_b)
+        c = convolve(stress.to_numpy(), b)  # (n_points,) or (n_real, n_points)
+        sim = DataFrame(np.atleast_2d(c).T, index=stress.index)
+        return sim.squeeze("columns").rename(self.name) if p.ndim == 1 else sim
 
     def to_dict(self, series: bool = True) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
@@ -760,9 +787,14 @@ class StepModel(StressModelBase):
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
-    ) -> Series:
-        """Simulate the stressmodel's contribution."""
-        return self._simulate(tuple(p), tmin, tmax, freq, dt)
+    ) -> Series | DataFrame:
+        """Simulate the stressmodel's contribution.
+
+        A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
+        and a DataFrame (one column per realization) is returned.
+        """
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
@@ -772,20 +804,21 @@ class StepModel(StressModelBase):
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
-    ) -> Series:
-        tstart = Timestamp.fromordinal(int(p[-1]))
+    ) -> Series | DataFrame:
         tindex = date_range(tmin, tmax, freq=freq, unit="us")
-        h = Series(0, tindex, name=self.name)
-        h.loc[h.index > tstart] = 1
-
-        b = self._get_block(p[:-1], dt, tmin, tmax)
-        npoints = h.index.size
-        h = Series(
-            data=fftconvolve(h, b, "full")[:npoints],
-            index=h.index,
-            name=self.name,
+        p = np.asarray(p)
+        P = p[np.newaxis, :] if p.ndim == 1 else p
+        # binary step series per realization (tstart is the last parameter),
+        # use datetime64[us] to avoid overflow for ordinals beyond year 2262
+        tstarts = np.array(
+            [np.datetime64(Timestamp.fromordinal(int(v)), "us") for v in P[:, -1]]
         )
-        return h
+        tindex64 = tindex.to_numpy().astype("datetime64[us]")
+        H = (tindex64[:, None] > tstarts[None, :]).astype(float).T  # (n_real, n_points)
+        b = self._get_block(P[:, :-1], dt, tmin, tmax)
+        c = convolve(H, b)
+        sim = DataFrame(np.atleast_2d(c).T, index=tindex)
+        return sim.squeeze("columns").rename(self.name) if p.ndim == 1 else sim
 
     def _get_responses(
         self,
@@ -963,25 +996,37 @@ class LinearTrend(StressModelBase):
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
-    ) -> Series:
-        """Simulate the stressmodel's contribution."""
+    ) -> Series | DataFrame:
+        """Simulate the stressmodel's contribution.
+
+        A 2-D `p` of shape (n_real, 3) is simulated as an ensemble and a
+        DataFrame (one column per realization) is returned.
+        """
         tindex = date_range(tmin, tmax, freq=freq)
-
-        if p[1] < tindex[0].toordinal():
-            tmin = tindex[0]
-        else:
-            tmin = Timestamp.fromordinal(int(p[1]))
-
-        if p[2] >= tindex[-1].toordinal():
-            tmax = tindex[-1]
-        else:
-            tmax = Timestamp.fromordinal(int(p[2]))
-
-        trend = tindex.to_series().diff() / Timedelta(1, "D")
-        trend.loc[:tmin] = 0
-        trend.loc[tmax:] = 0
-        trend = trend.cumsum() * p[0]
-        return trend.rename(self.name)
+        p = np.asarray(p)
+        P = p[np.newaxis, :] if p.ndim == 1 else p
+        # use datetime64[us] to avoid overflow for ordinals beyond year 2262
+        ts1 = np.array(
+            [np.datetime64(Timestamp.fromordinal(int(v)), "us") for v in P[:, 1]]
+        )
+        ts2 = np.array(
+            [np.datetime64(Timestamp.fromordinal(int(v)), "us") for v in P[:, 2]]
+        )
+        tmin_ts = np.where(
+            P[:, 1] < tindex[0].toordinal(), np.datetime64(tindex[0], "us"), ts1
+        )
+        tmax_ts = np.where(
+            P[:, 2] >= tindex[-1].toordinal(), np.datetime64(tindex[-1], "us"), ts2
+        )
+        tindex64 = tindex.to_numpy().astype("datetime64[us]")
+        mask = (tindex64[:, None] > tmin_ts[None, :]) & (
+            tindex64[:, None] < tmax_ts[None, :]
+        )
+        d = (tindex.to_series().diff() / Timedelta(1, "D")).to_numpy()
+        D = np.where(mask, d[:, None], 0.0)
+        c = (np.cumsum(D, axis=0) * P[:, 0][None, :]).T  # (n_real, n_points)
+        sim = DataFrame(np.atleast_2d(c).T, index=tindex)
+        return sim.squeeze("columns").rename(self.name) if p.ndim == 1 else sim
 
     def to_dict(self, series: bool = False) -> dict[str, Any]:
         """Export the stressmodel to a dictionary.
@@ -1442,9 +1487,14 @@ class WellModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
-    ) -> Series:
-        """Simulate the stressmodel's contribution."""
-        return self._simulate(tuple(p), tmin, tmax, freq, dt, istress)
+    ) -> Series | DataFrame:
+        """Simulate the stressmodel's contribution.
+
+        A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
+        and a DataFrame (one column per realization) is returned.
+        """
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt, istress)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
@@ -1455,7 +1505,7 @@ class WellModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
-    ) -> Series:
+    ) -> Series | DataFrame:
         tmin = self.tmin if tmin is None else tmin
         tmax = self.tmax if tmax is None else tmax
 
@@ -1471,32 +1521,32 @@ class WellModel(StressModelBase):
 
         distances = self.get_distances(istress=istress)
 
-        h = Series(
-            data=0,
-            index=selected_stresses[0].series.index,
-            name=self.name,
-            dtype=np.asarray(p).dtype,
-        )
+        p = np.asarray(p)
+        # same parameters for all wells: tile the stresses and the parameters
+        # (with the radius appended per row) over the wells, convolve all
+        # well-realization pairs in a single batched pass, then sum over wells
+        index = selected_stresses[0].series.index
+        P = p[np.newaxis, :] if p.ndim == 1 else p  # (n_real, n_param)
+        n_real, n_wells = P.shape[0], len(selected_stresses)
+        stresses_2d = np.stack([s.series.to_numpy() for s in selected_stresses])
+        ps_with_rs = np.column_stack(
+            [np.tile(P, (n_wells, 1)), np.repeat(distances.to_numpy(), n_real)]
+        )  # (n_wells * n_real, n_param + 1)
+        b = self._get_block(ps_with_rs, dt, tmin, tmax)  # (n_wells*n_real, n_b)
+        # rows are well-major: well w occupies rows [w*n_real, (w+1)*n_real)
+        c = convolve(np.repeat(stresses_2d, n_real, axis=0), b)
+        h = c.reshape(n_wells, n_real, -1).sum(axis=0)  # (n_real, n_points)
 
-        p_arr = np.asarray(p)
-        stress_by_name = {s.name: s.series for s in selected_stresses}
-        for name, r in distances.items():
-            stress = stress_by_name[name]
-            npoints = stress.index.size
-            p_with_r = np.concatenate([p_arr, np.array([r])])
-            b = self._get_block(p_with_r, dt, tmin, tmax)
-            c = fftconvolve(stress, b, "full")[:npoints]
-            h = h.add(Series(c, index=stress.index), fill_value=0.0)
+        name = self.name
         if istress is not None:
             if isinstance(istress, list):
-                h.name = self.name + "_" + "+".join(str(i) for i in istress)
+                name = self.name + "_" + "+".join(str(i) for i in istress)
             elif self.stresses[istress].name is not None:
-                h.name = self.stresses[istress].name
+                name = self.stresses[istress].name
             else:
-                h.name = self.name + "_" + str(istress)
-        else:
-            h.name = self.name
-        return h
+                name = self.name + "_" + str(istress)
+        sim = DataFrame(np.atleast_2d(h).T, index=index)
+        return sim.squeeze("columns").rename(name) if p.ndim == 1 else sim
 
     def get_stress(
         self,
@@ -2096,27 +2146,33 @@ class RechargeModel(StressModelBase):
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
-    ) -> Series:
-        """Simulate the stressmodel's contribution."""
-        return self._simulate(tuple(p), tmin, tmax, freq, dt, istress)
+    ) -> Series | DataFrame:
+        """Simulate the stressmodel's contribution.
+
+        A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
+        and a DataFrame (one column per realization) is returned.
+        """
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt, istress)
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
         self,
-        p: tuple | None = None,
+        p: tuple[float, ...] | ArrayLike | None = None,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
-    ) -> Series:
+    ) -> Series | DataFrame:
         """Simulate the contribution of recharge to the head.
 
         Parameters
         ----------
         p: array_like, optional
             array_like object with the values as floats representing the model
-            parameters.
+            parameters. A 2-D array of shape (n_real, n_param) simulates
+            an ensemble and returns a DataFrame with one column per realization.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the period
             (E.g. '1980-01-01 00:00:00'). Strings are converted to
@@ -2135,32 +2191,77 @@ class RechargeModel(StressModelBase):
 
         Returns
         -------
-        pandas.Series
+        pandas.Series or pandas.DataFrame
+            The simulated recharge contribution. A Series for a 1-D `p`, a
+            DataFrame with one column per realization for a 2-D `p`.
 
         """
         if p is None:
             p = self.parameters.initial.values
         else:
             p = np.asarray(p)
-        b = self._get_block(p[: self.rfunc.nparam], dt, tmin, tmax)
-        stress = self.get_stress(
-            p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress
-        ).values
         name = self.name
-
-        if istress is not None:
+        if istress is None:
+            # recharge depends on the parameters: for a 2-D `p` this is the
+            # (n_real, n_points) recharge matrix, convolved with the ensemble
+            # of block responses in a single batched pass
+            stress, index = self._recharge_values(p, tmin, tmax, freq)
+            stress = np.asarray(stress)
+        else:
+            s = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq, istress=istress)
+            stress, index = s.values, s.index
             if istress == 1 and self.nsplit > 1:
                 # only happen when Linear is used as the recharge model
-                stress = stress * p[-1]
+                if p.ndim > 1:
+                    stress = stress[None, :] * p[:, -1][:, None]  # (n_real, n_points)
+                else:
+                    stress = stress * p[-1]
             if self.stresses[istress].name is not None:
                 name = f"{self.name} ({self.stresses[istress].name})"
-
-        return Series(
-            data=fftconvolve(stress, b, "full")[: stress.size],
-            index=self.prec.series.index,
-            name=name,
-            dtype=p.dtype,
+        b = self._get_block(
+            p[:, : self.rfunc.nparam] if p.ndim > 1 else p[: self.rfunc.nparam],
+            dt,
+            tmin,
+            tmax,
         )
+        c = convolve(stress, b)
+        sim = DataFrame(np.atleast_2d(c).T, index=index)
+        return sim.squeeze("columns").rename(name) if p.ndim == 1 else sim
+
+    def _recharge_values(
+        self,
+        p: ArrayLike | None,
+        tmin: Timestamp | str | None,
+        tmax: Timestamp | str | None,
+        freq: str | None,
+    ) -> tuple[ArrayLike, DatetimeIndex]:
+        """Compute the recharge flux values and the corresponding index.
+
+        A 1-D `p` returns an array of shape (n_points,), a 2-D `p` of shape
+        (n_real, n_param) returns an array of shape
+        (n_real, n_points) with the recharge computed for all
+        realizations in a single pass (no loop over realizations).
+        """
+        tmin = self.tmin if tmin is None else tmin
+        tmax = self.tmax if tmax is None else tmax
+
+        self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
+
+        prec = self.prec.series.to_numpy()
+        evap = self.evap.series.to_numpy()
+        temp = self.temp.series.to_numpy() if self.temp is not None else None
+        if p is None:
+            p = self.parameters.loc[:, "initial"].to_numpy()
+        p = np.asarray(p)
+        p_rch = (
+            p[-self.recharge.nparam :] if p.ndim == 1 else p[:, -self.recharge.nparam :]
+        )
+        # parse self.temp if simulate accepts temp as a keyword argument
+        if "temp" in signature(self.recharge.simulate).parameters:
+            r = self.recharge.simulate(prec=prec, evap=evap, temp=temp, p=p_rch)
+        else:
+            r = self.recharge.simulate(prec=prec, evap=evap, p=p_rch)
+        return np.asarray(r), self.prec.series.index
 
     def get_stress(
         self,
@@ -2204,28 +2305,19 @@ class RechargeModel(StressModelBase):
 
         """
         _ = kwargs
+        if istress is None:
+            stress, index = self._recharge_values(p, tmin=tmin, tmax=tmax, freq=freq)
+            if np.ndim(stress) > 1:
+                # 2-D `p`: one column per realization
+                return DataFrame(np.atleast_2d(stress).T, index=index)
+            return Series(data=stress, index=index, name="recharge")
+
         tmin = self.tmin if tmin is None else tmin
         tmax = self.tmax if tmax is None else tmax
 
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
 
-        if istress is None:
-            prec = self.prec.series.to_numpy()
-            evap = self.evap.series.to_numpy()
-            temp = None
-            if self.temp is not None:
-                temp = self.temp.series.to_numpy()
-            if p is None:
-                p = self.parameters.loc[:, "initial"].to_numpy()
-            stress = self.recharge.simulate(
-                prec=prec, evap=evap, p=p[-self.recharge.nparam :], temp=temp
-            )
-            return Series(
-                data=stress,
-                index=self.prec.series.index,
-                name="recharge",
-            )
-        elif istress == 0:
+        if istress == 0:
             return self.prec.series
         elif istress == 1:
             return self.evap.series
@@ -2576,32 +2668,37 @@ class TarsoModel(RechargeModel):
         freq=None,
         dt: float = 1.0,
         istress: int | None = None,
-    ) -> Series:
-        """Simulate the stressmodel's contribution."""
+    ) -> Series | DataFrame:
+        """Simulate the stressmodel's contribution.
+
+        A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
+        and a DataFrame (one column per realization) is returned.
+        """
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
         return self._simulate(
-            p=tuple(p),
-            tmin=tmin,
-            tmax=tmax,
-            freq=freq,
-            dt=dt,
-            istress=istress,
+            p, tmin=tmin, tmax=tmax, freq=freq, dt=dt, istress=istress
         )
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
         self,
-        p: tuple | None = None,
+        p: tuple[float, ...] | ArrayLike | None = None,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
         istress: int | None = None,
-    ) -> Series:
+    ) -> Series | DataFrame:
         _ = istress  # istress is not used for TarsoModel
-        stress = self.get_stress(p=p, tmin=tmin, tmax=tmax, freq=freq)
-        h = self.tarso(p[: -self.recharge.nparam], stress.to_numpy(), dt)
-        sim = Series(h, name=self.name, index=stress.index)
-        return sim
+        p = np.asarray(p)
+        # for a 2-D `p` this is the (n_real, n_points) recharge matrix, fed to
+        # the ensemble tarso kernel; for 1-D `p` a single row
+        r, index = self._recharge_values(p, tmin, tmax, freq)
+        h = self._tarso_ensemble(
+            np.atleast_2d(p)[:, : -self.recharge.nparam], np.atleast_2d(r), dt
+        )
+        sim = DataFrame(np.atleast_2d(h).T, index=index)
+        return sim.squeeze("columns").rename(self.name) if p.ndim == 1 else sim
 
     @staticmethod
     def _check_stressmodel_compatibility(model: Model) -> None:
@@ -2619,58 +2716,96 @@ class TarsoModel(RechargeModel):
 
     @staticmethod
     @njit
+    def _tarso_ensemble(p: ArrayLike, r: ArrayLike, dt: float) -> ArrayLike:
+        """Ensemble (2-D-native) tarso kernel: compute the head for many realizations.
+
+        Parameters
+        ----------
+        p: array_like, shape (n_real, 6)
+            Parameters (A0, a0, d0, A1, a1, d1) per realization.
+        r: array_like, shape (n_real, n_points)
+            Recharge per realization.
+        dt: float
+            Time step in days.
+
+        Returns
+        -------
+        array_like, shape (n_real, n_points)
+            The simulated head for each realization.
+
+        Notes
+        -----
+        Based on exponential decay of the previous timestep and recharge, using
+        two thresholds. The realization axis is vectorized inside the time loop,
+        so all realizations are computed in a single pass.
+        """
+        n_real, n = r.shape
+        A0, a0, d0 = p[:, 0], p[:, 1], p[:, 2]
+        A1, a1, d1 = p[:, 3], p[:, 4], p[:, 5]
+        dtype = np.asarray(A0[0] + a0[0] + d0[0] + A1[0] + a1[0] + d1[0]).dtype
+
+        # calculate physical meaning of these parameters
+        S0 = a0 / A0
+        c0 = A0
+        S1 = a1 / A1
+        c1 = A1
+
+        # calculate effective parameters for the top level
+        c_e = 1.0 / ((1.0 / c0) + (1.0 / c1))
+        d_e = (c1 / (c0 + c1)) * d0 + (c0 / (c0 + c1)) * d1
+        a_e = S1 * c_e
+
+        h = np.empty((n_real, n), dtype=dtype)
+        h0 = (d0 + d1) / 2.0
+        high = _real(h0) > _real(d1)
+        S = np.where(high, S1, S0)
+        a = np.where(high, a_e, a0)
+        c = np.where(high, c_e, c0)
+        d = np.where(high, d_e, d0)
+        for i in range(n):
+            if i > 0:
+                h0 = h[:, i - 1]
+            exp_a = np.exp(-dt / a)
+            h[:, i] = (h0 - d) * exp_a + r[:, i] * c * (1.0 - exp_a) + d
+            newhigh = _real(h[:, i]) > _real(d1)
+            switch = high != newhigh
+            if np.any(switch):
+                # calculate time until d1 is reached
+                ratio = (d1 - d - r[:, i] * c) / (h0 - d - r[:, i] * c)
+                dtdr = np.where(switch, -S * c * np.log(ratio), 0.0)
+                if np.any(_real(dtdr) > dt):
+                    raise ValueError("TarsoModel: dtdr > dt")
+                # change parameters
+                high = newhigh
+                S = np.where(high, S1, S0)
+                a = np.where(high, a_e, a0)
+                c = np.where(high, c_e, c0)
+                d = np.where(high, d_e, d0)
+                # calculate new level after reaching d1
+                exp_a = np.exp(-(dt - dtdr) / a)
+                h[:, i] = np.where(
+                    switch,
+                    (d1 - d) * exp_a + r[:, i] * c * (1.0 - exp_a) + d,
+                    h[:, i],
+                )
+        return h
+
+    @staticmethod
+    @njit
     def tarso(p: ArrayLike, r: ArrayLike, dt: float) -> ArrayLike:
         """Compute the head.
 
         Based on exponential decay of the previous timestep and
         recharge, using two thresholds.
+
+        Notes
+        -----
+        Thin 1-D adapter over the `_tarso_ensemble` static method: the inputs
+        are reshaped to (1, n_points) and (1, n_param), so a single 2-D-native
+        kernel implementation serves both the 1-D and the ensemble path.
         """
-        A0, a0, d0, A1, a1, d1 = p
-        dtype = np.asarray(A0 + a0 + d0 + A1 + a1 + d1).dtype
-
-        # calculate physical meaning of these parameters
-        S0 = a0 / A0
-        c0 = A0
-
-        S1 = a1 / A1
-        c1 = A1
-
-        # calculate effective parameters for the top level
-        c_e = 1 / ((1 / c0) + (1 / c1))
-        d_e = (c1 / (c0 + c1)) * d0 + (c0 / (c0 + c1)) * d1
-        a_e = S1 * c_e
-
-        h = np.empty(len(r), dtype=dtype)
-        for i in range(len(r)):
-            if i == 0:
-                h0 = (d0 + d1) / 2
-                # Use .real for comparison to support complex-step differentiation
-                high = h0.real > d1.real
-                if high:
-                    S, a, c, d = S1, a_e, c_e, d_e
-                else:
-                    S, a, c, d = S0, a0, c0, d0
-            else:
-                h0 = h[i - 1]
-            exp_a = np.exp(-dt / a)
-            h[i] = (h0 - d) * exp_a + r[i] * c * (1 - exp_a) + d
-            # Use .real for comparison to support complex-step differentiation
-            newhigh = h[i].real > d1.real
-            if high != newhigh:
-                # calculate time until d1 is reached
-                dtdr = -S * c * np.log((d1 - d - r[i] * c) / (h0 - d - r[i] * c))
-                if dtdr.real > dt:
-                    raise ValueError("TarsoModel: dtdr > dt")
-                # change parameters
-                high = newhigh
-                if high:
-                    S, a, c, d = S1, a_e, c_e, d_e
-                else:
-                    S, a, c, d = S0, a0, c0, d0
-                # calculate new level after reaching d1
-                exp_a = np.exp(-(dt - dtdr) / a)
-                h[i] = (d1 - d) * exp_a + r[i] * c * (1 - exp_a) + d
-        return h
+        h = _tarso_ensemble(p.reshape(1, -1), r.reshape(1, -1), dt)
+        return h[0]
 
     def _get_responses(
         self,
@@ -2734,6 +2869,12 @@ class TarsoModel(RechargeModel):
         """
         data = super().to_dict(series=series) | {"dmin": self.dmin, "dmax": self.dmax}
         return data
+
+
+# Module-level alias to the ensemble tarso kernel, defined as a static method on
+# TarsoModel above. Numba resolves jitted callees through module globals, so the
+# jitted 1-D adapter `TarsoModel.tarso` calls this alias.
+_tarso_ensemble = TarsoModel._tarso_ensemble
 
 
 class ChangeModel(StressModelBase):
@@ -2930,46 +3071,68 @@ class ChangeModel(StressModelBase):
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
-    ) -> Series:
-        """Simulate the stressmodel's contribution."""
-        return self._simulate(tuple(p), tmin, tmax, freq, dt)
+    ) -> Series | DataFrame:
+        """Simulate the stressmodel's contribution.
+
+        A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
+        and a DataFrame (one column per realization) is returned.
+        """
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt)
+
+    @staticmethod
+    def _stack_blocks(rfunc, p: np.ndarray, dt: float, maxtmax) -> np.ndarray:
+        """Block responses of `rfunc` for each row of 2-D `p`, zero-padded to a common length."""
+        blocks = [rfunc.block(row, dt, maxtmax=maxtmax) for row in p]
+        n_max = max(b.size for b in blocks)
+        B = np.zeros(
+            (p.shape[0], n_max), dtype=np.result_type(blocks[0].dtype, np.float64)
+        )
+        for i, b in enumerate(blocks):
+            B[i, : b.size] = b
+        return B
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
         self,
-        p: tuple,
+        p: tuple[float, ...] | ArrayLike,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
-    ) -> Series:
+    ) -> Series | DataFrame:
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        rfunc1 = self.rfunc1.block(p[: self.rfunc1.nparam])
-        rfunc2 = self.rfunc2.block(
-            p[self.rfunc1.nparam : self.rfunc1.nparam + self.rfunc2.nparam]
+        p = np.asarray(p)
+        P = p[np.newaxis, :] if p.ndim == 1 else p  # (n_real, n_param)
+        n1 = self.rfunc1.nparam
+        if tmin is not None and tmax is not None:
+            maxtmax = (Timestamp(tmax) - Timestamp(tmin)) / Timedelta(1, "D")
+        else:
+            maxtmax = None
+        B1 = self._stack_blocks(self.rfunc1, P[:, :n1], dt, maxtmax)
+        B2 = self._stack_blocks(
+            self.rfunc2, P[:, n1 : n1 + self.rfunc2.nparam], dt, maxtmax
         )
 
         stress = self.stresses[0].series
-        npoints = stress.index.size
-        t = np.linspace(0, 1, npoints)
-        beta = p[-2]
-
-        sigma = stress.index.get_loc(Timestamp.fromordinal(int(p[-1]))) / npoints
-        omega = 1 / (np.exp(beta * (t - sigma)) + 1)
-
-        h1 = Series(
-            data=fftconvolve(stress, rfunc1, "full")[:npoints],
-            index=stress.index,
-            name=f"{self.name}_1",
+        index = stress.index
+        n_points = index.size
+        t = np.linspace(0, 1, n_points)
+        beta = P[:, -2]
+        sigma = (
+            np.array([index.get_loc(Timestamp.fromordinal(int(v))) for v in P[:, -1]])
+            / n_points
         )
-        h2 = Series(
-            data=fftconvolve(stress, rfunc2, "full")[:npoints],
-            index=stress.index,
-            name=f"{self.name}_2",
-        )
-        h = (omega * h1 + (1 - omega) * h2).rename(self.name)
 
-        return h
+        # (n_real, n_points) sigmoid weight between the two responses
+        omega = 1 / (np.exp(beta[:, None] * (t[None, :] - sigma[:, None])) + 1)
+
+        c1 = convolve(stress.to_numpy(), B1)  # (n_real, n_points)
+        c2 = convolve(stress.to_numpy(), B2)
+        h = omega * c1 + (1 - omega) * c2
+
+        sim = DataFrame(np.atleast_2d(h).T, index=index)
+        return sim.squeeze("columns").rename(self.name) if np.ndim(p) == 1 else sim
 
     def _get_responses(
         self,

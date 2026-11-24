@@ -477,7 +477,7 @@ class Model:
         freq: str | None = None,
         warmup: float | None = None,
         return_warmup: bool = False,
-    ) -> Series:
+    ) -> Series | DataFrame:
         """Simulate the heads using the time series model.
 
         Parameters
@@ -485,6 +485,9 @@ class Model:
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
+            A 2-D array of shape (n_real, n_param) is also accepted: the
+            simulation is then computed for all realizations at once (as an
+            ensemble) and a DataFrame is returned instead of a Series.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the simulation period
             (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
@@ -503,8 +506,11 @@ class Model:
 
         Returns
         -------
-        sim: pandas.Series
-            pandas.Series containing the simulated time series
+        sim: pandas.Series or pandas.DataFrame
+            For a 1-D `p` (or `p=None`): a pandas.Series containing the simulated
+            time series. For a 2-D `p` of shape (n_real, n_param): a
+            pandas.DataFrame with the simulation index as rows and one column
+            per realization (columns 0 to n_real - 1).
 
         Notes
         -----
@@ -512,6 +518,11 @@ class Model:
         the optimal parameters values are used and if not, the initial parameter
         values are used. This allows the user to get an idea of how the simulation
         looks with only the initial parameters and no calibration.
+
+        For a 2-D `p`, the parameter array is sliced per stressmodel exactly like
+        the 1-D parameter vector, but the convolution of each stressmodel is
+        computed for all realizations in a single FFT pass. The result matches
+        looping `simulate` over the rows of `p`.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
         settings = self._settings
@@ -534,20 +545,35 @@ class Model:
         sim_index = self._get_sim_index(tmin=tmin, tmax=tmax, freq=freq, warmup=warmup)
         dt = _get_dt(freq)
 
-        # Get parameters if none are provided
+        # Get parameters if none are provided. A 1-D p is simulated as a single
+        # realization (returning a Series), a 2-D p of shape (n_real, n_param)
+        # as an ensemble of realizations (returning a DataFrame).
         if p is None:
             p = self.get_parameters()
         elif isinstance(p, Series):
             p = p.to_numpy()
+        p = np.asarray(p)
+        one_d = p.ndim == 1
+        P = p[np.newaxis, :] if one_d else p
+        if not one_d:
+            n_param = self._parameters.index.size
+            if P.shape[1] != n_param:
+                raise ValueError(
+                    f"p has shape {P.shape}, but the model has {n_param} parameters. "
+                    "Provide a 2-D array with one column per model parameter."
+                )
+        n_real = P.shape[0]
 
         sim_values = np.zeros(
-            sim_index.size, dtype=np.complex128 if np.iscomplexobj(p) else np.float64
+            (n_real, sim_index.size),
+            dtype=np.complex128 if np.iscomplexobj(P) else np.float64,
         )
 
         istart = 0  # Track parameters index to pass to stressmodel object
         sim_index_min = sim_index[0]
         for sm in self.stressmodels.values():
-            p_sm = p[istart : istart + sm.nparam]
+            P_sm = P[:, istart : istart + sm.nparam]
+            p_sm = P_sm[0] if one_d else P_sm
             contrib = sm.simulate(
                 p=p_sm,
                 tmin=sim_index_min,
@@ -555,29 +581,44 @@ class Model:
                 freq=freq,
                 dt=dt,
             )
-            if contrib.hasnans:
+            if contrib.isna().to_numpy().any():
                 logger.error(
                     f"StressModel {sm.name} contribution simulation"
                     f" with parameters {p_sm} contains NaN-values."
                 )
-            sim_values += contrib.to_numpy()
+            c = contrib.to_numpy()
+            sim_values += c[np.newaxis, :] if one_d else c.T
             istart += sm.nparam
         if self.constant:
-            sim_values += self.constant.simulate(p[istart])
+            if one_d:
+                sim_values[0] += self.constant.simulate(p[istart])
+            else:
+                sim_values += self.constant.simulate(P[:, istart])[:, np.newaxis]
             istart += 1
         if self.transform:
-            sim_values = self.transform.simulate(
-                sim_values, p[istart : istart + self.transform.nparam]
-            )
+            if one_d:
+                sim_values[0] = self.transform.simulate(
+                    sim_values[0], p[istart : istart + self.transform.nparam]
+                )
+            else:
+                for i in range(n_real):
+                    sim_values[i] = self.transform.simulate(
+                        sim_values[i], P[i, istart : istart + self.transform.nparam]
+                    )
 
-        sim = Series(data=sim_values, index=sim_index, name="Simulation")
+        if one_d:
+            sim = Series(data=sim_values[0], index=sim_index, name="Simulation")
+        else:
+            sim = DataFrame(
+                data=sim_values.T, index=sim_index, columns=np.arange(n_real)
+            )
 
         # Respect provided tmin/tmax at this point, since warmup matters for
         # simulation but should not be returned, unless return_warmup=True.
         if not return_warmup:
             sim = sim.loc[tmin:tmax]
 
-        if sim.hasnans:
+        if sim.isna().to_numpy().any():
             msg = f"Simulation with parameters {p} contains NaN-values."
             logger.error(msg)
             raise ValueError(msg)
@@ -591,7 +632,7 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
-    ) -> Series:
+    ) -> Series | DataFrame:
         """Simulate the time series model and get it on the same index as the observations.
 
         Note that if the observations have a higher frequency than the simulation, linear
@@ -602,6 +643,8 @@ class Model:
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
+            A 2-D array of shape (n_real, n_param) returns a DataFrame with
+            one column per realization.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the simulation period
             (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
@@ -618,9 +661,10 @@ class Model:
 
         Returns
         -------
-        pandas.Series
-            Series containing the simulated time series on the same index as
-            the observations.
+        pandas.Series or pandas.DataFrame
+            Series (1-D `p`) or DataFrame with one column per realization (2-D `p`),
+            containing the simulated time series on the same index as the
+            observations.
         """
         # Default options when tmin, tmax, freq and warmup are not provided.
         settings = self._settings
@@ -628,10 +672,10 @@ class Model:
         tmax = settings["tmax"] if tmax is None else tmax
         freq = settings["freq"] if freq is None else freq
         warmup = settings["warmup"] if warmup is None else warmup
-        freq = settings["freq"] if freq is None else freq
         freq_obs = freq if settings["freq_obs"] is None else settings["freq_obs"]
 
-        # simulate model
+        # simulate model (returns a DataFrame with one column per realization
+        # for a 2-D p)
         sim = self.simulate(
             p=p, tmin=tmin, tmax=tmax, freq=freq, warmup=warmup, return_warmup=False
         )
@@ -658,13 +702,14 @@ class Model:
 
         return sim
 
-    def _simulate_interpolated(self, sim: Series, obs: Series) -> Series:
-        """Simulate the time series model and interpolate to the observation index.
+    def _simulate_interpolated(
+        self, sim: Series | DataFrame, obs: Series
+    ) -> Series | DataFrame:
+        """Interpolate simulated values to the observation index.
 
         Uses (pre-calculated) weights and indices for linear interpolation to speed
-        up the process.
+        up the process for both 1-D simulations (Series) and ensembles (DataFrame).
         """
-        # Interpolate using pre-calculated weights and indices
         sim_values = sim.to_numpy()
 
         # check assumes that obs_index is the same if sim_index is the same
@@ -678,12 +723,18 @@ class Model:
             )
 
         indices, weights = self._interpolation_indices_weights
+        if sim_values.ndim == 1:
+            sim_interp = (
+                sim_values[indices[:, 0]] * weights[:, 0]
+                + sim_values[indices[:, 1]] * weights[:, 1]
+            )
+            return Series(data=sim_interp, index=obs.index, name="Simulation")
+
         sim_interp = (
-            sim_values[indices[:, 0]] * weights[:, 0]
-            + sim_values[indices[:, 1]] * weights[:, 1]
+            sim_values[indices[:, 0]] * weights[:, 0, np.newaxis]
+            + sim_values[indices[:, 1]] * weights[:, 1, np.newaxis]
         )
-        sim = Series(data=sim_interp, index=obs.index, name="Simulation")
-        return sim
+        return DataFrame(data=sim_interp, index=obs.index, columns=sim.columns)
 
     def residuals(
         self,
@@ -692,7 +743,7 @@ class Model:
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         warmup: float | None = None,
-    ) -> Series:
+    ) -> Series | DataFrame:
         """Calculate the residual series.
 
         Parameters
@@ -700,6 +751,8 @@ class Model:
         p: array_like, optional
             array_like object with the values as floats representing the model
             parameters. See Model.get_parameters() for more info if parameters is None.
+            A 2-D array of shape (n_real, n_param) returns a DataFrame with
+            one column per realization.
         tmin: pandas.Timestamp or str, optional
             A string or pandas.Timestamp with the start date for the simulation period
             (E.g. '1980-01-01 00:00:00'). Strings are converted to pandas.Timestamp
@@ -716,21 +769,24 @@ class Model:
 
         Returns
         -------
-        pandas.Series
-            Series with the residuals.
+        pandas.Series or pandas.DataFrame
+            Series with the residuals (1-D `p`), or a DataFrame with one column
+            per realization (2-D `p`).
         """
         obs = self.observations(tmin=tmin, tmax=tmax, freq=freq)
         sim = self._simulate_on_observations(
             p=p, tmin=tmin, tmax=tmax, freq=freq, warmup=warmup
         )
-        res = obs.subtract(sim).rename("Residuals")
+        res = obs.sub(sim, axis=0)
+        if isinstance(res, Series):
+            res = res.rename("Residuals")
 
-        if res.hasnans:
+        if res.isna().to_numpy().any():
             res = res.dropna()
             logger.warning("Nan-values were removed from the residuals.")
 
         if self._fit_constant is False:
-            res = res.subtract(np.mean(res))
+            res = res.sub(res.mean(axis=0))
 
         return res
 

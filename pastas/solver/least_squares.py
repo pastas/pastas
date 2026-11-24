@@ -104,12 +104,18 @@ class LeastSquaresBase(SolverBase):
             kwargs["name"] = name
 
         parameter_sample = self.get_parameter_sample(n=n, name=name, max_iter=max_iter)
-        data = {}
 
-        # Disable caching during parameter sampling as each sample is unique
+        if func in (self.model.simulate, self.model.get_contribution):
+            try:
+                return func(p=parameter_sample, **kwargs)
+            except NotImplementedError as e:
+                logger.debug(
+                    f"Function does not support 2D parameter input. Falling back to loop. {e}"
+                )
+
         with temporarily_disable_cache():
-            for i, p in enumerate(parameter_sample):
-                data[i] = func(p=p, **kwargs)
+            # Disable caching during parameter sampling as each sample is unique
+            data = {i: func(p=p, **kwargs) for i, p in enumerate(parameter_sample)}
 
         return DataFrame.from_dict(data, orient="columns", dtype=float)
 

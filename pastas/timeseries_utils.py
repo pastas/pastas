@@ -21,9 +21,11 @@ from pandas import __version__ as pd_version
 from pandas.core.resample import Resampler
 from pandas.tseries.frequencies import to_offset
 from pandas.tseries.offsets import BaseOffset
+from scipy import fft as scipy_fft
 from scipy import interpolate
 
 from .decorators import deprecate_args_or_kwargs, deprecate_class_func_or_method, njit
+from .typing import ArrayLike
 
 logger = logging.getLogger(__name__)
 
@@ -910,7 +912,7 @@ def resample(
     return series.resample(freq, closed=closed, label=label, **kwargs)
 
 
-def _index_to_int64(tindex: DatetimeIndex) -> np.ndarray:
+def _index_to_int64(tindex: DatetimeIndex) -> ArrayLike:
     """Convert a pandas index to int64 representation."""
     if hasattr(tindex, "as_unit") and tindex.unit != "us":  # pandas >= 3.0
         # In pandas 3.0, the default resolution for newly created datetime-like objects
@@ -955,3 +957,90 @@ def _get_interpolation_weights(
     weights = np.divide(num, den, out=np.zeros_like(num, dtype=float), where=den != 0)
     weights = np.vstack([1 - weights, weights]).T
     return indices, weights
+
+
+def convolve(stress: ArrayLike, B: ArrayLike) -> np.ndarray:
+    """
+    Convolve a stress with block response(s), batched over realizations.
+
+    Supports all 1-D/2-D broadcasting combinations of a stress and block
+    response(s), computed in a single batched FFT pass:
+
+    - `stress` (n_points,) + `B` (n_b,) -> (n_points,)
+    - `stress` (n_points,) + `B` (n_real, n_b) -> (n_real, n_points)
+    - `stress` (n_real, n_points) + `B` (n_real, n_b) -> (n_real, n_points)
+    - `stress` (n_real, n_points) + `B` (n_b,) or (1, n_b) -> (n_real, n_points)
+
+    Parameters
+    ----------
+    stress : array_like, shape (n_points,) or (n_real, n_points)
+        The stress time series. If 2-D, each row is convolved with the
+        corresponding row of `B` (used when the "stress" itself depends on the
+        parameters, e.g. the step series of a StepModel).
+    B : array_like, shape (n_b,), (1, n_b) or (n_real, n_b)
+        Block response(s), one per realization, zero-padded to a common length
+        `n_b`. Ragged block responses (different length per realization) are
+        padded with zeros, which is exact for linear convolution.
+
+    Returns
+    -------
+    np.ndarray
+        The convolved series truncated to `n_points`: shape `(n_points,)` when
+        both inputs are 1-D, `(n_real, n_points)` otherwise. Equivalent to
+        `scipy.signal.fftconvolve(stress, b, "full")[:n_points]` for each row
+        `b` of `B`.
+
+    Notes
+    -----
+    The inputs are promoted to `np.result_type(stress, B)`; real inputs use
+    `scipy.fft.rfft`/`irfft`, complex inputs (e.g. complex-step
+    differentiation) use the full `scipy.fft.fft`/`ifft`. The FFT length is
+    `scipy.fft.next_fast_len(n_points + n_b - 1)`, so arbitrary series lengths
+    never hit slow prime-factor FFT fallbacks. The spectral multiplication is
+    done in-place (`B_fft *= S`) whenever the shapes allow it, and the inverse
+    transform uses `overwrite_x=True` to avoid redundant buffer copies. The
+    batched `scipy.fft` transforms use `workers=-1` (all cores) when Pastas'
+    `parallel` option is on and `scipy.fft.get_workers()` is 1; otherwise
+    `workers=None` is passed, so an explicit `scipy.fft.set_workers(n)` by the
+    user is respected.
+    """
+    from pastas._options import options
+
+    workers = -1 if options.parallel and scipy_fft.get_workers() == 1 else None
+
+    stress = np.asarray(stress)
+    B = np.asarray(B)
+    n_points = stress.shape[-1]
+
+    is_1d = stress.ndim == 1 and B.ndim == 1
+    if B.ndim == 1:
+        B = B[np.newaxis, :]
+
+    common_dtype = np.result_type(stress.dtype, B.dtype)
+    if stress.dtype != common_dtype:
+        stress = stress.astype(common_dtype, copy=False)
+    if B.dtype != common_dtype:
+        B = B.astype(common_dtype, copy=False)
+
+    is_complex = np.issubdtype(common_dtype, np.complexfloating)
+    n_fft = scipy_fft.next_fast_len(n_points + B.shape[1] - 1, real=not is_complex)
+    fft, ifft = (
+        (scipy_fft.fft, scipy_fft.ifft)
+        if is_complex
+        else (scipy_fft.rfft, scipy_fft.irfft)
+    )
+
+    s_workers = None if stress.ndim == 1 else workers
+    b_workers = None if is_1d else workers
+
+    S = fft(stress, n_fft, axis=-1, workers=s_workers)
+    B_fft = fft(B, n_fft, axis=1, workers=b_workers)
+
+    if S.ndim == 2 and B_fft.shape[0] == 1 and S.shape[0] > 1:
+        prod = B_fft * S
+    else:
+        B_fft *= S
+        prod = B_fft
+
+    conv = ifft(prod, n_fft, axis=1, overwrite_x=True, workers=b_workers)[:, :n_points]
+    return conv[0] if is_1d else conv
