@@ -1526,18 +1526,21 @@ class WellModel(StressModelBase):
             raise NotImplementedError(
                 "istress is not supported for a 2-D parameter array."
             )
-        # same parameters for all wells: one (ensemble) convolution per well
-        stress_by_name = {s.name: s.series for s in selected_stresses}
+        # same parameters for all wells: tile the stresses and the parameters
+        # (with the radius appended per row) over the wells, convolve all
+        # well-realization pairs in a single batched pass, then sum over wells
         index = selected_stresses[0].series.index
-        h = None
-        for name, r in distances.items():
-            if p.ndim > 1:
-                p_with_r = np.column_stack([p, np.full(p.shape[0], r)])
-            else:
-                p_with_r = np.concatenate([p, np.array([r])])
-            b = self._get_block(p_with_r, dt, tmin, tmax)
-            c = convolve(stress_by_name[name].to_numpy(), b)
-            h = c if h is None else h + c
+        P = p[np.newaxis, :] if p.ndim == 1 else p  # (n_real, n_param)
+        n_real, n_wells = P.shape[0], len(selected_stresses)
+        stresses_2d = np.stack([s.series.to_numpy() for s in selected_stresses])
+        ps_with_rs = np.column_stack(
+            [np.tile(P, (n_wells, 1)), np.repeat(distances.to_numpy(), n_real)]
+        )  # (n_wells * n_real, n_param + 1)
+        b = self._get_block(ps_with_rs, dt, tmin, tmax)  # (n_wells*n_real, n_b)
+        # rows are well-major: well w occupies rows [w*n_real, (w+1)*n_real)
+        c = convolve(np.repeat(stresses_2d, n_real, axis=0), b)
+        h = c.reshape(n_wells, n_real, -1).sum(axis=0)  # (n_real, n_points)
+
         name = self.name
         if istress is not None:
             if isinstance(istress, list):
