@@ -1522,10 +1522,6 @@ class WellModel(StressModelBase):
         distances = self.get_distances(istress=istress)
 
         p = np.asarray(p)
-        if p.ndim > 1 and istress is not None:
-            raise NotImplementedError(
-                "istress is not supported for a 2-D parameter array."
-            )
         # same parameters for all wells: tile the stresses and the parameters
         # (with the radius appended per row) over the wells, convolve all
         # well-realization pairs in a single batched pass, then sum over wells
@@ -2204,10 +2200,6 @@ class RechargeModel(StressModelBase):
             p = self.parameters.initial.values
         else:
             p = np.asarray(p)
-        if p.ndim > 1 and istress is not None:
-            raise NotImplementedError(
-                "istress is not supported for a 2-D parameter array."
-            )
         name = self.name
         if istress is None:
             # recharge depends on the parameters: for a 2-D `p` this is the
@@ -2220,7 +2212,10 @@ class RechargeModel(StressModelBase):
             stress, index = s.values, s.index
             if istress == 1 and self.nsplit > 1:
                 # only happen when Linear is used as the recharge model
-                stress = stress * p[-1]
+                if p.ndim > 1:
+                    stress = stress[None, :] * p[:, -1][:, None]  # (n_real, n_points)
+                else:
+                    stress = stress * p[-1]
             if self.stresses[istress].name is not None:
                 name = f"{self.name} ({self.stresses[istress].name})"
         b = self._get_block(
@@ -2311,11 +2306,10 @@ class RechargeModel(StressModelBase):
         """
         _ = kwargs
         if istress is None:
-            if p is not None and np.ndim(p) > 1:
-                raise NotImplementedError(
-                    "get_stress does not support a 2-D parameter array."
-                )
             stress, index = self._recharge_values(p, tmin=tmin, tmax=tmax, freq=freq)
+            if np.ndim(stress) > 1:
+                # 2-D `p`: one column per realization
+                return DataFrame(np.atleast_2d(stress).T, index=index)
             return Series(data=stress, index=index, name="recharge")
 
         tmin = self.tmin if tmin is None else tmin
@@ -3077,46 +3071,68 @@ class ChangeModel(StressModelBase):
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
-    ) -> Series:
-        """Simulate the stressmodel's contribution."""
-        return self._simulate(tuple(p), tmin, tmax, freq, dt)
+    ) -> Series | DataFrame:
+        """Simulate the stressmodel's contribution.
+
+        A 2-D `p` of shape (n_real, n_param) is simulated as an ensemble
+        and a DataFrame (one column per realization) is returned.
+        """
+        p = np.asarray(p) if np.ndim(p) > 1 else tuple(p)
+        return self._simulate(p, tmin, tmax, freq, dt)
+
+    @staticmethod
+    def _stack_blocks(rfunc, p: np.ndarray, dt: float, maxtmax) -> np.ndarray:
+        """Block responses of `rfunc` for each row of 2-D `p`, zero-padded to a common length."""
+        blocks = [rfunc.block(row, dt, maxtmax=maxtmax) for row in p]
+        n_max = max(b.size for b in blocks)
+        B = np.zeros(
+            (p.shape[0], n_max), dtype=np.result_type(blocks[0].dtype, np.float64)
+        )
+        for i, b in enumerate(blocks):
+            B[i, : b.size] = b
+        return B
 
     @conditional_cachedmethod(lambda self: self._cache)
     def _simulate(
         self,
-        p: tuple,
+        p: tuple[float, ...] | ArrayLike,
         tmin: Timestamp | str | None = None,
         tmax: Timestamp | str | None = None,
         freq: str | None = None,
         dt: float = 1.0,
-    ) -> Series:
+    ) -> Series | DataFrame:
         self.update_stress(tmin=tmin, tmax=tmax, freq=freq)
-        rfunc1 = self.rfunc1.block(p[: self.rfunc1.nparam])
-        rfunc2 = self.rfunc2.block(
-            p[self.rfunc1.nparam : self.rfunc1.nparam + self.rfunc2.nparam]
+        p = np.asarray(p)
+        P = p[np.newaxis, :] if p.ndim == 1 else p  # (n_real, n_param)
+        n1 = self.rfunc1.nparam
+        if tmin is not None and tmax is not None:
+            maxtmax = (Timestamp(tmax) - Timestamp(tmin)) / Timedelta(1, "D")
+        else:
+            maxtmax = None
+        B1 = self._stack_blocks(self.rfunc1, P[:, :n1], dt, maxtmax)
+        B2 = self._stack_blocks(
+            self.rfunc2, P[:, n1 : n1 + self.rfunc2.nparam], dt, maxtmax
         )
 
         stress = self.stresses[0].series
-        n_points = stress.index.size
+        index = stress.index
+        n_points = index.size
         t = np.linspace(0, 1, n_points)
-        beta = p[-2]
-
-        sigma = stress.index.get_loc(Timestamp.fromordinal(int(p[-1]))) / n_points
-        omega = 1 / (np.exp(beta * (t - sigma)) + 1)
-
-        h1 = Series(
-            data=convolve(stress, rfunc1)[:n_points],
-            index=stress.index,
-            name=f"{self.name}_1",
+        beta = P[:, -2]
+        sigma = (
+            np.array([index.get_loc(Timestamp.fromordinal(int(v))) for v in P[:, -1]])
+            / n_points
         )
-        h2 = Series(
-            data=convolve(stress, rfunc2)[:n_points],
-            index=stress.index,
-            name=f"{self.name}_2",
-        )
-        h = (omega * h1 + (1 - omega) * h2).rename(self.name)
 
-        return h
+        # (n_real, n_points) sigmoid weight between the two responses
+        omega = 1 / (np.exp(beta[:, None] * (t[None, :] - sigma[:, None])) + 1)
+
+        c1 = convolve(stress.to_numpy(), B1)  # (n_real, n_points)
+        c2 = convolve(stress.to_numpy(), B2)
+        h = omega * c1 + (1 - omega) * c2
+
+        sim = DataFrame(np.atleast_2d(h).T, index=index)
+        return sim.squeeze("columns").rename(self.name) if np.ndim(p) == 1 else sim
 
     def _get_responses(
         self,
