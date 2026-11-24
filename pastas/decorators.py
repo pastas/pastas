@@ -383,12 +383,14 @@ def _has_2d_array(args: tuple, kwargs: dict) -> bool:
 
 
 def conditional_cachedmethod(cache_getter):
-    """Conditionally cache a method using cachetools.cachedmethod.
+    """Conditionally cache a method in a per-instance mapping.
 
-    This decorator checks the global USE_CACHE flag and only applies caching when
+    This decorator checks the global cache option and only applies caching when
     both cachetools is available and caching is enabled. Calls with 2-D numpy
     array arguments (e.g. 2-D ensemble parameter arrays) always bypass the
-    cache, since such arrays are unhashable.
+    cache, since such arrays are unhashable. The cache lookup is done manually
+    (rather than via `cachetools.cachedmethod`) because calling that descriptor
+    programmatically is not supported across cachetools versions.
 
     Parameters
     ----------
@@ -405,10 +407,14 @@ def conditional_cachedmethod(cache_getter):
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if options.cache and not _has_2d_array(args, kwargs):
+            if not options.cache or _has_2d_array(args, kwargs):
                 return func(self, *args, **kwargs)
             cache = cache_getter(self)
-            key = methodkey(self, *args, **kwargs)
+            try:
+                key = methodkey(self, *args, **kwargs)
+            except TypeError:
+                # unhashable arguments (e.g. numpy arrays) cannot be cached
+                return func(self, *args, **kwargs)
             try:
                 return cache[key]
             except KeyError:
