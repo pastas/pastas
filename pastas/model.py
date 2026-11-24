@@ -581,11 +581,6 @@ class Model:
                 freq=freq,
                 dt=dt,
             )
-            if not one_d and isinstance(contrib, Series):
-                raise NotImplementedError(
-                    f"Stressmodel '{sm.name}' ({type(sm).__name__}) does not "
-                    "support 2-D parameter arrays yet."
-                )
             if contrib.isna().to_numpy().any():
                 logger.error(
                     f"StressModel {sm.name} contribution simulation"
