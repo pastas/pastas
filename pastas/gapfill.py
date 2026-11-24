@@ -1,7 +1,5 @@
 """Gapfill module for filling gaps in head time series using Pastas models."""
 
-from typing import Union
-
 import pandas as pd
 from numpy import exp, isnan
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp, concat
@@ -17,7 +15,7 @@ def gap_fill(
     tmax: Timestamp | str | None = None,
     sig_level: float | None = 0.05,
     use_noisemodel: bool = True,
-) -> Union[Series, DataFrame]:
+) -> Series | DataFrame:
     """Fill gaps in a hydraulic head time series using a Pastas model.
 
     Parameters
@@ -55,11 +53,18 @@ def gap_fill(
     -------
     >>> ps.gapfill(head=head.asfreq("D"), ml=ml, tmin="2000-01-01", tmax="2000-12-31")
 
+    Raises
+    ------
+    ValueError
+        Raised if use_noisemodel is True but no noise model is available in the Pastas
+        model.
+
+
     """
     # Handle empty series first without tmin or tmax provided
-    if len(head) == 0 and (tmin is None or tmax is None):
+    if head.empty:
         raise ValueError(
-            "An empty head series was provided, please provide tmin and tmax."
+            "An empty head series was provided, please provide a non-empty head series."
         )
 
     # Determine tmin and tmax first, converting strings to Timestamp
@@ -87,41 +92,76 @@ def gap_fill(
     sim = ml.simulate(tmin=tmin, tmax=tmax)
     res = ml.residuals(tmin=tmin, tmax=tmax)
 
+    if use_noisemodel:
+        if not ml.noisemodel:
+            raise ValueError("No noise model available in the Pastas model.")
+        else:
+            # do not apply tmin/tmax when computing dt so it uses calibration defaults that were used to estimate alpha
+            dt = ml.observations().index.to_series().diff().median() / Timedelta("1D")
+            res_var = ml.noise(tmin=tmin, tmax=tmax).var()
+    else:
+        res_var = res.var()
+
     if sig_level is not None:
-        vars = Series(0.0, index=head_filled.index, dtype=float)
+        variances = Series(0.0, index=head_filled.index, dtype=float)
 
     for start, end in zip(starts, ends):
         # Use the model to compute the filling values
         filling = sim.loc[start:end]
 
         tindex = head_filled.loc[start:end].index
-        r0 = res.loc[:start].iloc[[-1]]
-        r1 = res.loc[end:].iloc[[0]]
+
+        if res.loc[:start].empty:
+            r0 = Series(0.0, index=[start])
+            r0_is_nan = True
+        else:
+            r0 = res.loc[:start].iloc[[-1]]
+            r0_is_nan = False
+        if res.loc[end:].empty:
+            r1 = Series(0.0, index=[end])
+            r1_is_nan = True
+        else:
+            r1 = res.loc[end:].iloc[[0]]
+            r1_is_nan = False
+
         t0 = r0.index[0]
         t1 = r1.index[0]
 
         correction = compute_correction(
-            r0, r1, tindex, ml=ml, use_noisemodel=use_noisemodel
+            r0,
+            r1,
+            tindex,
+            ml=ml,
+            use_noisemodel=use_noisemodel,
+            r0_is_nan=r0_is_nan,
+            r1_is_nan=r1_is_nan,
         )
 
         # Fill the actual gap
         head_filled.loc[start:end] = filling + correction
 
         if sig_level is not None:
-            var = compute_prediction_variance(
-                t0=t0,
-                t1=t1,
-                tindex=tindex,
-                ml=ml,
-                use_noisemodel=use_noisemodel,
-            )
-            vars.loc[start:end] = var
+            if use_noisemodel:
+                var = compute_prediction_variance(
+                    t0=t0,
+                    t1=t1,
+                    tindex=tindex,
+                    ml=ml,
+                    dt=dt,
+                    noise_var=res_var,
+                    r0_is_nan=r0_is_nan,
+                    r1_is_nan=r1_is_nan,
+                )
+            else:
+                var = Series(res_var, index=tindex)
+
+            variances.loc[start:end] = var
 
     # If uncertainty is added
     if sig_level is not None:
         z = norm.ppf(1 - sig_level / 2)
-        upper = head_filled + z * vars**0.5
-        lower = head_filled - z * vars**0.5
+        upper = head_filled + z * variances**0.5
+        lower = head_filled - z * variances**0.5
         data = concat(
             [head_filled, lower, upper],
             axis=1,
@@ -138,6 +178,8 @@ def compute_correction(
     tindex: DatetimeIndex,
     ml: Model,
     use_noisemodel: bool = True,
+    r0_is_nan: bool = False,
+    r1_is_nan: bool = False,
 ) -> Series:
     """Compute the correction for filling gaps in the head time series.
 
@@ -155,6 +197,12 @@ def compute_correction(
         Pastas model.
     use_noisemodel : bool, optional
         Whether to use the noise model for the correction. Default is True.
+    r0_is_nan : bool, optional
+        Whether the residual before the gap (r0) is NaN (e.g., gap at start).
+        Default is False.
+    r1_is_nan : bool, optional
+        Whether the residual after the gap (r1) is NaN (e.g., gap at end).
+        Default is False.
 
     Returns
     -------
@@ -182,9 +230,6 @@ def compute_correction(
     r1 = r1.iloc[0]
 
     if use_noisemodel:
-        if not ml.noisemodel:
-            raise ValueError("No noise model available in the Pastas model.")
-
         alpha = ml.parameters.loc["noise_alpha", "optimal"]
 
         tau = (tindex - t0) / Timedelta("1D")
@@ -195,7 +240,13 @@ def compute_correction(
         b = exp(-(L - tau) / alpha)
         c = exp(-L / alpha)
 
-        correction = (a * r0 + b * r1 - c * (a * r1 + b * r0)) / (1 - c**2)
+        if r0_is_nan:
+            correction = b * r1
+        elif r1_is_nan:
+            correction = a * r0
+        else:
+            correction = (a * r0 + b * r1 - c * (a * r1 + b * r0)) / (1 - c**2)
+
         correction = Series(correction, index=tindex)
     else:
         s = Series(index=tindex)
@@ -211,7 +262,10 @@ def compute_prediction_variance(
     t1: Timestamp,
     tindex: DatetimeIndex,
     ml: Model,
-    use_noisemodel: bool = True,
+    noise_var: float,
+    dt: float,
+    r0_is_nan: bool = False,
+    r1_is_nan: bool = False,
 ) -> Series:
     """Compute the prediction variance for the gap filling.
 
@@ -223,10 +277,16 @@ def compute_prediction_variance(
         Timestamp of the first measurement after the gap.
     tindex : pd.DatetimeIndex
         Timestamps of the gap.
-    ml : Model
+    ml: Model
         Pastas model.
-    use_noisemodel : bool, optional
-        Whether to use the noise model for the prediction variance. Default is True.
+    dt : float
+        Time step of the observations in days.
+    noise_var : float
+        Variance of the noise.
+    r0_is_nan : bool, optional
+        Whether the residual before the gap (r0) is NaN (e.g., gap at start). Default is False.
+    r1_is_nan : bool, optional
+        Whether the residual after the gap (r1) is NaN (e.g., gap at end). Default is False.
 
     Returns
     -------
@@ -234,33 +294,28 @@ def compute_prediction_variance(
         Prediction variance for the gap as a Pandas Series with the timestamps of the
         gap as the index.
 
-    Raises
-    ------
-    ValueError
-        Raised if use_noisemodel is True but no noise model is available in the Pastas
-        model.
     """
-    if use_noisemodel:
-        if not ml.noisemodel:
-            raise ValueError("No noise model available in the Pastas model.")
+    alpha = ml.parameters.loc["noise_alpha", "optimal"]
 
-        alpha = ml.parameters.loc["noise_alpha", "optimal"]
+    tau = (tindex - t0) / Timedelta("1D")
+    L = (t1 - t0) / Timedelta("1D")
 
-        tau = (tindex - t0) / Timedelta("1D")
-        L = (t1 - t0) / Timedelta("1D")
+    # Compute the expectation of the variance for the gap
+    a = exp(-tau / alpha)
+    b = exp(-(L - tau) / alpha)
+    c = exp(-L / alpha)
 
-        # Compute the expectation of the variance for the gap
-        a = exp(-tau / alpha)
-        b = exp(-(L - tau) / alpha)
-        c = exp(-L / alpha)
+    var_res = noise_var / (1 - exp(-2 * dt / alpha))
 
-        dt = ml.observations().index.to_series().diff().median() / Timedelta("1D")
-        var_noise = ml.noise().var()
-        var_res = var_noise / (1 - exp(-2 * dt / alpha))
-
-        var = var_res * (1 - a**2 - b**2 + c**2) / (1 - c**2)
+    # If we don't have both r0 and r1 (gap at start or end),
+    # use the variance of the residuals instead of the formula which may give zero
+    if r0_is_nan:
+        var = var_res * (1 - b**2)
+    elif r1_is_nan:
+        # Use a reasonable variance estimate when we don't have both residuals
+        var = var_res * (1 - a**2)
     else:
-        var = ml.residuals().var()
+        var = var_res * (1 - a**2 - b**2 + c**2) / (1 - c**2)
 
     return Series(var, index=tindex)
 
@@ -317,7 +372,7 @@ def _get_new_index(
     tmin: Timestamp,
     tmax: Timestamp,
     freq: str | None = None,
-) -> Series:
+) -> DatetimeIndex:
     """Get a new index if tmin and tmax are outside the range of the head series.
 
     Parameters
