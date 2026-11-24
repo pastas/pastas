@@ -775,8 +775,13 @@ class LeastSquares(LeastSquaresBase):
         par = np.array(initial, copy=True, dtype=np.asarray(p).dtype)
         par[vary] = p
         return misfit(
-            model=self.model, p=par, noise=noise, weights=weights, callback=callback
-        )
+            model=self.model,
+            p=par,
+            noise=noise,
+            weights=weights,
+            callback=callback,
+            returnseparate=False,
+        ).to_numpy(copy=True)
 
     def solve(
         self,
@@ -1213,7 +1218,7 @@ class Lmfit(LeastSquaresBase):
             weights=weights,
             callback=None,
             returnseparate=False,
-        )
+        ).to_numpy(copy=True)
 
     def fit_report(
         self,

@@ -7,7 +7,7 @@ These likelihood functions are used in conjunction with Bayesian approaches
 from abc import ABC, abstractmethod
 
 from numpy import log, pi
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from ...typing import ArrayLike
 
@@ -43,12 +43,12 @@ class LikelihoodBase(ABC):
         """
 
     @abstractmethod
-    def compute(self, res: ArrayLike, p: ArrayLike) -> float:
+    def compute(self, res: Series, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
         ----------
-        res: array
+        res: Series
             Residuals of the model.
         p: array or list
             Parameters of the likelihood function.
@@ -122,12 +122,12 @@ class GaussianLikelihood(LikelihoodBase):
         )
         return parameters
 
-    def compute(self, res: ArrayLike, p: ArrayLike) -> float:
+    def compute(self, res: Series, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
         ----------
-        res: array
+        res: Series
             Residuals of the model.
         p: array or list
             Parameters of the log-likelihood function.
@@ -207,12 +207,12 @@ class GaussianLikelihoodAr1(LikelihoodBase):
             index=[name + "_var", name + "_phi"],
         )
 
-    def compute(self, res: ArrayLike, p: ArrayLike) -> float:
+    def compute(self, res: Series, p: ArrayLike) -> float:
         """Compute the log-likelihood.
 
         Parameters
         ----------
-        res: array
+        res: Series
             Residuals of the model.
         p: array or list
             Parameters of the log-likelihood function.
