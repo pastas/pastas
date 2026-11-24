@@ -7,6 +7,7 @@ and other convenient methods for handling time, numba compiled code, etc.
 from collections.abc import Callable
 from contextlib import contextmanager
 from functools import wraps
+from importlib.util import find_spec
 from logging import getLogger
 from typing import Any
 from warnings import warn
@@ -17,12 +18,7 @@ from pandas import Timestamp
 
 from pastas.version import __version__
 
-try:
-    from cachetools import cachedmethod
-
-    CACHETOOLS_AVAILABLE = True
-except (ModuleNotFoundError, ImportError):
-    CACHETOOLS_AVAILABLE = False
+CACHETOOLS_AVAILABLE = find_spec("cachetools") is not None
 
 logger = getLogger(__name__)
 
@@ -403,18 +399,27 @@ def conditional_cachedmethod(cache_getter):
 
     def decorator(func):
         if not CACHETOOLS_AVAILABLE:
-            # No cachetools available - just return the original function
             return func
 
-        # Create the cached version once at decoration time
-        cached_func = cachedmethod(cache_getter)(func)
+        from cachetools.keys import methodkey
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             if options.cache and not _has_2d_array(args, kwargs):
-                return cached_func(self, *args, **kwargs)
-            else:
                 return func(self, *args, **kwargs)
+            cache = cache_getter(self)
+            key = methodkey(self, *args, **kwargs)
+            try:
+                return cache[key]
+            except KeyError:
+                pass
+
+            result = func(self, *args, **kwargs)
+            try:
+                cache[key] = result
+            except ValueError:
+                pass  # Result is too large for the cache.
+            return result
 
         return wrapper
 
