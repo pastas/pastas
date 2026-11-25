@@ -68,6 +68,7 @@ ci = [
 ]
 rtd = [
     "pastas[solvers]",
+    "pastas-plugins",
     "Ipython",
     "ipykernel",
     "pydata-sphinx-theme",
