@@ -13,7 +13,10 @@ def test_load_multiple_csv() -> None:
     try:
         dataset = load_dataset("collenteur_2023")
     except requests.exceptions.HTTPError as e:
-        if e.response is not None and e.response.status_code in (403, 429):
+        status = e.response.status_code if e.response is not None else None
+        if status in (403, 429) or any(
+            code in str(e) for code in ("403", "429", "rate limit")
+        ):
             pytest.skip(f"HTTP Error that signals valid API behavior: {e}")
         raise
     assert isinstance(dataset, dict)
@@ -33,7 +36,10 @@ def test_list_datasets() -> None:
     try:
         datasets_list = list_datasets(silent=False)
     except requests.exceptions.HTTPError as e:
-        if e.response is not None and e.response.status_code in (403, 429):
+        status = e.response.status_code if e.response is not None else None
+        if status in (403, 429) or any(
+            code in str(e) for code in ("403", "429", "rate limit")
+        ):
             pytest.skip(f"HTTP Error that signals valid API behavior: {e}")
         raise
     # Add assertions here to verify the output of the function
