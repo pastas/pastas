@@ -22,7 +22,7 @@ def gap_fill(
     tmin: Timestamp | str | None = None,
     tmax: Timestamp | str | None = None,
     sig_level: float | None = 0.05,
-    use_noisemodel: bool = True,
+    use_noisemodel: bool = False,
     freq: str | None = None,
 ) -> Series | DataFrame:
     """Fill gaps in a hydraulic head time series using a Pastas model.
@@ -42,8 +42,8 @@ def gap_fill(
         Significance level for the prediction intervals. 0.05 by default to compute
         the 95% prediction intervals. If None, no prediction intervals are computed.
     use_noisemodel : bool, optional
-        Whether to use the noise model for the correction. Default is True.
-        Currently only works with a `ps.ArNoiseModel`.
+        Whether to use the noise model for the correction. Default is False.
+        Currently only works with a `pastas.ArNoiseModel`.
     freq : str | None, optional
         Frequency for the extended date range. If None, tries to infer from the head
         series. Required if head is empty and tmin/tmax are provided.
@@ -195,7 +195,7 @@ def _compute_correction(
     r1: Series,
     tindex: DatetimeIndex,
     ml: Model,
-    use_noisemodel: bool = True,
+    use_noisemodel: bool = False,
     r0_is_nan: bool = False,
     r1_is_nan: bool = False,
 ) -> Series:
@@ -214,7 +214,7 @@ def _compute_correction(
     ml : Model
         Pastas model.
     use_noisemodel : bool, optional
-        Whether to use the noise model for the correction. Default is True.
+        Whether to use the noise model for the correction. Default is False.
     r0_is_nan : bool, optional
         Whether the residual before the gap (r0) is NaN (e.g., gap at start).
         Default is False.

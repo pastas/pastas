@@ -53,6 +53,7 @@ on the `examples directory on GitHub <https://github.com/pastas/pastas/tree/mast
     standardized_groundwater_index
     signatures
     ensemble_predictions
+    gap_filling
 
 .. toctree::
     :maxdepth: 4
@@ -149,6 +150,8 @@ Applications
 :doc:`Groundwater signatures <signatures>`
 
 :doc:`Ensemble predictions <ensemble_predictions>`
+
+:doc:`Gap filling time series<gap_filling>`
 
 
 Time Series Analysis Manual
