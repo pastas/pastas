@@ -226,9 +226,9 @@ class GaussianLikelihoodAr1(LikelihoodBase):
         var = p[-2]
         phi = p[-1]
         N = len(res)
-        ln = -(N - 1) / 2 * log(2 * pi * var) + sum(
-            -((res[1:] - phi * res[0:-1]) ** 2) / (2 * var)
-        )
+        residuals = res.to_numpy(copy=True)
+        diff = residuals[1:] - phi * residuals[:-1]
+        ln = -(N - 1) / 2 * log(2 * pi * var) + sum(-((diff) ** 2) / (2 * var))
         return ln
 
     @property
