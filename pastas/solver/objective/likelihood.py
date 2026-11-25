@@ -6,7 +6,7 @@ These likelihood functions are used in conjunction with Bayesian approaches
 
 from abc import ABC, abstractmethod
 
-from numpy import log, pi
+from numpy import asarray, log, pi
 from pandas import DataFrame, Series
 
 from ...typing import ArrayLike
@@ -226,7 +226,7 @@ class GaussianLikelihoodAr1(LikelihoodBase):
         var = p[-2]
         phi = p[-1]
         N = len(res)
-        residuals = res.to_numpy(copy=True)
+        residuals = asarray(res)
         diff = residuals[1:] - phi * residuals[:-1]
         ln = -(N - 1) / 2 * log(2 * pi * var) + sum(-((diff) ** 2) / (2 * var))
         return ln
