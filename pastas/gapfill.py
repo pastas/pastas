@@ -261,8 +261,9 @@ def _compute_correction(
 
         correction = Series(correction, index=tindex)
     else:
-        s = Series({t0: r0, t1: r1})
-        correction = s.reindex(tindex).interpolate(method="time")
+        all_index = sorted(set([t0, t1]) | set(tindex))
+        s_extended = Series({t0: r0, t1: r1}, index=all_index)
+        correction = s_extended.interpolate(method="time").loc[tindex]
 
     return correction
 
