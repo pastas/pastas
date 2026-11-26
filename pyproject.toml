@@ -58,10 +58,12 @@ linting = ["pastas[ruffing]"]
 caching = ["cachetools"]
 codespelling = ["codespell[toml]"]
 mpmath = ["mpmath"]
-full = ["pastas[solvers,interactive,datasets,caching,mpmath]"]
+flopy = ["flopy >= 3.8"]
+full = ["pastas[solvers,interactive,datasets,caching,mpmath,flopy]"]
 pytesting = ["pytest>=7", "pytest-cov", "pytest-sugar", "papermill"]
 ci = [
     "pastas[pytesting,solvers,interactive,caching,mpmath]",
+    "flopy",
     "jupyter",
     "coverage",
     "corner",
