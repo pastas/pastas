@@ -73,6 +73,14 @@ class Emcee(SolverBase):
 
         ml.solve(thin_by=2)
 
+    By default the walkers start at positions drawn from the priors of the varied
+    parameters. Custom starting positions can be provided via `model.solve`,
+    e.g. to start the walkers at the same positions as another ensemble-based
+    method::
+
+        solver = ps.solver.Emcee(ml, nwalkers=20, nsteps=5000)
+        ml.solve(pinit=my_ensemble)
+
 
     To obtain the MCMC chains, use::
 
@@ -177,7 +185,9 @@ class Emcee(SolverBase):
             Callback function that will be called after each iteration of the solver.
         **kwargs: Any, optional
             Additional keyword arguments to be passed to the `emcee.EnsembleSampler.sample`
-            method via the `run_mcmc` method.
+            method via the `run_mcmc` method. The initial walker positions can be
+            overwritten manually by passing `pinit`, with shape (nwalkers, ndim),
+            where ndim is the number of varied parameters.
         """
         if steps is not None:
             deprecate_args_or_kwargs(
@@ -209,10 +219,10 @@ class Emcee(SolverBase):
         # Set priors
         self._set_priors()
 
-        # Set initial positions of the walkers
-        pinit = self.initial[self.vary]
-        ndim = pinit.size
-        pinit = pinit + np.abs(pinit) * 1e-2 * np.random.randn(self.nwalkers, ndim)
+        # Set initial positions of the walkers: use the positions manually
+        # provided via solve() if given, otherwise draw them from the priors
+        ndim = int(self.vary.sum())
+        pinit = self._get_pinit(kwargs.pop("pinit", None))
 
         # Create sampler and run mcmc
         if self.parallel:
@@ -261,6 +271,67 @@ class Emcee(SolverBase):
             dtype=float,
         )
         return success, result
+
+    def _get_pinit(self, pinit: ArrayLike | None = None) -> ArrayLike:
+        """Get the initial positions of the walkers.
+
+        Parameters
+        ----------
+        pinit: array-like, optional
+            Manually provided initial walker positions, with shape
+            (nwalkers, ndim). If None, the positions are drawn from the priors
+            of the varied parameters.
+
+        Returns
+        -------
+        pinit: numpy.ndarray
+            Array of shape (nwalkers, ndim) with the initial walker positions,
+            where ndim is the number of varied parameters.
+
+        """
+        ndim = int(self.vary.sum())
+        if pinit is None:
+            return self._sample_priors()
+
+        pinit = np.asarray(pinit, dtype=float)
+        if pinit.shape != (self.nwalkers, ndim):
+            msg = (
+                f"pinit has shape {pinit.shape}, expected ({self.nwalkers}, "
+                f"{ndim}) for the varied parameters of this solve call."
+            )
+            raise ValueError(msg)
+        if np.any(pinit < self.bounds[:, 0]) or np.any(pinit > self.bounds[:, 1]):
+            msg = "pinit contains walker positions outside the parameter bounds."
+            raise ValueError(msg)
+        return pinit
+
+    def _sample_priors(self) -> ArrayLike:
+        """Draw initial walker positions from the priors of the varied parameters.
+
+        Draws that fall outside the parameter bounds are redrawn (rejection
+        sampling), since out-of-bounds walkers have zero prior probability and
+        are rejected by emcee.
+        """
+        nwalkers = self.nwalkers
+        ndim = int(self.vary.sum())
+        pinit = np.empty((nwalkers, ndim), dtype=float)
+        for j, (prior, (lb, ub)) in enumerate(zip(self.priors, self.bounds)):
+            draws = np.asarray(prior.rvs(size=nwalkers), dtype=float)
+            outside = (draws < lb) | (draws > ub)
+            attempts = 0
+            while np.any(outside) and attempts < 100:
+                draws[outside] = prior.rvs(size=int(np.sum(outside)))
+                outside = (draws < lb) | (draws > ub)
+                attempts += 1
+            if np.any(outside):
+                # prior mass lies (almost) entirely outside the bounds: clip
+                logger.warning(
+                    f"Prior of parameter {j} has mass outside its bounds; "
+                    "clipping the outermost initial walker positions."
+                )
+                draws = np.clip(draws, lb, ub)
+            pinit[:, j] = draws
+        return pinit
 
     def log_probability(
         self,

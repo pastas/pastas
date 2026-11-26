@@ -17,7 +17,7 @@ def misfit(
     weights: Series | None = None,
     callback: Callable | None = None,
     returnseparate: bool = False,
-) -> ArrayLike | tuple[ArrayLike, ArrayLike, ArrayLike]:
+) -> Series | tuple[Series, Series, Series]:
     """
     Shared objective function for solvers to calculate residuals or noise.
 
@@ -59,9 +59,9 @@ def misfit(
     # Return separate components if requested
     if returnseparate:
         return (
-            res.to_numpy(copy=True),
-            model.noise(p=p, res=res).to_numpy(copy=True),
-            model._noise_weights(p=p, res=res).to_numpy(copy=True),
+            res,
+            model.noise(p=p, res=res),
+            model._noise_weights(p=p, res=res),
         )
 
-    return res.to_numpy(copy=True)
+    return res
