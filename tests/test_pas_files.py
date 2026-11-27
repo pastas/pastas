@@ -113,6 +113,7 @@ PAS_FILES = collect_pas_files() if os.environ.get("CI_PASFILES", "1") == "1" els
 
 XFAIL = {
     "ChangeModel.pas": "Known issue with ChangeModel in <=1.13.2",
+    "Ireson.pas": "No Ireson recharge model in <=1.14.0",
 }
 
 
